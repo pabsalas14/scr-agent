@@ -4,16 +4,16 @@
  * ============================================================================
  *
  * Servicio central que coordina la ejecución de los 3 agentes:
- * 1. Agente Malicia: Detecta código malicioso
- * 2. Agente Forenses: Investigación de historial
- * 3. Agente Síntesis: Reporte ejecutivo
+ * 1. Agente Inspector: Detecta código malicioso
+ * 2. Agente Detective: Investigación de historial
+ * 3. Agente Fiscal: Reporte ejecutivo
  *
  * Flujo:
- * Código → [Malicia] → Hallazgos
+ * Código → [Inspector] → Hallazgos
  *                      ↓
- *          Historial + Hallazgos → [Forenses] → Timeline
+ *          Historial + Hallazgos → [Detective] → Timeline
  *                                               ↓
- *          Hallazgos + Timeline → [Síntesis] → Reporte Ejecutivo
+ *          Hallazgos + Timeline → [Fiscal] → Reporte Ejecutivo
  *
  * El orquestador expone los agentes como herramientas MCP (Model Context Protocol)
  * para que se puedan usar desde el frontend o desde otros sistemas.
@@ -42,9 +42,9 @@ export class MCPOrchestratorService {
    * Flujo:
    * 1. Validar repositorio
    * 2. Obtener código fuente
-   * 3. Ejecutar Malicia
-   * 4. Si hay hallazgos, ejecutar Forenses
-   * 5. Ejecutar Síntesis
+   * 3. Ejecutar Inspector
+   * 4. Si hay hallazgos, ejecutar Detective
+   * 5. Ejecutar Fiscal
    * 6. Guardar resultados
    */
   async ejecutarAnalisisCompleto(
@@ -61,7 +61,7 @@ export class MCPOrchestratorService {
        * PASO 1: Validar repositorio
        */
       logger.info(`Iniciando análisis: ${analisis.id}`);
-      resultado.status = 'RUNNING';
+      resultado.status = 'MALICIA_EJECUTANDO';
 
       if (!gitService.validateRepositoryUrl(analisis.url_repositorio)) {
         throw new Error('URL de repositorio inválida o no soportada');
@@ -77,16 +77,20 @@ export class MCPOrchestratorService {
 
       /**
        * PASO 3: Obtener código fuente
-       * TODO: Implementar extracción de archivos
+       * Lee recursivamente los archivos de código del repositorio clonado
        */
       logger.info('Extrayendo código fuente');
-      const codigoFuente = 'placeholder'; // TODO: Leer archivos del repo
+      const repoFiles = gitService.readRepositoryFiles(localPath);
+      const codigoFuente = repoFiles.files
+        .map((f) => `// === ${f.path} ===\n${f.content}`)
+        .join('\n\n');
+      logger.info(`Archivos extraídos: ${repoFiles.fileCount}, tamaño: ${repoFiles.totalSize} bytes`);
 
       /**
        * PASO 4: Ejecutar Agente Malicia
        */
-      logger.info('Ejecutando Agente Malicia');
-      resultado.status = 'INSPECTOR_RUNNING';
+      logger.info('Ejecutando Agente Inspector');
+      resultado.status = 'MALICIA_EJECUTANDO';
 
       const maliciaInput: MaliciaInput = {
         codigo: codigoFuente,
@@ -96,7 +100,7 @@ export class MCPOrchestratorService {
       const maliciaOutput = await inspectorAgent.analizarCodigo(maliciaInput);
       resultado.malicia_output = maliciaOutput;
 
-      auditLog(AuditEventType.MALICIA_EXECUTION, 'Análisis Malicia completado', {
+      auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
         analisis_id: analisis.id,
         hallazgos: maliciaOutput.cantidad_hallazgos,
       });
@@ -106,8 +110,8 @@ export class MCPOrchestratorService {
        * (Solo si hay hallazgos)
        */
       if (maliciaOutput.cantidad_hallazgos > 0) {
-        logger.info('Ejecutando Agente Forenses');
-        resultado.status = 'DETECTIVE_RUNNING';
+        logger.info('Ejecutando Agente Detective');
+        resultado.status = 'FORENSES_EJECUTANDO';
 
         // Obtener historial de Git
         const historialGit = await gitService.getCommitHistory(
@@ -125,21 +129,17 @@ export class MCPOrchestratorService {
         );
         resultado.forenses_output = forensesOutput;
 
-        auditLog(
-          AuditEventType.FORENSES_EXECUTION,
-          'Análisis Forenses completado',
-          {
-            analisis_id: analisis.id,
-            eventos: forensesOutput.linea_tiempo.length,
-          }
-        );
+        auditLog(AuditEventType.DETECTIVE_EXECUTION, 'Análisis Detective completado', {
+          analisis_id: analisis.id,
+          eventos: forensesOutput.linea_tiempo.length,
+        });
       }
 
       /**
        * PASO 6: Ejecutar Agente Síntesis
        */
-      logger.info('Ejecutando Agente Síntesis');
-      resultado.status = 'FISCAL_RUNNING';
+      logger.info('Ejecutando Agente Fiscal');
+      resultado.status = 'SINTESIS_EJECUTANDO';
 
       const sintesisInput: SintesisInput = {
         hallazgos_malicia: resultado.malicia_output?.hallazgos || [],
@@ -150,7 +150,7 @@ export class MCPOrchestratorService {
       const sintesisOutput = await fiscalAgent.generarReporte(sintesisInput);
       resultado.sintesis_output = sintesisOutput;
 
-      auditLog(AuditEventType.SINTESIS_EXECUTION, 'Síntesis completada', {
+      auditLog(AuditEventType.FISCAL_EXECUTION, 'Fiscal completado', {
         analisis_id: analisis.id,
         puntuacion_riesgo: sintesisOutput.puntuacion_riesgo,
       });
@@ -158,7 +158,7 @@ export class MCPOrchestratorService {
       /**
        * PASO 7: Marcar como completado
        */
-      resultado.status = 'COMPLETED';
+      resultado.status = 'COMPLETADO';
       resultado.timestamp_fin = new Date().toISOString();
 
       auditLog(AuditEventType.ANALYSIS_COMPLETED, 'Análisis completo completado', {
@@ -174,7 +174,7 @@ export class MCPOrchestratorService {
        * Manejo de errores
        */
       const errorMsg = error instanceof Error ? error.message : String(error);
-      resultado.status = 'FAILED';
+      resultado.status = 'ERROR';
       resultado.error = errorMsg;
       resultado.timestamp_fin = new Date().toISOString();
 
@@ -189,12 +189,12 @@ export class MCPOrchestratorService {
   }
 
   /**
-   * Ejecutar solo Agente Malicia
+   * Ejecutar solo Agente Inspector
    * Útil para análisis rápido de código
    */
   async soloMalicia(codigo: string, contexto?: string) {
     try {
-      logger.info('Ejecutando Malicia solamente');
+      logger.info('Ejecutando Inspector solamente');
 
       const input: MaliciaInput = {
         codigo,
@@ -205,13 +205,13 @@ export class MCPOrchestratorService {
       return resultado;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(`Error en Malicia: ${errorMsg}`);
+      logger.error(`Error en Inspector: ${errorMsg}`);
       throw error;
     }
   }
 
   /**
-   * Ejecutar solo Agente Forenses
+   * Ejecutar solo Agente Detective
    * Útil para análisis de Git sin código
    */
   async soloForenses(
@@ -220,7 +220,7 @@ export class MCPOrchestratorService {
     limite_commits?: number
   ) {
     try {
-      logger.info('Ejecutando Forenses solamente');
+      logger.info('Ejecutando Detective solamente');
 
       const historial = await gitService.getCommitHistory(
         url_repositorio,
@@ -236,7 +236,7 @@ export class MCPOrchestratorService {
       return resultado;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
-      logger.error(`Error en Forenses: ${errorMsg}`);
+      logger.error(`Error en Detective: ${errorMsg}`);
       throw error;
     }
   }

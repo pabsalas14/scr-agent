@@ -76,6 +76,10 @@ export class GitService {
    * Maneja tanto clones iniciales como updates
    */
   async cloneOrPullRepository(repoUrl: string): Promise<string> {
+    if (!this.validateRepositoryUrl(repoUrl)) {
+      throw new Error('URL de repositorio inválida o no soportada');
+    }
+
     const localPath = this.getLocalPath(repoUrl);
 
     try {
@@ -173,7 +177,9 @@ export class GitService {
       for (const line of lines) {
         const parts = line.split('\t');
         if (parts.length >= 3) {
-          const [additions, deletions, file] = parts;
+          const additions = parts[0] ?? '0';
+          const deletions = parts[1] ?? '0';
+          const file = parts[2] ?? '';
           diffs.push({
             file,
             status: 'M', // Por defecto modificado (podríamos mejorar esto)
@@ -237,12 +243,76 @@ export class GitService {
         },
       });
 
-      return logResult.all;
+      return Array.from(logResult.all).map((commit: any) => ({
+        hash: commit.hash,
+        date: commit.date,
+        message: commit.message,
+        author: commit.author,
+        email: commit.email,
+        refs: commit.refs,
+      }));
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Error obteniendo commits de archivo: ${errorMessage}`);
       throw error;
     }
+  }
+
+  /**
+   * Leer archivos de código de un repositorio clonado localmente
+   * Retorna contenido de todos los archivos con extensiones relevantes
+   */
+  readRepositoryFiles(
+    localPath: string,
+    extensions: string[] = ['.ts', '.js', '.py', '.java', '.go', '.rb', '.php', '.cs', '.json', '.yaml', '.yml', '.sh', '.env']
+  ): { files: Array<{ path: string; content: string; size: number }>; totalSize: number; fileCount: number } {
+    const MAX_FILE_SIZE = 500 * 1024; // 500 KB por archivo
+    const MAX_TOTAL_SIZE = 5 * 1024 * 1024; // 5 MB total
+    const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '__pycache__', 'venv', '.venv']);
+
+    const files: Array<{ path: string; content: string; size: number }> = [];
+    let totalSize = 0;
+
+    const walk = (dir: string): void => {
+      if (totalSize >= MAX_TOTAL_SIZE) return;
+
+      let entries: fs.Dirent[];
+      try {
+        entries = fs.readdirSync(dir, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      for (const entry of entries) {
+        if (totalSize >= MAX_TOTAL_SIZE) break;
+
+        if (entry.isDirectory()) {
+          if (!EXCLUDED_DIRS.has(entry.name)) {
+            walk(path.join(dir, entry.name));
+          }
+        } else if (entry.isFile()) {
+          const ext = path.extname(entry.name).toLowerCase();
+          if (extensions.includes(ext)) {
+            const filePath = path.join(dir, entry.name);
+            try {
+              const stat = fs.statSync(filePath);
+              if (stat.size > MAX_FILE_SIZE) continue;
+              const content = fs.readFileSync(filePath, 'utf-8');
+              const relativePath = path.relative(localPath, filePath);
+              files.push({ path: relativePath, content, size: stat.size });
+              totalSize += stat.size;
+            } catch {
+              // Ignorar archivos que no se pueden leer
+            }
+          }
+        }
+      }
+    };
+
+    walk(localPath);
+
+    logger.debug(`Archivos leídos: ${files.length}, tamaño total: ${totalSize} bytes`);
+    return { files, totalSize, fileCount: files.length };
   }
 
   /**
@@ -252,9 +322,19 @@ export class GitService {
   validateRepositoryUrl(url: string): boolean {
     try {
       const urlObj = new URL(url);
+      // Solo permitir HTTPS para reducir superficie SSRF
+      if (urlObj.protocol !== 'https:') return false;
+
+      // Evitar URLs con credenciales embebidas
+      if (urlObj.username || urlObj.password) return false;
+
       // Solo permitir GitHub, GitLab, Bitbucket (agregar más si necesario)
+      // Importante: evitar bypass tipo "evilgithub.com" (endsWith simple)
+      const hostname = urlObj.hostname.toLowerCase();
       const allowedHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
-      return allowedHosts.some((host) => urlObj.hostname.endsWith(host));
+      return allowedHosts.some(
+        (host) => hostname === host || hostname.endsWith(`.${host}`)
+      );
     } catch {
       return false;
     }
@@ -262,4 +342,4 @@ export class GitService {
 }
 
 // Singleton exportado
-export const gitService = new GitService(process.env.GIT_CACHE_DIR);
+export const gitService = new GitService(process.env['GIT_CACHE_DIR']);
