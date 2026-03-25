@@ -1,0 +1,52 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "version": "2",
+  "tasks": {
+    "build": {
+      "description": "Compilar paquete",
+      "outputs": ["dist/**", ".next/**", "build/**"],
+      "cache": true,
+      "dependsOn": ["^build"]
+    },
+    "dev": {
+      "description": "Iniciar servidor de desarrollo",
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "description": "Verificar código",
+      "cache": true,
+      "dependsOn": ["^lint"]
+    },
+    "lint:fix": {
+      "description": "Corregir problemas de linting",
+      "cache": false,
+      "outputs": ["**/*.ts", "**/*.tsx", "**/*.js"]
+    },
+    "test": {
+      "description": "Ejecutar pruebas",
+      "cache": true,
+      "inputs": ["src/**", "**/*.test.ts", "**/*.test.tsx"],
+      "outputs": ["coverage/**"]
+    },
+    "test:watch": {
+      "description": "Pruebas en modo watch",
+      "cache": false,
+      "persistent": true
+    },
+    "test:coverage": {
+      "description": "Reporte de cobertura de pruebas",
+      "cache": true,
+      "outputs": ["coverage/**"]
+    },
+    "type-check": {
+      "description": "Verificar tipos de TypeScript",
+      "cache": true
+    }
+  },
+  "globalDependencies": [
+    "tsconfig.json",
+    ".eslintrc.js",
+    "turbo.json"
+  ]
+}

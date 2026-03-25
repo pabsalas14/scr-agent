@@ -1,0 +1,55 @@
+{
+  "name": "@scr-agent/backend",
+  "version": "0.1.0",
+  "description": "Backend MCP Server - Orquestación de agentes de análisis de seguridad",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "type-check": "tsc --noEmit",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest --coverage",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.24.3",
+    "@prisma/client": "^5.8.0",
+    "axios": "^1.6.5",
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.1.2",
+    "node-cache": "^5.1.2",
+    "redis": "^4.6.12",
+    "sanitize-html": "^2.11.0",
+    "simple-git": "^3.20.0",
+    "validator": "^13.11.0",
+    "winston": "^3.11.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.2",
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.10.6",
+    "@types/sanitize-html": "^2.9.5",
+    "@types/validator": "^13.11.8",
+    "prisma": "^5.8.0",
+    "supertest": "^6.3.3",
+    "tsx": "^4.7.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "engines": {
+    "node": ">=18.19.1"
+  }
+}

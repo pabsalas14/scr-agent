@@ -1,0 +1,6 @@
+# Configuración de workspace de pnpm para monorepo
+# Define las ubicaciones de los paquetes gestionados
+
+packages:
+  - "packages/*"
+  - "tools/*"
