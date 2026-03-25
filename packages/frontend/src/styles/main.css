@@ -1,0 +1,143 @@
+/**
+ * Estilos globales de SCR Agent
+ * Utiliza Tailwind CSS
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Variables CSS personalizadas
+ */
+:root {
+  --severity-crítico: #dc2626;
+  --severity-alto: #ea580c;
+  --severity-medio: #eab308;
+  --severity-bajo: #22c55e;
+
+  --color-primary: #0f172a;
+  --color-secondary: #1e293b;
+  --color-accent: #3b82f6;
+}
+
+/**
+ * Base styles
+ */
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: 'Courier New', monospace;
+  background: #f3f4f6;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+
+/**
+ * Custom components
+ */
+
+.card {
+  @apply rounded-lg border border-gray-200 shadow-sm;
+}
+
+.badge {
+  @apply inline-block px-2.5 py-0.5 rounded-full text-sm font-medium;
+}
+
+.badge-crítico {
+  @apply badge bg-red-100 text-red-800;
+}
+
+.badge-alto {
+  @apply badge bg-orange-100 text-orange-800;
+}
+
+.badge-medio {
+  @apply badge bg-yellow-100 text-yellow-800;
+}
+
+.badge-bajo {
+  @apply badge bg-green-100 text-green-800;
+}
+
+.button-primary {
+  @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium;
+}
+
+.button-secondary {
+  @apply px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors font-medium;
+}
+
+.input-field {
+  @apply w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500;
+}
+
+/**
+ * Timeline styles
+ */
+.timeline {
+  @apply relative;
+}
+
+.timeline-event {
+  @apply mb-8 relative pl-8;
+}
+
+.timeline-event::before {
+  content: '';
+  @apply absolute left-0 top-2 w-3 h-3 rounded-full border-2 border-blue-500 bg-white;
+}
+
+.timeline-event.critical::before {
+  @apply border-red-500;
+}
+
+.timeline-event.high::before {
+  @apply border-orange-500;
+}
+
+.timeline-event.medium::before {
+  @apply border-yellow-500;
+}
+
+.timeline-event.low::before {
+  @apply border-green-500;
+}
+
+/**
+ * Animaciones
+ */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/**
+ * Responsive
+ */
+@media (max-width: 768px) {
+  .container {
+    @apply px-4;
+  }
+
+  code {
+    font-size: 0.85em;
+  }
+}
