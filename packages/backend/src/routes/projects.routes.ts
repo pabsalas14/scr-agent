@@ -17,6 +17,7 @@ import { PrismaClient } from '@prisma/client';
 import { validarBody } from '../middleware/validation.middleware';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { gitService } from '../services/git.service';
+import { queueService } from '../services/queue.service';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -178,9 +179,14 @@ router.post('/:id/analyses', async (req: Request, res: Response) => {
     });
 
     /**
-     * TODO: Lanzar análisis asíncrono en background
-     * Por ahora solo crea el registro
+     * Encolar análisis para ejecución en background
+     * El frontend hará polling a GET /analyses/:id para ver el estado
      */
+    queueService.encolar({
+      analysisId: analysis.id,
+      projectId: project.id,
+      repositoryUrl: project.repositoryUrl,
+    });
 
     res.status(201).json({ data: analysis });
   } catch (error) {
