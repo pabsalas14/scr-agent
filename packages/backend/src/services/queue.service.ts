@@ -19,9 +19,9 @@
 import { PrismaClient } from '@prisma/client';
 import { logger, auditLog, AuditEventType } from './logger.service';
 import { gitService } from './git.service';
-import { maliciaAgent } from '../agents/malicia.agent';
-import { forensesAgent } from '../agents/forenses.agent';
-import { sintesisAgent } from '../agents/sintesis.agent';
+import { inspectorAgent } from '../agents/inspector.agent';
+import { detectiveAgent } from '../agents/detective.agent';
+import { fiscalAgent } from '../agents/fiscal.agent';
 import fs from 'fs';
 import path from 'path';
 
@@ -112,11 +112,11 @@ export class QueueService {
       // ── PASO 3: Agente Malicia ───────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
-        data: { status: 'MALICIA_RUNNING', progress: 20 },
+        data: { status: 'INSPECTOR_RUNNING', progress: 20 },
       });
 
       logger.info('Ejecutando Agente Malicia');
-      const maliciaOutput = await maliciaAgent.analizarCodigo({
+      const maliciaOutput = await inspectorAgent.analizarCodigo({
         codigo: codigoFuente,
         contexto: `Análisis de: ${repositoryUrl}`,
       });
@@ -147,13 +147,13 @@ export class QueueService {
       // ── PASO 4: Agente Forenses ──────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
-        data: { status: 'FORENSES_RUNNING', progress: 50 },
+        data: { status: 'DETECTIVE_RUNNING', progress: 50 },
       });
 
       const historialGit = await gitService.getCommitHistory(repositoryUrl, 50);
 
       logger.info('Ejecutando Agente Forenses');
-      const forensesOutput = await forensesAgent.investigarHistorial({
+      const forensesOutput = await detectiveAgent.investigarHistorial({
         hallazgos_malicia: maliciaOutput.hallazgos,
         historial_commits: historialGit,
       });
@@ -180,11 +180,11 @@ export class QueueService {
       // ── PASO 5: Agente Síntesis ──────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
-        data: { status: 'SINTESIS_RUNNING', progress: 80 },
+        data: { status: 'FISCAL_RUNNING', progress: 80 },
       });
 
       logger.info('Ejecutando Agente Síntesis');
-      const sintesisOutput = await sintesisAgent.generarReporte({
+      const sintesisOutput = await fiscalAgent.generarReporte({
         hallazgos_malicia: maliciaOutput.hallazgos,
         linea_tiempo_forenses: forensesOutput.linea_tiempo,
         contexto_repo: repositoryUrl,

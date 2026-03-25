@@ -21,9 +21,9 @@
 
 import { logger, auditLog, AuditEventType } from './logger.service';
 import { gitService } from './git.service';
-import { maliciaAgent } from '../agents/malicia.agent';
-import { forensesAgent } from '../agents/forenses.agent';
-import { sintesisAgent } from '../agents/sintesis.agent';
+import { inspectorAgent } from '../agents/inspector.agent';
+import { detectiveAgent } from '../agents/detective.agent';
+import { fiscalAgent } from '../agents/fiscal.agent';
 import {
   ResultadoAnalisisCompleto,
   AnalisisCompleto,
@@ -86,14 +86,14 @@ export class MCPOrchestratorService {
        * PASO 4: Ejecutar Agente Malicia
        */
       logger.info('Ejecutando Agente Malicia');
-      resultado.status = 'MALICIA_RUNNING';
+      resultado.status = 'INSPECTOR_RUNNING';
 
       const maliciaInput: MaliciaInput = {
         codigo: codigoFuente,
         contexto: `Análisis de repositorio: ${analisis.url_repositorio}`,
       };
 
-      const maliciaOutput = await maliciaAgent.analizarCodigo(maliciaInput);
+      const maliciaOutput = await inspectorAgent.analizarCodigo(maliciaInput);
       resultado.malicia_output = maliciaOutput;
 
       auditLog(AuditEventType.MALICIA_EXECUTION, 'Análisis Malicia completado', {
@@ -107,7 +107,7 @@ export class MCPOrchestratorService {
        */
       if (maliciaOutput.cantidad_hallazgos > 0) {
         logger.info('Ejecutando Agente Forenses');
-        resultado.status = 'FORENSES_RUNNING';
+        resultado.status = 'DETECTIVE_RUNNING';
 
         // Obtener historial de Git
         const historialGit = await gitService.getCommitHistory(
@@ -120,7 +120,7 @@ export class MCPOrchestratorService {
           historial_commits: historialGit,
         };
 
-        const forensesOutput = await forensesAgent.investigarHistorial(
+        const forensesOutput = await detectiveAgent.investigarHistorial(
           forensesInput
         );
         resultado.forenses_output = forensesOutput;
@@ -139,7 +139,7 @@ export class MCPOrchestratorService {
        * PASO 6: Ejecutar Agente Síntesis
        */
       logger.info('Ejecutando Agente Síntesis');
-      resultado.status = 'SINTESIS_RUNNING';
+      resultado.status = 'FISCAL_RUNNING';
 
       const sintesisInput: SintesisInput = {
         hallazgos_malicia: resultado.malicia_output?.hallazgos || [],
@@ -147,7 +147,7 @@ export class MCPOrchestratorService {
         contexto_repo: `Repositorio: ${analisis.url_repositorio}`,
       };
 
-      const sintesisOutput = await sintesisAgent.generarReporte(sintesisInput);
+      const sintesisOutput = await fiscalAgent.generarReporte(sintesisInput);
       resultado.sintesis_output = sintesisOutput;
 
       auditLog(AuditEventType.SINTESIS_EXECUTION, 'Síntesis completada', {
@@ -201,7 +201,7 @@ export class MCPOrchestratorService {
         contexto,
       };
 
-      const resultado = await maliciaAgent.analizarCodigo(input);
+      const resultado = await inspectorAgent.analizarCodigo(input);
       return resultado;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -232,7 +232,7 @@ export class MCPOrchestratorService {
         historial_commits: historial,
       };
 
-      const resultado = await forensesAgent.investigarHistorial(input);
+      const resultado = await detectiveAgent.investigarHistorial(input);
       return resultado;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);

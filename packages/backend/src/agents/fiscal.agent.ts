@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * AGENTE SÍNTESIS - Síntesis de Reportes
+ * AGENTE SÍNTESIS - Fiscal - Síntesis de Reportes
  * ============================================================================
  *
  * Responsabilidades:
@@ -29,9 +29,9 @@ import {
 } from '../types/agents';
 
 /**
- * Servicio del Agente Síntesis
+ * Servicio del Agente Fiscal
  */
-export class SintesisAgentService {
+export class FiscalAgentService {
   /**
    * Cliente de Anthropic
    */
@@ -277,4 +277,4 @@ ${input.contexto_repo ? `\n## Contexto del Repositorio\n${input.contexto_repo}` 
 /**
  * Singleton exportado
  */
-export const sintesisAgent = new SintesisAgentService();
+export const fiscalAgent = new FiscalAgentService();

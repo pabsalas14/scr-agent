@@ -25,9 +25,9 @@ import { gitService } from '../services/git.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**
- * Servicio del Agente Forenses
+ * Servicio del Agente Detective
  */
-export class ForensesAgentService {
+export class DetectiveAgentService {
   /**
    * Cliente de Anthropic
    */
@@ -306,4 +306,4 @@ Responde SOLO con JSON válido:
 /**
  * Singleton exportado
  */
-export const forensesAgent = new ForensesAgentService();
+export const detectiveAgent = new DetectiveAgentService();

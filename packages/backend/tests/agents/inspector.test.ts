@@ -1,6 +1,6 @@
 /**
  * ============================================================================
- * TESTS: Agente Malicia
+ * TESTS: Agente Inspector
  * ============================================================================
  *
  * Pruebas unitarias del agente de detección de código malicioso
@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { MaliciaAgentService } from '../../src/agents/malicia.agent';
+import { InspectorAgentService } from '../../src/agents/malicia.agent';
 
 /**
  * Mock del cliente Anthropic
@@ -37,13 +37,13 @@ vi.mock('../../src/services/cache.service', () => ({
   },
 }));
 
-describe('MaliciaAgentService', () => {
-  let agente: MaliciaAgentService;
+describe('InspectorAgentService', () => {
+  let agente: InspectorAgentService;
   let anthropicMock: any;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    agente = new MaliciaAgentService('api-key-test');
+    agente = new InspectorAgentService('api-key-test');
     // Obtener instancia mockeada
     const Anthropic = vi.mocked(
       (await import('@anthropic-ai/sdk')).default

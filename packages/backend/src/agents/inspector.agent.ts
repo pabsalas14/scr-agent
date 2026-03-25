@@ -59,9 +59,9 @@ const MALICIOUS_PATTERNS = {
 };
 
 /**
- * Servicio del Agente Malicia
+ * Servicio del Agente Inspector
  */
-export class MaliciaAgentService {
+export class InspectorAgentService {
   /**
    * Cliente de Anthropic para acceder a Claude
    */
@@ -275,4 +275,4 @@ ${input.contexto ? `\n## Contexto Adicional\n${input.contexto}` : ''}
 /**
  * Singleton exportado
  */
-export const maliciaAgent = new MaliciaAgentService();
+export const inspectorAgent = new InspectorAgentService();

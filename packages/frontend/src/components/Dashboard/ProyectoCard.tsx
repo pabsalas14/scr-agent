@@ -111,9 +111,9 @@ function EstadoChip({ status }: { status: string }) {
   const CONFIG: Record<string, { label: string; clase: string }> = {
     PENDIENTE: { label: 'Pendiente', clase: 'bg-gray-100 text-gray-600' },
     RUNNING: { label: 'En proceso', clase: 'bg-blue-100 text-blue-700' },
-    MALICIA_RUNNING: { label: 'Malicia...', clase: 'bg-orange-100 text-orange-700' },
-    FORENSES_RUNNING: { label: 'Forenses...', clase: 'bg-purple-100 text-purple-700' },
-    SINTESIS_RUNNING: { label: 'Síntesis...', clase: 'bg-indigo-100 text-indigo-700' },
+    INSPECTOR_RUNNING: { label: 'Inspector...', clase: 'bg-orange-100 text-orange-700' },
+    DETECTIVE_RUNNING: { label: 'Detective...', clase: 'bg-purple-100 text-purple-700' },
+    FISCAL_RUNNING: { label: 'Fiscal...', clase: 'bg-indigo-100 text-indigo-700' },
     COMPLETADO: { label: 'Completado', clase: 'bg-green-100 text-green-700' },
     ERROR: { label: 'Error', clase: 'bg-red-100 text-red-700' },
   };

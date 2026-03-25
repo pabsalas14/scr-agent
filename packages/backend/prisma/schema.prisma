@@ -1,13 +1,11 @@
-/**
- * Esquema de base de datos PostgreSQL para SCR Agent
- *
- * Estructura de datos:
- * - Proyectos: Repositorios a analizar
- * - Análisis: Ejecuciones de análisis completo
- * - Hallazgos: Resultados de análisis de malicia
- * - Eventos Forenses: Timeline de cambios
- * - Reportes: Síntesis final con PDF exportable
- */
+// Esquema de base de datos PostgreSQL para SCR Agent
+//
+// Estructura de datos:
+// - Proyectos: Repositorios a analizar
+// - Análisis: Ejecuciones de análisis completo
+// - Hallazgos: Resultados del Agente Inspector
+// - Eventos Forenses: Timeline de cambios del Agente Detective
+// - Reportes: Síntesis final del Agente Fiscal
 
 datasource db {
   provider = "postgresql"
@@ -20,10 +18,8 @@ generator client {
 
 // ==================== MODELOS BASE ====================
 
-/**
- * Proyecto - Repositorio a ser analizado
- * Soporta: GitHub, GitLab, Bitbucket
- */
+// Proyecto - Repositorio a ser analizado
+// Soporta: GitHub, GitLab, Bitbucket
 model Project {
   id            String    @id @default(cuid())
   name          String    @db.VarChar(255)
@@ -44,10 +40,8 @@ model Project {
   @@map("projects")
 }
 
-/**
- * Análisis - Ejecución completa del flujo SCR
- * Contiene: Malicia findings → Forenses timeline → Síntesis report
- */
+// Análisis - Ejecución completa del flujo SCR
+// Contiene: Inspector findings → Detective timeline → Fiscal report
 model Analysis {
   id            String    @id @default(cuid())
   projectId     String
@@ -73,12 +67,10 @@ model Analysis {
   @@map("analyses")
 }
 
-// ==================== AGENTE MALICIA ====================
+// ==================== AGENTE INSPECTOR ====================
 
-/**
- * Hallazgo - Resultado del análisis de código malicioso
- * Generado por: Agente Malicia (Claude 3.5 Sonnet)
- */
+// Hallazgo - Resultado del análisis de código malicioso
+// Generado por: Agente Inspector (Claude 3.5 Sonnet)
 model Finding {
   id              String    @id @default(cuid())
   analysisId      String
@@ -96,8 +88,8 @@ model Finding {
 
   // Contenido
   codeSnippet     String?   @db.Text
-  whySuspicious   String    @db.Text // Explicación del riesgo
-  remediationSteps String[]  // Array de pasos de remediación
+  whySuspicious   String    @db.Text
+  remediationSteps String[]
 
   // Metadata
   createdAt       DateTime  @default(now())
@@ -112,12 +104,10 @@ model Finding {
   @@map("findings")
 }
 
-// ==================== AGENTE FORENSES ====================
+// ==================== AGENTE DETECTIVE ====================
 
-/**
- * EventoForense - Evento en la línea de tiempo de Git
- * Generado por: Agente Forenses (Claude 3.5 Haiku)
- */
+// EventoForense - Evento en la línea de tiempo de Git
+// Generado por: Agente Detective (Claude 3.5 Haiku)
 model ForensicEvent {
   id              String    @id @default(cuid())
   analysisId      String
@@ -140,7 +130,7 @@ model ForensicEvent {
 
   // Evaluación de riesgo
   riskLevel       Severity  @default(LOW)
-  suspicionIndicators String[] // Patrones detectados
+  suspicionIndicators String[]
 
   // Temporal
   timestamp       DateTime
@@ -154,12 +144,10 @@ model ForensicEvent {
   @@map("forensic_events")
 }
 
-// ==================== AGENTE SÍNTESIS ====================
+// ==================== AGENTE FISCAL ====================
 
-/**
- * Reporte - Síntesis final con recomendaciones
- * Generado por: Agente Síntesis (Claude 3.5 Sonnet)
- */
+// Reporte - Síntesis final con recomendaciones
+// Generado por: Agente Fiscal (Claude 3.5 Sonnet)
 model Report {
   id                String    @id @default(cuid())
   analysisId        String    @unique
@@ -171,12 +159,12 @@ model Report {
 
   // Desglose
   findingsCount     Int
-  severityBreakdown Json      // { "CRÍTICO": 1, "ALTO": 2, ... }
+  severityBreakdown Json
   compromisedFunctions String[]
   affectedAuthors   String[]
 
   // Remediación
-  remediationSteps  Json      // Array de steps con acción, justificación, etc.
+  remediationSteps  Json
   generalRecommendation String @db.Text
 
   // Exportación
@@ -194,46 +182,46 @@ model Report {
 
 /// Alcance del análisis
 enum AnalysisScope {
-  REPOSITORY  /// Analizar repositorio completo
-  ORGANIZATION /// Analizar toda la organización
-  PULL_REQUEST /// Analizar solo cambios en PR
+  REPOSITORY   // Analizar repositorio completo
+  ORGANIZATION // Analizar toda la organización
+  PULL_REQUEST // Analizar solo cambios en PR
 }
 
 /// Estado del análisis
 enum AnalysisStatus {
-  PENDING      /// Pendiente de ejecución
-  RUNNING      /// Ejecutándose
-  MALICIA_RUNNING /// Agente Malicia en proceso
-  FORENSES_RUNNING /// Agente Forenses en proceso
-  SINTESIS_RUNNING /// Agente Síntesis en proceso
-  COMPLETED    /// Análisis completado
-  FAILED       /// Falló el análisis
-  PARTIAL      /// Completado parcialmente
+  PENDING           // Pendiente de ejecución
+  RUNNING           // Ejecutándose
+  INSPECTOR_RUNNING // Agente Inspector en proceso
+  DETECTIVE_RUNNING // Agente Detective en proceso
+  FISCAL_RUNNING    // Agente Fiscal en proceso
+  COMPLETED         // Análisis completado
+  FAILED            // Falló el análisis
+  PARTIAL           // Completado parcialmente
 }
 
 /// Severidad de hallazgo
 enum Severity {
-  BAJO
-  MEDIO
-  ALTO
-  CRÍTICO
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
 }
 
 /// Tipo de riesgo detectado
 enum RiskType {
-  BACKDOOR          /// Puerta trasera
-  INJECTION         /// Inyección de código
-  LOGIC_BOMB        /// Bomba lógica
-  OBFUSCATION       /// Código ofuscado
-  SUSPICIOUS        /// Comportamiento sospechoso
-  ERROR_HANDLING    /// Manejo de errores anormal
-  HARDCODED_VALUES  /// Valores hardcodeados
+  BACKDOOR         // Puerta trasera
+  INJECTION        // Inyección de código
+  LOGIC_BOMB       // Bomba lógica
+  OBFUSCATION      // Código ofuscado
+  SUSPICIOUS       // Comportamiento sospechoso
+  ERROR_HANDLING   // Manejo de errores anormal
+  HARDCODED_VALUES // Valores hardcodeados
 }
 
 /// Acción de Git
 enum GitAction {
-  ADDED     /// Archivo/función agregada
-  MODIFIED  /// Archivo/función modificada
-  DELETED   /// Archivo/función eliminada
-  RENAMED   /// Archivo renombrado
+  ADDED    // Archivo/función agregada
+  MODIFIED // Archivo/función modificada
+  DELETED  // Archivo/función eliminada
+  RENAMED  // Archivo renombrado
 }

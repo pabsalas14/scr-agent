@@ -30,7 +30,7 @@
       "@/*": ["./*"],
       "@backend/*": ["packages/backend/src/*"],
       "@frontend/*": ["packages/frontend/src/*"],
-      "@tools/*": ["tools/*/src/*"],
+      "@tools/*": ["tools/shared/src/*"],
       "@types/*": ["tools/types/src/*"]
     },
     "types": ["node", "vitest/globals"]
