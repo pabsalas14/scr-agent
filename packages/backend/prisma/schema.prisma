@@ -196,6 +196,7 @@ enum AnalysisStatus {
   FISCAL_RUNNING    // Agente Fiscal en proceso
   COMPLETED         // Análisis completado
   FAILED            // Falló el análisis
+  CANCELLED         // Cancelado por el usuario
   PARTIAL           // Completado parcialmente
 }
 
