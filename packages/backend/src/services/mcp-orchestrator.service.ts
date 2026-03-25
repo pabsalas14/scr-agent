@@ -24,6 +24,8 @@ import { gitService } from './git.service';
 import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
+import { prisma } from './prisma.service';
+import { queueService } from './queue.service';
 import {
   ResultadoAnalisisCompleto,
   AnalisisCompleto,
@@ -242,22 +244,85 @@ export class MCPOrchestratorService {
   }
 
   /**
-   * Obtener estado actual de un análisis
-   * TODO: Implementar con base de datos
+   * Obtener estado actual de un análisis consultando la BD
    */
   async obtenerEstado(analisisId: string): Promise<ResultadoAnalisisCompleto | null> {
-    // TODO: Buscar en base de datos
     logger.debug(`Obteniendo estado de análisis: ${analisisId}`);
-    return null;
+
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analisisId },
+      include: { project: true },
+    });
+
+    if (!analysis) return null;
+
+    const mapStatus = (s: string): ResultadoAnalisisCompleto['status'] => {
+      const statusMap: Record<string, ResultadoAnalisisCompleto['status']> = {
+        PENDING: 'PENDIENTE',
+        RUNNING: 'MALICIA_EJECUTANDO',
+        INSPECTOR_RUNNING: 'MALICIA_EJECUTANDO',
+        DETECTIVE_RUNNING: 'FORENSES_EJECUTANDO',
+        FISCAL_RUNNING: 'SINTESIS_EJECUTANDO',
+        COMPLETED: 'COMPLETADO',
+        FAILED: 'ERROR',
+        CANCELLED: 'ERROR',
+        PARTIAL: 'COMPLETADO',
+      };
+      return statusMap[s] ?? 'ERROR';
+    };
+
+    return {
+      id: analysis.id,
+      proyecto_id: analysis.projectId,
+      url_repositorio: analysis.project.repositoryUrl,
+      alcance: 'REPOSITORIO',
+      timestamp_inicio: (analysis.startedAt ?? analysis.createdAt).toISOString(),
+      status: mapStatus(analysis.status),
+      timestamp_fin: analysis.completedAt?.toISOString(),
+    };
   }
 
   /**
    * Cancelar un análisis en progreso
-   * TODO: Implementar con soporte de base de datos
+   * Actualiza el estado en BD y señala al queue para detener la ejecución
    */
   async cancelarAnalisis(analisisId: string): Promise<boolean> {
-    // TODO: Marcar en base de datos como cancelado
     logger.info(`Cancelando análisis: ${analisisId}`);
+
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analisisId },
+    });
+
+    if (!analysis) {
+      logger.warn(`Análisis ${analisisId} no encontrado`);
+      return false;
+    }
+
+    const estadosCancelables = [
+      'PENDING',
+      'RUNNING',
+      'INSPECTOR_RUNNING',
+      'DETECTIVE_RUNNING',
+      'FISCAL_RUNNING',
+    ];
+
+    if (!estadosCancelables.includes(analysis.status)) {
+      logger.warn(`Análisis ${analisisId} no está en estado cancelable: ${analysis.status}`);
+      return false;
+    }
+
+    await prisma.analysis.update({
+      where: { id: analisisId },
+      data: { status: 'CANCELLED' },
+    });
+
+    // Señalar al queue para detener la ejecución entre pasos
+    queueService.cancelar(analisisId);
+
+    auditLog(AuditEventType.ANALYSIS_FAILED, 'Análisis cancelado por el usuario', {
+      analisisId,
+    });
+
     return true;
   }
 }
