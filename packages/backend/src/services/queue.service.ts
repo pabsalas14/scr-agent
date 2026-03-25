@@ -16,16 +16,14 @@
  * Implementación: Cola in-memory (para producción usar Bull + Redis)
  */
 
-import { PrismaClient } from '@prisma/client';
 import { logger, auditLog, AuditEventType } from './logger.service';
 import { gitService } from './git.service';
 import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
+import { prisma } from './prisma.service';
 import fs from 'fs';
 import path from 'path';
-
-const prisma = new PrismaClient();
 
 /**
  * Trabajo en cola
@@ -50,6 +48,26 @@ export class QueueService {
    * Indica si el worker está procesando
    */
   private procesando = false;
+
+  /**
+   * IDs de análisis que han sido cancelados
+   * Se usan para interrumpir la ejecución entre pasos
+   */
+  private cancelados = new Set<string>();
+
+  /**
+   * Cancelar un análisis pendiente o en ejecución
+   * Si está en cola lo elimina; si está corriendo lo marcará para detener entre pasos
+   */
+  cancelar(analysisId: string): void {
+    this.cancelados.add(analysisId);
+    // Eliminar de la cola si todavía no empezó
+    const idx = this.cola.findIndex((t) => t.analysisId === analysisId);
+    if (idx !== -1) {
+      this.cola.splice(idx, 1);
+      logger.info(`Análisis ${analysisId} eliminado de la cola`);
+    }
+  }
 
   /**
    * Encolar nuevo análisis
@@ -89,7 +107,7 @@ export class QueueService {
 
   /**
    * Ejecutar análisis completo de un trabajo
-   * Flujo: Malicia → Forenses → Síntesis → Guardar en BD
+   * Flujo: Inspector → Detective → Fiscal → Guardar en BD
    */
   private async ejecutarAnalisis(trabajo: TrabajoAnalisis): Promise<void> {
     const { analysisId, repositoryUrl } = trabajo;
@@ -109,13 +127,19 @@ export class QueueService {
       const localPath = await gitService.cloneOrPullRepository(repositoryUrl);
       const codigoFuente = await this.leerArchivosRepo(localPath);
 
-      // ── PASO 3: Agente Malicia ───────────────────────────────────────────
+      // Verificar cancelación antes de continuar
+      if (this.cancelados.has(analysisId)) {
+        this.cancelados.delete(analysisId);
+        return;
+      }
+
+      // ── PASO 3: Agente Inspector ─────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'INSPECTOR_RUNNING', progress: 20 },
       });
 
-      logger.info('Ejecutando Agente Malicia');
+      logger.info('Ejecutando Agente Inspector');
       const maliciaOutput = await inspectorAgent.analizarCodigo({
         codigo: codigoFuente,
         contexto: `Análisis de: ${repositoryUrl}`,
@@ -139,12 +163,18 @@ export class QueueService {
         });
       }
 
-      auditLog(AuditEventType.MALICIA_EXECUTION, 'Malicia completado y guardado', {
+      auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Inspector completado y guardado', {
         analysisId,
         hallazgos: maliciaOutput.cantidad_hallazgos,
       });
 
-      // ── PASO 4: Agente Forenses ──────────────────────────────────────────
+      // Verificar cancelación antes de continuar
+      if (this.cancelados.has(analysisId)) {
+        this.cancelados.delete(analysisId);
+        return;
+      }
+
+      // ── PASO 4: Agente Detective ─────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'DETECTIVE_RUNNING', progress: 50 },
@@ -152,7 +182,7 @@ export class QueueService {
 
       const historialGit = await gitService.getCommitHistory(repositoryUrl, 50);
 
-      logger.info('Ejecutando Agente Forenses');
+      logger.info('Ejecutando Agente Detective');
       const forensesOutput = await detectiveAgent.investigarHistorial({
         hallazgos_malicia: maliciaOutput.hallazgos,
         historial_commits: historialGit,
@@ -177,13 +207,19 @@ export class QueueService {
         });
       }
 
-      // ── PASO 5: Agente Síntesis ──────────────────────────────────────────
+      // Verificar cancelación antes de continuar
+      if (this.cancelados.has(analysisId)) {
+        this.cancelados.delete(analysisId);
+        return;
+      }
+
+      // ── PASO 5: Agente Fiscal ────────────────────────────────────────────
       await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'FISCAL_RUNNING', progress: 80 },
       });
 
-      logger.info('Ejecutando Agente Síntesis');
+      logger.info('Ejecutando Agente Fiscal');
       const sintesisOutput = await fiscalAgent.generarReporte({
         hallazgos_malicia: maliciaOutput.hallazgos,
         linea_tiempo_forenses: forensesOutput.linea_tiempo,
@@ -316,16 +352,16 @@ export class QueueService {
 
   private mapearSeveridad(s: string): any {
     const mapa: Record<string, string> = {
-      BAJO: 'BAJO',
-      MEDIO: 'MEDIO',
-      ALTO: 'ALTO',
-      CRÍTICO: 'CRÍTICO',
-      LOW: 'BAJO',
-      MEDIUM: 'MEDIO',
-      HIGH: 'ALTO',
-      CRITICAL: 'CRÍTICO',
+      BAJO: 'LOW',
+      MEDIO: 'MEDIUM',
+      ALTO: 'HIGH',
+      CRÍTICO: 'CRITICAL',
+      LOW: 'LOW',
+      MEDIUM: 'MEDIUM',
+      HIGH: 'HIGH',
+      CRITICAL: 'CRITICAL',
     };
-    return mapa[s] || 'MEDIO';
+    return mapa[s] || 'MEDIUM';
   }
 
   private mapearTipoRiesgo(t: string): any {
