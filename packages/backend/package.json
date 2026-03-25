@@ -19,7 +19,7 @@
     "db:studio": "prisma studio"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.24.3",
+    "@anthropic-ai/sdk": "^0.80.0",
     "@prisma/client": "^5.8.0",
     "axios": "^1.6.5",
     "bcrypt": "^5.1.1",
