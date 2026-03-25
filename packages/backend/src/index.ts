@@ -138,10 +138,14 @@ app.get('/api/v1', (_req, res) => {
   });
 });
 
-// TODO: Importar y usar rutas de agentes
-// app.use('/api/v1/projects', projectRoutes);
-// app.use('/api/v1/analyses', analysisRoutes);
-// app.use('/api/v1/reports', reportRoutes);
+/**
+ * Rutas API
+ */
+import projectRoutes from './routes/projects.routes';
+import analysisRoutes from './routes/analyses.routes';
+
+app.use('/api/v1/projects', projectRoutes);
+app.use('/api/v1/analyses', analysisRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 

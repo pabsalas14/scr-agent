@@ -3,104 +3,139 @@
  * COMPONENTE PRINCIPAL - APP
  * ============================================================================
  *
- * Componente raíz de la aplicación React
  * Maneja:
- * - Enrutamiento principal
- * - Providers (QueryClient, Zustand store)
- * - Layout global
+ * - Estado de navegación simple (sin router externo)
+ * - Providers (QueryClient)
+ * - Layout global con header y footer
  *
- * TODO: Implementar rutas
- * - Dashboard
- * - Project selector
- * - Report viewer
- * - Timeline viewer
+ * Vistas:
+ * - 'dashboard' → Lista de proyectos
+ * - 'reporte'   → Reporte de análisis con timeline
  */
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import React, { useState } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import Dashboard from './components/Dashboard/Dashboard';
+import ReportViewer from './components/Reports/ReportViewer';
 
 /**
- * Crear cliente de React Query para caché de datos
+ * Cliente de React Query
  */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutos
+      staleTime: 1000 * 60 * 5,
       retry: 1,
     },
   },
-})
+});
+
+type Vista = 'dashboard' | 'reporte';
 
 /**
- * Componente principal
+ * Componente principal de la aplicación
  */
 function App() {
+  const [vista, setVista] = useState<Vista>('dashboard');
+  const [analysisId, setAnalysisId] = useState<string | null>(null);
+
+  /**
+   * Ir a ver un reporte de análisis
+   */
+  const irAReporte = (id: string) => {
+    setAnalysisId(id);
+    setVista('reporte');
+  };
+
+  /**
+   * Volver al dashboard
+   */
+  const irADashboard = () => {
+    setVista('dashboard');
+    setAnalysisId(null);
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 flex flex-col">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 shadow-sm">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <h1 className="text-2xl font-bold text-gray-900">
-              🔍 SCR Agent - Revisión de Código Seguro
-            </h1>
-            <p className="text-sm text-gray-600 mt-1">
-              Análisis agentico de seguridad con MCP
-            </p>
+        <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              <button
+                onClick={irADashboard}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+              >
+                <span className="text-2xl">🔍</span>
+                <div className="text-left">
+                  <p className="font-bold text-gray-900 leading-tight">SCR Agent</p>
+                  <p className="text-xs text-gray-500">Revisión de código seguro</p>
+                </div>
+              </button>
+
+              {/* Breadcrumb */}
+              <nav className="flex items-center gap-2 text-sm text-gray-500">
+                <button
+                  onClick={irADashboard}
+                  className={`hover:text-gray-800 ${vista === 'dashboard' ? 'text-blue-600 font-medium' : ''}`}
+                >
+                  Proyectos
+                </button>
+                {vista === 'reporte' && (
+                  <>
+                    <span>›</span>
+                    <span className="text-blue-600 font-medium">Reporte</span>
+                  </>
+                )}
+              </nav>
+            </div>
           </div>
         </header>
 
-        {/* Main content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          {/* Welcome message */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold text-blue-900 mb-2">
-              ¡Bienvenido a SCR Agent!
-            </h2>
-            <p className="text-blue-800 mb-4">
-              Sistema de análisis de seguridad de código con arquitectura MCP agentica.
-              Detecta código malicioso, investiga patrones sospechosos y genera reportes ejecutivos.
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-white p-4 rounded-lg border border-blue-100">
-                <h3 className="font-semibold text-blue-900 mb-2">🚨 Agente Malicia</h3>
-                <p className="text-sm text-gray-700">
-                  Detecta código malicioso, backdoors y funciones sospechosas
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-blue-100">
-                <h3 className="font-semibold text-blue-900 mb-2">🔍 Agente Forenses</h3>
-                <p className="text-sm text-gray-700">
-                  Investiga historial de Git y construye líneas de tiempo
-                </p>
-              </div>
-              <div className="bg-white p-4 rounded-lg border border-blue-100">
-                <h3 className="font-semibold text-blue-900 mb-2">📊 Agente Síntesis</h3>
-                <p className="text-sm text-gray-700">
-                  Genera reportes ejecutivos con priorización de riesgos
-                </p>
-              </div>
-            </div>
-          </div>
+        {/* Contenido principal */}
+        <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+          <AnimatePresence mode="wait">
+            {vista === 'dashboard' && (
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Dashboard onVerAnalisis={irAReporte} />
+              </motion.div>
+            )}
 
-          {/* TODO: Add routing and real components */}
-          <div className="text-center py-12">
-            <p className="text-gray-600">
-              Componentes en desarrollo...
-            </p>
-          </div>
+            {vista === 'reporte' && analysisId && (
+              <motion.div
+                key="reporte"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ReportViewer
+                  analysisId={analysisId}
+                  onVolver={irADashboard}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-12">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <p className="text-sm text-gray-600">
-              © 2024 SCR Agent. Construido con Claude Code 🤖
+        <footer className="bg-white border-t border-gray-200 mt-auto">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <p className="text-xs text-gray-500 text-center">
+              SCR Agent — Arquitectura MCP agentica con Claude 3.5 · OWASP Top 10 · Todo en español
             </p>
           </div>
         </footer>
       </div>
     </QueryClientProvider>
-  )
+  );
 }
 
-export default App
+export default App;
