@@ -13,11 +13,14 @@
  * - 'reporte'   → Reporte de análisis con timeline
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './components/Dashboard/Dashboard';
 import ReportViewer from './components/Reports/ReportViewer';
+import LoginPage from './pages/LoginPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './hooks/useAuth';
 
 /**
  * Cliente de React Query
@@ -31,13 +34,14 @@ const queryClient = new QueryClient({
   },
 });
 
-type Vista = 'dashboard' | 'reporte';
+type Vista = 'login' | 'dashboard' | 'reporte';
 
 /**
  * Componente principal de la aplicación
  */
 function App() {
-  const [vista, setVista] = useState<Vista>('dashboard');
+  const { isAuthenticated } = useAuth();
+  const [vista, setVista] = useState<Vista>(isAuthenticated() ? 'dashboard' : 'login');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
 
   /**
@@ -56,8 +60,17 @@ function App() {
     setAnalysisId(null);
   };
 
+  if (vista === 'login') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <LoginPage onLoginSuccess={() => setVista('dashboard')} />
+      </QueryClientProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
+      <ProtectedRoute onUnauthenticated={() => setVista('login')}>
       <div className="min-h-screen bg-gray-50 flex flex-col">
         {/* Header */}
         <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
@@ -134,6 +147,7 @@ function App() {
           </div>
         </footer>
       </div>
+      </ProtectedRoute>
     </QueryClientProvider>
   );
 }
