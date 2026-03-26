@@ -111,12 +111,13 @@ export class QueueService {
    * Ejecutar análisis completo de un trabajo
    * Flujo: Inspector → Detective → Fiscal → Guardar en BD
    * Respeta el scope para determinar qué código analizar
+   * Usa GitHub token si existe para repos privados
    */
   private async ejecutarAnalisis(trabajo: TrabajoAnalisis): Promise<void> {
-    const { analysisId, repositoryUrl, scope } = trabajo;
+    const { analysisId, repositoryUrl, scope, projectId, githubToken } = trabajo;
     const tiempoInicio = Date.now();
 
-    logger.info(`Iniciando análisis: ${analysisId} (scope: ${scope})`);
+    logger.info(`Iniciando análisis: ${analysisId} (scope: ${scope})${githubToken ? ' [con GitHub token]' : ''}`);
 
     try {
       // ── PASO 1: Marcar como RUNNING ─────────────────────────────────────
@@ -127,7 +128,8 @@ export class QueueService {
 
       // ── PASO 2: Obtener código fuente según SCOPE ────────────────────────────────────
       logger.info(`Clonando/actualizando repositorio (scope: ${scope})`);
-      const localPath = await gitService.cloneOrPullRepository(repositoryUrl);
+      // Pasar GitHub token si existe (para repos privados)
+      const localPath = await gitService.cloneOrPullRepository(repositoryUrl, githubToken);
 
       let codigoFuente: string;
       if (scope === 'PULL_REQUEST') {

@@ -72,32 +72,64 @@ export class GitService {
   }
 
   /**
+   * Construir URL autenticada con token de GitHub
+   * Convierte https://github.com/owner/repo en https://token@github.com/owner/repo.git
+   */
+  private buildAuthenticatedUrl(repoUrl: string, githubToken?: string): string {
+    if (!githubToken) {
+      return repoUrl;
+    }
+
+    try {
+      const url = new URL(repoUrl);
+      // Insertar token en la URL: https://token@github.com/owner/repo
+      url.username = githubToken;
+      // Asegurar que la URL termina en .git para operaciones de git
+      const urlString = url.toString();
+      return urlString.endsWith('.git') ? urlString : `${urlString}.git`;
+    } catch {
+      // Si hay error, retornar URL original (sin autenticación)
+      logger.warn(`Error construyendo URL autenticada, usando URL original: ${repoUrl}`);
+      return repoUrl;
+    }
+  }
+
+  /**
    * Clonar o pullear un repositorio
    * Maneja tanto clones iniciales como updates
    */
-  async cloneOrPullRepository(repoUrl: string): Promise<string> {
+  async cloneOrPullRepository(repoUrl: string, githubToken?: string): Promise<string> {
     if (!this.validateRepositoryUrl(repoUrl)) {
       throw new Error('URL de repositorio inválida o no soportada');
     }
 
     const localPath = this.getLocalPath(repoUrl);
 
+    // Construir URL con token si existe (para repos privados)
+    const urlToUse = this.buildAuthenticatedUrl(repoUrl, githubToken);
+
     try {
       if (!fs.existsSync(localPath)) {
         // Clonar repositorio
-        logger.info(`Clonando repositorio: ${repoUrl}`);
-        await simpleGit().clone(repoUrl, localPath);
+        logger.info(`Clonando repositorio: ${repoUrl}${githubToken ? ' [con GitHub token]' : ''}`);
+        await simpleGit().clone(urlToUse, localPath);
         auditLog(AuditEventType.DB_OPERATION, `Repositorio clonado`, {
           repoUrl,
           localPath,
+          hasToken: !!githubToken,
         });
       } else {
         // Pullear cambios
-        logger.info(`Actualizando repositorio: ${repoUrl}`);
+        logger.info(`Actualizando repositorio: ${repoUrl}${githubToken ? ' [con GitHub token]' : ''}`);
         const git = simpleGit(localPath);
+        // Si hay token, configurar credenciales
+        if (githubToken) {
+          await git.addConfig('user.token', githubToken, false, 'local');
+        }
         await git.pull();
         auditLog(AuditEventType.DB_OPERATION, `Repositorio actualizado`, {
           repoUrl,
+          hasToken: !!githubToken,
         });
       }
 
