@@ -13,10 +13,12 @@
  * - Solo el usuario propietario puede ver sus tokens
  */
 
-import { Router, type Router as ExpressRouter, Request, Response } from 'express';
+import { Router, type Router as ExpressRouter, Response } from 'express';
 import { z } from 'zod';
 import { validarBody } from '../middleware/validation.middleware';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
+import { prisma } from '../services/prisma.service';
+import { AuthenticatedRequest } from '../middleware/auth.middleware';
 import axios from 'axios';
 
 const router: ExpressRouter = Router();
@@ -32,9 +34,15 @@ const GitHubTokenSchema = z.object({
  * POST /api/v1/settings/github-token
  * Guardar y validar GitHub token
  */
-router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Request, res: Response) => {
+router.post('/github-token', validarBody(GitHubTokenSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { token } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
 
     /**
      * Validar token contra GitHub API
@@ -64,11 +72,24 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Request
     }
 
     /**
-     * En una implementación real, guardarías el token encriptado en BD
-     * y lo asociarías con el usuario actual.
-     * Por ahora, retornamos éxito
+     * Guardar token en BD (tabla UserSettings)
+     * Usar upsert para crear o actualizar
      */
-    auditLog(AuditEventType.DB_OPERATION, 'GitHub token validado', {
+    await prisma.userSettings.upsert({
+      where: { userId },
+      create: {
+        userId,
+        githubToken: token,
+        githubValidatedAt: new Date(),
+      },
+      update: {
+        githubToken: token,
+        githubValidatedAt: new Date(),
+      },
+    });
+
+    auditLog(AuditEventType.DB_OPERATION, 'GitHub token guardado y validado', {
+      userId,
       timestamp: new Date().toISOString(),
     });
 
@@ -88,22 +109,30 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Request
  * GET /api/v1/settings
  * Obtener configuraciones del usuario (sin exponer tokens)
  */
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
+
     /**
-     * En una implementación real, obtendría las configuraciones del usuario
-     * de la BD y retornaría:
-     * - has_github_token: boolean (no retornar el token)
-     * - preferences: objeto con preferencias
+     * Obtener configuraciones del usuario
      */
+    const settings = await prisma.userSettings.findUnique({
+      where: { userId },
+    });
+
     res.json({
       data: {
-        has_github_token: false, // Cambiar según si está configurado
-        has_api_key: false,
+        has_github_token: !!settings?.githubToken,
+        github_validated_at: settings?.githubValidatedAt || null,
+        has_api_key: !!settings?.apiKey,
         preferences: {
-          darkMode: false,
-          autoRefresh: 10000,
-          notifications: true,
+          darkMode: settings?.darkMode ?? false,
+          autoRefresh: settings?.autoRefresh ?? 10000,
         },
       },
     });
@@ -118,12 +147,28 @@ router.get('/', async (_req: Request, res: Response) => {
  * DELETE /api/v1/settings/github-token
  * Eliminar GitHub token
  */
-router.delete('/github-token', async (_req: Request, res: Response) => {
+router.delete('/github-token', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
+
     /**
-     * En una implementación real, eliminarías el token de la BD
+     * Eliminar token de la BD
      */
+    await prisma.userSettings.update({
+      where: { userId },
+      data: {
+        githubToken: null,
+        githubValidatedAt: null,
+      },
+    });
+
     auditLog(AuditEventType.DB_OPERATION, 'GitHub token eliminado', {
+      userId,
       timestamp: new Date().toISOString(),
     });
 

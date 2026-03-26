@@ -26,8 +26,35 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Relaciones
+  settings     UserSettings?
+
   @@index([email])
   @@map("users")
+}
+
+// Configuraciones del Usuario
+model UserSettings {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // GitHub token (encriptado en BD)
+  githubToken   String?  @db.VarChar(500)
+  githubValidatedAt DateTime?
+
+  // API Key para servicios externos
+  apiKey        String?  @db.VarChar(500)
+
+  // Preferencias
+  darkMode      Boolean  @default(false)
+  autoRefresh   Int      @default(10000) // ms
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@map("user_settings")
 }
 
 // Proyecto - Repositorio a ser analizado
