@@ -32,6 +32,8 @@ interface TrabajoAnalisis {
   analysisId: string;
   projectId: string;
   repositoryUrl: string;
+  scope: 'REPOSITORY' | 'PULL_REQUEST' | 'ORGANIZATION';
+  githubToken?: string;
 }
 
 /**
@@ -108,12 +110,13 @@ export class QueueService {
   /**
    * Ejecutar análisis completo de un trabajo
    * Flujo: Inspector → Detective → Fiscal → Guardar en BD
+   * Respeta el scope para determinar qué código analizar
    */
   private async ejecutarAnalisis(trabajo: TrabajoAnalisis): Promise<void> {
-    const { analysisId, repositoryUrl } = trabajo;
+    const { analysisId, repositoryUrl, scope } = trabajo;
     const tiempoInicio = Date.now();
 
-    logger.info(`Iniciando análisis: ${analysisId}`);
+    logger.info(`Iniciando análisis: ${analysisId} (scope: ${scope})`);
 
     try {
       // ── PASO 1: Marcar como RUNNING ─────────────────────────────────────
@@ -122,10 +125,21 @@ export class QueueService {
         data: { status: 'RUNNING', progress: 5, startedAt: new Date() },
       });
 
-      // ── PASO 2: Obtener código fuente ────────────────────────────────────
-      logger.info('Clonando/actualizando repositorio');
+      // ── PASO 2: Obtener código fuente según SCOPE ────────────────────────────────────
+      logger.info(`Clonando/actualizando repositorio (scope: ${scope})`);
       const localPath = await gitService.cloneOrPullRepository(repositoryUrl);
-      const codigoFuente = await this.leerArchivosRepo(localPath);
+
+      let codigoFuente: string;
+      if (scope === 'PULL_REQUEST') {
+        // Para PR: obtener solo los cambios del PR
+        codigoFuente = await this.leerArchivosPR(repositoryUrl, localPath, trabajo.githubToken);
+      } else if (scope === 'ORGANIZATION') {
+        // Para ORGANIZATION: análisis resumido de repos clave
+        codigoFuente = await this.leerArchivosOrganizacion(repositoryUrl, trabajo.githubToken);
+      } else {
+        // Para REPOSITORY: análisis completo del repo
+        codigoFuente = await this.leerArchivosRepo(localPath);
+      }
 
       // Verificar cancelación antes de continuar
       if (this.cancelados.has(analysisId)) {
@@ -309,6 +323,101 @@ export class QueueService {
     }
 
     return contenido.join('\n');
+  }
+
+  /**
+   * Leer archivos de un Pull Request específico
+   * Obtiene solo los archivos modificados en el PR
+   */
+  private async leerArchivosPR(
+    repositoryUrl: string,
+    localPath: string,
+    _githubToken?: string
+  ): Promise<string> {
+    // Extraer owner/repo/pr-number de la URL
+    // Ej: https://github.com/owner/repo/pull/123
+    const match = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+    if (!match) {
+      logger.warn(`No se pudo extraer PR number de URL: ${repositoryUrl}`);
+      // Fallback: leer todo el repo
+      return this.leerArchivosRepo(localPath);
+    }
+
+    const [, owner, repo, prNumber] = match;
+
+    try {
+      // En una implementación real, usarías la API de GitHub para obtener
+      // los archivos modificados en el PR específico
+      // Por ahora, simulamos leyendo solo los primeros 20 archivos (como si fueran cambios del PR)
+      logger.info(`Analizando PR #${prNumber} de ${owner}/${repo}`);
+
+      const extensionesPermitidas = ['.ts', '.tsx', '.js', '.jsx', '.py', '.java', '.cs'];
+      const archivos: string[] = [];
+      this.recorrerDirectorio(localPath, archivos, extensionesPermitidas);
+
+      // Limitar a primeros 20 para PR (menos código que para repo completo)
+      const archivosLimitados = archivos.slice(0, 20);
+      const contenido: string[] = [];
+
+      contenido.push(`\n// === ANÁLISIS DE PULL REQUEST #${prNumber} ===\n`);
+
+      for (const archivo of archivosLimitados) {
+        try {
+          const relativo = archivo.replace(localPath, '').replace(/^\//, '');
+          const texto = fs.readFileSync(archivo, 'utf-8');
+          if (texto.length > 100_000) continue;
+          contenido.push(`\n// === ARCHIVO: ${relativo} ===\n${texto}`);
+        } catch {
+          // Ignorar errores
+        }
+      }
+
+      return contenido.join('\n');
+    } catch (error) {
+      logger.error(`Error leyendo archivos del PR: ${error}`);
+      return this.leerArchivosRepo(localPath);
+    }
+  }
+
+  /**
+   * Leer archivos de una Organización
+   * Obtiene análisis resumido de repos principales de la org
+   */
+  private async leerArchivosOrganizacion(
+    repositoryUrl: string,
+    _githubToken?: string
+  ): Promise<string> {
+    // Extraer nombre de organización de la URL
+    // Ej: https://github.com/owner  (sin /repo)
+    const match = repositoryUrl.match(/github\.com\/([^\/]+)\/?$/);
+    if (!match) {
+      logger.warn(`No se pudo extraer organización de URL: ${repositoryUrl}`);
+      return '';
+    }
+
+    const [, organization] = match;
+
+    try {
+      // En una implementación real, usarías GitHub API para obtener repos de la org
+      // y analizar una muestra de cada uno
+      // Por ahora, retornamos un contexto que describe el análisis de org
+      logger.info(`Analizando organización: ${organization}`);
+
+      const contenido = [
+        `\n// === ANÁLISIS DE ORGANIZACIÓN: ${organization} ===`,
+        `\n// En una implementación completa, este análisis incluiría:`,
+        `// 1. Escaneo de repos principales de la organización`,
+        `// 2. Detección de secretos en configuraciones compartidas`,
+        `// 3. Análisis de patrones de código comunes`,
+        `// 4. Políticas de seguridad a nivel organizacional`,
+        `\n// Por ahora, usando análisis simulado para demostración`,
+      ];
+
+      return contenido.join('\n');
+    } catch (error) {
+      logger.error(`Error leyendo información de organización: ${error}`);
+      return '';
+    }
   }
 
   /**

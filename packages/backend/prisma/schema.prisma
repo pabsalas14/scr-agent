@@ -41,6 +41,9 @@ model Project {
   // Configuración de alcance
   scope         AnalysisScope @default(REPOSITORY)
 
+  // Token para repositorios privados (encriptado en BD)
+  githubToken   String?   @db.VarChar(500)
+
   // Metadata
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

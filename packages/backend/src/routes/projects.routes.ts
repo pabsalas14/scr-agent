@@ -180,11 +180,14 @@ router.post('/:id/analyses', async (req: Request, res: Response) => {
     /**
      * Encolar análisis para ejecución en background
      * El frontend hará polling a GET /analyses/:id para ver el estado
+     * Se pasa el scope para que los agentes adapten el análisis
      */
     queueService.encolar({
       analysisId: analysis.id,
       projectId: project.id,
       repositoryUrl: project.repositoryUrl,
+      scope: project.scope as 'REPOSITORY' | 'PULL_REQUEST' | 'ORGANIZATION',
+      githubToken: project.githubToken || undefined,
     });
 
     res.status(201).json({ data: analysis });
