@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, Trash2, Check, AlertCircle } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { useToast } from '../../hooks/useToast';
 import { getApiKey, setApiKey, clearApiKey, getMaskedApiKey } from '../../services/config.service';
+import { settingsService } from '../../services/settings.service';
 
 type Tab = 'api' | 'github' | 'preferences';
 
@@ -59,17 +60,13 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       setError(null);
       setValidatingToken(true);
 
-      // Validar token contra GitHub API
-      const response = await fetch('https://api.github.com/user', {
-        headers: { Authorization: `token ${githubToken}` },
-      });
+      // Validar token contra GitHub API (backend)
+      const response = await settingsService.saveGitHubToken(githubToken);
 
-      if (response.ok) {
+      if (response.valid) {
         setTokenValid(true);
-        toast.success('Token válido y guardado');
-        localStorage.setItem('github_token', githubToken);
+        toast.success('Token válido y guardado en el servidor');
         setGithubToken('');
-        // También guardar en backend si es necesario
       } else {
         setTokenValid(false);
         setError('Token inválido o expirado');
@@ -77,7 +74,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       }
     } catch (err) {
       setTokenValid(false);
-      const message = 'Error validando token';
+      const message = err instanceof Error ? err.message : 'Error validando token';
       setError(message);
       toast.error(message);
     } finally {
@@ -93,12 +90,21 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
     }
   };
 
-  const handleClearGithubToken = () => {
+  const handleClearGithubToken = async () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar el GitHub token?')) {
-      localStorage.removeItem('github_token');
-      setGithubToken('');
-      setTokenValid(null);
-      toast.warning('GitHub token eliminado');
+      try {
+        setLoading(true);
+        await settingsService.deleteGitHubToken();
+        setGithubToken('');
+        setTokenValid(null);
+        toast.warning('GitHub token eliminado');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Error eliminando token';
+        setError(message);
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
