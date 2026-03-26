@@ -1,0 +1,83 @@
+# ============================================================================
+# DOCKER COMPOSE - SCR Agent
+# ============================================================================
+#
+# Servicios:
+#   postgres  → Base de datos PostgreSQL
+#   backend   → API Express + Agentes MCP
+#   frontend  → React + Nginx
+#
+# Uso:
+#   docker compose up -d               # Iniciar todo
+#   docker compose logs -f backend     # Ver logs del backend
+#   docker compose down -v             # Bajar y borrar volúmenes
+
+services:
+  # ── PostgreSQL ──────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    container_name: scr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-scragent}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-scragent_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-scragent_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-scragent}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend ─────────────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+      target: production
+    container_name: scr-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER:-scragent}:${POSTGRES_PASSWORD:-scragent_secret}@postgres:5432/${POSTGRES_DB:-scragent_db}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      BACKEND_PORT: 3000
+      GIT_CACHE_DIR: /tmp/scr-agent-cache
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      FRONTEND_URL: http://frontend
+    volumes:
+      - git_cache:/tmp/scr-agent-cache
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+
+  # ── Frontend ─────────────────────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+      target: production
+      args:
+        VITE_API_URL: /api/v1
+    container_name: scr-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+
+volumes:
+  postgres_data:
+  git_cache:
