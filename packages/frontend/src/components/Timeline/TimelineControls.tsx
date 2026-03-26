@@ -5,7 +5,6 @@
  * - Contadores de eventos
  */
 
-import React from 'react';
 
 interface TimelineControlsProps {
   totalEventos: number;

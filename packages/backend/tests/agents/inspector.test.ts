@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InspectorAgentService } from '../../src/agents/malicia.agent';
+import { InspectorAgentService } from '../../src/agents/inspector.agent';
 
 /**
  * Mock del cliente Anthropic
@@ -41,14 +41,17 @@ describe('InspectorAgentService', () => {
   let agente: InspectorAgentService;
   let anthropicMock: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     agente = new InspectorAgentService('api-key-test');
-    // Obtener instancia mockeada
-    const Anthropic = vi.mocked(
-      (await import('@anthropic-ai/sdk')).default
-    );
-    anthropicMock = new Anthropic();
+    // Obtener la instancia mockeada creada dentro del agente
+    const { default: Anthropic } = await import('@anthropic-ai/sdk');
+    const AnthropicMock = vi.mocked(Anthropic);
+    anthropicMock = AnthropicMock.mock.results[0]?.value;
+
+    if (!anthropicMock?.messages?.create) {
+      throw new Error('No se pudo obtener el mock de Anthropic.messages.create');
+    }
   });
 
   it('detecta un backdoor en código sospechoso', async () => {
@@ -188,6 +191,7 @@ describe('InspectorAgentService', () => {
 
     const resultado = await agente.analizarCodigo({ codigo: 'const x = 1;' });
 
-    expect(resultado.tiempo_ejecucion_ms).toBeGreaterThan(0);
+    // En entornos rápidos puede ser 0ms; solo validamos que exista y sea no-negativo
+    expect(resultado.tiempo_ejecucion_ms).toBeGreaterThanOrEqual(0);
   });
 });

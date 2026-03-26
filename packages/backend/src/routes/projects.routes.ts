@@ -11,16 +11,15 @@
  * OWASP API8: Solo campos permitidos en el body
  */
 
-import { Router, Request, Response } from 'express';
+import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
 import { validarBody } from '../middleware/validation.middleware';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { gitService } from '../services/git.service';
 import { queueService } from '../services/queue.service';
+import { prisma } from '../services/prisma.service';
 
-const router = Router();
-const prisma = new PrismaClient();
+const router: ExpressRouter = Router();
 
 /**
  * Schema de creación de proyecto
@@ -106,7 +105,7 @@ router.post('/', validarBody(CrearProyectoSchema), async (req: Request, res: Res
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params['id'] },
       include: {
         analyses: {
           orderBy: { createdAt: 'desc' },
@@ -135,7 +134,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.get('/:id/analyses', async (req: Request, res: Response) => {
   try {
     const analyses = await prisma.analysis.findMany({
-      where: { projectId: req.params.id },
+      where: { projectId: req.params['id'] },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -154,7 +153,7 @@ router.get('/:id/analyses', async (req: Request, res: Response) => {
 router.post('/:id/analyses', async (req: Request, res: Response) => {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params['id'] },
     });
 
     if (!project) {

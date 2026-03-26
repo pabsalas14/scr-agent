@@ -9,7 +9,7 @@
 
 Se ha implementado exitosamente la **arquitectura MCP agentica** para análisis de seguridad de código con:
 
-- ✅ 3 agentes especializados (Malicia, Forenses, Síntesis)
+- ✅ 3 agentes especializados (Inspector, Detective, Fiscal)
 - ✅ Backend Express + PostgreSQL + Prisma ORM
 - ✅ Frontend React 19 + Vite + Tailwind CSS
 - ✅ Seguridad OWASP Top 10 + Top 10 API integrada
@@ -76,7 +76,7 @@ Repositorio Git
        │
        ▼
 ┌─────────────────┐
-│  Agente Malicia │ (Claude 3.5 Sonnet)
+│  Agente Inspector │ (Claude 3.5 Sonnet)
 │  - Detecta      │
 │    patrones     │
 │    maliciosos   │
@@ -90,7 +90,7 @@ Repositorio Git
          │
          ▼
 ┌──────────────────────┐
-│ Agente Forenses      │ (Claude 3.5 Haiku)
+│ Agente Detective      │ (Claude 3.5 Haiku)
 │ - Investiga cambios  │
 │ - Crea timeline      │
 │ - Detecta patrones   │
@@ -98,7 +98,7 @@ Repositorio Git
          │ Timeline de eventos
          ▼
 ┌──────────────────────┐
-│ Agente Síntesis      │ (Claude 3.5 Sonnet)
+│ Agente Fiscal      │ (Claude 3.5 Sonnet)
 │ - Agrega hallazgos   │
 │ - Genera reporte     │
 │ - Prioriza acciones  │
@@ -153,9 +153,9 @@ Repositorio Git
 
 - ✅ **Project** - Repositorios a analizar
 - ✅ **Analysis** - Ejecuciones de análisis
-- ✅ **Finding** - Hallazgos de Malicia
+- ✅ **Finding** - Hallazgos del Inspector
 - ✅ **ForensicEvent** - Timeline de cambios
-- ✅ **Report** - Síntesis final
+- ✅ **Report** - Reporte final (Fiscal)
 
 ### Enums
 

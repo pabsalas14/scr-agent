@@ -10,12 +10,11 @@
  * GET /api/v1/analyses/:id/report/pdf → Descargar PDF
  */
 
-import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import { logger } from '../services/logger.service';
+import { prisma } from '../services/prisma.service';
 
-const router = Router();
-const prisma = new PrismaClient();
+const router: ExpressRouter = Router();
 
 /**
  * GET /api/v1/analyses/:id
@@ -24,7 +23,7 @@ const prisma = new PrismaClient();
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const analysis = await prisma.analysis.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params['id'] },
     });
 
     if (!analysis) {
@@ -41,12 +40,12 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/analyses/:id/findings
- * Hallazgos de Malicia
+ * Hallazgos del Inspector
  */
 router.get('/:id/findings', async (req: Request, res: Response) => {
   try {
     const findings = await prisma.finding.findMany({
-      where: { analysisId: req.params.id },
+      where: { analysisId: req.params['id'] },
       orderBy: [
         { severity: 'desc' },
         { confidence: 'desc' },
@@ -67,7 +66,7 @@ router.get('/:id/findings', async (req: Request, res: Response) => {
 router.get('/:id/forensics', async (req: Request, res: Response) => {
   try {
     const events = await prisma.forensicEvent.findMany({
-      where: { analysisId: req.params.id },
+      where: { analysisId: req.params['id'] },
       orderBy: { timestamp: 'asc' },
     });
 
@@ -80,12 +79,12 @@ router.get('/:id/forensics', async (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/analyses/:id/report
- * Reporte ejecutivo de Síntesis
+ * Reporte ejecutivo del Fiscal
  */
 router.get('/:id/report', async (req: Request, res: Response) => {
   try {
     const report = await prisma.report.findUnique({
-      where: { analysisId: req.params.id },
+      where: { analysisId: req.params['id'] },
     });
 
     if (!report) {
@@ -116,7 +115,7 @@ router.get('/:id/report', async (req: Request, res: Response) => {
 router.get('/:id/report/pdf', async (req: Request, res: Response) => {
   try {
     const report = await prisma.report.findUnique({
-      where: { analysisId: req.params.id },
+      where: { analysisId: req.params['id'] },
     });
 
     if (!report || !report.pdfContent) {
@@ -127,7 +126,7 @@ router.get('/:id/report/pdf', async (req: Request, res: Response) => {
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="reporte-scr-${req.params.id}.pdf"`
+      `attachment; filename="reporte-scr-${req.params['id']}.pdf"`
     );
     res.send(report.pdfContent);
   } catch (error) {

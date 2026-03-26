@@ -21,7 +21,7 @@ import winston from 'winston';
  */
 export function createLogger(): winston.Logger {
   return winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info',
+    level: process.env['LOG_LEVEL'] || 'info',
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.errors({ stack: true }),
@@ -57,9 +57,9 @@ export enum AuditEventType {
   ANALYSIS_FAILED = 'ANALYSIS_FAILED',
 
   // Agentes
-  MALICIA_EXECUTION = 'MALICIA_EXECUTION',
-  FORENSES_EXECUTION = 'FORENSES_EXECUTION',
-  SINTESIS_EXECUTION = 'SINTESIS_EXECUTION',
+  INSPECTOR_EXECUTION = 'INSPECTOR_EXECUTION',
+  DETECTIVE_EXECUTION = 'DETECTIVE_EXECUTION',
+  FISCAL_EXECUTION = 'FISCAL_EXECUTION',
 
   // Reportes
   REPORT_GENERATED = 'REPORT_GENERATED',

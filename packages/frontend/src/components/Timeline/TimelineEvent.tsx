@@ -3,8 +3,6 @@
  * Se muestra al hacer click en un nodo del SVG
  */
 
-import React from 'react';
-import { motion } from 'framer-motion';
 import type { EventoTimeline } from '../../types/timeline';
 import { COLORES_RIESGO, COLORES_RIESGO_CLARO } from '../../types/timeline';
 import BadgeRiesgo from '../shared/BadgeRiesgo';

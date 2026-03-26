@@ -3,7 +3,6 @@
  * Muestra info básica y permite iniciar análisis
  */
 
-import React from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
@@ -37,7 +36,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
     onSuccess: (analisis) => onVerAnalisis(analisis.id),
   });
 
-  const analisisList = analisisData?.data || [];
+  const analisisList = analisisData || [];
   const ultimoAnalisis = analisisList[0];
   const enProceso = ultimoAnalisis?.status.includes('RUNNING');
 

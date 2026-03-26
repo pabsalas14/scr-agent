@@ -44,7 +44,7 @@ export class FiscalAgentService {
 
   constructor(apiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -95,15 +95,20 @@ export class FiscalAgentService {
       /**
        * Procesar respuesta
        */
-      const contenido = response.content[0];
-      if (contenido.type !== 'text') {
+      const textoRespuesta = response.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n')
+        .trim();
+
+      if (!textoRespuesta) {
         throw new Error('Respuesta inesperada de Claude');
       }
 
       /**
        * Parsear reporte
        */
-      const reporte = this.parseReporte(contenido.text);
+      const reporte = this.parseReporte(textoRespuesta);
 
       /**
        * Construir salida
@@ -123,8 +128,8 @@ export class FiscalAgentService {
        * Auditoría
        */
       auditLog(
-        AuditEventType.SINTESIS_EXECUTION,
-        'Síntesis de reporte completada',
+        AuditEventType.FISCAL_EXECUTION,
+        'Reporte Fiscal completado',
         {
           cantidad_hallazgos: input.hallazgos_malicia.length,
           puntuacion_riesgo: output.puntuacion_riesgo,
@@ -224,11 +229,11 @@ ${input.contexto_repo ? `\n## Contexto del Repositorio\n${input.contexto_repo}` 
 
       const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1];
+        jsonStr = jsonMatch[1] ?? jsonStr;
       } else {
         const jsonMatch2 = texto.match(/\{[\s\S]*\}/);
         if (jsonMatch2) {
-          jsonStr = jsonMatch2[0];
+          jsonStr = jsonMatch2[0] ?? jsonStr;
         }
       }
 

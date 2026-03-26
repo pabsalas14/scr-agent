@@ -17,7 +17,7 @@
  * - Exportar como PNG/PDF
  */
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { EventoTimeline, GrupoFuncion, FiltrosTimeline, NivelRiesgo } from '../../types/timeline';
@@ -55,8 +55,8 @@ function agruparPorFuncion(eventos: EventoTimeline[]): GrupoFuncion[] {
       severidades.find((s) => evs.some((e) => e.nivel_riesgo === s)) || 'BAJO';
 
     return {
-      funcion,
-      archivo,
+      funcion: funcion ?? 'root',
+      archivo: archivo ?? '',
       eventos: ordenados,
       nivel_riesgo_maximo: maxRiesgo,
       primera_fecha: ordenados[0]?.timestamp || '',
@@ -73,7 +73,7 @@ export default function TimelineViewer({ eventos, onExportarPDF }: TimelineViewe
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [eventoSeleccionado, setEventoSeleccionado] = useState<EventoTimeline | null>(null);
-  const [grupoExpandido, setGrupoExpandido] = useState<string | null>(null);
+  const [_grupoExpandido, setGrupoExpandido] = useState<string | null>(null);
   const [filtros, setFiltros] = useState<FiltrosTimeline>({});
   const [vistaGrupo, setVistaGrupo] = useState(false); // false = por commit, true = por función
 
@@ -137,7 +137,8 @@ export default function TimelineViewer({ eventos, onExportarPDF }: TimelineViewe
     /**
      * Ticks del eje de tiempo
      */
-    const eje = d3.axisTop(xScale).ticks(6).tickFormat(d3.timeFormat('%d-%b-%Y'));
+    const fmt = d3.timeFormat('%d-%b-%Y');
+    const eje = d3.axisTop(xScale).ticks(6).tickFormat((d) => fmt(d as Date));
     gEje.call(eje);
 
     /**

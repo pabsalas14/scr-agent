@@ -2,10 +2,9 @@
  * Modal para crear un nuevo proyecto/repositorio
  */
 
-import React from 'react';
 import { useForm } from 'react-hook-form';
 import { motion } from 'framer-motion';
-import type { CrearProyectoDTO, AlcanceAnalisis } from '../../types/api';
+import type { CrearProyectoDTO } from '../../types/api';
 
 interface NuevoProyectoProps {
   onCrear: (dto: CrearProyectoDTO) => void;

@@ -11,7 +11,7 @@
  * - Exportar PDF
  */
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { apiService } from '../../services/api.service';
@@ -345,7 +345,6 @@ function StatCard({
   label,
   valor,
   icono,
-  color,
 }: {
   label: string;
   valor: string | number;

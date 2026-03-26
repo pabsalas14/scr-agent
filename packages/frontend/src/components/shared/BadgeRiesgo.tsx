@@ -3,7 +3,6 @@
  * Usado en múltiples componentes
  */
 
-import React from 'react';
 import type { NivelRiesgo } from '../../types/timeline';
 
 interface BadgeRiesgoProps {

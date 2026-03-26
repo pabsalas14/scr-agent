@@ -40,7 +40,7 @@ export class DetectiveAgentService {
 
   constructor(apiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -96,15 +96,20 @@ export class DetectiveAgentService {
       /**
        * Procesar respuesta
        */
-      const contenido = response.content[0];
-      if (contenido.type !== 'text') {
+      const textoRespuesta = response.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n')
+        .trim();
+
+      if (!textoRespuesta) {
         throw new Error('Respuesta inesperada de Claude');
       }
 
       /**
        * Parsear timeline
        */
-      const eventos = this.parseTimeline(contenido.text);
+      const eventos = this.parseTimeline(textoRespuesta);
 
       /**
        * Detectar patrones y autores sospechosos
@@ -130,7 +135,7 @@ export class DetectiveAgentService {
       /**
        * Auditoría
        */
-      auditLog(AuditEventType.FORENSES_EXECUTION, 'Análisis Forenses completado', {
+      auditLog(AuditEventType.DETECTIVE_EXECUTION, 'Análisis Detective completado', {
         cantidad_eventos: eventos.length,
         patrones_detectados: patrones.length,
         autores_sospechosos: autores.length,
@@ -211,11 +216,11 @@ Responde SOLO con JSON válido:
 
       const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1];
+        jsonStr = jsonMatch[1] ?? jsonStr;
       } else {
         const jsonMatch2 = texto.match(/\{[\s\S]*\}/);
         if (jsonMatch2) {
-          jsonStr = jsonMatch2[0];
+          jsonStr = jsonMatch2[0] ?? jsonStr;
         }
       }
 

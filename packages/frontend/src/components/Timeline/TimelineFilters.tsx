@@ -3,7 +3,6 @@
  * Permite filtrar por severidad, autor, archivo y rango de fechas
  */
 
-import React from 'react';
 import type { EventoTimeline, FiltrosTimeline, NivelRiesgo } from '../../types/timeline';
 import { COLORES_RIESGO } from '../../types/timeline';
 

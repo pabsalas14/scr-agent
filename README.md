@@ -29,7 +29,7 @@ Repositorio Git
       │
       ▼
 ┌─────────────────┐    ┌──────────────────────┐    ┌──────────────────┐
-│  🚨 Malicia     │───▶│  🔍 Forenses         │───▶│  📊 Síntesis     │
+│  🚨 Inspector   │───▶│  🔍 Detective        │───▶│  📊 Fiscal       │
 │  Claude Sonnet  │    │  Claude Haiku        │    │  Claude Sonnet   │
 │                 │    │                      │    │                  │
 │  Detecta:       │    │  Investiga:          │    │  Genera:         │
@@ -69,11 +69,11 @@ scr-agent/
 │   ├── backend/                   # Node.js + Express + MCP Server
 │   │   ├── src/
 │   │   │   ├── agents/
-│   │   │   │   ├── malicia.agent.ts        ← Claude 3.5 Sonnet
-│   │   │   │   ├── forenses.agent.ts       ← Claude 3.5 Haiku
-│   │   │   │   └── sintesis.agent.ts       ← Claude 3.5 Sonnet
+│   │   │   │   ├── inspector.agent.ts      ← Claude 3.5 Sonnet
+│   │   │   │   ├── detective.agent.ts      ← Claude 3.5 Haiku
+│   │   │   │   └── fiscal.agent.ts         ← Claude 3.5 Sonnet
 │   │   │   ├── services/
-│   │   │   │   ├── mcp-orchestrator.ts     ← Coordinador central
+│   │   │   │   ├── mcp-orchestrator.service.ts     ← Coordinador central
 │   │   │   │   ├── git.service.ts          ← simple-git
 │   │   │   │   ├── cache.service.ts        ← node-cache / Redis
 │   │   │   │   └── logger.service.ts       ← Winston + auditoría
@@ -119,7 +119,7 @@ scr-agent/
 
 ## 🤖 Agentes
 
-### Agente Malicia
+### Agente Inspector
 > **Modelo:** Claude 3.5 Sonnet | **Caché:** 30 días por hash de código
 
 Analiza el código en busca de patrones maliciosos:
@@ -144,7 +144,7 @@ Analiza el código en busca de patrones maliciosos:
 }
 ```
 
-### Agente Forenses
+### Agente Detective
 > **Modelo:** Claude 3.5 Haiku | **Caché:** 30 días por rango de commits
 
 Investiga el historial de Git de archivos comprometidos:
@@ -166,7 +166,7 @@ Investiga el historial de Git de archivos comprometidos:
 }
 ```
 
-### Agente Síntesis
+### Agente Fiscal
 > **Modelo:** Claude 3.5 Sonnet | **Caché:** 7 días por análisis
 
 Genera el reporte ejecutivo final:
@@ -249,7 +249,7 @@ Base URL: `http://localhost:3000/api/v1`
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | `GET` | `/analyses/:id` | Estado del análisis (polling) |
-| `GET` | `/analyses/:id/findings` | Hallazgos de Malicia |
+| `GET` | `/analyses/:id/findings` | Hallazgos del Inspector |
 | `GET` | `/analyses/:id/forensics` | Eventos forenses (timeline) |
 | `GET` | `/analyses/:id/report` | Reporte ejecutivo |
 | `GET` | `/analyses/:id/report/pdf` | Descargar PDF |
@@ -315,7 +315,7 @@ id               id               id
 name             projectId ──────▶ analysisId ──▶ Analysis
 repositoryUrl    status           file
 scope            progress         function
-                 startedAt        severity: BAJO|MEDIO|ALTO|CRÍTICO
+                 startedAt        severity: LOW|MEDIUM|HIGH|CRITICAL
                                   riskType
                                   whySuspicious
                                   remediationSteps[]
@@ -338,9 +338,9 @@ timestamp        pdfContent (bytes)
 
 | Agente | Modelo | Por qué |
 |--------|--------|---------|
-| Malicia | `claude-3-5-sonnet-20241022` | Análisis profundo, detección de patrones complejos |
-| Forenses | `claude-3-5-haiku-20241022` | Rápido para queries secuenciales de Git |
-| Síntesis | `claude-3-5-sonnet-20241022` | Razonamiento multi-paso para reportes ejecutivos |
+| Inspector | `claude-3-5-sonnet-20241022` | Análisis profundo, detección de patrones complejos |
+| Detective | `claude-3-5-haiku-20241022` | Rápido para queries secuenciales de Git |
+| Fiscal | `claude-3-5-sonnet-20241022` | Razonamiento multi-paso para reportes ejecutivos |
 
 **Estrategia de costo:**
 - Haiku para tareas deterministas y rápidas (~10x más barato)
@@ -359,9 +359,9 @@ timestamp        pdfContent (bytes)
 | API response time | < 200ms |
 
 **Estrategia de caché:**
-- Hash de código fuente → resultados de Malicia (30 días)
+- Hash de código fuente → resultados del Inspector (30 días)
 - Rango de commits → timeline forense (30 días)
-- Reporte ejecutivo → síntesis (7 días)
+- Reporte ejecutivo → fiscal (7 días)
 - Deduplicación de requests en vuelo
 
 ---

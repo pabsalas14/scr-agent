@@ -74,7 +74,7 @@ export class InspectorAgentService {
 
   constructor(apiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -126,15 +126,20 @@ export class InspectorAgentService {
       /**
        * Procesar respuesta
        */
-      const contenido = response.content[0];
-      if (contenido.type !== 'text') {
+      const textoRespuesta = response.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n')
+        .trim();
+
+      if (!textoRespuesta) {
         throw new Error('Respuesta inesperada de Claude');
       }
 
       /**
        * Parsear JSON de la respuesta
        */
-      const hallazgos = this.parseRespuesta(contenido.text);
+      const hallazgos = this.parseRespuesta(textoRespuesta);
 
       /**
        * Construir salida
@@ -154,7 +159,7 @@ export class InspectorAgentService {
       /**
        * Auditoría
        */
-      auditLog(AuditEventType.MALICIA_EXECUTION, 'Análisis Malicia completado', {
+      auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
         cantidad_hallazgos: hallazgos.length,
         tiempo_ms: output.tiempo_ejecucion_ms,
       });
@@ -241,12 +246,12 @@ ${input.contexto ? `\n## Contexto Adicional\n${input.contexto}` : ''}
       // Buscar JSON entre ```json y ```
       const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1];
+        jsonStr = jsonMatch[1] ?? jsonStr;
       } else {
         // Buscar JSON plano
         const jsonMatch2 = texto.match(/\{[\s\S]*\}/);
         if (jsonMatch2) {
-          jsonStr = jsonMatch2[0];
+          jsonStr = jsonMatch2[0] ?? jsonStr;
         }
       }
 
