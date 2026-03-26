@@ -173,7 +173,9 @@ export class GitService {
       for (const line of lines) {
         const parts = line.split('\t');
         if (parts.length >= 3) {
-          const [additions, deletions, file] = parts;
+          const file = parts[2] ?? '';
+          const additions = parts[0] ?? '0';
+          const deletions = parts[1] ?? '0';
           diffs.push({
             file,
             status: 'M', // Por defecto modificado (podríamos mejorar esto)
@@ -237,7 +239,7 @@ export class GitService {
         },
       });
 
-      return logResult.all;
+      return [...logResult.all] as GitCommit[];
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       logger.error(`Error obteniendo commits de archivo: ${errorMessage}`);
@@ -332,4 +334,4 @@ export class GitService {
 }
 
 // Singleton exportado
-export const gitService = new GitService(process.env.GIT_CACHE_DIR);
+export const gitService = new GitService(process.env['GIT_CACHE_DIR']);

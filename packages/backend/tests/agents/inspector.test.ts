@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { InspectorAgentService } from '../../src/agents/malicia.agent';
+import { InspectorAgentService } from '../../src/agents/inspector.agent';
 
 /**
  * Mock del cliente Anthropic
@@ -41,14 +41,14 @@ describe('InspectorAgentService', () => {
   let agente: InspectorAgentService;
   let anthropicMock: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     agente = new InspectorAgentService('api-key-test');
-    // Obtener instancia mockeada
+    // Obtener la instancia que fue creada DENTRO del constructor del agente
     const Anthropic = vi.mocked(
       (await import('@anthropic-ai/sdk')).default
     );
-    anthropicMock = new Anthropic();
+    anthropicMock = vi.mocked(Anthropic).mock.results[0]?.value;
   });
 
   it('detecta un backdoor en código sospechoso', async () => {

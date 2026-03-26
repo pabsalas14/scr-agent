@@ -74,7 +74,7 @@ export class InspectorAgentService {
 
   constructor(apiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -127,14 +127,15 @@ export class InspectorAgentService {
        * Procesar respuesta
        */
       const contenido = response.content[0];
-      if (contenido.type !== 'text') {
+      if (!contenido || contenido.type !== 'text') {
         throw new Error('Respuesta inesperada de Claude');
       }
+      const texto = contenido.text;
 
       /**
        * Parsear JSON de la respuesta
        */
-      const hallazgos = this.parseRespuesta(contenido.text);
+      const hallazgos = this.parseRespuesta(texto);
 
       /**
        * Construir salida
@@ -241,7 +242,7 @@ ${input.contexto ? `\n## Contexto Adicional\n${input.contexto}` : ''}
       // Buscar JSON entre ```json y ```
       const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1];
+        jsonStr = jsonMatch[1] ?? texto;
       } else {
         // Buscar JSON plano
         const jsonMatch2 = texto.match(/\{[\s\S]*\}/);

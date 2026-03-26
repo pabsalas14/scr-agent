@@ -26,8 +26,8 @@ dotenv.config();
 
 // ==================== CONFIGURACIÓN ====================
 
-const PORT = process.env.BACKEND_PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
+const PORT = process.env['BACKEND_PORT'] || 3000;
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
 
 // ==================== LOGGER ====================
 
@@ -37,7 +37,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
  * Requerimiento OWASP A09: Logging y Monitoreo
  */
 const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
+  level: process.env['LOG_LEVEL'] || 'info',
   format: winston.format.combine(
     winston.format.timestamp(),
     winston.format.errors({ stack: true }),
@@ -73,12 +73,12 @@ app.use(helmet());
 
 // CORS - Control de origen (OWASP API2)
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
+  process.env['FRONTEND_URL'] || 'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5173',
 ];
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     // Permitir requests sin origin (ej. Postman, health checks)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);

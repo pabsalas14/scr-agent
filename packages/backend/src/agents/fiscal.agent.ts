@@ -44,7 +44,7 @@ export class FiscalAgentService {
 
   constructor(apiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env.ANTHROPIC_API_KEY,
+      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
     });
   }
 
@@ -96,14 +96,15 @@ export class FiscalAgentService {
        * Procesar respuesta
        */
       const contenido = response.content[0];
-      if (contenido.type !== 'text') {
+      if (!contenido || contenido.type !== 'text') {
         throw new Error('Respuesta inesperada de Claude');
       }
+      const texto = contenido.text;
 
       /**
        * Parsear reporte
        */
-      const reporte = this.parseReporte(contenido.text);
+      const reporte = this.parseReporte(texto);
 
       /**
        * Construir salida
@@ -224,7 +225,7 @@ ${input.contexto_repo ? `\n## Contexto del Repositorio\n${input.contexto_repo}` 
 
       const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1];
+        jsonStr = jsonMatch[1] ?? texto;
       } else {
         const jsonMatch2 = texto.match(/\{[\s\S]*\}/);
         if (jsonMatch2) {

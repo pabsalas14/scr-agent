@@ -160,7 +160,7 @@ export interface AnalisisCompleto {
   url_repositorio: string;
   alcance: 'REPOSITORIO' | 'ORGANIZACION' | 'PULL_REQUEST';
   timestamp_inicio: string;
-  status: 'PENDIENTE' | 'MALICIA_EJECUTANDO' | 'FORENSES_EJECUTANDO' | 'SINTESIS_EJECUTANDO' | 'COMPLETADO' | 'ERROR';
+  status: 'PENDING' | 'RUNNING' | 'INSPECTOR_RUNNING' | 'DETECTIVE_RUNNING' | 'FISCAL_RUNNING' | 'COMPLETED' | 'FAILED' | 'PARTIAL';
 }
 
 /**

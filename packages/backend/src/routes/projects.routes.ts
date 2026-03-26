@@ -106,7 +106,7 @@ router.post('/', validarBody(CrearProyectoSchema), async (req: Request, res: Res
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params['id'] },
       include: {
         analyses: {
           orderBy: { createdAt: 'desc' },
@@ -135,7 +135,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.get('/:id/analyses', async (req: Request, res: Response) => {
   try {
     const analyses = await prisma.analysis.findMany({
-      where: { projectId: req.params.id },
+      where: { projectId: req.params['id'] },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -154,7 +154,7 @@ router.get('/:id/analyses', async (req: Request, res: Response) => {
 router.post('/:id/analyses', async (req: Request, res: Response) => {
   try {
     const project = await prisma.project.findUnique({
-      where: { id: req.params.id },
+      where: { id: req.params['id'] },
     });
 
     if (!project) {
