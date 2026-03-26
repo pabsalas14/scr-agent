@@ -246,6 +246,76 @@ export class GitService {
   }
 
   /**
+   * Leer archivos de código del repositorio clonado
+   * Filtra por extensiones relevantes y limita tamaño
+   */
+  async readRepoFiles(localPath: string): Promise<string> {
+    const extensionesPermitidas = [
+      '.ts', '.tsx', '.js', '.jsx',
+      '.py', '.java', '.cs', '.go',
+      '.rb', '.php', '.rs',
+    ];
+
+    const archivos: string[] = [];
+    this.recorrerDirectorio(localPath, archivos, extensionesPermitidas);
+
+    // Limitar a los primeros 50 archivos para no exceder el contexto
+    const archivosLimitados = archivos.slice(0, 50);
+    const contenido: string[] = [];
+
+    for (const archivo of archivosLimitados) {
+      try {
+        const relativo = archivo.replace(localPath, '').replace(/^\//, '');
+        const texto = fs.readFileSync(archivo, 'utf-8');
+
+        // Ignorar archivos muy grandes (> 100KB)
+        if (texto.length > 100_000) continue;
+
+        contenido.push(`\n// === ARCHIVO: ${relativo} ===\n${texto}`);
+      } catch {
+        // Ignorar archivos que no se pueden leer
+      }
+    }
+
+    return contenido.join('\n');
+  }
+
+  /**
+   * Recorrer directorio recursivamente
+   */
+  private recorrerDirectorio(
+    dir: string,
+    archivos: string[],
+    extensiones: string[],
+    profundidad = 0
+  ): void {
+    if (profundidad > 5) return;
+
+    const ignorar = ['node_modules', '.git', 'dist', 'build', '.next', 'coverage'];
+
+    try {
+      const entradas = fs.readdirSync(dir, { withFileTypes: true });
+
+      for (const entrada of entradas) {
+        if (ignorar.includes(entrada.name)) continue;
+
+        const rutaCompleta = path.join(dir, entrada.name);
+
+        if (entrada.isDirectory()) {
+          this.recorrerDirectorio(rutaCompleta, archivos, extensiones, profundidad + 1);
+        } else if (entrada.isFile()) {
+          const ext = path.extname(entrada.name);
+          if (extensiones.includes(ext)) {
+            archivos.push(rutaCompleta);
+          }
+        }
+      }
+    } catch {
+      // Ignorar errores de permisos
+    }
+  }
+
+  /**
    * Validar que la URL es un repositorio válido
    * OWASP A10 - Prevenir SSRF
    */

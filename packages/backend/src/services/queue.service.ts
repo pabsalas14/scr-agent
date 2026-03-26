@@ -22,8 +22,6 @@ import { gitService } from './git.service';
 import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
-import fs from 'fs';
-import path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -107,7 +105,7 @@ export class QueueService {
       // ── PASO 2: Obtener código fuente ────────────────────────────────────
       logger.info('Clonando/actualizando repositorio');
       const localPath = await gitService.cloneOrPullRepository(repositoryUrl);
-      const codigoFuente = await this.leerArchivosRepo(localPath);
+      const codigoFuente = await gitService.readRepoFiles(localPath);
 
       // ── PASO 3: Agente Malicia ───────────────────────────────────────────
       await prisma.analysis.update({
@@ -237,78 +235,6 @@ export class QueueService {
       });
 
       throw error;
-    }
-  }
-
-  /**
-   * Leer archivos de código del repositorio
-   * Filtra a extensiones relevantes y limita el tamaño
-   */
-  private async leerArchivosRepo(localPath: string): Promise<string> {
-    const extensionesPermitidas = [
-      '.ts', '.tsx', '.js', '.jsx',
-      '.py', '.java', '.cs', '.go',
-      '.rb', '.php', '.rs',
-    ];
-
-    const archivos: string[] = [];
-    this.recorrerDirectorio(localPath, archivos, extensionesPermitidas);
-
-    // Limitar a los primeros 50 archivos para no exceder contexto
-    const archivosLimitados = archivos.slice(0, 50);
-    const contenido: string[] = [];
-
-    for (const archivo of archivosLimitados) {
-      try {
-        const relativo = archivo.replace(localPath, '').replace(/^\//, '');
-        const texto = fs.readFileSync(archivo, 'utf-8');
-
-        // Ignorar archivos muy grandes (> 100KB)
-        if (texto.length > 100_000) continue;
-
-        contenido.push(`\n// === ARCHIVO: ${relativo} ===\n${texto}`);
-      } catch {
-        // Ignorar archivos que no se pueden leer
-      }
-    }
-
-    return contenido.join('\n');
-  }
-
-  /**
-   * Recorrer directorio recursivamente
-   */
-  private recorrerDirectorio(
-    dir: string,
-    archivos: string[],
-    extensiones: string[],
-    profundidad = 0
-  ): void {
-    // Máximo 5 niveles de profundidad para evitar repos muy grandes
-    if (profundidad > 5) return;
-
-    // Ignorar directorios de dependencias y build
-    const ignorar = ['node_modules', '.git', 'dist', 'build', '.next', 'coverage'];
-
-    try {
-      const entradas = fs.readdirSync(dir, { withFileTypes: true });
-
-      for (const entrada of entradas) {
-        if (ignorar.includes(entrada.name)) continue;
-
-        const rutaCompleta = path.join(dir, entrada.name);
-
-        if (entrada.isDirectory()) {
-          this.recorrerDirectorio(rutaCompleta, archivos, extensiones, profundidad + 1);
-        } else if (entrada.isFile()) {
-          const ext = path.extname(entrada.name);
-          if (extensiones.includes(ext)) {
-            archivos.push(rutaCompleta);
-          }
-        }
-      }
-    } catch {
-      // Ignorar errores de permisos
     }
   }
 

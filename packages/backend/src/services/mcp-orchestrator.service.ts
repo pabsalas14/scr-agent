@@ -77,10 +77,9 @@ export class MCPOrchestratorService {
 
       /**
        * PASO 3: Obtener código fuente
-       * TODO: Implementar extracción de archivos
        */
       logger.info('Extrayendo código fuente');
-      const codigoFuente = 'placeholder'; // TODO: Leer archivos del repo
+      const codigoFuente = await gitService.readRepoFiles(localPath);
 
       /**
        * PASO 4: Ejecutar Agente Malicia
