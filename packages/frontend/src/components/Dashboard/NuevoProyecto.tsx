@@ -1,10 +1,9 @@
-/**
- * Modal para crear un nuevo proyecto/repositorio
- */
-
 import { useForm } from 'react-hook-form';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { CrearProyectoDTO } from '../../types/api';
+import Modal from '../ui/Modal';
+import Input from '../ui/Input';
+import Button from '../ui/Button';
 
 interface NuevoProyectoProps {
   onCrear: (dto: CrearProyectoDTO) => void;
@@ -18,51 +17,62 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
     handleSubmit,
     formState: { errors },
   } = useForm<CrearProyectoDTO>({
-    defaultValues: { scope: 'REPOSITORIO' },
+    defaultValues: { scope: 'REPOSITORY' },
   });
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+    <AnimatePresence>
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white rounded-xl shadow-xl w-full max-w-lg"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        onClick={onCerrar}
       >
-        {/* Header */}
-        <div className="flex justify-between items-center p-5 border-b">
-          <h3 className="text-lg font-bold text-gray-900">Nuevo Proyecto</h3>
-          <button onClick={onCerrar} className="text-gray-400 hover:text-gray-600 text-xl">
-            ✕
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit(onCrear)} className="p-5 space-y-4">
-          {/* Nombre */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del proyecto *
-            </label>
-            <input
-              type="text"
-              className="input-field"
-              placeholder="Mi repositorio"
-              {...register('name', { required: 'El nombre es requerido' })}
-            />
-            {errors.name && (
-              <p className="text-red-600 text-xs mt-1">{errors.name.message}</p>
-            )}
+        <motion.div
+          initial={{ scale: 0.95, opacity: 0, y: -20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.95, opacity: 0, y: -20 }}
+          transition={{ duration: 0.2 }}
+          className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Header */}
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Nuevo Proyecto
+            </h2>
+            <button
+              onClick={onCerrar}
+              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              aria-label="Close"
+            >
+              ✕
+            </button>
           </div>
 
-          {/* URL del repositorio */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL del repositorio *
-            </label>
-            <input
+          {/* Form */}
+          <form onSubmit={handleSubmit(onCrear)} className="p-6 space-y-5">
+            {/* Nombre */}
+            <Input
+              label="Nombre del proyecto *"
+              placeholder="Mi repositorio"
+              error={errors.name?.message}
+              {...register('name', {
+                required: 'El nombre es requerido',
+                minLength: {
+                  value: 3,
+                  message: 'Mínimo 3 caracteres',
+                },
+              })}
+            />
+
+            {/* URL del repositorio */}
+            <Input
+              label="URL del repositorio *"
               type="url"
-              className="input-field"
               placeholder="https://github.com/org/repo"
+              error={errors.repositoryUrl?.message}
               {...register('repositoryUrl', {
                 required: 'La URL del repositorio es requerida',
                 pattern: {
@@ -71,52 +81,68 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
                 },
               })}
             />
-            {errors.repositoryUrl && (
-              <p className="text-red-600 text-xs mt-1">{errors.repositoryUrl.message}</p>
-            )}
-          </div>
 
-          {/* Descripción */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descripción
-            </label>
-            <textarea
-              className="input-field resize-none"
-              rows={2}
-              placeholder="Descripción del repositorio"
-              {...register('description')}
-            />
-          </div>
+            {/* Descripción */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Descripción
+              </label>
+              <textarea
+                placeholder="Descripción del repositorio"
+                rows={2}
+                className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                {...register('description')}
+              />
+            </div>
 
-          {/* Alcance del análisis */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Alcance del análisis *
-            </label>
-            <select className="input-field" {...register('scope')}>
-              <option value="REPOSITORIO">Repositorio completo</option>
-              <option value="PULL_REQUEST">Solo Pull Requests</option>
-              <option value="ORGANIZACION">Organización completa</option>
-            </select>
-          </div>
+            {/* Alcance del análisis */}
+            <div>
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-3">
+                Alcance del análisis *
+              </label>
+              <div className="space-y-2">
+                {[
+                  { value: 'REPOSITORY', label: '📁 Repositorio completo', desc: 'Analizar todo el código' },
+                  { value: 'PULL_REQUEST', label: '📌 Pull Request específico', desc: 'Solo cambios de un PR' },
+                  { value: 'ORGANIZATION', label: '🏢 Organización completa', desc: 'Todos los repos de la org' },
+                ].map(({ value, label, desc }) => (
+                  <label key={value} className="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
+                    <input
+                      type="radio"
+                      value={value}
+                      {...register('scope')}
+                      className="mt-1 w-4 h-4"
+                    />
+                    <div className="ml-3 flex-1">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{label}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{desc}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
 
-          {/* Botones */}
-          <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onCerrar}
-              className="button-secondary"
-              disabled={cargando}
-            >
-              Cancelar
-            </button>
-            <button type="submit" className="button-primary" disabled={cargando}>
-              {cargando ? '⏳ Creando...' : 'Crear Proyecto'}
-            </button>
-          </div>
-        </form>
+            {/* Botones */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <Button
+                variant="secondary"
+                onClick={onCerrar}
+                disabled={cargando}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                disabled={cargando}
+                isLoading={cargando}
+              >
+                {cargando ? 'Creando...' : 'Crear Proyecto'}
+              </Button>
+            </div>
+          </form>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
   );
 }
