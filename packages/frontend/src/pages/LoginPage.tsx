@@ -7,6 +7,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
+import Input from '../components/ui/Input';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
 interface LoginPageProps {
   onLoginSuccess: () => void;
@@ -30,7 +33,8 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
       onLoginSuccess();
     } catch (err: unknown) {
       if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.error || 'Error al iniciar sesión');
+        const errorMsg = err.response?.data?.error || 'Error al iniciar sesión';
+        setError(errorMsg);
       } else {
         setError('Error al iniciar sesión');
       }
@@ -40,52 +44,54 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div className="text-center mb-6">
-          <span className="text-4xl">🔍</span>
-          <h1 className="text-2xl font-bold text-gray-900 mt-2">SCR Agent</h1>
-          <p className="text-sm text-gray-500">Revisión de código seguro</p>
-        </div>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <Card glass className="w-full max-w-md backdrop-blur-xl">
+        <div className="p-8">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <img src="/logo-coda.png" alt="CODA Logo" className="h-20 w-20 mx-auto mb-4 object-contain drop-shadow-lg" />
+            <h1 className="text-3xl font-bold text-gray-900 mb-1">CODA</h1>
+            <p className="text-sm text-gray-600">Revisión de código seguro</p>
+          </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <Input
+              label="Email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="usuario@ejemplo.com"
+              required
+              disabled={loading}
             />
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <input
+            <Input
+              label="Contraseña"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="••••••••"
+              required
+              disabled={loading}
+              error={error || undefined}
             />
-          </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">{error}</p>
-          )}
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full"
+            >
+              {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
+            </Button>
+          </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 px-4 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
-            {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
-          </button>
-        </form>
-      </div>
+          {/* Footer */}
+          <p className="text-xs text-gray-500 text-center mt-6">
+            Sistema de análisis de seguridad de código
+          </p>
+        </div>
+      </Card>
     </div>
   );
 }

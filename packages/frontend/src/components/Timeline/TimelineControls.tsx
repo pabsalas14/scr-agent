@@ -24,9 +24,9 @@ export default function TimelineControls({
   onExportarPDF,
 }: TimelineControlsProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3 glass-sm rounded-xl p-4">
       {/* Contador */}
-      <div className="flex items-center gap-2 text-sm text-gray-600">
+      <div className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
         <span>
           Mostrando <strong>{eventosFiltrados}</strong> de{' '}
           <strong>{totalEventos}</strong> eventos

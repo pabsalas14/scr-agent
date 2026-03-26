@@ -1,30 +1,16 @@
-/**
- * ============================================================================
- * COMPONENTE PRINCIPAL - APP
- * ============================================================================
- *
- * Maneja:
- * - Estado de navegación simple (sin router externo)
- * - Providers (QueryClient)
- * - Layout global con header y footer
- *
- * Vistas:
- * - 'dashboard' → Lista de proyectos
- * - 'reporte'   → Reporte de análisis con timeline
- */
-
 import { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import Dashboard from './components/Dashboard/Dashboard';
+
+import MainDashboard from './components/Monitoring/MainDashboard';
 import ReportViewer from './components/Reports/ReportViewer';
 import LoginPage from './pages/LoginPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './hooks/useAuth';
+import SettingsModal from './components/Settings/SettingsModal';
+import ToastContainer from './components/ui/Toast';
+import Header from './components/Header';
 
-/**
- * Cliente de React Query
- */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -36,118 +22,80 @@ const queryClient = new QueryClient({
 
 type Vista = 'login' | 'dashboard' | 'reporte';
 
-/**
- * Componente principal de la aplicación
- */
-function App() {
-  const { isAuthenticated } = useAuth();
-  const [vista, setVista] = useState<Vista>(isAuthenticated() ? 'dashboard' : 'login');
+function AppContent() {
+  const [vista, setVista] = useState<Vista>('login');
   const [analysisId, setAnalysisId] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
-  /**
-   * Ir a ver un reporte de análisis
-   */
   const irAReporte = (id: string) => {
     setAnalysisId(id);
     setVista('reporte');
   };
 
-  /**
-   * Volver al dashboard
-   */
   const irADashboard = () => {
     setVista('dashboard');
     setAnalysisId(null);
   };
 
+  const toggleTheme = () => {
+    setTheme(t => t === 'light' ? 'dark' : 'light');
+    const html = document.documentElement;
+    if (theme === 'light') {
+      html.classList.add('dark');
+    } else {
+      html.classList.remove('dark');
+    }
+  };
+
   if (vista === 'login') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <LoginPage onLoginSuccess={() => setVista('dashboard')} />
-      </QueryClientProvider>
-    );
+    return <LoginPage onLoginSuccess={() => setVista('dashboard')} />;
   }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ProtectedRoute onUnauthenticated={() => setVista('login')}>
-      <div className="min-h-screen bg-gray-50 flex flex-col">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 shadow-sm sticky top-0 z-40">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-            <div className="flex items-center justify-between">
-              <button
-                onClick={irADashboard}
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-              >
-                <span className="text-2xl">🔍</span>
-                <div className="text-left">
-                  <p className="font-bold text-gray-900 leading-tight">SCR Agent</p>
-                  <p className="text-xs text-gray-500">Revisión de código seguro</p>
-                </div>
-              </button>
+    <ProtectedRoute onUnauthenticated={() => setVista('login')}>
+      <div className="min-h-screen flex flex-col bg-gradient-to-br from-teal-600 to-blue-600 dark:from-slate-900 dark:to-slate-800">
+        {/* Header Component */}
+        <Header
+          vista={vista}
+          theme={theme}
+          onLogoClick={irADashboard}
+          onThemeToggle={toggleTheme}
+          onSettingsClick={() => setSettingsOpen(true)}
+          onNavClick={(nav) => nav === 'dashboard' && irADashboard()}
+        />
 
-              {/* Breadcrumb */}
-              <nav className="flex items-center gap-2 text-sm text-gray-500">
-                <button
-                  onClick={irADashboard}
-                  className={`hover:text-gray-800 ${vista === 'dashboard' ? 'text-blue-600 font-medium' : ''}`}
-                >
-                  Proyectos
-                </button>
-                {vista === 'reporte' && (
-                  <>
-                    <span>›</span>
-                    <span className="text-blue-600 font-medium">Reporte</span>
-                  </>
-                )}
-              </nav>
-            </div>
-          </div>
-        </header>
-
-        {/* Contenido principal */}
+        {/* Main */}
         <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
           <AnimatePresence mode="wait">
             {vista === 'dashboard' && (
-              <motion.div
-                key="dashboard"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Dashboard onVerAnalisis={irAReporte} />
+              <motion.div key="dashboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <MainDashboard onVerAnalisis={irAReporte} />
               </motion.div>
             )}
-
             {vista === 'reporte' && analysisId && (
-              <motion.div
-                key="reporte"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ReportViewer
-                  analysisId={analysisId}
-                  onVolver={irADashboard}
-                />
+              <motion.div key="reporte" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <ReportViewer analysisId={analysisId} onVolver={irADashboard} />
               </motion.div>
             )}
           </AnimatePresence>
         </main>
 
-        {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-auto">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <p className="text-xs text-gray-500 text-center">
-              SCR Agent — Arquitectura MCP agentica con Claude 3.5 · OWASP Top 10 · Todo en español
-            </p>
-          </div>
+        <footer className="text-center py-6 text-xs text-white/70 px-4">
+          <p>CODA — Análisis de seguridad de código</p>
         </footer>
       </div>
-      </ProtectedRoute>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <ToastContainer />
+    </ProtectedRoute>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
     </QueryClientProvider>
   );
 }

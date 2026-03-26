@@ -14,8 +14,11 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { ArrowLeft, Download } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { EventoTimeline } from '../../types/timeline';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
 import BadgeRiesgo from '../shared/BadgeRiesgo';
 import TimelineViewer from '../Timeline/TimelineViewer';
 
@@ -37,20 +40,26 @@ function GaugeRiesgo({ puntuacion }: { puntuacion: number }) {
       ? '#eab308'
       : '#22c55e';
 
+  const bgColor = puntuacion >= 80
+    ? 'bg-red-50 dark:bg-red-900/20'
+    : puntuacion >= 60
+    ? 'bg-orange-50 dark:bg-orange-900/20'
+    : puntuacion >= 40
+    ? 'bg-yellow-50 dark:bg-yellow-900/20'
+    : 'bg-green-50 dark:bg-green-900/20';
+
   return (
     <div className="flex flex-col items-center">
-      <div
-        className="w-32 h-32 rounded-full border-8 flex items-center justify-center"
-        style={{ borderColor: color }}
-      >
+      <div className={`w-40 h-40 rounded-full border-8 flex items-center justify-center ${bgColor} border-gray-200 dark:border-gray-700`}
+        style={{ borderColor: color }}>
         <div className="text-center">
-          <p className="text-3xl font-bold" style={{ color }}>
+          <p className="text-4xl font-bold" style={{ color }}>
             {puntuacion}
           </p>
-          <p className="text-xs text-gray-500">/ 100</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">/ 100</p>
         </div>
       </div>
-      <p className="mt-2 text-sm font-medium" style={{ color }}>
+      <p className="mt-4 text-sm font-semibold" style={{ color }}>
         {puntuacion >= 80
           ? 'Riesgo CRÍTICO'
           : puntuacion >= 60
@@ -152,67 +161,71 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start sm:items-center gap-4 flex-wrap">
         <div className="flex items-center gap-3">
-          <button onClick={onVolver} className="button-secondary py-1.5">
-            ← Volver
-          </button>
-          <h2 className="text-xl font-bold text-gray-900">Reporte de Análisis</h2>
+          <Button variant="secondary" onClick={onVolver}>
+            <ArrowLeft className="w-4 h-4" />
+            Volver
+          </Button>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+            Reporte de Análisis
+          </h1>
         </div>
-        <button
-          onClick={descargarPDF}
-          className="button-primary flex items-center gap-2"
-        >
-          📄 Descargar PDF
-        </button>
+        <Button variant="primary" onClick={descargarPDF}>
+          <Download className="w-4 h-4" />
+          Descargar PDF
+        </Button>
       </div>
 
-      {/* Resumen rápido */}
+      {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <StatCard
-          label="Hallazgos"
-          valor={reporte.findingsCount}
-          icono="🚨"
-          color="red"
-        />
-        <StatCard
-          label="Puntuación"
-          valor={`${reporte.riskScore}/100`}
-          icono="📊"
-          color="orange"
-        />
-        <StatCard
-          label="Funciones comprometidas"
-          valor={reporte.compromisedFunctions.length}
-          icono="⚠️"
-          color="yellow"
-        />
-        <StatCard
-          label="Autores afectados"
-          valor={reporte.affectedAuthors.length}
-          icono="👤"
-          color="blue"
-        />
+        <Card>
+          <div className="text-center">
+            <p className="text-2xl mb-2">🚨</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{reporte.findingsCount}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Hallazgos</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-2xl mb-2">📊</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{reporte.riskScore}/100</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Puntuación</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-2xl mb-2">⚠️</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{reporte.compromisedFunctions.length}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Funciones</p>
+          </div>
+        </Card>
+        <Card>
+          <div className="text-center">
+            <p className="text-2xl mb-2">👤</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{reporte.affectedAuthors.length}</p>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Autores</p>
+          </div>
+        </Card>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-gray-200 gap-1">
-        {SECCIONES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSeccionActiva(s.id)}
-            className={`
-              px-4 py-2.5 text-sm font-medium border-b-2 transition-colors
-              ${
+      <div className="border-b border-gray-200 dark:border-gray-800">
+        <div className="flex gap-1 overflow-x-auto">
+          {SECCIONES.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setSeccionActiva(s.id)}
+              className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap ${
                 seccionActiva === s.id
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }
-            `}
-          >
-            {s.label}
-          </button>
-        ))}
+                  ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Contenido de cada sección */}
@@ -226,31 +239,31 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
         {seccionActiva === 'resumen' && (
           <div className="grid md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-4">
-              <div className="card bg-white p-5">
-                <h3 className="font-semibold text-gray-800 mb-3">Resumen Ejecutivo</h3>
-                <p className="text-gray-700 leading-relaxed">{reporte.executiveSummary}</p>
-              </div>
-              <div className="card bg-white p-5">
-                <h3 className="font-semibold text-gray-800 mb-3">Desglose por Severidad</h3>
+              <Card>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Resumen Ejecutivo</h3>
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{reporte.executiveSummary}</p>
+              </Card>
+              <Card>
+                <h3 className="font-semibold text-gray-900 dark:text-white mb-3">Desglose por Severidad</h3>
                 <div className="space-y-2">
                   {Object.entries(reporte.severityBreakdown).map(([sev, count]) => (
                     <div key={sev} className="flex items-center gap-3">
                       <BadgeRiesgo nivel={sev as any} size="sm" />
-                      <div className="flex-1 bg-gray-100 rounded-full h-2">
+                      <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                         <div
-                          className="bg-blue-500 h-2 rounded-full"
+                          className="bg-blue-600 h-2 rounded-full transition-all"
                           style={{
                             width: `${(count / reporte.findingsCount) * 100}%`,
                           }}
                         />
                       </div>
-                      <span className="text-sm font-medium text-gray-700 w-6 text-right">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300 w-6 text-right">
                         {count as number}
                       </span>
                     </div>
                   ))}
                 </div>
-              </div>
+              </Card>
             </div>
             <div className="flex justify-center">
               <GaugeRiesgo puntuacion={reporte.riskScore} />
@@ -262,29 +275,29 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
         {seccionActiva === 'hallazgos' && (
           <div className="space-y-3">
             {(hallazgos || []).map((hallazgo) => (
-              <div key={hallazgo.id} className="card bg-white p-4">
+              <Card key={hallazgo.id}>
                 <div className="flex justify-between items-start mb-2">
                   <BadgeRiesgo nivel={hallazgo.severity as any} size="sm" />
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
                     Confianza: {Math.round(hallazgo.confidence * 100)}%
                   </span>
                 </div>
-                <p className="font-mono text-sm text-gray-800 mb-1">
+                <p className="font-mono text-sm text-gray-900 dark:text-gray-100 mb-1">
                   {hallazgo.file}
                   {hallazgo.function && ` :: ${hallazgo.function}`}
                 </p>
-                <p className="text-sm text-gray-700 mb-2">{hallazgo.whySuspicious}</p>
-                <div className="bg-gray-50 rounded p-2 text-xs">
-                  <strong className="text-gray-600">Remediación:</strong>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{hallazgo.whySuspicious}</p>
+                <div className="bg-gray-100 dark:bg-gray-700 rounded p-2 text-xs">
+                  <strong className="text-gray-700 dark:text-gray-300">Remediación:</strong>
                   <ul className="mt-1 space-y-0.5 list-disc list-inside">
                     {hallazgo.remediationSteps.map((step, i) => (
-                      <li key={i} className="text-gray-600">
+                      <li key={i} className="text-gray-600 dark:text-gray-400">
                         {step}
                       </li>
                     ))}
                   </ul>
                 </div>
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -308,21 +321,21 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
         {/* REMEDIACIÓN */}
         {seccionActiva === 'remediacion' && (
           <div className="space-y-4">
-            <div className="card bg-white p-5">
-              <h3 className="font-semibold text-gray-800 mb-2">Recomendación General</h3>
-              <p className="text-gray-700">{reporte.generalRecommendation}</p>
-            </div>
+            <Card>
+              <h3 className="font-semibold text-gray-900 dark:text-white mb-2">Recomendación General</h3>
+              <p className="text-gray-700 dark:text-gray-300">{reporte.generalRecommendation}</p>
+            </Card>
             <div className="space-y-3">
               {(reporte.remediationSteps as any[]).map((step, i) => (
-                <div key={i} className="card bg-white p-4">
+                <Card key={i}>
                   <div className="flex items-start gap-3">
-                    <div className="w-7 h-7 rounded-full bg-blue-100 text-blue-800 text-sm font-bold flex items-center justify-center flex-shrink-0">
+                    <div className="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-sm font-bold flex items-center justify-center flex-shrink-0">
                       {step.order || i + 1}
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-800">{step.action || step.accion}</p>
+                      <p className="font-medium text-gray-900 dark:text-white">{step.action || step.accion}</p>
                       {(step.justification || step.justificacion) && (
-                        <p className="text-sm text-gray-600 mt-1">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                           {step.justification || step.justificacion}
                         </p>
                       )}
@@ -331,31 +344,12 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                       <BadgeRiesgo nivel={(step.urgency || step.urgencia) as any} size="sm" />
                     )}
                   </div>
-                </div>
+                </Card>
               ))}
             </div>
           </div>
         )}
       </motion.div>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  valor,
-  icono,
-}: {
-  label: string;
-  valor: string | number;
-  icono: string;
-  color: string;
-}) {
-  return (
-    <div className="card bg-white p-4 text-center">
-      <p className="text-2xl mb-1">{icono}</p>
-      <p className="text-2xl font-bold text-gray-900">{valor}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label}</p>
     </div>
   );
 }

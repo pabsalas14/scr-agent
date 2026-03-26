@@ -46,6 +46,7 @@ const allowedOrigins = [
   process.env['FRONTEND_URL'] || 'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5173',
+  'http://localhost:5200',
 ];
 app.use(cors({
   origin: (
@@ -67,7 +68,7 @@ app.use(cors({
 // Rate Limiting - Prevenir DDoS (OWASP API4)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // máximo 100 requests por ventana
+  max: 500, // máximo 500 requests por ventana (aumentado para desarrollo)
   message: 'Demasiadas solicitudes, intente más tarde',
   standardHeaders: true,
   legacyHeaders: false,
@@ -129,6 +130,7 @@ app.get('/api/v1', (_req, res) => {
 import projectRoutes from './routes/projects.routes';
 import analysisRoutes from './routes/analyses.routes';
 import authRoutes from './routes/auth.routes';
+import monitoringRoutes from './routes/monitoring.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 
 // Rutas públicas de autenticación (sin JWT)
@@ -139,6 +141,7 @@ app.use('/api/v1', authMiddleware);
 
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
+app.use('/api/v1/monitoring', monitoringRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 

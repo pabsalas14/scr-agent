@@ -44,7 +44,7 @@ export default function TimelineFilters({ eventos, filtros, onChange }: Timeline
   const hayFiltros = Object.values(filtros).some(Boolean);
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+    <div className="glass-sm rounded-xl p-4">
       <div className="flex flex-wrap gap-4 items-end">
         {/* Filtro de severidad */}
         <div>
