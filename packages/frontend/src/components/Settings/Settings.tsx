@@ -60,7 +60,7 @@ export default function Settings() {
       <div>
         <h2 className="text-xl font-bold text-gray-900">Configuración</h2>
         <p className="text-sm text-gray-500 mt-1">
-          Ajusta los parámetros del sistema SCR Agent
+          Ajusta los parámetros del sistema CODA
         </p>
       </div>
 
@@ -205,12 +205,12 @@ export default function Settings() {
 
       {/* Info del sistema */}
       <div className="card bg-gray-50 p-4">
-        <h3 className="font-semibold text-gray-700 mb-2 text-sm">Acerca de SCR Agent</h3>
+        <h3 className="font-semibold text-gray-700 mb-2 text-sm">Acerca de CODA</h3>
         <div className="text-xs text-gray-500 space-y-1">
           <p>• Agente Inspector (Claude 3.5 Sonnet) — Detección de código malicioso</p>
           <p>• Agente Detective (Claude 3.5 Haiku) — Análisis forense de historial Git</p>
           <p>• Agente Fiscal (Claude 3.5 Sonnet) — Síntesis y reporte ejecutivo</p>
-          <p className="mt-2 text-gray-400">OWASP Top 10 2021 · Arquitectura MCP · PostgreSQL + Prisma</p>
+          <p className="mt-2 text-gray-400">OWASP Top 10 2021 · Multi-Agent Architecture · PostgreSQL + Prisma</p>
         </div>
       </div>
     </div>

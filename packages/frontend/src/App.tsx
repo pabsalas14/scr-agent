@@ -70,8 +70,8 @@ function App() {
               >
                 <span className="text-2xl">🔍</span>
                 <div className="text-left">
-                  <p className="font-bold text-gray-900 leading-tight">SCR Agent</p>
-                  <p className="text-xs text-gray-500">Revisión de código seguro</p>
+                  <p className="font-bold text-gray-900 leading-tight">CODA</p>
+                  <p className="text-xs text-gray-500">Code Observability & Defense Agents</p>
                 </div>
               </button>
 
@@ -154,7 +154,7 @@ function App() {
         <footer className="bg-white border-t border-gray-200 mt-auto">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <p className="text-xs text-gray-500 text-center">
-              SCR Agent — Arquitectura MCP agentica con Claude 3.5 · OWASP Top 10 · Todo en español
+              CODA — Code Observability & Defense Agents · Claude 3.5 · OWASP Top 10
             </p>
           </div>
         </footer>

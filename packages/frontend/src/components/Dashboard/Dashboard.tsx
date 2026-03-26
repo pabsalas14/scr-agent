@@ -65,7 +65,7 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
         <p className="text-red-700 font-medium">Error al cargar proyectos</p>
         <p className="text-red-600 text-sm mt-1">
-          Verifica que el backend está activo en puerto 3000
+          Verifica que el backend está activo en puerto 3001
         </p>
       </div>
     );
