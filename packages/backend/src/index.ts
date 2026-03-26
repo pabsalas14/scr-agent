@@ -11,57 +11,27 @@
  * Arquitectura:
  * - Servidor Express en puerto 3000
  * - Rutas API bajo /api/v1/
- * - MCP expone los agentes: Malicia, Forenses, Síntesis
+ * - MCP expone los agentes: Inspector, Detective, Fiscal
  */
 
-import express from 'express';
+import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
-import winston from 'winston';
+import { logger } from './services/logger.service';
 
 // Cargar variables de entorno
 dotenv.config();
 
 // ==================== CONFIGURACIÓN ====================
 
-const PORT = process.env.BACKEND_PORT || 3000;
-const NODE_ENV = process.env.NODE_ENV || 'development';
-
-// ==================== LOGGER ====================
-
-/**
- * Logger centralizado usando Winston
- * Soporta múltiples transports (console, file)
- * Requerimiento OWASP A09: Logging y Monitoreo
- */
-const logger = winston.createLogger({
-  level: process.env.LOG_LEVEL || 'info',
-  format: winston.format.combine(
-    winston.format.timestamp(),
-    winston.format.errors({ stack: true }),
-    winston.format.json()
-  ),
-  defaultMeta: { service: 'scr-agent-backend' },
-  transports: [
-    new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        winston.format.simple()
-      ),
-    }),
-    // En producción, agregar transports a archivo
-    ...(NODE_ENV === 'production' ? [
-      new winston.transports.File({ filename: 'logs/error.log', level: 'error' }),
-      new winston.transports.File({ filename: 'logs/combined.log' }),
-    ] : []),
-  ],
-});
+const PORT = process.env['BACKEND_PORT'] || 3000;
+const NODE_ENV = process.env['NODE_ENV'] || 'development';
 
 // ==================== SERVIDOR EXPRESS ====================
 
-const app = express();
+const app: Express = express();
 
 /**
  * Middleware de Seguridad
@@ -73,12 +43,15 @@ app.use(helmet());
 
 // CORS - Control de origen (OWASP API2)
 const allowedOrigins = [
-  process.env.FRONTEND_URL || 'http://localhost:5173',
+  process.env['FRONTEND_URL'] || 'http://localhost:5173',
   'http://localhost:5174',
   'http://localhost:5173',
 ];
 app.use(cors({
-  origin: (origin, callback) => {
+  origin: (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void
+  ) => {
     // Permitir requests sin origin (ej. Postman, health checks)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
@@ -155,6 +128,14 @@ app.get('/api/v1', (_req, res) => {
  */
 import projectRoutes from './routes/projects.routes';
 import analysisRoutes from './routes/analyses.routes';
+import authRoutes from './routes/auth.routes';
+import { authMiddleware } from './middleware/auth.middleware';
+
+// Rutas públicas de autenticación (sin JWT)
+app.use('/api/v1/auth', authRoutes);
+
+// Middleware JWT para todas las rutas protegidas
+app.use('/api/v1', authMiddleware);
 
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);

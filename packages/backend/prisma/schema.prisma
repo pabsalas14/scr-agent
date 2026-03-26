@@ -18,6 +18,18 @@ generator client {
 
 // ==================== MODELOS BASE ====================
 
+// Usuario - Autenticación y autorización
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([email])
+  @@map("users")
+}
+
 // Proyecto - Repositorio a ser analizado
 // Soporta: GitHub, GitLab, Bitbucket
 model Project {
