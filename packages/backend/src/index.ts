@@ -131,6 +131,7 @@ import projectRoutes from './routes/projects.routes';
 import analysisRoutes from './routes/analyses.routes';
 import authRoutes from './routes/auth.routes';
 import monitoringRoutes from './routes/monitoring.routes';
+import settingsRoutes from './routes/settings.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 
 // Rutas públicas de autenticación (sin JWT)
@@ -142,6 +143,7 @@ app.use('/api/v1', authMiddleware);
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
 app.use('/api/v1/monitoring', monitoringRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 
