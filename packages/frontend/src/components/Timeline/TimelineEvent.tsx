@@ -34,7 +34,7 @@ export default function TimelineEvent({ evento, onCerrar }: TimelineEventProps) 
       {/* Header */}
       <div className="flex justify-between items-start mb-4">
         <div className="flex items-center gap-3">
-          <BadgeRiesgo nivel={evento.nivel_riesgo} />
+          <BadgeRiesgo severity={evento.nivel_riesgo} />
           <span className="font-mono text-sm text-gray-600 bg-white px-2 py-0.5 rounded border">
             {evento.commit}
           </span>

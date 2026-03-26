@@ -235,7 +235,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                 <div className="space-y-2">
                   {Object.entries(reporte.severityBreakdown).map(([sev, count]) => (
                     <div key={sev} className="flex items-center gap-3">
-                      <BadgeRiesgo nivel={sev as any} size="sm" />
+                      <BadgeRiesgo severity={sev as any} size="sm" />
                       <div className="flex-1 bg-gray-100 rounded-full h-2">
                         <div
                           className="bg-blue-500 h-2 rounded-full"
@@ -264,7 +264,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
             {(hallazgos || []).map((hallazgo) => (
               <div key={hallazgo.id} className="card bg-white p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <BadgeRiesgo nivel={hallazgo.severity} size="sm" />
+                  <BadgeRiesgo severity={hallazgo.severity} size="sm" />
                   <span className="text-xs text-gray-500">
                     Confianza: {Math.round(hallazgo.confidence * 100)}%
                   </span>
@@ -328,7 +328,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                       )}
                     </div>
                     {(step.urgency || step.urgencia) && (
-                      <BadgeRiesgo nivel={(step.urgency || step.urgencia)} size="sm" />
+                      <BadgeRiesgo severity={(step.urgency || step.urgencia)} size="sm" />
                     )}
                   </div>
                 </div>

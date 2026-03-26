@@ -50,7 +50,7 @@ function agruparPorFuncion(eventos: EventoTimeline[]): GrupoFuncion[] {
       (a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
 
-    const severidades: NivelRiesgo[] = ['CRÍTICO', 'ALTO', 'MEDIO', 'BAJO'];
+    const severidades: NivelRiesgo[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
     const maxRiesgo =
       severidades.find((s) => evs.some((e) => e.nivel_riesgo === s)) || 'BAJO';
 

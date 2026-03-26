@@ -13,7 +13,7 @@ interface TimelineFiltersProps {
   onChange: (filtros: FiltrosTimeline) => void;
 }
 
-const NIVELES: NivelRiesgo[] = ['CRÍTICO', 'ALTO', 'MEDIO', 'BAJO'];
+const NIVELES: NivelRiesgo[] = ['CRITICAL', 'HIGH', 'MEDIUM', 'LOW'];
 
 export default function TimelineFilters({ eventos, filtros, onChange }: TimelineFiltersProps) {
   /**
