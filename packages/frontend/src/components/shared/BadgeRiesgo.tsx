@@ -1,40 +1,30 @@
-/**
- * Badge visual para niveles de riesgo
- * Usado en múltiples componentes
- */
-
 import React from 'react';
-import type { NivelRiesgo } from '../../types/timeline';
 
 interface BadgeRiesgoProps {
-  nivel: NivelRiesgo;
+  severity: string;
   size?: 'sm' | 'md';
 }
 
-const LABELS: Record<NivelRiesgo, string> = {
-  CRITICAL: '🚨 CRÍTICO',
-  HIGH: '⚠️ ALTO',
-  MEDIUM: '❔ MEDIO',
-  LOW: '✓ BAJO',
+const CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
+  CRITICAL: { label: 'Critico', cls: 'badge-critical', dot: 'bg-red-500' },
+  HIGH:     { label: 'Alto',    cls: 'badge-high',     dot: 'bg-orange-500' },
+  MEDIUM:   { label: 'Medio',   cls: 'badge-medium',   dot: 'bg-amber-500' },
+  LOW:      { label: 'Bajo',    cls: 'badge-low',      dot: 'bg-emerald-500' },
+  // Spanish fallbacks
+  CRITICO:  { label: 'Critico', cls: 'badge-critical', dot: 'bg-red-500' },
+  ALTO:     { label: 'Alto',    cls: 'badge-high',     dot: 'bg-orange-500' },
+  MEDIO:    { label: 'Medio',   cls: 'badge-medium',   dot: 'bg-amber-500' },
+  BAJO:     { label: 'Bajo',    cls: 'badge-low',      dot: 'bg-emerald-500' },
 };
 
-const CLASES: Record<NivelRiesgo, string> = {
-  CRITICAL: 'bg-red-100 text-red-800 border-red-300',
-  HIGH: 'bg-orange-100 text-orange-800 border-orange-300',
-  MEDIUM: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  LOW: 'bg-green-100 text-green-800 border-green-300',
-};
+export default function BadgeRiesgo({ severity, size = 'md' }: BadgeRiesgoProps) {
+  const key = severity?.toUpperCase() ?? '';
+  const cfg = CONFIG[key] ?? { label: severity, cls: 'badge bg-slate-100 text-slate-600', dot: 'bg-slate-400' };
 
-export default function BadgeRiesgo({ nivel, size = 'md' }: BadgeRiesgoProps) {
   return (
-    <span
-      className={`
-        inline-flex items-center border rounded-full font-semibold
-        ${CLASES[nivel]}
-        ${size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'}
-      `}
-    >
-      {LABELS[nivel]}
+    <span className={cfg.cls + (size === 'sm' ? ' text-[10px] px-1.5' : '')}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
     </span>
   );
 }

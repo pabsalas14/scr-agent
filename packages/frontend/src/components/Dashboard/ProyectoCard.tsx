@@ -1,8 +1,3 @@
-/**
- * Card de un proyecto en el dashboard
- * Muestra info básica y permite iniciar análisis
- */
-
 import React from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
@@ -13,115 +8,139 @@ interface ProyectoCardProps {
   onVerAnalisis: (id: string) => void;
 }
 
-const SCOPE_LABELS: Record<string, string> = {
-  REPOSITORY: '📁 Repositorio',
-  ORGANIZATION: '🏢 Organización',
-  PULL_REQUEST: '📌 Pull Request',
+const SCOPE_CONFIG: Record<string, { label: string; color: string }> = {
+  REPOSITORY:   { label: 'Repositorio',  color: 'bg-violet-50 text-violet-700' },
+  ORGANIZATION: { label: 'Organizacion', color: 'bg-sky-50 text-sky-700' },
+  PULL_REQUEST: { label: 'Pull Request', color: 'bg-rose-50 text-rose-700' },
 };
 
+const STATUS_CONFIG: Record<string, { label: string; cls: string; dot: string }> = {
+  PENDING:          { label: 'Pendiente',   cls: 'status-pending',  dot: 'bg-slate-400' },
+  RUNNING:          { label: 'En proceso',  cls: 'status-running',  dot: 'bg-blue-500 animate-pulse' },
+  INSPECTOR_RUNNING:{ label: 'Inspector',   cls: 'status-running',  dot: 'bg-orange-500 animate-pulse' },
+  DETECTIVE_RUNNING:{ label: 'Detective',   cls: 'status-running',  dot: 'bg-purple-500 animate-pulse' },
+  FISCAL_RUNNING:   { label: 'Fiscal',      cls: 'status-running',  dot: 'bg-indigo-500 animate-pulse' },
+  COMPLETED:        { label: 'Completado',  cls: 'status-done',     dot: 'bg-emerald-500' },
+  FAILED:           { label: 'Error',       cls: 'status-failed',   dot: 'bg-red-500' },
+  PARTIAL:          { label: 'Parcial',     cls: 'status-partial',  dot: 'bg-amber-500' },
+};
+
+function shortUrl(url: string): string {
+  try {
+    const u = new URL(url);
+    return u.hostname.replace('www.','') + u.pathname;
+  } catch {
+    return url;
+  }
+}
+
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
-  /**
-   * Análisis del proyecto
-   */
   const { data: analisisData } = useQuery({
     queryKey: ['analyses', proyecto.id],
     queryFn: () => apiService.obtenerAnalisisDeProyecto(proyecto.id),
     refetchInterval: 5_000,
   });
 
-  /**
-   * Iniciar nuevo análisis
-   */
   const iniciar = useMutation({
     mutationFn: () => apiService.iniciarAnalisis(proyecto.id),
     onSuccess: (analisis) => onVerAnalisis(analisis.id),
   });
 
   const analisisList = analisisData || [];
-  const ultimoAnalisis = analisisList[0];
-  const enProceso = ultimoAnalisis?.status.includes('RUNNING');
+  const ultimo = analisisList[0];
+  const enProceso = ultimo?.status.includes('RUNNING') || iniciar.isPending;
+  const scope = SCOPE_CONFIG[proyecto.scope] ?? { label: proyecto.scope, color: 'bg-slate-100 text-slate-600' };
+  const statusCfg = ultimo ? (STATUS_CONFIG[ultimo.status] ?? { label: ultimo.status, cls: 'status-pending', dot: 'bg-slate-400' }) : null;
 
   return (
-    <div className="card bg-white p-4 hover:shadow-md transition-shadow">
-      {/* Header */}
-      <div className="flex justify-between items-start mb-3">
-        <div>
-          <h3 className="font-semibold text-gray-900 truncate">{proyecto.name}</h3>
-          <p className="text-xs text-gray-500 mt-0.5">{SCOPE_LABELS[proyecto.scope]}</p>
+    <div className="card-hover flex flex-col h-full">
+      {/* Top bar */}
+      <div className="px-5 pt-5 pb-4 flex-1">
+
+        {/* Scope + count */}
+        <div className="flex items-center justify-between mb-3">
+          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${scope.color}`}>
+            {scope.label}
+          </span>
+          <span className="text-xs text-slate-400">
+            {analisisList.length} analisis
+          </span>
         </div>
-        <span className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
-          {analisisList.length} análisis
-        </span>
+
+        {/* Name */}
+        <h3 className="font-semibold text-slate-900 truncate text-[15px] mb-1">
+          {proyecto.name}
+        </h3>
+
+        {/* URL */}
+        <p className="code-text text-[11px] truncate mb-3 max-w-full block" title={proyecto.repositoryUrl}>
+          {shortUrl(proyecto.repositoryUrl)}
+        </p>
+
+        {/* Description */}
+        {proyecto.description && (
+          <p className="text-xs text-slate-500 line-clamp-2 mb-3 leading-relaxed">
+            {proyecto.description}
+          </p>
+        )}
+
+        {/* Last analysis status */}
+        {statusCfg && (
+          <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-lg border border-slate-100">
+            <span className={`status-dot ${statusCfg.dot} w-2 h-2 rounded-full flex-shrink-0`} />
+            <span className={`text-xs font-medium ${
+              statusCfg.cls === 'status-done' ? 'text-emerald-700' :
+              statusCfg.cls === 'status-running' ? 'text-blue-700' :
+              statusCfg.cls === 'status-failed' ? 'text-red-700' :
+              'text-slate-600'
+            }`}>
+              {statusCfg.label}
+            </span>
+            {ultimo?.status === 'COMPLETED' && typeof ultimo.progress === 'number' && (
+              <div className="ml-auto flex items-center gap-1.5">
+                <div className="w-16 bg-slate-200 rounded-full h-1">
+                  <div
+                    className="bg-emerald-500 h-1 rounded-full transition-all"
+                    style={{ width: `${ultimo.progress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-slate-400">{ultimo.progress}%</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* URL */}
-      <p className="text-xs font-mono text-blue-600 truncate mb-3">
-        {proyecto.repositoryUrl}
-      </p>
-
-      {/* Último análisis */}
-      {ultimoAnalisis && (
-        <div className="bg-gray-50 rounded p-2 mb-3 text-xs">
-          <div className="flex justify-between">
-            <span className="text-gray-500">Último análisis</span>
-            <EstadoChip status={ultimoAnalisis.status} />
-          </div>
-          {ultimoAnalisis.status === 'COMPLETED' && (
-            <div className="mt-1">
-              <div className="bg-gray-200 rounded-full h-1.5">
-                <div
-                  className="bg-blue-500 rounded-full h-1.5 transition-all"
-                  style={{ width: `${ultimoAnalisis.progress}%` }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Descripción */}
-      {proyecto.description && (
-        <p className="text-xs text-gray-600 mb-3 line-clamp-2">{proyecto.description}</p>
-      )}
-
-      {/* Acciones */}
-      <div className="flex gap-2">
+      {/* Actions */}
+      <div className="px-5 pb-5 flex gap-2 pt-3 border-t border-slate-100">
         <button
-          className="button-primary flex-1 text-sm py-1.5 flex items-center justify-center gap-1"
+          className={`btn flex-1 text-sm py-2 ${enProceso ? 'btn-secondary' : 'btn-primary'}`}
           onClick={() => iniciar.mutate()}
-          disabled={enProceso || iniciar.isPending}
+          disabled={enProceso}
         >
-          {enProceso || iniciar.isPending ? '⏳ Analizando...' : '🔍 Analizar'}
+          {enProceso ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              <span>Analizando...</span>
+            </>
+          ) : (
+            <>
+              <span>▶</span>
+              <span>Analizar</span>
+            </>
+          )}
         </button>
-        {ultimoAnalisis?.status === 'COMPLETED' && (
+
+        {ultimo?.status === 'COMPLETED' && (
           <button
-            className="button-secondary text-sm py-1.5 px-3"
-            onClick={() => onVerAnalisis(ultimoAnalisis.id)}
-            title="Ver último reporte"
+            className="btn-secondary px-3 py-2 text-sm"
+            onClick={() => onVerAnalisis(ultimo.id)}
+            title="Ver reporte"
           >
             📊
           </button>
         )}
       </div>
     </div>
-  );
-}
-
-function EstadoChip({ status }: { status: string }) {
-  const CONFIG: Record<string, { label: string; clase: string }> = {
-    PENDING: { label: 'Pendiente', clase: 'bg-gray-100 text-gray-600' },
-    RUNNING: { label: 'En proceso', clase: 'bg-blue-100 text-blue-700' },
-    INSPECTOR_RUNNING: { label: 'Inspector...', clase: 'bg-orange-100 text-orange-700' },
-    DETECTIVE_RUNNING: { label: 'Detective...', clase: 'bg-purple-100 text-purple-700' },
-    FISCAL_RUNNING: { label: 'Fiscal...', clase: 'bg-indigo-100 text-indigo-700' },
-    COMPLETED: { label: 'Completado', clase: 'bg-green-100 text-green-700' },
-    FAILED: { label: 'Error', clase: 'bg-red-100 text-red-700' },
-    PARTIAL: { label: 'Parcial', clase: 'bg-yellow-100 text-yellow-700' },
-  };
-  const cfg = CONFIG[status] || { label: status, clase: 'bg-gray-100 text-gray-600' };
-  return (
-    <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${cfg.clase}`}>
-      {cfg.label}
-    </span>
   );
 }

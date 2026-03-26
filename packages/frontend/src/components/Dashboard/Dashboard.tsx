@@ -1,21 +1,8 @@
-/**
- * ============================================================================
- * DASHBOARD PRINCIPAL
- * ============================================================================
- *
- * Vista principal con:
- * - Lista de proyectos
- * - Iniciar nuevo análisis
- * - Historial de análisis
- * - Estado en tiempo real
- */
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../services/api.service';
 import type { Proyecto, CrearProyectoDTO } from '../../types/api';
-import BadgeRiesgo from '../shared/BadgeRiesgo';
 import NuevoProyecto from './NuevoProyecto';
 import ProyectoCard from './ProyectoCard';
 
@@ -27,22 +14,12 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   const queryClient = useQueryClient();
   const [modalAbierto, setModalAbierto] = useState(false);
 
-  /**
-   * Cargar proyectos del backend
-   */
-  const {
-    data: proyectosData,
-    isLoading,
-    error,
-  } = useQuery({
+  const { data: proyectosData, isLoading, error } = useQuery({
     queryKey: ['projects'],
     queryFn: () => apiService.obtenerProyectos(),
-    refetchInterval: 10_000, // Refrescar cada 10s
+    refetchInterval: 10_000,
   });
 
-  /**
-   * Crear proyecto nuevo
-   */
   const crearProyecto = useMutation({
     mutationFn: (dto: CrearProyectoDTO) => apiService.crearProyecto(dto),
     onSuccess: () => {
@@ -53,20 +30,27 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center py-20">
-        <div className="animate-spin text-4xl">⟳</div>
-        <span className="ml-3 text-gray-600">Cargando proyectos...</span>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-indigo-200 border-t-indigo-600 rounded-full animate-spin" />
+          <p className="text-sm text-slate-500">Cargando proyectos...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-        <p className="text-red-700 font-medium">Error al cargar proyectos</p>
-        <p className="text-red-600 text-sm mt-1">
-          Verifica que el backend está activo en puerto 3001
-        </p>
+      <div className="flex items-center justify-center min-h-96">
+        <div className="card p-8 max-w-md text-center">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            ⚠
+          </div>
+          <h3 className="font-semibold text-slate-800 mb-1">Error de conexion</h3>
+          <p className="text-sm text-slate-500">
+            No se pudo conectar al backend. Verifica que este activo en el puerto 3001.
+          </p>
+        </div>
       </div>
     );
   }
@@ -74,69 +58,71 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   const proyectos = proyectosData?.data || [];
 
   return (
-    <div className="space-y-6">
-      {/* Header del dashboard */}
-      <div className="flex justify-between items-center">
+    <>
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Proyectos</h2>
-          <p className="text-sm text-gray-600">
-            {proyectos.length} repositorios registrados
+          <h1 className="page-title">Proyectos</h1>
+          <p className="page-subtitle">
+            {proyectos.length === 0
+              ? 'Ningun repositorio registrado aun'
+              : proyectos.length + ' repositorio' + (proyectos.length === 1 ? '' : 's') + ' registrado' + (proyectos.length === 1 ? '' : 's')}
           </p>
         </div>
-        <button
-          className="button-primary flex items-center gap-2"
-          onClick={() => setModalAbierto(true)}
-        >
-          + Nuevo Proyecto
+        <button className="btn-primary" onClick={() => setModalAbierto(true)}>
+          + Nuevo proyecto
         </button>
       </div>
 
-      {/* Lista de proyectos */}
       {proyectos.length === 0 ? (
         <EmptyState onNuevo={() => setModalAbierto(true)} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {proyectos.map((proyecto, i) => (
             <motion.div
               key={proyecto.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.08 }}
+              transition={{ delay: i * 0.06, duration: 0.2 }}
             >
-              <ProyectoCard
-                proyecto={proyecto}
-                onVerAnalisis={onVerAnalisis}
-              />
+              <ProyectoCard proyecto={proyecto} onVerAnalisis={onVerAnalisis} />
             </motion.div>
           ))}
         </div>
       )}
 
-      {/* Modal de nuevo proyecto */}
-      {modalAbierto && (
-        <NuevoProyecto
-          onCrear={(dto) => crearProyecto.mutate(dto)}
-          onCerrar={() => setModalAbierto(false)}
-          cargando={crearProyecto.isPending}
-        />
-      )}
-    </div>
+      <AnimatePresence>
+        {modalAbierto && (
+          <NuevoProyecto
+            onCrear={(dto) => crearProyecto.mutate(dto)}
+            onCerrar={() => setModalAbierto(false)}
+            cargando={crearProyecto.isPending}
+          />
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
 function EmptyState({ onNuevo }: { onNuevo: () => void }) {
   return (
-    <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
-      <p className="text-5xl mb-4">🔍</p>
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">
-        Sin proyectos aún
-      </h3>
-      <p className="text-gray-500 mb-6">
-        Agrega un repositorio para comenzar el análisis de seguridad
-      </p>
-      <button className="button-primary" onClick={onNuevo}>
-        + Agregar primer proyecto
-      </button>
+    <div className="flex flex-col items-center justify-center min-h-96 py-8">
+      <div className="card p-12 max-w-md w-full text-center">
+        <div className="relative w-20 h-20 mx-auto mb-6">
+          <div className="absolute inset-0 bg-indigo-50 rounded-2xl" />
+          <div className="absolute inset-0 flex items-center justify-center text-4xl">
+            🔍
+          </div>
+        </div>
+        <h3 className="text-base font-semibold text-slate-800 mb-2">
+          Sin proyectos todavia
+        </h3>
+        <p className="text-sm text-slate-500 mb-6 leading-relaxed">
+          Agrega un repositorio de GitHub, GitLab o Bitbucket para comenzar el analisis de seguridad con CODA.
+        </p>
+        <button className="btn-primary w-full justify-center" onClick={onNuevo}>
+          + Agregar primer proyecto
+        </button>
+      </div>
     </div>
   );
 }
