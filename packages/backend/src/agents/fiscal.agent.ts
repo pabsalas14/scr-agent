@@ -22,6 +22,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { configService } from '../services/config.service';
 import {
   SintesisInput,
   SintesisOutput,
@@ -42,10 +43,16 @@ export class FiscalAgentService {
    */
   private model = 'claude-3-5-sonnet-20241022';
 
-  constructor(apiKey?: string) {
+  constructor(private readonly fixedApiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
+      apiKey: fixedApiKey || configService.getAnthropicApiKey(),
     });
+  }
+
+  private getClient(): Anthropic {
+    if (this.fixedApiKey) return this.anthropic;
+    this.anthropic = new Anthropic({ apiKey: configService.getAnthropicApiKey() });
+    return this.anthropic;
   }
 
   /**
@@ -56,6 +63,10 @@ export class FiscalAgentService {
 
     try {
       logger.info('Iniciando síntesis de reporte');
+
+      if (!configService.isReady() && !this.fixedApiKey) {
+        throw new Error('API key de Anthropic no configurada. Ve a Configuración para agregarla.');
+      }
 
       /**
        * Generar clave de caché
@@ -81,7 +92,7 @@ export class FiscalAgentService {
        * Llamar a Claude
        */
       logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.anthropic.messages.create({
+      const response = await this.getClient().messages.create({
         model: this.model,
         max_tokens: 4096,
         messages: [

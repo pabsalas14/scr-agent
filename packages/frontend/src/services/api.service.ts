@@ -19,6 +19,8 @@ import type {
   Hallazgo,
   EventoForense,
   Reporte,
+  ConfigPublica,
+  ActualizarConfigDTO,
   ApiResponse,
   PaginatedResponse,
 } from '../types/api';
@@ -179,6 +181,18 @@ class ApiService {
       responseType: 'blob',
     });
     return data as Blob;
+  }
+
+  // ==================== CONFIGURACIÓN ====================
+
+  async obtenerConfig(): Promise<ConfigPublica> {
+    const { data } = await this.client.get<ApiResponse<ConfigPublica>>('/config');
+    return data.data;
+  }
+
+  async actualizarConfig(config: ActualizarConfigDTO): Promise<ConfigPublica> {
+    const { data } = await this.client.post<ApiResponse<ConfigPublica>>('/config', config);
+    return data.data;
   }
 
   // ==================== HEALTH ====================

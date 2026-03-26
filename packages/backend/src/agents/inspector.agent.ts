@@ -21,6 +21,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { configService } from '../services/config.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
 /**
@@ -72,10 +73,21 @@ export class InspectorAgentService {
    */
   private model = 'claude-3-5-sonnet-20241022';
 
-  constructor(apiKey?: string) {
+  constructor(private readonly fixedApiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
+      apiKey: fixedApiKey || configService.getAnthropicApiKey(),
     });
+  }
+
+  /**
+   * Obtener cliente Anthropic con el API key actual (permite actualización en caliente)
+   */
+  private getClient(): Anthropic {
+    // Si hay fixedApiKey (tests), reusar this.anthropic para que los mocks funcionen
+    if (this.fixedApiKey) return this.anthropic;
+    // En producción, refrescar con el key actual del configService
+    this.anthropic = new Anthropic({ apiKey: configService.getAnthropicApiKey() });
+    return this.anthropic;
   }
 
   /**
@@ -86,6 +98,10 @@ export class InspectorAgentService {
 
     try {
       logger.info('Iniciando análisis Malicia');
+
+      if (!configService.isReady() && !this.fixedApiKey) {
+        throw new Error('API key de Anthropic no configurada. Ve a Configuración para agregarla.');
+      }
 
       /**
        * Verificar caché primero
@@ -112,7 +128,7 @@ export class InspectorAgentService {
        * Llamar a Claude
        */
       logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.anthropic.messages.create({
+      const response = await this.getClient().messages.create({
         model: this.model,
         max_tokens: 4096,
         messages: [

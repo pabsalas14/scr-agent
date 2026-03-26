@@ -155,9 +155,11 @@ app.get('/api/v1', (_req, res) => {
  */
 import projectRoutes from './routes/projects.routes';
 import analysisRoutes from './routes/analyses.routes';
+import configRoutes from './routes/config.routes';
 
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
+app.use('/api/v1/config', configRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 

@@ -85,6 +85,20 @@ export interface Reporte {
   createdAt: string;
 }
 
+export interface ConfigPublica {
+  apiKeyConfigured: boolean;
+  logLevel?: string;
+  maxFilesPerRepo?: number;
+  maxFileSizeKb?: number;
+}
+
+export interface ActualizarConfigDTO {
+  anthropicApiKey?: string;
+  logLevel?: 'debug' | 'info' | 'warn' | 'error';
+  maxFilesPerRepo?: number;
+  maxFileSizeKb?: number;
+}
+
 export interface ApiResponse<T> {
   data: T;
   message?: string;

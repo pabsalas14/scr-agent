@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from './components/Dashboard/Dashboard';
 import ReportViewer from './components/Reports/ReportViewer';
+import Settings from './components/Settings/Settings';
 
 /**
  * Cliente de React Query
@@ -31,7 +32,7 @@ const queryClient = new QueryClient({
   },
 });
 
-type Vista = 'dashboard' | 'reporte';
+type Vista = 'dashboard' | 'reporte' | 'settings';
 
 /**
  * Componente principal de la aplicación
@@ -74,20 +75,32 @@ function App() {
                 </div>
               </button>
 
-              {/* Breadcrumb */}
-              <nav className="flex items-center gap-2 text-sm text-gray-500">
+              {/* Navegación */}
+              <nav className="flex items-center gap-1 text-sm">
                 <button
                   onClick={irADashboard}
-                  className={`hover:text-gray-800 ${vista === 'dashboard' ? 'text-blue-600 font-medium' : ''}`}
+                  className={`px-3 py-1.5 rounded-md transition-colors ${
+                    vista === 'dashboard'
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
                 >
                   Proyectos
                 </button>
                 {vista === 'reporte' && (
-                  <>
-                    <span>›</span>
-                    <span className="text-blue-600 font-medium">Reporte</span>
-                  </>
+                  <span className="px-3 py-1.5 text-blue-600 font-medium">› Reporte</span>
                 )}
+                <button
+                  onClick={() => setVista('settings')}
+                  className={`px-3 py-1.5 rounded-md transition-colors flex items-center gap-1 ${
+                    vista === 'settings'
+                      ? 'bg-blue-50 text-blue-600 font-medium'
+                      : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
+                  }`}
+                  title="Configuración"
+                >
+                  ⚙️ Config
+                </button>
               </nav>
             </div>
           </div>
@@ -120,6 +133,18 @@ function App() {
                   analysisId={analysisId}
                   onVolver={irADashboard}
                 />
+              </motion.div>
+            )}
+
+            {vista === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Settings />
               </motion.div>
             )}
           </AnimatePresence>

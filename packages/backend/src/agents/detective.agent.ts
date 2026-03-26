@@ -22,6 +22,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
 import { gitService } from '../services/git.service';
+import { configService } from '../services/config.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**
@@ -38,10 +39,16 @@ export class DetectiveAgentService {
    */
   private model = 'claude-3-5-haiku-20241022';
 
-  constructor(apiKey?: string) {
+  constructor(private readonly fixedApiKey?: string) {
     this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
+      apiKey: fixedApiKey || configService.getAnthropicApiKey(),
     });
+  }
+
+  private getClient(): Anthropic {
+    if (this.fixedApiKey) return this.anthropic;
+    this.anthropic = new Anthropic({ apiKey: configService.getAnthropicApiKey() });
+    return this.anthropic;
   }
 
   /**
@@ -52,6 +59,10 @@ export class DetectiveAgentService {
 
     try {
       logger.info('Iniciando análisis Forenses');
+
+      if (!configService.isReady() && !this.fixedApiKey) {
+        throw new Error('API key de Anthropic no configurada. Ve a Configuración para agregarla.');
+      }
 
       /**
        * Construir clave de caché
@@ -82,7 +93,7 @@ export class DetectiveAgentService {
        * Llamar a Claude Haiku
        */
       logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.anthropic.messages.create({
+      const response = await this.getClient().messages.create({
         model: this.model,
         max_tokens: 2048,
         messages: [
