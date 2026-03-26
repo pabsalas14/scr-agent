@@ -13,8 +13,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { Plus } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { CrearProyectoDTO } from '../../types/api';
+import Button from '../ui/Button';
 import NuevoProyecto from './NuevoProyecto';
 import ProyectoCard from './ProyectoCard';
 
@@ -75,19 +77,21 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   return (
     <div className="space-y-6">
       {/* Header del dashboard */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Proyectos</h2>
-          <p className="text-sm text-gray-600">
-            {proyectos.length} repositorios registrados
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Proyectos</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            {proyectos.length} {proyectos.length === 1 ? 'repositorio' : 'repositorios'} registrados
           </p>
         </div>
-        <button
-          className="button-primary flex items-center gap-2"
+        <Button
+          variant="primary"
           onClick={() => setModalAbierto(true)}
+          className="whitespace-nowrap"
         >
-          + Nuevo Proyecto
-        </button>
+          <Plus className="w-4 h-4" />
+          Nuevo Proyecto
+        </Button>
       </div>
 
       {/* Lista de proyectos */}
@@ -125,17 +129,18 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
 
 function EmptyState({ onNuevo }: { onNuevo: () => void }) {
   return (
-    <div className="text-center py-16 bg-white border border-gray-200 rounded-lg">
-      <p className="text-5xl mb-4">🔍</p>
-      <h3 className="text-lg font-semibold text-gray-700 mb-2">
+    <div className="text-center py-16 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg">
+      <p className="text-6xl mb-4">🔍</p>
+      <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
         Sin proyectos aún
-      </h3>
-      <p className="text-gray-500 mb-6">
+      </h2>
+      <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
         Agrega un repositorio para comenzar el análisis de seguridad
       </p>
-      <button className="button-primary" onClick={onNuevo}>
-        + Agregar primer proyecto
-      </button>
+      <Button variant="primary" onClick={onNuevo} className="inline-flex items-center gap-2">
+        <Plus className="w-4 h-4" />
+        Agregar primer proyecto
+      </Button>
     </div>
   );
 }
