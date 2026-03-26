@@ -19,6 +19,7 @@
 import { PrismaClient } from '@prisma/client';
 import { logger, auditLog, AuditEventType } from './logger.service';
 import { gitService } from './git.service';
+import { pdfService } from './pdf.service';
 import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
@@ -188,7 +189,50 @@ export class QueueService {
         contexto_repo: repositoryUrl,
       });
 
-      // Guardar reporte en BD
+      // Obtener hallazgos y eventos guardados para el PDF
+      const hallazgosGuardados = await prisma.finding.findMany({
+        where: { analysisId },
+      });
+      const eventosGuardados = await prisma.forensicEvent.findMany({
+        where: { analysisId },
+        orderBy: { timestamp: 'asc' },
+      });
+
+      // Generar PDF del reporte
+      logger.info('Generando PDF del reporte');
+      const pdfBuffer = await pdfService.generarPDF({
+        analysisId,
+        repositoryUrl,
+        riskScore: sintesisOutput.puntuacion_riesgo,
+        executiveSummary: sintesisOutput.resumen_ejecutivo,
+        findingsCount: sintesisOutput.cantidad_hallazgos,
+        severityBreakdown: sintesisOutput.desglose_severidad as Record<string, number>,
+        compromisedFunctions: sintesisOutput.funciones_comprometidas,
+        affectedAuthors: sintesisOutput.autores_afectados,
+        remediationSteps: sintesisOutput.prioridad_remediacion,
+        generalRecommendation: sintesisOutput.recomendacion_general,
+        findings: hallazgosGuardados.map((h) => ({
+          file: h.file,
+          function: h.function,
+          lineRange: h.lineRange,
+          severity: h.severity,
+          riskType: h.riskType,
+          confidence: h.confidence,
+          whySuspicious: h.whySuspicious,
+          remediationSteps: h.remediationSteps,
+        })),
+        forensicEvents: eventosGuardados.map((e) => ({
+          author: e.author,
+          commitHash: e.commitHash,
+          commitMessage: e.commitMessage,
+          file: e.file,
+          action: e.action,
+          riskLevel: e.riskLevel,
+          timestamp: e.timestamp,
+        })),
+      });
+
+      // Guardar reporte en BD (con PDF incluido)
       await prisma.report.create({
         data: {
           analysisId,
@@ -200,6 +244,7 @@ export class QueueService {
           affectedAuthors: sintesisOutput.autores_afectados,
           remediationSteps: sintesisOutput.prioridad_remediacion as any,
           generalRecommendation: sintesisOutput.recomendacion_general,
+          pdfContent: pdfBuffer,
         },
       });
 
