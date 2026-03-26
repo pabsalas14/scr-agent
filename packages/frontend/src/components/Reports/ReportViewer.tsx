@@ -105,7 +105,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
     accion: e.action,
     mensaje_commit: e.commitMessage,
     resumen_cambios: e.changesSummary,
-    nivel_riesgo: e.riskLevel as any,
+    nivel_riesgo: e.riskLevel,
     indicadores_sospecha: e.suspicionIndicators,
     hallazgo_id: e.findingId,
   }));
@@ -264,7 +264,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
             {(hallazgos || []).map((hallazgo) => (
               <div key={hallazgo.id} className="card bg-white p-4">
                 <div className="flex justify-between items-start mb-2">
-                  <BadgeRiesgo nivel={hallazgo.severity as any} size="sm" />
+                  <BadgeRiesgo nivel={hallazgo.severity} size="sm" />
                   <span className="text-xs text-gray-500">
                     Confianza: {Math.round(hallazgo.confidence * 100)}%
                   </span>
@@ -328,7 +328,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                       )}
                     </div>
                     {(step.urgency || step.urgencia) && (
-                      <BadgeRiesgo nivel={(step.urgency || step.urgencia) as any} size="sm" />
+                      <BadgeRiesgo nivel={(step.urgency || step.urgencia)} size="sm" />
                     )}
                   </div>
                 </div>

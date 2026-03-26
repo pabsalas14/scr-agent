@@ -2,15 +2,16 @@
  * Tipos para comunicación con el API REST backend
  */
 
-export type AlcanceAnalisis = 'REPOSITORIO' | 'ORGANIZACION' | 'PULL_REQUEST';
+export type AlcanceAnalisis = 'REPOSITORY' | 'ORGANIZATION' | 'PULL_REQUEST';
 export type EstadoAnalisis =
-  | 'PENDIENTE'
+  | 'PENDING'
   | 'RUNNING'
-  | 'MALICIA_RUNNING'
-  | 'FORENSES_RUNNING'
-  | 'SINTESIS_RUNNING'
-  | 'COMPLETADO'
-  | 'ERROR';
+  | 'INSPECTOR_RUNNING'
+  | 'DETECTIVE_RUNNING'
+  | 'FISCAL_RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'PARTIAL';
 
 export interface Proyecto {
   id: string;
@@ -45,7 +46,7 @@ export interface Hallazgo {
   file: string;
   function?: string;
   lineRange: string;
-  severity: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   riskType: string;
   confidence: number;
   codeSnippet?: string;
@@ -61,11 +62,11 @@ export interface EventoForense {
   commitHash: string;
   commitMessage: string;
   author: string;
-  action: 'AGREGADO' | 'MODIFICADO' | 'ELIMINADO';
+  action: 'ADDED' | 'MODIFIED' | 'DELETED' | 'RENAMED';
   file: string;
   function?: string;
   changesSummary?: string;
-  riskLevel: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO';
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   suspicionIndicators: string[];
   timestamp: string;
 }

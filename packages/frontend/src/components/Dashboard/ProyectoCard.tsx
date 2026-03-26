@@ -14,8 +14,8 @@ interface ProyectoCardProps {
 }
 
 const SCOPE_LABELS: Record<string, string> = {
-  REPOSITORIO: '📁 Repositorio',
-  ORGANIZACION: '🏢 Organización',
+  REPOSITORY: '📁 Repositorio',
+  ORGANIZATION: '🏢 Organización',
   PULL_REQUEST: '📌 Pull Request',
 };
 
@@ -37,7 +37,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
     onSuccess: (analisis) => onVerAnalisis(analisis.id),
   });
 
-  const analisisList = analisisData?.data || [];
+  const analisisList = analisisData || [];
   const ultimoAnalisis = analisisList[0];
   const enProceso = ultimoAnalisis?.status.includes('RUNNING');
 
@@ -66,7 +66,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             <span className="text-gray-500">Último análisis</span>
             <EstadoChip status={ultimoAnalisis.status} />
           </div>
-          {ultimoAnalisis.status === 'COMPLETADO' && (
+          {ultimoAnalisis.status === 'COMPLETED' && (
             <div className="mt-1">
               <div className="bg-gray-200 rounded-full h-1.5">
                 <div
@@ -93,7 +93,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
         >
           {enProceso || iniciar.isPending ? '⏳ Analizando...' : '🔍 Analizar'}
         </button>
-        {ultimoAnalisis?.status === 'COMPLETADO' && (
+        {ultimoAnalisis?.status === 'COMPLETED' && (
           <button
             className="button-secondary text-sm py-1.5 px-3"
             onClick={() => onVerAnalisis(ultimoAnalisis.id)}
@@ -109,13 +109,14 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
 
 function EstadoChip({ status }: { status: string }) {
   const CONFIG: Record<string, { label: string; clase: string }> = {
-    PENDIENTE: { label: 'Pendiente', clase: 'bg-gray-100 text-gray-600' },
+    PENDING: { label: 'Pendiente', clase: 'bg-gray-100 text-gray-600' },
     RUNNING: { label: 'En proceso', clase: 'bg-blue-100 text-blue-700' },
     INSPECTOR_RUNNING: { label: 'Inspector...', clase: 'bg-orange-100 text-orange-700' },
     DETECTIVE_RUNNING: { label: 'Detective...', clase: 'bg-purple-100 text-purple-700' },
     FISCAL_RUNNING: { label: 'Fiscal...', clase: 'bg-indigo-100 text-indigo-700' },
-    COMPLETADO: { label: 'Completado', clase: 'bg-green-100 text-green-700' },
-    ERROR: { label: 'Error', clase: 'bg-red-100 text-red-700' },
+    COMPLETED: { label: 'Completado', clase: 'bg-green-100 text-green-700' },
+    FAILED: { label: 'Error', clase: 'bg-red-100 text-red-700' },
+    PARTIAL: { label: 'Parcial', clase: 'bg-yellow-100 text-yellow-700' },
   };
   const cfg = CONFIG[status] || { label: status, clase: 'bg-gray-100 text-gray-600' };
   return (

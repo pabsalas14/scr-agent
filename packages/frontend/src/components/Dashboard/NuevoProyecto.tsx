@@ -19,7 +19,7 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
     handleSubmit,
     formState: { errors },
   } = useForm<CrearProyectoDTO>({
-    defaultValues: { scope: 'REPOSITORIO' },
+    defaultValues: { scope: 'REPOSITORY' },
   });
 
   return (
@@ -96,9 +96,9 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
               Alcance del análisis *
             </label>
             <select className="input-field" {...register('scope')}>
-              <option value="REPOSITORIO">Repositorio completo</option>
+              <option value="REPOSITORY">Repositorio completo</option>
               <option value="PULL_REQUEST">Solo Pull Requests</option>
-              <option value="ORGANIZACION">Organización completa</option>
+              <option value="ORGANIZATION">Organización completa</option>
             </select>
           </div>
 

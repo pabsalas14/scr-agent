@@ -12,17 +12,17 @@ interface BadgeRiesgoProps {
 }
 
 const LABELS: Record<NivelRiesgo, string> = {
-  CRÍTICO: '🚨 CRÍTICO',
-  ALTO: '⚠️ ALTO',
-  MEDIO: '❔ MEDIO',
-  BAJO: '✓ BAJO',
+  CRITICAL: '🚨 CRÍTICO',
+  HIGH: '⚠️ ALTO',
+  MEDIUM: '❔ MEDIO',
+  LOW: '✓ BAJO',
 };
 
 const CLASES: Record<NivelRiesgo, string> = {
-  CRÍTICO: 'bg-red-100 text-red-800 border-red-300',
-  ALTO: 'bg-orange-100 text-orange-800 border-orange-300',
-  MEDIO: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  BAJO: 'bg-green-100 text-green-800 border-green-300',
+  CRITICAL: 'bg-red-100 text-red-800 border-red-300',
+  HIGH: 'bg-orange-100 text-orange-800 border-orange-300',
+  MEDIUM: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  LOW: 'bg-green-100 text-green-800 border-green-300',
 };
 
 export default function BadgeRiesgo({ nivel, size = 'md' }: BadgeRiesgoProps) {

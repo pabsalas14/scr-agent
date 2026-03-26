@@ -3,7 +3,7 @@
  * Usados por el componente TimelineViewer con D3.js
  */
 
-export type NivelRiesgo = 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO';
+export type NivelRiesgo = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 
 export interface EventoTimeline {
   id: string;
@@ -12,7 +12,7 @@ export interface EventoTimeline {
   autor: string;
   archivo: string;
   funcion?: string;
-  accion: 'AGREGADO' | 'MODIFICADO' | 'ELIMINADO';
+  accion: 'ADDED' | 'MODIFIED' | 'DELETED' | 'RENAMED';
   mensaje_commit: string;
   resumen_cambios?: string;
   nivel_riesgo: NivelRiesgo;
@@ -41,15 +41,15 @@ export interface FiltrosTimeline {
 }
 
 export const COLORES_RIESGO: Record<NivelRiesgo, string> = {
-  BAJO: '#22c55e',
-  MEDIO: '#eab308',
-  ALTO: '#ea580c',
-  CRÍTICO: '#dc2626',
+  LOW: '#22c55e',
+  MEDIUM: '#eab308',
+  HIGH: '#ea580c',
+  CRITICAL: '#dc2626',
 };
 
 export const COLORES_RIESGO_CLARO: Record<NivelRiesgo, string> = {
-  BAJO: '#dcfce7',
-  MEDIO: '#fef9c3',
-  ALTO: '#ffedd5',
-  CRÍTICO: '#fee2e2',
+  LOW: '#dcfce7',
+  MEDIUM: '#fef9c3',
+  HIGH: '#ffedd5',
+  CRITICAL: '#fee2e2',
 };
