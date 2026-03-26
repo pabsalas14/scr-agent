@@ -33,23 +33,23 @@ model User {
 // Proyecto - Repositorio a ser analizado
 // Soporta: GitHub, GitLab, Bitbucket
 model Project {
-  id            String    @id @default(cuid())
-  name          String    @db.VarChar(255)
+  id            String  @id @default(cuid())
+  name          String  @db.VarChar(255)
   description   String?
-  repositoryUrl String    @unique @db.VarChar(500)
+  repositoryUrl String  @unique @db.VarChar(500)
 
   // Configuración de alcance
-  scope         AnalysisScope @default(REPOSITORY)
+  scope AnalysisScope @default(REPOSITORY)
 
   // Token para repositorios privados (encriptado en BD)
-  githubToken   String?   @db.VarChar(500)
+  githubToken String? @db.VarChar(500)
 
   // Metadata
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
-  analyses      Analysis[]
+  analyses Analysis[]
 
   @@index([repositoryUrl])
   @@map("projects")
@@ -58,24 +58,24 @@ model Project {
 // Análisis - Ejecución completa del flujo SCR
 // Contiene: Inspector findings → Detective timeline → Fiscal report
 model Analysis {
-  id            String    @id @default(cuid())
-  projectId     String
-  project       Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   // Estado de análisis
-  status        AnalysisStatus @default(PENDING)
-  progress      Int     @default(0) // 0-100
+  status   AnalysisStatus @default(PENDING)
+  progress Int            @default(0) // 0-100
 
   // Datos
-  findings      Finding[]
+  findings       Finding[]
   forensicEvents ForensicEvent[]
-  report        Report?
+  report         Report?
 
   // Timing
-  startedAt     DateTime?
-  completedAt   DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@index([projectId])
   @@index([status])
@@ -87,31 +87,31 @@ model Analysis {
 // Hallazgo - Resultado del análisis de código malicioso
 // Generado por: Agente Inspector (Claude 3.5 Sonnet)
 model Finding {
-  id              String    @id @default(cuid())
-  analysisId      String
-  analysis        Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 
   // Ubicación en código
-  file            String    @db.VarChar(500)
-  function        String?   @db.VarChar(255)
-  lineRange       String    // "45-52" en formato string para flexibilidad
+  file      String  @db.VarChar(500)
+  function  String? @db.VarChar(255)
+  lineRange String // "45-52" en formato string para flexibilidad
 
   // Análisis de riesgo
-  severity        Severity  @default(MEDIUM)
-  riskType        RiskType
-  confidence      Float     @default(0.5) // 0.0-1.0
+  severity   Severity @default(MEDIUM)
+  riskType   RiskType
+  confidence Float    @default(0.5) // 0.0-1.0
 
   // Contenido
-  codeSnippet     String?   @db.Text
-  whySuspicious   String    @db.Text
+  codeSnippet      String?  @db.Text
+  whySuspicious    String   @db.Text
   remediationSteps String[]
 
   // Metadata
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relaciones
-  forensicEvents  ForensicEvent[]
+  forensicEvents ForensicEvent[]
 
   @@index([analysisId])
   @@index([severity])
@@ -124,34 +124,34 @@ model Finding {
 // EventoForense - Evento en la línea de tiempo de Git
 // Generado por: Agente Detective (Claude 3.5 Haiku)
 model ForensicEvent {
-  id              String    @id @default(cuid())
-  analysisId      String
-  analysis        Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  analysisId String
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 
   // Relacionado con hallazgo
-  findingId       String?
-  finding         Finding?  @relation(fields: [findingId], references: [id], onDelete: SetNull)
+  findingId String?
+  finding   Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
 
   // Datos de commit
-  commitHash      String    @db.VarChar(40)
-  commitMessage   String    @db.Text
-  author          String    @db.VarChar(255)
+  commitHash    String @db.VarChar(40)
+  commitMessage String @db.Text
+  author        String @db.VarChar(255)
 
   // Cambios
-  action          GitAction
-  file            String    @db.VarChar(500)
-  function        String?   @db.VarChar(255)
-  changesSummary  String?   @db.Text
+  action         GitAction
+  file           String    @db.VarChar(500)
+  function       String?   @db.VarChar(255)
+  changesSummary String?   @db.Text
 
   // Evaluación de riesgo
-  riskLevel       Severity  @default(LOW)
+  riskLevel           Severity @default(LOW)
   suspicionIndicators String[]
 
   // Temporal
-  timestamp       DateTime
+  timestamp DateTime
 
   // Metadata
-  createdAt       DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   @@index([analysisId])
   @@index([timestamp])
@@ -164,31 +164,31 @@ model ForensicEvent {
 // Reporte - Síntesis final con recomendaciones
 // Generado por: Agente Fiscal (Claude 3.5 Sonnet)
 model Report {
-  id                String    @id @default(cuid())
-  analysisId        String    @unique
-  analysis          Analysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  analysisId String   @unique
+  analysis   Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
 
   // Resumen ejecutivo
-  executiveSummary  String    @db.Text
-  riskScore         Int       // 0-100
+  executiveSummary String @db.Text
+  riskScore        Int // 0-100
 
   // Desglose
-  findingsCount     Int
-  severityBreakdown Json
+  findingsCount        Int
+  severityBreakdown    Json
   compromisedFunctions String[]
-  affectedAuthors   String[]
+  affectedAuthors      String[]
 
   // Remediación
-  remediationSteps  Json
+  remediationSteps      Json
   generalRecommendation String @db.Text
 
   // Exportación
-  pdfContent        Bytes?
-  jsonContent       String?   @db.Text
+  pdfContent  Bytes?
+  jsonContent String? @db.Text
 
   // Metadata
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("reports")
 }
@@ -197,22 +197,22 @@ model Report {
 
 /// Alcance del análisis
 enum AnalysisScope {
-  REPOSITORY   // Analizar repositorio completo
+  REPOSITORY // Analizar repositorio completo
   ORGANIZATION // Analizar toda la organización
   PULL_REQUEST // Analizar solo cambios en PR
 }
 
 /// Estado del análisis
 enum AnalysisStatus {
-  PENDING           // Pendiente de ejecución
-  RUNNING           // Ejecutándose
+  PENDING // Pendiente de ejecución
+  RUNNING // Ejecutándose
   INSPECTOR_RUNNING // Agente Inspector en proceso
   DETECTIVE_RUNNING // Agente Detective en proceso
-  FISCAL_RUNNING    // Agente Fiscal en proceso
-  COMPLETED         // Análisis completado
-  FAILED            // Falló el análisis
-  CANCELLED         // Cancelado por el usuario
-  PARTIAL           // Completado parcialmente
+  FISCAL_RUNNING // Agente Fiscal en proceso
+  COMPLETED // Análisis completado
+  FAILED // Falló el análisis
+  CANCELLED // Cancelado por el usuario
+  PARTIAL // Completado parcialmente
 }
 
 /// Severidad de hallazgo
@@ -225,19 +225,19 @@ enum Severity {
 
 /// Tipo de riesgo detectado
 enum RiskType {
-  BACKDOOR         // Puerta trasera
-  INJECTION        // Inyección de código
-  LOGIC_BOMB       // Bomba lógica
-  OBFUSCATION      // Código ofuscado
-  SUSPICIOUS       // Comportamiento sospechoso
-  ERROR_HANDLING   // Manejo de errores anormal
+  BACKDOOR // Puerta trasera
+  INJECTION // Inyección de código
+  LOGIC_BOMB // Bomba lógica
+  OBFUSCATION // Código ofuscado
+  SUSPICIOUS // Comportamiento sospechoso
+  ERROR_HANDLING // Manejo de errores anormal
   HARDCODED_VALUES // Valores hardcodeados
 }
 
 /// Acción de Git
 enum GitAction {
-  ADDED    // Archivo/función agregada
+  ADDED // Archivo/función agregada
   MODIFIED // Archivo/función modificada
-  DELETED  // Archivo/función eliminada
-  RENAMED  // Archivo renombrado
+  DELETED // Archivo/función eliminada
+  RENAMED // Archivo renombrado
 }

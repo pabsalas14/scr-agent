@@ -60,18 +60,18 @@ export default function MainDashboard({ onVerAnalisis }: MainDashboardProps) {
   return (
     <div className="space-y-6">
       {/* Tab Navigation */}
-      <div className="glass-sm rounded-xl p-2 w-fit">
-        <div className="flex gap-1">
+      <div className="border-b border-gray-200 dark:border-gray-800">
+        <div className="flex gap-1 overflow-x-auto">
           {TABS.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`
-                px-4 py-2.5 rounded-lg transition-all duration-200 flex items-center gap-2 text-sm font-medium
+                px-4 py-3 text-sm font-medium border-b-2 transition-colors whitespace-nowrap flex items-center gap-2
                 ${
                   activeTab === tab.id
-                    ? 'bg-blue-500 text-white shadow-md'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-white/10'
+                    ? 'border-blue-600 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300'
                 }
               `}
             >
