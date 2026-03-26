@@ -9,7 +9,7 @@
  */
 
 import { Router, Request, Response, IRouter } from 'express';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { prisma } from '../services/prisma.service';
