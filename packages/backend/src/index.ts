@@ -133,6 +133,9 @@ import authRoutes from './routes/auth.routes';
 import monitoringRoutes from './routes/monitoring.routes';
 import settingsRoutes from './routes/settings.routes';
 import githubRoutes from './routes/github.routes';
+import findingsRoutes from './routes/findings.routes';
+import usersRoutes from './routes/users.routes';
+import notificationsRoutes from './routes/notifications.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 
 // Rutas públicas de autenticación (sin JWT)
@@ -146,6 +149,9 @@ app.use('/api/v1/analyses', analysisRoutes);
 app.use('/api/v1/monitoring', monitoringRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/github', githubRoutes);
+app.use('/api/v1/findings', findingsRoutes);
+app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/notifications', notificationsRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 

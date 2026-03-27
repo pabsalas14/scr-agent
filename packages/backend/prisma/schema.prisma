@@ -22,15 +22,35 @@ generator client {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique @db.VarChar(255)
+  name         String?  @db.VarChar(255)
   passwordHash String   @db.VarChar(255)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   // Relaciones
   settings     UserSettings?
+  roles        UserRole[]
+  assignments  FindingAssignment[]
+  statusChanges FindingStatusChange[]
 
   @@index([email])
   @@map("users")
+}
+
+// Rol del usuario - Para RBAC
+model UserRole {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role        Role     @default(VIEWER)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, role])
+  @@index([userId])
+  @@index([role])
+  @@map("user_roles")
 }
 
 // Configuraciones del Usuario
@@ -139,11 +159,76 @@ model Finding {
 
   // Relaciones
   forensicEvents ForensicEvent[]
+  assignment FindingAssignment?
+  statusHistory FindingStatusChange[]
+  remediation RemediationEntry?
 
   @@index([analysisId])
   @@index([severity])
   @@index([riskType])
   @@map("findings")
+}
+
+// Asignación de hallazgo a usuario
+model FindingAssignment {
+  id        String   @id @default(cuid())
+  findingId String   @unique
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  assignedTo String
+  assignedUser User @relation(fields: [assignedTo], references: [id], onDelete: SetNull)
+
+  assignedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([findingId])
+  @@index([assignedTo])
+  @@map("finding_assignments")
+}
+
+// Estado actual del hallazgo
+model FindingStatusChange {
+  id        String   @id @default(cuid())
+  findingId String
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  status    FindingStatus
+  changedBy String
+  changedByUser User @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+
+  note      String?  @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([findingId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("finding_status_changes")
+}
+
+// Entrada de remediación
+model RemediationEntry {
+  id        String   @id @default(cuid())
+  findingId String   @unique
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  // Detalles de corrección
+  correctionNotes String? @db.Text
+  proofOfFixUrl   String? @db.VarChar(500)  // PR link, commit, screenshot, etc
+  status          RemediationStatus @default(PENDING)
+
+  // Verificación
+  verifiedAt      DateTime?
+  verificationNotes String? @db.Text
+
+  // Timing
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([findingId])
+  @@index([status])
+  @@map("remediation_entries")
 }
 
 // ==================== AGENTE DETECTIVE ====================
@@ -267,4 +352,34 @@ enum GitAction {
   MODIFIED // Archivo/función modificada
   DELETED // Archivo/función eliminada
   RENAMED // Archivo renombrado
+}
+
+// ==================== PHASE 1: TRACKING & MULTI-USER ====================
+
+/// Rol de usuario
+enum Role {
+  ADMIN // Acceso total
+  ANALYST // Analista de seguridad
+  DEVELOPER // Desarrollador
+  VIEWER // Solo lectura
+}
+
+/// Estado del hallazgo
+enum FindingStatus {
+  DETECTED // Hallazgo detectado
+  IN_REVIEW // En revisión por equipo
+  IN_CORRECTION // En proceso de corrección
+  CORRECTED // Corregido por desarrollador
+  VERIFIED // Verificado por analista
+  FALSE_POSITIVE // Falso positivo
+  CLOSED // Cerrado
+}
+
+/// Estado de remediación
+enum RemediationStatus {
+  PENDING // Pendiente de inicio
+  IN_PROGRESS // En progreso
+  COMPLETED // Completado
+  VERIFIED // Verificado
+  REJECTED // Rechazado por QA
 }
