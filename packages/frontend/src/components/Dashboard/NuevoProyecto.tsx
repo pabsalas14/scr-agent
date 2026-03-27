@@ -1,9 +1,12 @@
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useRef } from 'react';
+import { ChevronDown, Loader } from 'lucide-react';
 import type { CrearProyectoDTO } from '../../types/api';
 import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
+import { githubService, type GitHubRepo, type GitHubBranch } from '../../services/github.service';
 
 interface NuevoProyectoProps {
   onCrear: (dto: CrearProyectoDTO) => void;
@@ -12,13 +15,106 @@ interface NuevoProyectoProps {
 }
 
 export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProyectoProps) {
+  // Form state
   const {
     register,
     handleSubmit,
     formState: { errors },
+    setValue,
+    watch,
   } = useForm<CrearProyectoDTO>({
     defaultValues: { scope: 'REPOSITORY' },
   });
+
+  // Dynamic repo loading
+  const [searchQuery, setSearchQuery] = useState('');
+  const [repos, setRepos] = useState<GitHubRepo[]>([]);
+  const [loadingRepos, setLoadingRepos] = useState(false);
+  const [showRepoDropdown, setShowRepoDropdown] = useState(false);
+  const repoInputRef = useRef<HTMLInputElement>(null);
+
+  // Branch loading
+  const [branches, setBranches] = useState<GitHubBranch[]>([]);
+  const [loadingBranches, setLoadingBranches] = useState(false);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
+  const [showBranchDropdown, setShowBranchDropdown] = useState(false);
+  const repositoryUrl = watch('repositoryUrl');
+
+  // Search repos
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setRepos([]);
+      return;
+    }
+
+    const searchRepos = async () => {
+      try {
+        setLoadingRepos(true);
+        const result = await githubService.searchRepos({
+          search: searchQuery,
+          per_page: 10,
+        });
+        setRepos(result.repos);
+      } catch (error) {
+        console.error('Error searching repos:', error);
+        setRepos([]);
+      } finally {
+        setLoadingRepos(false);
+      }
+    };
+
+    const timer = setTimeout(searchRepos, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Load branches when repo URL changes
+  useEffect(() => {
+    if (!repositoryUrl) {
+      setBranches([]);
+      setSelectedBranch(null);
+      return;
+    }
+
+    const loadBranches = async () => {
+      try {
+        // Extract owner and repo from URL
+        const match = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+        if (!match) return;
+
+        const owner = match[1];
+        const repo = match[2].replace('.git', '');
+
+        setLoadingBranches(true);
+        const result = await githubService.getBranches(owner, repo);
+        setBranches(result.branches);
+
+        // Auto-select main branch if exists
+        const mainBranch = result.branches.find(b => b.name === 'main' || b.name === 'master');
+        if (mainBranch) {
+          setSelectedBranch(mainBranch.name);
+        }
+      } catch (error) {
+        console.error('Error loading branches:', error);
+        setBranches([]);
+      } finally {
+        setLoadingBranches(false);
+      }
+    };
+
+    loadBranches();
+  }, [repositoryUrl]);
+
+  // Handle repo selection
+  const handleSelectRepo = (repo: GitHubRepo) => {
+    setValue('repositoryUrl', repo.cloneUrl);
+    setValue('name', repo.name);
+    if (repo.description) {
+      setValue('description', repo.description);
+    }
+    setShowRepoDropdown(false);
+    setSearchQuery('');
+    setRepos([]);
+  };
 
   return (
     <AnimatePresence>
@@ -53,6 +149,52 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
 
           {/* Form */}
           <form onSubmit={handleSubmit(onCrear)} className="p-6 space-y-5">
+            {/* Buscar repositorio */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                Buscar repositorio
+              </label>
+              <div className="relative">
+                <input
+                  ref={repoInputRef}
+                  type="text"
+                  placeholder="Buscar repos por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowRepoDropdown(true);
+                  }}
+                  onFocus={() => setShowRepoDropdown(true)}
+                  className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                {loadingRepos && (
+                  <Loader className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-blue-500 animate-spin" />
+                )}
+              </div>
+
+                {/* Dropdown de repos */}
+                {showRepoDropdown && repos.length > 0 && (
+                  <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-64 overflow-y-auto">
+                    {repos.map((repo) => (
+                      <button
+                        key={repo.id}
+                        type="button"
+                        onClick={() => handleSelectRepo(repo)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors"
+                      >
+                        <p className="font-medium text-gray-900 dark:text-white">{repo.name}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-400">{repo.fullName}</p>
+                        {repo.description && (
+                          <p className="text-xs text-gray-500 dark:text-gray-500 truncate">
+                            {repo.description}
+                          </p>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+            </div>
+
             {/* Nombre */}
             <Input
               label="Nombre del proyecto *"
@@ -81,6 +223,67 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
                 },
               })}
             />
+
+            {/* Selector de rama */}
+            {branches.length > 0 && (
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
+                  Rama (opcional)
+                </label>
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBranchDropdown(!showBranchDropdown)}
+                    className="w-full px-4 py-2 border border-gray-200 dark:border-gray-700 rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-left flex justify-between items-center hover:border-gray-300 dark:hover:border-gray-600 transition-colors"
+                  >
+                    <span>{selectedBranch || 'Seleccionar rama...'}</span>
+                    <ChevronDown
+                      className={`w-4 h-4 transition-transform ${
+                        showBranchDropdown ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </button>
+
+                  {/* Dropdown de ramas */}
+                  {showBranchDropdown && (
+                    <div className="absolute z-50 top-full mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                      {branches.map((branch) => (
+                        <button
+                          key={branch.name}
+                          type="button"
+                          onClick={() => {
+                            setSelectedBranch(branch.name);
+                            setShowBranchDropdown(false);
+                          }}
+                          className={`w-full px-4 py-2 text-left border-b border-gray-100 dark:border-gray-700 last:border-0 transition-colors ${
+                            selectedBranch === branch.name
+                              ? 'bg-blue-50 dark:bg-blue-900/30'
+                              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                          }`}
+                        >
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {branch.name}
+                            {branch.protected && (
+                              <span className="ml-2 text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 px-2 py-0.5 rounded">
+                                Protected
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                            {branch.sha.substring(0, 7)}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {loadingBranches && (
+                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                    <Loader className="w-3 h-3 animate-spin" /> Cargando ramas...
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Descripción */}
             <div>
