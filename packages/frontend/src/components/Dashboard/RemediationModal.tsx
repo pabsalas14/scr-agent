@@ -1,16 +1,16 @@
 /**
- * RemediationModal - Modal para gestionar la remediación de hallazgos
- * Permite: registrar correcciones, agregar prueba, verificar
+ * RemediationModal - Modal profesional para gestionar remediaciones
  */
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
-  X,
-  CheckCircle,
+  CheckCircle2,
   AlertCircle,
-  Link as LinkIcon,
+  LinkIcon,
   FileText,
+  Copy,
+  Check,
 } from 'lucide-react';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -37,6 +37,7 @@ export default function RemediationModal({
   const [isSaving, setIsSaving] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   const [tab, setTab] = useState<'correction' | 'verification'>('correction');
+  const [copiedUrl, setCopiedUrl] = useState(false);
   const toast = useToast();
 
   // Load existing remediation
@@ -75,8 +76,7 @@ export default function RemediationModal({
       toast.success('Remediación registrada');
       onSave();
     } catch (error) {
-      toast.error('Error al guardar remediación');
-      console.error(error);
+      toast.error('Error al guardar');
     } finally {
       setIsSaving(false);
     }
@@ -86,14 +86,19 @@ export default function RemediationModal({
     try {
       setIsVerifying(true);
       await findingsService.verifyRemediation(finding.id, verificationNotes);
-      toast.success('Remediación verificada correctamente');
+      toast.success('Remediación verificada ✓');
       onSave();
     } catch (error) {
-      toast.error('Error al verificar remediación');
-      console.error(error);
+      toast.error('Error al verificar');
     } finally {
       setIsVerifying(false);
     }
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedUrl(true);
+    setTimeout(() => setCopiedUrl(false), 2000);
   };
 
   if (isLoading) {
@@ -108,30 +113,25 @@ export default function RemediationModal({
   }
 
   return (
-    <Modal
-      isOpen={true}
-      onClose={onClose}
-      title={`Remediación: ${finding.file}`}
-      size="lg"
-    >
+    <Modal isOpen={true} onClose={onClose} title={`Remediación: ${finding.file.split('/').pop()}`} size="lg">
       <div className="space-y-4">
         {/* Status Info */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="p-3 bg-blue-900/20 border border-blue-500/30 rounded-lg"
+          className="p-4 rounded-lg border border-blue-700/50 bg-blue-900/20"
         >
           <p className="text-xs text-blue-300 mb-1">Estado de Remediación</p>
-          <p className="text-blue-400 font-semibold">
+          <p className="text-lg font-bold text-blue-400">
             {remediation?.status === 'VERIFIED'
               ? '✓ Verificada'
               : remediation?.status === 'IN_PROGRESS'
-                ? '⏳ En Progreso'
-                : 'Pendiente'}
+                ? '⚙️ En Progreso'
+                : '⏳ Pendiente'}
           </p>
           {remediation?.verifiedAt && (
-            <p className="text-xs text-gray-400 mt-1">
-              Verificada el {new Date(remediation.verifiedAt).toLocaleString()}
+            <p className="text-xs text-gray-400 mt-2">
+              Verificada el {new Date(remediation.verifiedAt).toLocaleString('es-ES')}
             </p>
           )}
         </motion.div>
@@ -140,35 +140,31 @@ export default function RemediationModal({
         <div className="flex gap-2 border-b border-gray-700">
           <button
             onClick={() => setTab('correction')}
-            className={`px-4 py-2 font-medium transition-colors ${
+            className={`px-4 py-3 font-medium transition-all border-b-2 flex items-center gap-2 ${
               tab === 'correction'
-                ? 'text-blue-400 border-b-2 border-blue-400'
-                : 'text-gray-400 hover:text-gray-300'
+                ? 'text-orange-400 border-b-orange-400'
+                : 'text-gray-400 border-b-transparent hover:text-gray-300'
             }`}
           >
-            <FileText className="w-4 h-4 inline mr-2" />
+            <FileText className="w-4 h-4" />
             Corrección
           </button>
           <button
             onClick={() => setTab('verification')}
-            className={`px-4 py-2 font-medium transition-colors ${
+            className={`px-4 py-3 font-medium transition-all border-b-2 flex items-center gap-2 ${
               tab === 'verification'
-                ? 'text-green-400 border-b-2 border-green-400'
-                : 'text-gray-400 hover:text-gray-300'
+                ? 'text-green-400 border-b-green-400'
+                : 'text-gray-400 border-b-transparent hover:text-gray-300'
             }`}
           >
-            <CheckCircle className="w-4 h-4 inline mr-2" />
+            <CheckCircle2 className="w-4 h-4" />
             Verificación
           </button>
         </div>
 
         {/* Correction Tab */}
         {tab === 'correction' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {/* Correction Notes */}
             <div>
               <label className="block text-sm font-semibold text-gray-200 mb-2">
@@ -177,31 +173,41 @@ export default function RemediationModal({
               <textarea
                 value={correctionNotes}
                 onChange={(e) => setCorrectionNotes(e.target.value)}
-                placeholder="Describe qué cambios realizaste para corregir esta vulnerabilidad..."
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
+                placeholder="Describe qué cambios realizaste y por qué solucionan el problema..."
+                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500 text-sm"
                 rows={4}
               />
-              <p className="text-xs text-gray-400 mt-1">
-                Sé específico sobre los cambios y por qué los resuelven
-              </p>
+              <p className="text-xs text-gray-400 mt-1">Sé específico sobre los cambios implementados</p>
             </div>
 
             {/* Proof of Fix URL */}
             <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-2">
-                <LinkIcon className="w-4 h-4 inline mr-2" />
+              <label className="block text-sm font-semibold text-gray-200 mb-2 flex items-center gap-2">
+                <LinkIcon className="w-4 h-4" />
                 Prueba de Corrección (URL)
               </label>
-              <input
-                type="url"
-                value={proofOfFixUrl}
-                onChange={(e) => setProofOfFixUrl(e.target.value)}
-                placeholder="https://github.com/.../pull/123"
-                className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                PR, commit, o screenshot que demuestre la corrección
-              </p>
+              <div className="relative">
+                <input
+                  type="url"
+                  value={proofOfFixUrl}
+                  onChange={(e) => setProofOfFixUrl(e.target.value)}
+                  placeholder="https://github.com/user/repo/pull/123"
+                  className="w-full px-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-orange-500"
+                />
+                {proofOfFixUrl && (
+                  <button
+                    onClick={() => copyToClipboard(proofOfFixUrl)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2"
+                  >
+                    {copiedUrl ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4 text-gray-400" />
+                    )}
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-400 mt-1">PR, commit, o screenshot demostrando la solución</p>
             </div>
 
             {/* Save Button */}
@@ -209,7 +215,7 @@ export default function RemediationModal({
               onClick={handleSaveRemediation}
               disabled={isSaving || (!correctionNotes && !proofOfFixUrl)}
               isLoading={isSaving}
-              className="w-full"
+              className="w-full bg-orange-600 hover:bg-orange-700"
             >
               Guardar Corrección
             </Button>
@@ -218,15 +224,13 @@ export default function RemediationModal({
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="p-3 bg-green-900/20 border border-green-500/30 rounded-lg"
+                className="p-3 rounded-lg border border-green-700/50 bg-green-900/20"
               >
-                <p className="text-xs text-green-300 mb-2">
-                  ✓ Remediación guardada
-                </p>
+                <p className="text-xs text-green-300 mb-1">✓ Remediación Registrada</p>
                 <p className="text-xs text-gray-400">
                   Iniciada:{' '}
                   {remediation.startedAt
-                    ? new Date(remediation.startedAt).toLocaleString()
+                    ? new Date(remediation.startedAt).toLocaleString('es-ES')
                     : 'Ahora'}
                 </p>
               </motion.div>
@@ -236,16 +240,13 @@ export default function RemediationModal({
 
         {/* Verification Tab */}
         {tab === 'verification' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
             {!remediation || remediation.status !== 'VERIFIED' ? (
               <>
-                <div className="p-3 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <div className="p-4 rounded-lg border border-amber-700/50 bg-amber-900/20 flex gap-3">
+                  <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-300">
-                    ⚠️ Verifica que la corrección sea válida y completa
+                    Verifica que la corrección haya solucionado completamente el problema de seguridad
                   </p>
                 </div>
 
@@ -256,17 +257,15 @@ export default function RemediationModal({
                   <textarea
                     value={verificationNotes}
                     onChange={(e) => setVerificationNotes(e.target.value)}
-                    placeholder="Describe cómo verificaste que la corrección es válida..."
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-500 text-sm"
+                    placeholder="Describe cómo verificaste que la corrección es efectiva..."
+                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-green-500 text-sm"
                     rows={3}
                   />
                 </div>
 
                 <Button
                   onClick={handleVerifyRemediation}
-                  disabled={
-                    isVerifying || !remediation || remediation.status === 'VERIFIED'
-                  }
+                  disabled={isVerifying || !remediation}
                   isLoading={isVerifying}
                   className="w-full bg-green-600 hover:bg-green-700"
                 >
@@ -274,18 +273,11 @@ export default function RemediationModal({
                 </Button>
               </>
             ) : (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center py-8"
-              >
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <p className="text-lg font-bold text-green-400 mb-2">
-                  ✓ Verificada
-                </p>
+              <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-12">
+                <div className="text-6xl mb-4">✓</div>
+                <p className="text-2xl font-bold text-green-400 mb-2">Verificada</p>
                 <p className="text-gray-400 text-sm">
-                  Verificada el{' '}
-                  {new Date(remediation.verifiedAt!).toLocaleString()}
+                  Verificada el {new Date(remediation.verifiedAt!).toLocaleString('es-ES')}
                 </p>
                 {remediation.verificationNotes && (
                   <p className="text-gray-400 text-sm mt-4 p-3 bg-gray-800/30 rounded">
