@@ -73,7 +73,7 @@ app.use(cors({
 // Rate Limiting - Prevenir DDoS (OWASP API4)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 500, // máximo 500 requests por ventana (aumentado para desarrollo)
+  max: 10000, // máximo 10000 requests por ventana (development)
   message: 'Demasiadas solicitudes, intente más tarde',
   standardHeaders: true,
   legacyHeaders: false,

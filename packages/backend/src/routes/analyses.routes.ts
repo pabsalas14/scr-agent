@@ -18,12 +18,38 @@ const router: ExpressRouter = Router();
 
 /**
  * GET /api/v1/analyses/:id
- * Obtener estado de análisis
+ * Obtener estado de análisis con todos sus hallazgos
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const analysis = await prisma.analysis.findUnique({
       where: { id: req.params['id'] },
+      include: {
+        findings: {
+          include: {
+            statusHistory: {
+              include: {
+                changedByUser: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+              orderBy: { createdAt: 'desc' },
+            },
+            assignment: {
+              include: {
+                assignedUser: {
+                  select: { id: true, name: true, email: true },
+                },
+              },
+            },
+            remediation: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        project: {
+          select: { id: true, name: true, repositoryUrl: true },
+        },
+      },
     });
 
     if (!analysis) {
@@ -31,7 +57,13 @@ router.get('/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    res.json({ data: analysis });
+    // Convertir a JSON plain para asegurar serialización correcta
+    const plainAnalysis = JSON.parse(JSON.stringify(analysis));
+
+    res.json({
+      success: true,
+      data: plainAnalysis
+    });
   } catch (error) {
     logger.error(`Error obteniendo análisis: ${error}`);
     res.status(500).json({ error: 'Error al obtener análisis' });

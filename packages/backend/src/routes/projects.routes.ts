@@ -34,10 +34,13 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
       },
     });
 
+    // Convertir a JSON plain
+    const plainProjects = JSON.parse(JSON.stringify(projects));
+
     res.json({
       success: true,
-      data: projects,
-      count: projects.length,
+      data: plainProjects,
+      count: plainProjects.length,
     });
   } catch (error) {
     next(error);
@@ -78,47 +81,12 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    res.json({
-      success: true,
-      data: project,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-/**
- * GET /api/v1/analyses/:analysisId
- * Obtener detalles de un análisis específico
- */
-router.get('/analyses/:analysisId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { analysisId } = req.params;
-
-    const analysis = await prisma.analysis.findUnique({
-      where: { id: analysisId },
-      include: {
-        findings: true,
-      },
-    });
-
-    if (!analysis) {
-      return res.status(404).json({
-        success: false,
-        error: 'Análisis no encontrado',
-      });
-    }
-
-    // Debug: Log what we got back
-    logger.info({
-      message: `[DEBUG] Analysis ${analysisId}`,
-      findingsCount: (analysis as any).findings?.length ?? 'undefined',
-      keys: Object.keys(analysis),
-    });
+    // Convertir a JSON plain
+    const plainProject = JSON.parse(JSON.stringify(project));
 
     res.json({
       success: true,
-      data: analysis,
+      data: plainProject,
     });
   } catch (error) {
     next(error);
