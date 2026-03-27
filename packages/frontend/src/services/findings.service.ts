@@ -12,13 +12,12 @@ import {
 class FindingsService {
   /**
    * Get all findings for an analysis
+   * Calls the /analyses/:id/findings endpoint
    */
   async getFindings(analysisId: string): Promise<Finding[]> {
     try {
-      const response = await apiService.get<FindingsListResponse>(
-        `/findings/analysis/${analysisId}`
-      );
-      return response.data || [];
+      const response = await apiService.obtenerHallazgos(analysisId);
+      return response || [];
     } catch (error) {
       console.error('Error fetching findings:', error);
       throw error;

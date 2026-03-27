@@ -72,19 +72,43 @@ router.get('/:id', async (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/analyses/:id/findings
- * Hallazgos del Inspector
+ * Hallazgos del Inspector con todas sus relaciones
  */
 router.get('/:id/findings', async (req: Request, res: Response) => {
   try {
     const findings = await prisma.finding.findMany({
       where: { analysisId: req.params['id'] },
+      include: {
+        statusHistory: {
+          include: {
+            changedByUser: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+          orderBy: { createdAt: 'desc' },
+        },
+        assignment: {
+          include: {
+            assignedUser: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+        },
+        remediation: true,
+      },
       orderBy: [
         { severity: 'desc' },
         { confidence: 'desc' },
       ],
     });
 
-    res.json({ data: findings });
+    // Convertir a JSON plain
+    const plainFindings = JSON.parse(JSON.stringify(findings));
+
+    res.json({
+      success: true,
+      data: plainFindings
+    });
   } catch (error) {
     logger.error(`Error obteniendo hallazgos: ${error}`);
     res.status(500).json({ error: 'Error al obtener hallazgos' });
