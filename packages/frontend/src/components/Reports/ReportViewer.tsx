@@ -21,6 +21,7 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import BadgeRiesgo from '../shared/BadgeRiesgo';
 import TimelineViewer from '../Timeline/TimelineViewer';
+import FindingsTracker from '../Dashboard/FindingsTracker';
 
 interface ReportViewerProps {
   analysisId: string;
@@ -96,7 +97,7 @@ function GaugeRiesgo({ puntuacion }: { puntuacion: number }) {
 
 export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps) {
   const [seccionActiva, setSeccionActiva] = useState<
-    'resumen' | 'hallazgos' | 'timeline' | 'remediacion'
+    'resumen' | 'hallazgos' | 'timeline' | 'remediacion' | 'gestor'
   >('resumen');
 
   /**
@@ -176,6 +177,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
   const SECCIONES = [
     { id: 'resumen', label: '📋 Resumen' },
     { id: 'hallazgos', label: `🚨 Hallazgos (${reporte.findingsCount})` },
+    { id: 'gestor', label: '🔍 Gestor de Hallazgos' },
     { id: 'timeline', label: '⏱ Línea de tiempo' },
     { id: 'remediacion', label: '🔧 Remediación' },
   ] as const;
@@ -267,6 +269,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
           {[
             { id: 'resumen', label: '📋 Resumen', color: '#0EA5E9' },
             { id: 'hallazgos', label: `🚨 Hallazgos (${reporte.findingsCount})`, color: '#EC4899' },
+            { id: 'gestor', label: '🔍 Gestor', color: '#F59E0B' },
             { id: 'timeline', label: '⏱ Timeline', color: '#8B5CF6' },
             { id: 'remediacion', label: '🔧 Remediación', color: '#10B981' },
           ].map((s: any) => (
@@ -395,6 +398,16 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                 </Card>
               </motion.div>
             ))}
+          </motion.div>
+        )}
+
+        {/* GESTOR DE HALLAZGOS */}
+        {seccionActiva === 'gestor' && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            <FindingsTracker analysisId={analysisId} />
           </motion.div>
         )}
 
