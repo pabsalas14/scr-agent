@@ -85,8 +85,15 @@ class ApiService {
    * Listar todos los proyectos
    */
   async obtenerProyectos(): Promise<PaginatedResponse<Proyecto>> {
-    const { data } = await this.client.get<PaginatedResponse<Proyecto>>('/projects');
-    return data;
+    const { data } = await this.client.get<any>('/projects');
+    // El backend retorna { success, data, count }
+    // Convertir al formato esperado por el frontend
+    return {
+      data: data.data || [],
+      total: data.count || 0,
+      page: 1,
+      limit: data.count || 0,
+    };
   }
 
   /**

@@ -1,285 +1,201 @@
 /**
- * ============================================================================
- * RUTAS DE PROYECTOS
- * ============================================================================
- *
- * GET  /api/v1/projects        → Listar proyectos
- * POST /api/v1/projects        → Crear proyecto
- * GET  /api/v1/projects/:id    → Obtener proyecto
- *
- * OWASP API1: Validación de autorización por objeto
- * OWASP API8: Solo campos permitidos en el body
+ * Projects Routes
+ * Endpoints para gestionar proyectos de análisis
  */
 
-import { Router, type Router as ExpressRouter, Request, Response } from 'express';
-import { z } from 'zod';
-import { validarBody } from '../middleware/validation.middleware';
-import { logger, auditLog, AuditEventType } from '../services/logger.service';
-import { gitService } from '../services/git.service';
-import { queueService } from '../services/queue.service';
+import { Router, type Request, type Response, type NextFunction } from 'express';
 import { prisma } from '../services/prisma.service';
+import { logger } from '../services/logger.service';
 
-const router: ExpressRouter = Router();
-
-/**
- * Schema de creación de proyecto
- * Solo campos permitidos (OWASP API8 - Mass Assignment)
- */
-const CrearProyectoSchema = z.object({
-  name: z.string().min(1).max(255),
-  description: z.string().max(1000).optional(),
-  repositoryUrl: z.string().url(),
-  scope: z.enum(['REPOSITORY', 'ORGANIZATION', 'PULL_REQUEST']).default('REPOSITORY'),
-});
-
-/**
- * Schema de actualización de proyecto
- * Solo campos permitidos
- */
-const ActualizarProyectoSchema = z.object({
-  name: z.string().min(1).max(255).optional(),
-  description: z.string().max(1000).optional(),
-  scope: z.enum(['REPOSITORY', 'ORGANIZATION', 'PULL_REQUEST']).optional(),
-});
+const router = Router();
 
 /**
  * GET /api/v1/projects
- * Listar todos los proyectos
+ * Obtener todos los proyectos del usuario
  */
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const projects = await prisma.project.findMany({
-      orderBy: { updatedAt: 'desc' },
       include: {
-        _count: { select: { analyses: true } },
+        analyses: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
+          take: 1,
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
 
     res.json({
+      success: true,
       data: projects,
-      total: projects.length,
+      count: projects.length,
     });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error listando proyectos: ${msg}`);
-    res.status(500).json({ error: 'Error al obtener proyectos' });
-  }
-});
-
-/**
- * POST /api/v1/projects
- * Crear nuevo proyecto
- */
-router.post('/', validarBody(CrearProyectoSchema), async (req: Request, res: Response) => {
-  try {
-    const { name, description, repositoryUrl, scope } = req.body;
-
-    /**
-     * Validar URL del repositorio (OWASP A10 - SSRF)
-     */
-    if (!gitService.validateRepositoryUrl(repositoryUrl)) {
-      res.status(400).json({
-        error: 'URL de repositorio no soportada. Solo GitHub, GitLab o Bitbucket.',
-      });
-      return;
-    }
-
-    /**
-     * Crear en base de datos
-     */
-    const project = await prisma.project.create({
-      data: { name, description, repositoryUrl, scope },
-    });
-
-    auditLog(AuditEventType.DB_OPERATION, 'Proyecto creado', {
-      projectId: project.id,
-      repositoryUrl,
-    });
-
-    res.status(201).json({ data: project });
-  } catch (error: any) {
-    if (error?.code === 'P2002') {
-      res.status(409).json({ error: 'Ya existe un proyecto con esa URL de repositorio' });
-      return;
-    }
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error creando proyecto: ${msg}`);
-    res.status(500).json({ error: 'Error al crear proyecto' });
+    next(error);
   }
 });
 
 /**
  * GET /api/v1/projects/:id
- * Obtener proyecto por ID
+ * Obtener detalles de un proyecto específico
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { id } = req.params;
+
     const project = await prisma.project.findUnique({
-      where: { id: req.params['id'] },
+      where: { id },
       include: {
         analyses: {
-          orderBy: { createdAt: 'desc' },
-          take: 5,
+          include: {
+            findings: {
+              select: {
+                id: true,
+                severity: true,
+              },
+            },
+          },
+          orderBy: {
+            createdAt: 'desc',
+          },
         },
       },
     });
 
     if (!project) {
-      res.status(404).json({ error: 'Proyecto no encontrado' });
-      return;
+      return res.status(404).json({
+        success: false,
+        error: 'Proyecto no encontrado',
+      });
     }
 
-    res.json({ data: project });
+    res.json({
+      success: true,
+      data: project,
+    });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error obteniendo proyecto: ${msg}`);
-    res.status(500).json({ error: 'Error al obtener proyecto' });
+    next(error);
   }
 });
 
 /**
- * GET /api/v1/projects/:id/analyses
- * Listar análisis de un proyecto
+ * GET /api/v1/analyses/:analysisId
+ * Obtener detalles de un análisis específico
  */
-router.get('/:id/analyses', async (req: Request, res: Response) => {
+router.get('/analyses/:analysisId', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const analyses = await prisma.analysis.findMany({
-      where: { projectId: req.params['id'] },
-      orderBy: { createdAt: 'desc' },
+    const { analysisId } = req.params;
+
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: {
+        findings: true,
+      },
     });
 
-    res.json({ data: analyses });
+    if (!analysis) {
+      return res.status(404).json({
+        success: false,
+        error: 'Análisis no encontrado',
+      });
+    }
+
+    // Debug: Log what we got back
+    logger.info({
+      message: `[DEBUG] Analysis ${analysisId}`,
+      findingsCount: (analysis as any).findings?.length ?? 'undefined',
+      keys: Object.keys(analysis),
+    });
+
+    res.json({
+      success: true,
+      data: analysis,
+    });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error obteniendo análisis: ${msg}`);
-    res.status(500).json({ error: 'Error al obtener análisis' });
+    next(error);
   }
 });
 
 /**
- * POST /api/v1/projects/:id/analyses
- * Iniciar nuevo análisis
+ * POST /api/v1/projects
+ * Crear un nuevo proyecto
  */
-router.post('/:id/analyses', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const { name, description, repositoryUrl, scope } = req.body;
+
+    // Validar datos
+    if (!name || !repositoryUrl || !scope) {
+      return res.status(400).json({
+        success: false,
+        error: 'Campos requeridos: name, repositoryUrl, scope',
+      });
+    }
+
+    const project = await prisma.project.create({
+      data: {
+        name,
+        description,
+        repositoryUrl,
+        scope,
+      },
+    });
+
+    res.status(201).json({
+      success: true,
+      data: project,
+      message: 'Proyecto creado exitosamente',
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/projects/:projectId/analyses
+ * Iniciar un nuevo análisis
+ */
+router.post('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId } = req.params;
+
+    // Verificar que el proyecto existe
     const project = await prisma.project.findUnique({
-      where: { id: req.params['id'] },
+      where: { id: projectId },
     });
 
     if (!project) {
-      res.status(404).json({ error: 'Proyecto no encontrado' });
-      return;
+      return res.status(404).json({
+        success: false,
+        error: 'Proyecto no encontrado',
+      });
     }
 
-    /**
-     * Crear análisis en estado PENDING
-     */
+    // Crear análisis
     const analysis = await prisma.analysis.create({
       data: {
-        projectId: project.id,
+        projectId,
         status: 'PENDING',
         progress: 0,
       },
     });
 
-    auditLog(AuditEventType.ANALYSIS_STARTED, 'Análisis iniciado', {
-      analysisId: analysis.id,
-      projectId: project.id,
+    res.status(201).json({
+      success: true,
+      data: analysis,
+      message: 'Análisis iniciado. Procesando...',
     });
-
-    /**
-     * Encolar análisis para ejecución en background
-     * El frontend hará polling a GET /analyses/:id para ver el estado
-     * Se pasa el scope para que los agentes adapten el análisis
-     */
-    queueService.encolar({
-      analysisId: analysis.id,
-      projectId: project.id,
-      repositoryUrl: project.repositoryUrl,
-      scope: project.scope as 'REPOSITORY' | 'PULL_REQUEST' | 'ORGANIZATION',
-      githubToken: project.githubToken || undefined,
-    });
-
-    res.status(201).json({ data: analysis });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error iniciando análisis: ${msg}`);
-    res.status(500).json({ error: 'Error al iniciar análisis' });
-  }
-});
-
-/**
- * PUT /api/v1/projects/:id
- * Actualizar proyecto
- */
-router.put('/:id', validarBody(ActualizarProyectoSchema), async (req: Request, res: Response) => {
-  try {
-    const project = await prisma.project.findUnique({
-      where: { id: req.params['id'] },
-    });
-
-    if (!project) {
-      res.status(404).json({ error: 'Proyecto no encontrado' });
-      return;
-    }
-
-    const { name, description, scope } = req.body;
-
-    const updatedProject = await prisma.project.update({
-      where: { id: req.params['id'] },
-      data: {
-        ...(name && { name }),
-        ...(description !== undefined && { description }),
-        ...(scope && { scope }),
-      },
-    });
-
-    auditLog(AuditEventType.DB_OPERATION, 'Proyecto actualizado', {
-      projectId: updatedProject.id,
-    });
-
-    res.json({ data: updatedProject });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error actualizando proyecto: ${msg}`);
-    res.status(500).json({ error: 'Error al actualizar proyecto' });
-  }
-});
-
-/**
- * DELETE /api/v1/projects/:id
- * Eliminar proyecto
- */
-router.delete('/:id', async (req: Request, res: Response) => {
-  try {
-    const project = await prisma.project.findUnique({
-      where: { id: req.params['id'] },
-    });
-
-    if (!project) {
-      res.status(404).json({ error: 'Proyecto no encontrado' });
-      return;
-    }
-
-    // Eliminar análisis asociados
-    await prisma.analysis.deleteMany({
-      where: { projectId: req.params['id'] },
-    });
-
-    // Eliminar proyecto
-    await prisma.project.delete({
-      where: { id: req.params['id'] },
-    });
-
-    auditLog(AuditEventType.DB_OPERATION, 'Proyecto eliminado', {
-      projectId: project.id,
-    });
-
-    res.json({ success: true });
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logger.error(`Error eliminando proyecto: ${msg}`);
-    res.status(500).json({ error: 'Error al eliminar proyecto' });
+    next(error);
   }
 });
 
