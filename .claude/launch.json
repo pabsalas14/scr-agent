@@ -5,13 +5,15 @@
       "name": "backend",
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["--filter", "@scr-agent/backend", "dev"],
-      "port": 3001
+      "port": 3001,
+      "autoPort": true
     },
     {
       "name": "frontend",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@scr-agent/frontend", "dev", "--", "--port", "5200"],
-      "port": 5200
+      "runtimeArgs": ["--filter", "@scr-agent/frontend", "dev"],
+      "port": 5173,
+      "autoPort": true
     }
   ]
 }

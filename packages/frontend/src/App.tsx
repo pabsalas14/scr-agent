@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -23,7 +23,12 @@ const queryClient = new QueryClient({
 type Vista = 'login' | 'dashboard' | 'reporte';
 
 function AppContent() {
-  const [vista, setVista] = useState<Vista>('login');
+  const { isAuthenticated } = useAuth();
+  const initialVista = useMemo<Vista>(() => {
+    return isAuthenticated() ? 'dashboard' : 'login';
+  }, [isAuthenticated]);
+
+  const [vista, setVista] = useState<Vista>(initialVista);
   const [analysisId, setAnalysisId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -81,8 +86,8 @@ function AppContent() {
           </AnimatePresence>
         </main>
 
-        <footer className="text-center py-6 text-xs text-white/70 px-4">
-          <p>CODA — Análisis de seguridad de código</p>
+        <footer className="text-center py-6 text-xs text-gray-400 px-4 border-t border-gray-700/50">
+          <p>CodeShield — Advanced Security Analysis & Intelligence Platform</p>
         </footer>
       </div>
 

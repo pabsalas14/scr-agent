@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Moon, Sun, Settings, LogOut, User } from 'lucide-react';
-import { useAuth } from '../hooks/useAuth';
+import { Moon, Sun, Settings, LogOut, User, Shield } from 'lucide-react';
 
 interface HeaderProps {
   vista: 'dashboard' | 'reporte' | 'login';
@@ -19,7 +18,6 @@ export default function Header({
   onSettingsClick,
   onNavClick,
 }: HeaderProps) {
-  const { logout, user } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const getNavLabel = () => {
@@ -34,37 +32,37 @@ export default function Header({
   };
 
   const getInitials = () => {
-    if (!user?.email) return 'U';
-    return user.email
-      .split('@')[0]
-      .split('.')
-      .map((part) => part[0])
+    const email = localStorage.getItem('userEmail') || 'user@example.com';
+    const parts = email.split('@')[0]?.split('.') || [];
+    return parts
+      .map((part: string) => part[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || 'U';
   };
 
   const handleLogout = () => {
     setShowUserMenu(false);
-    logout();
+    localStorage.clear();
+    window.location.href = '/login';
   };
 
   return (
-    <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-40 shadow-sm">
+    <header className="border-b border-gray-700/50 bg-gradient-to-r from-slate-900 via-slate-900 to-slate-800 sticky top-0 z-40 shadow-xl backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
-          {/* Logo */}
+          {/* Logo - Mejorado */}
           <button
             onClick={onLogoClick}
-            className="flex items-center gap-3 hover:opacity-90 transition-opacity duration-200 group"
+            className="flex items-center gap-3 hover:opacity-90 transition-opacity duration-300 group"
             aria-label="Go to dashboard"
           >
-            <div className="p-2 bg-gradient-to-br from-slate-800 to-slate-900 dark:from-blue-600 dark:to-blue-700 rounded-lg group-hover:shadow-md transition-shadow">
-              <img src="/logo-coda.png" alt="CODA" className="h-5 w-5 invert dark:invert-0" />
+            <div className="p-2.5 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl group-hover:shadow-xl group-hover:shadow-blue-500/50 transition-all duration-300">
+              <Shield className="h-5 w-5 text-white" />
             </div>
             <div className="hidden sm:block">
-              <p className="font-bold text-slate-900 dark:text-white text-sm">CODA</p>
-              <p className="text-xs text-slate-500 dark:text-blue-400">Code Security</p>
+              <p className="font-black text-white text-base tracking-tight">CodeShield</p>
+              <p className="text-xs text-cyan-400 font-semibold">Security Analysis</p>
             </div>
           </button>
 
@@ -132,7 +130,7 @@ export default function Header({
                     {/* User Info */}
                     <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                        {user?.email || 'User'}
+                        {localStorage.getItem('userEmail') || 'User'}
                       </p>
                     </div>
 

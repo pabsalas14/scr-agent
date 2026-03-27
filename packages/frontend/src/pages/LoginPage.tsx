@@ -5,7 +5,6 @@
  */
 
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useAuth } from '../hooks/useAuth';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
@@ -28,16 +27,25 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
     setLoading(true);
 
     try {
-      const { data } = await axios.post('/api/v1/auth/login', { email, password });
+      const response = await fetch('/api/v1/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Error al iniciar sesión');
+      }
+
+      const data = await response.json();
       setToken(data.token);
       onLoginSuccess();
     } catch (err: unknown) {
-      if (axios.isAxiosError(err)) {
-        const errorMsg = err.response?.data?.error || 'Error al iniciar sesión';
-        setError(errorMsg);
-      } else {
-        setError('Error al iniciar sesión');
-      }
+      const errorMsg = err instanceof Error ? err.message : 'Error al iniciar sesión';
+      setError(errorMsg);
     } finally {
       setLoading(false);
     }

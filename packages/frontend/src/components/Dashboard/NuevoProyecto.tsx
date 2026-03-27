@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Loader } from 'lucide-react';
 import type { CrearProyectoDTO } from '../../types/api';
-import Modal from '../ui/Modal';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { githubService, type GitHubRepo, type GitHubBranch } from '../../services/github.service';
@@ -23,7 +22,7 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
     setValue,
     watch,
   } = useForm<CrearProyectoDTO>({
-    defaultValues: { scope: 'REPOSITORY' },
+    defaultValues: { scope: 'REPOSITORIO' },
   });
 
   // Dynamic repo loading
@@ -79,7 +78,7 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
       try {
         // Extract owner and repo from URL
         const match = repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-        if (!match) return;
+        if (!match || !match[1] || !match[2]) return;
 
         const owner = match[1];
         const repo = match[2].replace('.git', '');
@@ -130,11 +129,12 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.95, opacity: 0, y: -20 }}
           transition={{ duration: 0.2 }}
-          className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-lg max-h-[90vh] overflow-y-auto"
+          className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 w-full max-w-2xl flex flex-col"
+          style={{ maxHeight: '85vh' }}
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
-          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+          <div className="flex justify-between items-center px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
               Nuevo Proyecto
             </h2>
@@ -148,7 +148,7 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onCrear)} className="p-6 space-y-5">
+          <form onSubmit={handleSubmit((data) => onCrear(data as CrearProyectoDTO))} className="p-6 space-y-5 overflow-y-auto flex-1">
             {/* Buscar repositorio */}
             <div className="relative">
               <label className="block text-sm font-medium text-gray-900 dark:text-white mb-2">
@@ -305,9 +305,9 @@ export default function NuevoProyecto({ onCrear, onCerrar, cargando }: NuevoProy
               </label>
               <div className="space-y-2">
                 {[
-                  { value: 'REPOSITORY', label: '📁 Repositorio completo', desc: 'Analizar todo el código' },
+                  { value: 'REPOSITORIO', label: '📁 Repositorio completo', desc: 'Analizar todo el código' },
                   { value: 'PULL_REQUEST', label: '📌 Pull Request específico', desc: 'Solo cambios de un PR' },
-                  { value: 'ORGANIZATION', label: '🏢 Organización completa', desc: 'Todos los repos de la org' },
+                  { value: 'ORGANIZACION', label: '🏢 Organización completa', desc: 'Todos los repos de la org' },
                 ].map(({ value, label, desc }) => (
                   <label key={value} className="flex items-start p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors">
                     <input

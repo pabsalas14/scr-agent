@@ -105,6 +105,21 @@ class ApiService {
     return data.data;
   }
 
+  /**
+   * Actualizar proyecto
+   */
+  async actualizarProyecto(id: string, dto: Partial<CrearProyectoDTO>): Promise<Proyecto> {
+    const { data } = await this.client.put<ApiResponse<Proyecto>>(`/projects/${id}`, dto);
+    return data.data;
+  }
+
+  /**
+   * Eliminar proyecto
+   */
+  async eliminarProyecto(id: string): Promise<void> {
+    await this.client.delete(`/projects/${id}`);
+  }
+
   // ==================== ANÁLISIS ====================
 
   /**
@@ -179,6 +194,24 @@ class ApiService {
       responseType: 'blob',
     });
     return data as Blob;
+  }
+
+  // ==================== SETTINGS ====================
+
+  /**
+   * Obtener configuración del usuario
+   */
+  async obtenerConfiguracionUsuario(): Promise<any> {
+    const { data } = await this.client.get('/settings');
+    return data;
+  }
+
+  /**
+   * Guardar token de GitHub
+   */
+  async guardarTokenGithub(token: string): Promise<any> {
+    const { data } = await this.client.post('/settings/github-token', { token });
+    return data;
   }
 
   // ==================== HEALTH ====================

@@ -33,6 +33,16 @@ const CrearProyectoSchema = z.object({
 });
 
 /**
+ * Schema de actualización de proyecto
+ * Solo campos permitidos
+ */
+const ActualizarProyectoSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().max(1000).optional(),
+  scope: z.enum(['REPOSITORY', 'ORGANIZATION', 'PULL_REQUEST']).optional(),
+});
+
+/**
  * GET /api/v1/projects
  * Listar todos los proyectos
  */
@@ -195,6 +205,81 @@ router.post('/:id/analyses', async (req: Request, res: Response) => {
     const msg = error instanceof Error ? error.message : String(error);
     logger.error(`Error iniciando análisis: ${msg}`);
     res.status(500).json({ error: 'Error al iniciar análisis' });
+  }
+});
+
+/**
+ * PUT /api/v1/projects/:id
+ * Actualizar proyecto
+ */
+router.put('/:id', validarBody(ActualizarProyectoSchema), async (req: Request, res: Response) => {
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: req.params['id'] },
+    });
+
+    if (!project) {
+      res.status(404).json({ error: 'Proyecto no encontrado' });
+      return;
+    }
+
+    const { name, description, scope } = req.body;
+
+    const updatedProject = await prisma.project.update({
+      where: { id: req.params['id'] },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description }),
+        ...(scope && { scope }),
+      },
+    });
+
+    auditLog(AuditEventType.DB_OPERATION, 'Proyecto actualizado', {
+      projectId: updatedProject.id,
+    });
+
+    res.json({ data: updatedProject });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error actualizando proyecto: ${msg}`);
+    res.status(500).json({ error: 'Error al actualizar proyecto' });
+  }
+});
+
+/**
+ * DELETE /api/v1/projects/:id
+ * Eliminar proyecto
+ */
+router.delete('/:id', async (req: Request, res: Response) => {
+  try {
+    const project = await prisma.project.findUnique({
+      where: { id: req.params['id'] },
+    });
+
+    if (!project) {
+      res.status(404).json({ error: 'Proyecto no encontrado' });
+      return;
+    }
+
+    // Eliminar análisis asociados
+    await prisma.analysis.deleteMany({
+      where: { projectId: req.params['id'] },
+    });
+
+    // Eliminar proyecto
+    await prisma.project.delete({
+      where: { id: req.params['id'] },
+    });
+
+    auditLog(AuditEventType.DB_OPERATION, 'Proyecto eliminado', {
+      projectId: project.id,
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error eliminando proyecto: ${msg}`);
+    res.status(500).json({ error: 'Error al eliminar proyecto' });
   }
 });
 
