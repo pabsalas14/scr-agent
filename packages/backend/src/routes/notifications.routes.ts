@@ -1,9 +1,9 @@
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { notificationsService } from '../services/notifications.service';
 import { logger } from '../services/logger.service';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -18,7 +18,7 @@ router.get('/', async (req: Request, res: Response) => {
     const { limit = 20 } = req.query;
 
     const notifications = notificationsService.getUserNotifications(
-      userId,
+      userId!,
       parseInt(limit as string)
     );
 
@@ -66,7 +66,7 @@ router.put('/:notificationId/read', async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const { notificationId } = req.params;
 
-    const success = notificationsService.markAsRead(userId, notificationId);
+    const success = notificationsService.markAsRead(userId!, notificationId!);
 
     if (!success) {
       return res.status(404).json({

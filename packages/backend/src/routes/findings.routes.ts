@@ -1,11 +1,11 @@
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { findingsService } from '../services/findings.service';
 import { usersService } from '../services/users.service';
 import { notificationsService } from '../services/notifications.service';
 import { logger } from '../services/logger.service';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -17,7 +17,7 @@ router.use(authMiddleware);
 router.get('/analysis/:analysisId', async (req: Request, res: Response) => {
   try {
     const { analysisId } = req.params;
-    const findings = await findingsService.getFindings(analysisId);
+    const findings = await findingsService.getFindings(analysisId!);
 
     res.json({
       success: true,
@@ -39,7 +39,7 @@ router.get('/analysis/:analysisId', async (req: Request, res: Response) => {
 router.get('/:findingId', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
-    const finding = await findingsService.getFindingDetail(findingId);
+    const finding = await findingsService.getFindingDetail(findingId!);
 
     if (!finding) {
       return res.status(404).json({
@@ -104,9 +104,9 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
     }
 
     const updated = await findingsService.updateFindingStatus(
-      findingId,
+      findingId!,
       status as any,
-      userId,
+      userId!,
       note
     );
 
@@ -117,7 +117,7 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
     if ((updated as any).assignment?.assignedTo) {
       notificationsService.notifyFindingStatusChange(
         (updated as any).assignment.assignedTo,
-        findingId,
+        findingId!,
         status as any,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
@@ -153,7 +153,7 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
       });
     }
 
-    const assignment = await findingsService.assignFinding(findingId, assignedTo);
+    const assignment = await findingsService.assignFinding(findingId!, assignedTo);
 
     // Get assigner info for notification
     const assigner = userId ? await usersService.getUserDetail(userId) : null;
@@ -161,7 +161,7 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
     // Notify assigned user
     notificationsService.notifyFindingAssignment(
       assignedTo,
-      findingId,
+      findingId!,
       (assigner as any)?.name || (assigner as any)?.email || 'Sistema'
     );
 
@@ -186,7 +186,7 @@ router.delete('/:findingId/assign', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
 
-    await findingsService.unassignFinding(findingId);
+    await findingsService.unassignFinding(findingId!);
 
     res.json({
       success: true,
@@ -208,7 +208,7 @@ router.delete('/:findingId/assign', async (req: Request, res: Response) => {
 router.get('/:findingId/remediation', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
-    const remediation = await findingsService.getRemediationDetail(findingId);
+    const remediation = await findingsService.getRemediationDetail(findingId!);
 
     res.json({
       success: true,
@@ -241,12 +241,11 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
     }
 
     const remediation = await findingsService.createOrUpdateRemediation(
-      findingId,
+      findingId!,
       {
         correctionNotes,
         proofOfFixUrl,
         status: (status || 'IN_PROGRESS') as any,
-        startedAt: new Date(),
       }
     );
 
@@ -254,11 +253,11 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
     const user = userId ? await usersService.getUserDetail(userId) : null;
 
     // Get finding's assigned user for notification
-    const finding = await findingsService.getFindingDetail(findingId);
+    const finding = await findingsService.getFindingDetail(findingId!);
     if ((finding as any)?.assignment?.assignedTo && user) {
       notificationsService.notifyRemediationUpdate(
         (finding as any).assignment.assignedTo,
-        findingId,
+        findingId!,
         'IN_PROGRESS' as any,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
@@ -295,7 +294,7 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
     }
 
     const remediation = await findingsService.createOrUpdateRemediation(
-      findingId,
+      findingId!,
       {
         status: 'VERIFIED' as any,
         verifiedAt: new Date(),
@@ -304,20 +303,20 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
     );
 
     // Update finding status to VERIFIED
-    const user = await usersService.getUserDetail(userId);
+    const user = await usersService.getUserDetail(userId!);
     await findingsService.updateFindingStatus(
-      findingId,
+      findingId!,
       'VERIFIED' as any,
-      userId,
+      userId!,
       'Remediación verificada'
     );
 
     // Notify assigned user
-    const finding = await findingsService.getFindingDetail(findingId);
+    const finding = await findingsService.getFindingDetail(findingId!);
     if ((finding as any)?.assignment?.assignedTo) {
       notificationsService.notifyRemediationVerified(
         (finding as any).assignment.assignedTo,
-        findingId,
+        findingId!,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
     }
@@ -342,7 +341,7 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
 router.get('/analysis/:analysisId/stats', async (req: Request, res: Response) => {
   try {
     const { analysisId } = req.params;
-    const stats = await findingsService.getFindingsStats(analysisId);
+    const stats = await findingsService.getFindingsStats(analysisId!);
 
     res.json({
       success: true,

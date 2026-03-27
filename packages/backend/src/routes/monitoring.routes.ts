@@ -125,8 +125,8 @@ async function getDiskUsage(): Promise<{ used: number; total: number; usage: num
     const parts = stdout.trim().split(/\s+/);
 
     if (parts.length >= 4) {
-      const total = parseInt(parts[1], 10);
-      const used = parseInt(parts[2], 10);
+      const total = parseInt(parts[1]!, 10);
+      const used = parseInt(parts[2]!, 10);
       return {
         used,
         total,
@@ -173,7 +173,7 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
     // Obtener TODOS los análisis completados en el período
     const analyses = await prisma.analysis.findMany({
       where: {
-        status: 'COMPLETADO',
+        status: 'COMPLETED' as any,
         completedAt: {
           gte: startDate,
           lte: now,
@@ -320,7 +320,7 @@ router.get('/agents/:id/executions', async (req: Request, res: Response) => {
 
     const executions: AgentExecution[] = analyses.map((analysis, idx) => ({
       id: `exec-${idx}`,
-      agentId: req.params['id'],
+      agentId: req.params['id']!,
       timestamp: analysis.createdAt,
       duration: analysis.completedAt
         ? analysis.completedAt.getTime() - analysis.createdAt.getTime()

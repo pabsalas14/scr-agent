@@ -1,10 +1,10 @@
-import { Router, Request, Response } from 'express';
+import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { usersService } from '../services/users.service';
 import { logger } from '../services/logger.service';
 import { Role } from '@prisma/client';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
@@ -58,7 +58,7 @@ router.get('/:userId', async (req: Request, res: Response) => {
 
     // Users can only view their own profile unless they're admin
     if (userId !== currentUserId) {
-      const userRole = await usersService.getUserRole(currentUserId);
+      const userRole = await usersService.getUserRole(currentUserId!);
       if (userRole !== 'ADMIN') {
         return res.status(403).json({
           success: false,
@@ -67,7 +67,7 @@ router.get('/:userId', async (req: Request, res: Response) => {
       }
     }
 
-    const user = await usersService.getUserDetail(userId);
+    const user = await usersService.getUserDetail(userId!);
 
     if (!user) {
       return res.status(404).json({
@@ -161,7 +161,7 @@ router.post('/:userId/roles', async (req: Request, res: Response) => {
       });
     }
 
-    const assignedRole = await usersService.assignRole(userId, role);
+    const assignedRole = await usersService.assignRole(userId!, role);
 
     res.json({
       success: true,
@@ -209,7 +209,7 @@ router.delete('/:userId/roles/:role', async (req: Request, res: Response) => {
       });
     }
 
-    await usersService.removeRole(userId, role as Role);
+    await usersService.removeRole(userId!, role as Role);
 
     res.json({
       success: true,
@@ -251,7 +251,7 @@ router.get('/:userId/assignments', async (req: Request, res: Response) => {
       }
     }
 
-    const assignments = await usersService.getUserAssignments(userId);
+    const assignments = await usersService.getUserAssignments(userId!);
 
     res.json({
       success: true,
@@ -274,7 +274,7 @@ router.get('/analysis/:analysisId/assignments', async (req: Request, res: Respon
   try {
     const { analysisId } = req.params;
 
-    const assignments = await usersService.getAnalystAssignments(analysisId);
+    const assignments = await usersService.getAnalystAssignments(analysisId!);
 
     res.json({
       success: true,
