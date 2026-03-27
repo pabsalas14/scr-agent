@@ -49,6 +49,13 @@ router.get('/:userId', async (req: Request, res: Response) => {
     const { userId } = req.params;
     const currentUserId = (req as any).user?.id;
 
+    if (!currentUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
+
     // Users can only view their own profile unless they're admin
     if (userId !== currentUserId) {
       const userRole = await usersService.getUserRole(currentUserId);
@@ -123,9 +130,16 @@ router.post('/:userId/roles', async (req: Request, res: Response) => {
     const { role } = req.body;
     const currentUserId = (req as any).user?.id;
 
+    if (!currentUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
+
     // Check if requester is admin
-    const userRole = await usersService.getUserRole(currentUserId);
-    if (userRole !== 'ADMIN') {
+    const requesterRole = await usersService.getUserRole(currentUserId);
+    if (requesterRole !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         error: 'Unauthorized: Admin access required',
@@ -147,11 +161,11 @@ router.post('/:userId/roles', async (req: Request, res: Response) => {
       });
     }
 
-    const userRole = await usersService.assignRole(userId, role);
+    const assignedRole = await usersService.assignRole(userId, role);
 
     res.json({
       success: true,
-      data: userRole,
+      data: assignedRole,
     });
   } catch (error) {
     logger.error('Error assigning role:', error);
@@ -171,9 +185,16 @@ router.delete('/:userId/roles/:role', async (req: Request, res: Response) => {
     const { userId, role } = req.params;
     const currentUserId = (req as any).user?.id;
 
+    if (!currentUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
+
     // Check if requester is admin
-    const userRole = await usersService.getUserRole(currentUserId);
-    if (userRole !== 'ADMIN') {
+    const requesterRole = await usersService.getUserRole(currentUserId);
+    if (requesterRole !== 'ADMIN') {
       return res.status(403).json({
         success: false,
         error: 'Unauthorized: Admin access required',
@@ -211,6 +232,13 @@ router.get('/:userId/assignments', async (req: Request, res: Response) => {
   try {
     const { userId } = req.params;
     const currentUserId = (req as any).user?.id;
+
+    if (!currentUserId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
 
     // Users can only view their own assignments unless they're admin/analyst
     if (userId !== currentUserId) {

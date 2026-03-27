@@ -4,7 +4,6 @@ import { findingsService } from '../services/findings.service';
 import { usersService } from '../services/users.service';
 import { notificationsService } from '../services/notifications.service';
 import { logger } from '../services/logger.service';
-import { FindingStatus, RemediationStatus } from '@prisma/client';
 
 const router = Router();
 
@@ -72,6 +71,13 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
     const { status, note } = req.body;
     const userId = (req as any).user?.id;
 
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
+
     if (!status) {
       return res.status(400).json({
         success: false,
@@ -80,7 +86,7 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
     }
 
     // Validate status
-    const validStatuses: FindingStatus[] = [
+    const validStatuses = [
       'DETECTED',
       'IN_REVIEW',
       'IN_CORRECTION',
@@ -99,7 +105,7 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
 
     const updated = await findingsService.updateFindingStatus(
       findingId,
-      status,
+      status as any,
       userId,
       note
     );
@@ -108,12 +114,12 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
     const user = await usersService.getUserDetail(userId);
 
     // Get finding's assigned user for notification
-    if (updated.assignment?.assignedTo) {
+    if ((updated as any).assignment?.assignedTo) {
       notificationsService.notifyFindingStatusChange(
-        updated.assignment.assignedTo,
+        (updated as any).assignment.assignedTo,
         findingId,
-        status,
-        user?.name || user?.email || 'Sistema'
+        status as any,
+        (user as any)?.name || (user as any)?.email || 'Sistema'
       );
     }
 
@@ -138,6 +144,7 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
     const { assignedTo } = req.body;
+    const userId = (req as any).user?.id;
 
     if (!assignedTo) {
       return res.status(400).json({
@@ -149,13 +156,13 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
     const assignment = await findingsService.assignFinding(findingId, assignedTo);
 
     // Get assigner info for notification
-    const assigner = await usersService.getUserDetail((req as any).user?.id);
+    const assigner = userId ? await usersService.getUserDetail(userId) : null;
 
     // Notify assigned user
     notificationsService.notifyFindingAssignment(
       assignedTo,
       findingId,
-      assigner?.name || assigner?.email || 'Sistema'
+      (assigner as any)?.name || (assigner as any)?.email || 'Sistema'
     );
 
     res.json({
@@ -224,6 +231,7 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
     const { correctionNotes, proofOfFixUrl, status } = req.body;
+    const userId = (req as any).user?.id;
 
     if (!correctionNotes && !proofOfFixUrl) {
       return res.status(400).json({
@@ -237,22 +245,22 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
       {
         correctionNotes,
         proofOfFixUrl,
-        status: status || 'IN_PROGRESS',
+        status: (status || 'IN_PROGRESS') as any,
         startedAt: new Date(),
       }
     );
 
     // Get user info for notification
-    const user = await usersService.getUserDetail((req as any).user?.id);
+    const user = userId ? await usersService.getUserDetail(userId) : null;
 
     // Get finding's assigned user for notification
     const finding = await findingsService.getFindingDetail(findingId);
-    if (finding?.assignment?.assignedTo) {
+    if ((finding as any)?.assignment?.assignedTo && user) {
       notificationsService.notifyRemediationUpdate(
-        finding.assignment.assignedTo,
+        (finding as any).assignment.assignedTo,
         findingId,
-        'IN_PROGRESS',
-        user?.name || user?.email || 'Sistema'
+        'IN_PROGRESS' as any,
+        (user as any)?.name || (user as any)?.email || 'Sistema'
       );
     }
 
@@ -270,7 +278,7 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
 });
 
 /**
- * PUT /api/v1/findings/:findingId/remediation/:remediationId/verify
+ * PUT /api/v1/findings/:findingId/remediation/verify
  * Verify remediation as complete
  */
 router.put('/:findingId/remediation/verify', async (req: Request, res: Response) => {
@@ -279,10 +287,17 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
     const { verificationNotes } = req.body;
     const userId = (req as any).user?.id;
 
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        error: 'User not authenticated',
+      });
+    }
+
     const remediation = await findingsService.createOrUpdateRemediation(
       findingId,
       {
-        status: 'VERIFIED',
+        status: 'VERIFIED' as any,
         verifiedAt: new Date(),
         verificationNotes,
       }
@@ -292,18 +307,18 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
     const user = await usersService.getUserDetail(userId);
     await findingsService.updateFindingStatus(
       findingId,
-      'VERIFIED',
+      'VERIFIED' as any,
       userId,
       'Remediación verificada'
     );
 
     // Notify assigned user
     const finding = await findingsService.getFindingDetail(findingId);
-    if (finding?.assignment?.assignedTo) {
+    if ((finding as any)?.assignment?.assignedTo) {
       notificationsService.notifyRemediationVerified(
-        finding.assignment.assignedTo,
+        (finding as any).assignment.assignedTo,
         findingId,
-        user?.name || user?.email || 'Sistema'
+        (user as any)?.name || (user as any)?.email || 'Sistema'
       );
     }
 
