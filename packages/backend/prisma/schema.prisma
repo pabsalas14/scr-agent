@@ -34,6 +34,7 @@ model User {
   statusChanges FindingStatusChange[]
   notifications Notification[]
   comments     Comment[]
+  mentionedIn  CommentMention[] @relation("CommentMentions")
   notificationPreferences NotificationPreferences?
 
   @@index([email])
@@ -430,6 +431,10 @@ model Comment {
   user      User     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   content   String   @db.Text
+  mentions  String[] @default([]) // ["@user1", "@user2"]
+
+  // Relaciones
+  mentionNotifications CommentMention[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -439,6 +444,30 @@ model Comment {
   @@index([createdAt])
   @@map("comments")
 }
+
+// Notificación de mención en comentario
+model CommentMention {
+  id        String   @id @default(cuid())
+  commentId String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+
+  mentionedUserId String
+  mentionedUser   User     @relation("CommentMentions", fields: [mentionedUserId], references: [id], onDelete: Cascade)
+
+  read      Boolean  @default(false)
+  readAt    DateTime?
+
+  createdAt DateTime @default(now())
+
+  @@index([commentId])
+  @@index([mentionedUserId])
+  @@index([read])
+  @@map("comment_mentions")
+}
+
+// Agregar relación de mentions en User
+// Nota: User modelo ya tiene comments: Comment[]
+// Necesitamos agregar: mentionedIn CommentMention[]
 
 /// Preferencias de notificación del usuario
 model NotificationPreferences {

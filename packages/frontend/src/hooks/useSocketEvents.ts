@@ -48,6 +48,21 @@ interface AnalysisErrorData extends AnalysisEventData {
   errorMessage: string;
 }
 
+interface CommentEventData extends FindingEventData {
+  commentId: string;
+  findingId: string;
+  userId?: string;
+  userName?: string;
+  content?: string;
+  mentions?: string[];
+}
+
+interface CommentMentionedData {
+  commentId: string;
+  mentionedUserId: string;
+  timestamp: Date;
+}
+
 // ── Hook ────────────────────────────────────────────────────────────────
 
 export function useSocketEvents(callbacks: {
@@ -56,7 +71,10 @@ export function useSocketEvents(callbacks: {
   onFindingAssigned?: (data: FindingEventData) => void;
   onRemediationUpdated?: (data: FindingEventData) => void;
   onRemediationVerified?: (data: FindingEventData) => void;
-  onCommentAdded?: (data: FindingEventData) => void;
+  onCommentAdded?: (data: CommentEventData) => void;
+  onCommentUpdated?: (data: CommentEventData) => void;
+  onCommentDeleted?: (data: CommentEventData) => void;
+  onCommentMentioned?: (data: CommentMentionedData) => void;
 
   // Analysis events
   onAnalysisStatusChanged?: (data: AnalysisStatusChangedData) => void;
@@ -96,8 +114,20 @@ export function useSocketEvents(callbacks: {
         callbacks.onRemediationVerified?.(data);
       });
 
-      socket.on('comment:added', (data: FindingEventData) => {
+      socket.on('comment:added', (data: CommentEventData) => {
         callbacks.onCommentAdded?.(data);
+      });
+
+      socket.on('comment:updated', (data: CommentEventData) => {
+        callbacks.onCommentUpdated?.(data);
+      });
+
+      socket.on('comment:deleted', (data: CommentEventData) => {
+        callbacks.onCommentDeleted?.(data);
+      });
+
+      socket.on('comment:mentioned', (data: CommentMentionedData) => {
+        callbacks.onCommentMentioned?.(data);
       });
 
       // ── Handlers para Eventos Analysis ───────────────────────────────

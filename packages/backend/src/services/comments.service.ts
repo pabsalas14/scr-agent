@@ -1,29 +1,63 @@
 /**
  * ============================================================================
- * COMMENTS SERVICE - Gestión de comentarios en hallazgos
+ * COMMENTS SERVICE
  * ============================================================================
  *
- * Servicio para crear, obtener y gestionar comentarios asociados a hallazgos
+ * Gestiona comentarios en hallazgos con soporte para @menciones y notificaciones
  */
 
 import { prisma } from './prisma.service';
+import { socketService } from './socket.service';
 import { logger } from './logger.service';
+
+interface CreateCommentInput {
+  findingId: string;
+  userId: string;
+  content: string;
+  mentions?: string[]; // ["@user1@email.com", "@user2@email.com"]
+}
+
+interface UpdateCommentInput {
+  commentId: string;
+  content: string;
+  mentions?: string[];
+}
 
 export class CommentsService {
   /**
-   * Crear un nuevo comentario
+   * Crear nuevo comentario en un hallazgo con soporte para menciones
    */
-  async createComment(input: {
-    findingId: string;
-    userId: string;
-    content: string;
-  }): Promise<any> {
+  async createComment(input: CreateCommentInput): Promise<any> {
     try {
+      const { findingId, userId, content, mentions = [] } = input;
+
+      // Validar que el hallazgo existe
+      const finding = await prisma.finding.findUnique({
+        where: { id: findingId },
+        include: { analysis: { include: { project: true } } },
+      });
+
+      if (!finding) {
+        throw new Error(`Finding ${findingId} not found`);
+      }
+
+      // Obtener usuario
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true },
+      });
+
+      if (!user) {
+        throw new Error(`User ${userId} not found`);
+      }
+
+      // Crear comentario
       const comment = await prisma.comment.create({
         data: {
-          findingId: input.findingId,
-          userId: input.userId,
-          content: input.content,
+          findingId,
+          userId,
+          content,
+          mentions,
         },
         include: {
           user: {
@@ -36,10 +70,26 @@ export class CommentsService {
         },
       });
 
-      logger.info(`Comment created: ${comment.id} for finding ${input.findingId}`);
+      // Crear notificaciones para menciones
+      if (mentions.length > 0) {
+        await this.createMentionNotifications(comment.id, mentions, userId);
+      }
+
+      // Emitir evento WebSocket
+      socketService.emitCommentAdded(
+        findingId,
+        comment.id,
+        userId,
+        user.name || user.email,
+        content,
+        mentions
+      );
+
+      logger.info(`Comentario creado: ${comment.id} en hallazgo ${findingId}`);
+
       return comment;
     } catch (error) {
-      logger.error('Error creating comment:', error);
+      logger.error('Error creando comentario:', error);
       throw error;
     }
   }
@@ -59,45 +109,231 @@ export class CommentsService {
               email: true,
             },
           },
+          mentionNotifications: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: 'asc' },
       });
 
       return comments;
     } catch (error) {
-      logger.error('Error fetching comments:', error);
+      logger.error('Error obteniendo comentarios:', error);
       throw error;
     }
   }
 
   /**
-   * Eliminar un comentario
+   * Obtener comentario por ID
    */
-  async deleteComment(commentId: string): Promise<void> {
+  async getComment(commentId: string): Promise<any> {
     try {
-      await prisma.comment.delete({
+      const comment = await prisma.comment.findUnique({
         where: { id: commentId },
-      });
-
-      logger.info(`Comment deleted: ${commentId}`);
-    } catch (error) {
-      logger.error('Error deleting comment:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Actualizar un comentario
-   */
-  async updateComment(commentId: string, content: string): Promise<any> {
-    try {
-      const comment = await prisma.comment.update({
-        where: { id: commentId },
-        data: { content },
         include: {
           user: {
             select: {
               id: true,
+              name: true,
+              email: true,
+            },
+          },
+          mentionNotifications: {
+            include: {
+              mentionedUser: {
+                select: { id: true, email: true, name: true },
+              },
+            },
+          },
+        },
+      });
+
+      return comment;
+    } catch (error) {
+      logger.error('Error obteniendo comentario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar comentario
+   */
+  async updateComment(input: UpdateCommentInput): Promise<any> {
+    try {
+      const { commentId, content, mentions = [] } = input;
+
+      // Obtener comentario actual
+      const currentComment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { finding: { include: { analysis: { include: { project: true } } } } },
+      });
+
+      if (!currentComment) {
+        throw new Error(`Comment ${commentId} not found`);
+      }
+
+      // Actualizar comentario
+      const updated = await prisma.comment.update({
+        where: { id: commentId },
+        data: {
+          content,
+          mentions,
+          // Limpiar menciones antiguas
+          mentionNotifications: {
+            deleteMany: {},
+          },
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          mentionNotifications: true,
+        },
+      });
+
+      // Crear nuevas notificaciones de menciones
+      if (mentions.length > 0) {
+        await this.createMentionNotifications(
+          commentId,
+          mentions,
+          currentComment.userId
+        );
+      }
+
+      logger.info(`Comentario actualizado: ${commentId}`);
+
+      return updated;
+    } catch (error) {
+      logger.error('Error actualizando comentario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Borrar comentario
+   */
+  async deleteComment(commentId: string): Promise<void> {
+    try {
+      const comment = await prisma.comment.findUnique({
+        where: { id: commentId },
+        include: { finding: { include: { analysis: { include: { project: true } } } } },
+      });
+
+      if (!comment) {
+        throw new Error(`Comment ${commentId} not found`);
+      }
+
+      // Borrar comentario (cascade elimina mentionNotifications)
+      await prisma.comment.delete({
+        where: { id: commentId },
+      });
+
+      logger.info(`Comentario borrado: ${commentId}`);
+    } catch (error) {
+      logger.error('Error borrando comentario:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Marcar menciones como leídas
+   */
+  async markMentionsAsRead(mentionIds: string[]): Promise<any> {
+    try {
+      const updated = await prisma.commentMention.updateMany({
+        where: { id: { in: mentionIds } },
+        data: {
+          read: true,
+          readAt: new Date(),
+        },
+      });
+
+      return updated;
+    } catch (error) {
+      logger.error('Error marcando menciones como leídas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener menciones no leídas de un usuario
+   */
+  async getUnreadMentions(userId: string): Promise<any[]> {
+    try {
+      const mentions = await prisma.commentMention.findMany({
+        where: {
+          mentionedUserId: userId,
+          read: false,
+        },
+        include: {
+          comment: {
+            include: {
+              finding: {
+                select: { id: true, file: true, severity: true },
+              },
+              user: {
+                select: { id: true, email: true, name: true },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return mentions;
+    } catch (error) {
+      logger.error('Error obteniendo menciones no leídas:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Crear notificaciones para usuarios mencionados
+   */
+  private async createMentionNotifications(
+    commentId: string,
+    mentions: string[],
+    mentionerUserId: string
+  ): Promise<void> {
+    try {
+      // Extraer emails de menciones (e.g., "@user@example.com" → "user@example.com")
+      const mentionedEmails = mentions
+        .map((m) => m.replace(/@/g, '').trim())
+        .filter((m) => m.includes('@')); // Validar que sean emails
+
+      if (mentionedEmails.length === 0) return;
+
+      // Buscar usuarios por email
+      const mentionedUsers = await prisma.user.findMany({
+        where: {
+          email: { in: mentionedEmails },
+          NOT: { id: mentionerUserId }, // No notificar al que escribió
+        },
+        select: { id: true, email: true },
+      });
+
+      // Crear notificaciones
+      if (mentionedUsers.length > 0) {
+        await prisma.commentMention.createMany({
+          data: mentionedUsers.map((user) => ({
+            commentId,
+            mentionedUserId: user.id,
+            read: false,
+          })),
+        });
+
+        // Emitir eventos WebSocket para cada usuario mencionado
+        for (const user of mentionedUsers) {
+          socketService.emitCommentMentioned(commentId, user.id);
+        }
+      }
+    } catch (error) {
+      logger.error('Error creando notificaciones de mención:', error);
+      // No lanzar error, solo loguear para no romper el flow
+    }
+  }
               name: true,
               email: true,
             },

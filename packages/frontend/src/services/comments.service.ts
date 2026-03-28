@@ -20,8 +20,23 @@ export interface Comment {
     email: string;
   };
   content: string;
+  mentions?: string[];
+  mentionNotifications?: CommentMention[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CommentMention {
+  id: string;
+  commentId: string;
+  mentionedUserId: string;
+  read: boolean;
+  readAt?: string;
+  createdAt: string;
+  comment?: Comment & {
+    finding: { id: string; file: string; severity: string };
+    user: { id: string; email: string; name: string | null };
+  };
 }
 
 class CommentsService {
@@ -47,11 +62,12 @@ class CommentsService {
   }
 
   /**
-   * Crear un nuevo comentario
+   * Crear un nuevo comentario con soporte para @menciones
    */
-  async createComment(findingId: string, content: string): Promise<Comment> {
+  async createComment(findingId: string, content: string, mentions?: string[]): Promise<Comment> {
     const response = await this.client.post(`/findings/${findingId}/comments`, {
       content,
+      mentions: mentions || [],
     });
     return response.data.data;
   }
@@ -72,13 +88,31 @@ class CommentsService {
   }
 
   /**
-   * Actualizar un comentario
+   * Actualizar un comentario con soporte para @menciones
    */
-  async updateComment(findingId: string, commentId: string, content: string): Promise<Comment> {
+  async updateComment(findingId: string, commentId: string, content: string, mentions?: string[]): Promise<Comment> {
     const response = await this.client.put(`/findings/${findingId}/comments/${commentId}`, {
       content,
+      mentions: mentions || [],
     });
     return response.data.data;
+  }
+
+  /**
+   * Obtener menciones no leídas del usuario actual
+   */
+  async getUnreadMentions(): Promise<CommentMention[]> {
+    const response = await this.client.get('/comments/mentions/unread');
+    return response.data.data || [];
+  }
+
+  /**
+   * Marcar menciones como leídas
+   */
+  async markMentionsAsRead(mentionIds: string[]): Promise<void> {
+    await this.client.put('/comments/mentions/read', {
+      mentionIds,
+    });
   }
 }
 

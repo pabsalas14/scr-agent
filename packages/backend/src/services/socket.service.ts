@@ -181,7 +181,7 @@ class SocketService {
     userId: string,
     userName: string,
     content: string,
-    interestedUserIds: string[]
+    mentions: string[] = []
   ): void {
     const event = 'comment:added';
     const data = {
@@ -190,14 +190,63 @@ class SocketService {
       userId,
       userName,
       content,
+      mentions,
       timestamp: new Date(),
     };
 
-    interestedUserIds.forEach((uid) => {
-      if (uid !== userId) { // Don't notify the commenter
-        this.notifyUser(uid, event, data);
-      }
-    });
+    // Notificar a todos los usuarios conectados sobre el nuevo comentario
+    // (Las menciones se notificarán con un evento separado)
+    if (!this.io) return;
+    this.io.emit(event, data);
+    logger.info(`Comentario agregado al hallazgo ${findingId}: ${commentId}`);
+  }
+
+  /**
+   * Emit when user is mentioned in comment
+   */
+  emitCommentMentioned(commentId: string, mentionedUserId: string): void {
+    const event = 'comment:mentioned';
+    const data = {
+      commentId,
+      mentionedUserId,
+      timestamp: new Date(),
+    };
+
+    this.notifyUser(mentionedUserId, event, data);
+    logger.info(`Usuario ${mentionedUserId} mencionado en comentario ${commentId}`);
+  }
+
+  /**
+   * Emit when comment is updated
+   */
+  emitCommentUpdated(findingId: string, commentId: string, content: string): void {
+    const event = 'comment:updated';
+    const data = {
+      commentId,
+      findingId,
+      content,
+      timestamp: new Date(),
+    };
+
+    if (!this.io) return;
+    this.io.emit(event, data);
+    logger.info(`Comentario actualizado: ${commentId}`);
+  }
+
+  /**
+   * Emit when comment is deleted
+   */
+  emitCommentDeleted(findingId: string, commentId: string): void {
+    const event = 'comment:deleted';
+    const data = {
+      commentId,
+      findingId,
+      timestamp: new Date(),
+    };
+
+    if (!this.io) return;
+    this.io.emit(event, data);
+    logger.info(`Comentario borrado: ${commentId}`);
   }
 
   /**
