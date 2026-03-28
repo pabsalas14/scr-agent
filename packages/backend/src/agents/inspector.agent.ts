@@ -71,7 +71,7 @@ export class InspectorAgentService {
   /**
    * Modelo a usar
    */
-  private model = 'claude-3-5-sonnet-20241022';
+  private model = 'claude-sonnet-4-6';
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey;

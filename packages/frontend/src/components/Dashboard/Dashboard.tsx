@@ -88,11 +88,16 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
       {/* Header del dashboard - Responsive */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
-            📊 Mis Proyectos
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2">
-            Gestiona y analiza tus repositorios de código
+          <div className="flex items-center gap-3 mb-2">
+            <div className="text-3xl sm:text-4xl">🛡️</div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 dark:from-cyan-300 dark:via-blue-400 dark:to-purple-500 bg-clip-text text-transparent leading-tight">
+                CodeShield Análisis
+              </h1>
+            </div>
+          </div>
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-2 ml-12">
+            Escanea y asegura tus repositorios con inteligencia artificial
           </p>
         </div>
         <div className="flex gap-2 sm:gap-3 flex-shrink-0 w-full sm:w-auto">

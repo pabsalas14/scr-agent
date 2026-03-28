@@ -37,7 +37,7 @@ export class DetectiveAgentService {
   /**
    * Modelo a usar (Haiku para rapidez y economía)
    */
-  private model = 'claude-3-5-haiku-20241022';
+  private model = 'claude-haiku-4-5-20251001';
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey;
