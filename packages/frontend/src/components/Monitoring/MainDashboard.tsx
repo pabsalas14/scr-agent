@@ -70,7 +70,7 @@ export default function MainDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Tab Navigation - Responsive */}
-      <div className="bg-white dark:bg-gradient-to-r dark:from-gray-900/50 dark:to-gray-800/50 backdrop-blur-md rounded-lg border border-gray-200 dark:border-gray-700/50 p-1 shadow-md dark:shadow-lg overflow-x-auto">
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:bg-gradient-to-r dark:from-slate-800/30 dark:to-slate-700/30 backdrop-blur-md rounded-lg border border-blue-200 dark:border-blue-500/30 p-1 shadow-sm dark:shadow-md overflow-x-auto">
         <div className="flex gap-1 sm:gap-2 min-w-min sm:min-w-full">
           {TABS.map((tab) => (
             <motion.button

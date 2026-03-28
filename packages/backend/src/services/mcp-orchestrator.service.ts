@@ -74,7 +74,8 @@ export class MCPOrchestratorService {
        */
       logger.info('Obteniendo repositorio');
       const localPath = await gitService.cloneOrPullRepository(
-        analisis.url_repositorio
+        analisis.url_repositorio,
+        process.env.GITHUB_TOKEN
       );
 
       /**

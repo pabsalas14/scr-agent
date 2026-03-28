@@ -64,7 +64,7 @@ async function processAnalysisQueue() {
 
     // Clonar/descargar repositorio
     logger.info(`Descargando repositorio: ${project.repositoryUrl}`);
-    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl);
+    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl, process.env.GITHUB_TOKEN);
 
     // Leer código fuente
     logger.info(`Leyendo código fuente...`);
