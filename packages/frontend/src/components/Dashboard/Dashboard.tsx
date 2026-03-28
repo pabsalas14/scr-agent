@@ -84,7 +84,7 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   };
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-6 bg-gradient-to-b from-transparent via-slate-900/50 to-slate-900/30 rounded-xl p-6 sm:p-8 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8">
       {/* Header del dashboard - Responsive */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6">
         <div className="flex-1 min-w-0">
