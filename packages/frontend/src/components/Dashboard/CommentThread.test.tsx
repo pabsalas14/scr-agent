@@ -76,7 +76,8 @@ describe('CommentThread', () => {
       wrapper: createWrapper(),
     });
 
-    expect(screen.getByText(/Comentarios/i)).toBeInTheDocument();
+    // Use getByRole to be more specific
+    expect(screen.getByRole('heading', { name: /Comentarios/i })).toBeInTheDocument();
   });
 
   it('should display existing comments', async () => {
