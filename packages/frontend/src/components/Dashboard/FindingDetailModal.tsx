@@ -20,6 +20,8 @@ import Button from '../ui/Button';
 import { Finding, FindingStatus, User as IUser } from '../../types/findings';
 import { findingsService } from '../../services/findings.service';
 import { useToast } from '../../hooks/useToast';
+import { useSocketEvents } from '../../hooks/useSocketEvents';
+import CommentThread from './CommentThread';
 
 interface FindingDetailModalProps {
   finding: Finding;
@@ -66,6 +68,34 @@ export default function FindingDetailModal({
   const [isUpdating, setIsUpdating] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const toast = useToast();
+
+  // Listen to socket events for this specific finding
+  useSocketEvents({
+    onFindingUpdated: (data) => {
+      if (data.findingId === finding.id) {
+        console.log('📢 This finding was updated via socket');
+        onStatusChange(); // Trigger parent refetch
+      }
+    },
+    onFindingAssigned: (data) => {
+      if (data.findingId === finding.id) {
+        console.log('📢 This finding was assigned via socket');
+        onStatusChange();
+      }
+    },
+    onRemediationUpdated: (data) => {
+      if (data.findingId === finding.id) {
+        console.log('📢 Remediation updated for this finding via socket');
+        onStatusChange();
+      }
+    },
+    onRemediationVerified: (data) => {
+      if (data.findingId === finding.id) {
+        console.log('📢 Remediation verified for this finding via socket');
+        onStatusChange();
+      }
+    },
+  });
 
   const currentStatus: FindingStatus = finding.statusHistory?.[0]?.status || 'DETECTED';
   const availableTransitions = STATUS_WORKFLOW[currentStatus];
@@ -345,7 +375,7 @@ export default function FindingDetailModal({
                       color: STATUS_COLORS[status].color,
                       borderColor:
                         selectedStatus === status ? STATUS_COLORS[status].color : 'transparent',
-                      ringColor: STATUS_COLORS[status].color,
+                      boxShadow: selectedStatus === status ? `0 0 0 2px ${STATUS_COLORS[status].color}40` : 'none',
                     }}
                   >
                     {STATUS_COLORS[status].label}
@@ -375,6 +405,11 @@ export default function FindingDetailModal({
             </div>
           </ExpandableSection>
         )}
+
+        {/* Comments Section */}
+        <ExpandableSection title="Discusión" icon={AlertCircle} id="comments">
+          <CommentThread findingId={finding.id} />
+        </ExpandableSection>
       </div>
     </Modal>
   );

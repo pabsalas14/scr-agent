@@ -22,6 +22,7 @@ import Card from '../ui/Card';
 import BadgeRiesgo from '../shared/BadgeRiesgo';
 import TimelineViewer from '../Timeline/TimelineViewer';
 import FindingsTracker from '../Dashboard/FindingsTracker';
+import AnalysisReport from '../Analysis/AnalysisReport';
 
 interface ReportViewerProps {
   analysisId: string;
@@ -155,22 +156,29 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
     URL.revokeObjectURL(url);
   };
 
-  if (cargandoReporte) {
-    return (
-      <div className="flex justify-center py-20">
-        <span className="text-gray-600">Cargando reporte...</span>
-      </div>
-    );
-  }
-
+  // Si no hay reporte completado aún, mostrar estado del análisis
   if (!reporte) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-        <p className="text-yellow-700">Reporte no disponible aún. El análisis puede estar en progreso.</p>
-        <button onClick={onVolver} className="button-secondary mt-4">
-          ← Volver
-        </button>
-      </div>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+        <div className="flex justify-between items-start gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
+              <button onClick={onVolver} className="hover:text-white transition-colors">
+                Proyectos
+              </button>
+              <span>/</span>
+              <span className="text-white">Análisis en progreso</span>
+            </div>
+            <h1 className="text-4xl font-black text-white">Análisis de Seguridad</h1>
+            <p className="text-gray-400 mt-2">Monitoreo del análisis en tiempo real</p>
+          </div>
+          <Button variant="secondary" onClick={onVolver} className="flex items-center gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            Volver
+          </Button>
+        </div>
+        <AnalysisReport analysisId={analysisId} />
+      </motion.div>
     );
   }
 
@@ -365,9 +373,9 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
                 transition={{ delay: idx * 0.05 }}
               >
                 <Card className="border-l-4" style={{ borderLeftColor:
-                  hallazgo.severity === 'CRITICAL' ? '#dc2626' :
-                  hallazgo.severity === 'HIGH' ? '#ea580c' :
-                  hallazgo.severity === 'MEDIUM' ? '#eab308' : '#22c55e'
+                  hallazgo.severity === 'CRÍTICO' ? '#dc2626' :
+                  hallazgo.severity === 'ALTO' ? '#ea580c' :
+                  hallazgo.severity === 'MEDIO' ? '#eab308' : '#22c55e'
                 }}>
                   <div className="flex justify-between items-start mb-3">
                     <BadgeRiesgo nivel={hallazgo.severity as any} size="sm" />

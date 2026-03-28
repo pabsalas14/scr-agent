@@ -26,6 +26,7 @@ import { notificationsService } from '../../services/notifications.service';
 import { Finding, FindingStatus, Severity } from '../../types/findings';
 import FindingDetailModal from './FindingDetailModal';
 import RemediationModal from './RemediationModal';
+import { useSocketEvents } from '../../hooks/useSocketEvents';
 
 interface FindingsTrackerProps {
   analysisId: string;
@@ -112,6 +113,26 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
   const { data: analysts = [] } = useQuery({
     queryKey: ['analysts'],
     queryFn: () => usersService.getUsersByRole('ANALYST'),
+  });
+
+  // Listen to socket events and refetch findings when changes occur
+  useSocketEvents({
+    onFindingUpdated: (data) => {
+      console.log('🔄 Refetching findings due to status change:', data);
+      refetch();
+    },
+    onFindingAssigned: (data) => {
+      console.log('🔄 Refetching findings due to assignment:', data);
+      refetch();
+    },
+    onRemediationUpdated: (data) => {
+      console.log('🔄 Refetching findings due to remediation update:', data);
+      refetch();
+    },
+    onRemediationVerified: (data) => {
+      console.log('🔄 Refetching findings due to remediation verification:', data);
+      refetch();
+    },
   });
 
   // Filtrar hallazgos

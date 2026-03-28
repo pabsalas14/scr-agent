@@ -67,7 +67,9 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
         className="space-y-3"
       >
         {agents.map((agent, i) => {
-          const statusInfo = STATUS_COLORS[agent.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.inactive;
+          const statusInfo = STATUS_COLORS[agent.status as keyof typeof STATUS_COLORS] || STATUS_COLORS['inactive'];
+
+          if (!statusInfo) return null;
 
           return (
             <motion.div
@@ -77,20 +79,20 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
               transition={{ delay: i * 0.1 }}
               whileHover={{ scale: 1.01 }}
             >
-              <Card className={`border-l-4 bg-gradient-to-r ${statusInfo.bg} transition-all hover:shadow-xl`} style={{ borderLeftColor: statusInfo.color }}>
+              <Card className={`border-l-4 bg-gradient-to-r ${statusInfo?.bg || ''} transition-all hover:shadow-xl`} style={{ borderLeftColor: statusInfo?.color }}>
                 <div className="flex items-center justify-between gap-6">
                   {/* Left: Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-gray-800/50">
-                        {statusInfo.icon}
+                        {statusInfo?.icon}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="text-lg font-bold text-white truncate">
                           {agent.name}
                         </h3>
-                        <p className={`text-xs font-semibold ${statusInfo.text}`}>
-                          {statusInfo.label}
+                        <p className={`text-xs font-semibold ${statusInfo?.text || ''}`}>
+                          {statusInfo?.label}
                         </p>
                       </div>
                     </div>

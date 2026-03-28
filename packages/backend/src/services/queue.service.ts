@@ -100,7 +100,21 @@ export class QueueService {
       await this.ejecutarAnalisis(trabajo);
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
-      logger.error(`Error procesando análisis ${trabajo.analysisId}: ${msg}`);
+      const stack = error instanceof Error ? error.stack : '';
+      logger.error(`Error procesando análisis ${trabajo.analysisId}: ${msg}\nStack: ${stack}`);
+
+      // Guardar error en BD para que el usuario lo vea
+      try {
+        await prisma.analysis.update({
+          where: { id: trabajo.analysisId },
+          data: {
+            status: 'FAILED',
+            errorMessage: msg,
+          },
+        });
+      } catch (dbError) {
+        logger.error(`Error guardando fallo de análisis en BD: ${dbError}`);
+      }
     } finally {
       // Procesar el siguiente sin importar si hubo error
       void this.procesarSiguiente();

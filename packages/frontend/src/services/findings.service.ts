@@ -17,7 +17,7 @@ class FindingsService {
   async getFindings(analysisId: string): Promise<Finding[]> {
     try {
       const response = await apiService.obtenerHallazgos(analysisId);
-      return response || [];
+      return (response || []) as unknown as Finding[];
     } catch (error) {
       console.error('Error fetching findings:', error);
       throw error;
@@ -29,10 +29,10 @@ class FindingsService {
    */
   async getFindingDetail(findingId: string): Promise<Finding> {
     try {
-      const response = await apiService.get<FindingDetailResponse>(
+      const response = await apiService.get<any>(
         `/findings/${findingId}`
       );
-      return response.data;
+      return response.data as Finding;
     } catch (error) {
       console.error('Error fetching finding detail:', error);
       throw error;
@@ -48,11 +48,11 @@ class FindingsService {
     note?: string
   ): Promise<Finding> {
     try {
-      const response = await apiService.put<FindingDetailResponse>(
+      const response = await apiService.put<any>(
         `/findings/${findingId}/status`,
         { status, note }
       );
-      return response.data;
+      return response.data as Finding;
     } catch (error) {
       console.error('Error updating finding status:', error);
       throw error;
@@ -149,10 +149,10 @@ class FindingsService {
    */
   async getFindsStats(analysisId: string): Promise<FindingsStats> {
     try {
-      const response = await apiService.get<FindingsStatsResponse>(
+      const response = await apiService.get<any>(
         `/findings/analysis/${analysisId}/stats`
       );
-      return response.data;
+      return response.data as FindingsStats;
     } catch (error) {
       console.error('Error fetching findings stats:', error);
       throw error;

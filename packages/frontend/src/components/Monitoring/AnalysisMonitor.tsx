@@ -105,6 +105,7 @@ export default function AnalysisMonitor() {
           <div className="space-y-3">
             {enProgreso.map((analysis: any) => {
               const cfg = STATUS_CONFIG[analysis.status] || STATUS_CONFIG['RUNNING'];
+              if (!cfg) return null;
               return (
                 <motion.div
                   key={analysis.id}
@@ -113,25 +114,25 @@ export default function AnalysisMonitor() {
                   whileHover={{ scale: 1.01 }}
                   className="group"
                 >
-                  <Card className="border-l-4 transition-all group-hover:shadow-xl" style={{ borderLeftColor: cfg.color }}>
+                  <Card className="border-l-4 transition-all group-hover:shadow-xl" style={{ borderLeftColor: cfg!.color }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${cfg.color}20`, color: cfg.color }}>
-                          {cfg.icon}
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: `${cfg!.color}20`, color: cfg!.color }}>
+                          {cfg!.icon}
                         </div>
                         <div>
                           <p className="font-semibold text-white">{analysis.projectName}</p>
-                          <p className="text-xs text-gray-400">{cfg.label}</p>
+                          <p className="text-xs text-gray-400">{cfg!.label}</p>
                         </div>
                       </div>
-                      <span className="text-sm font-bold" style={{ color: cfg.color }}>
+                      <span className="text-sm font-bold" style={{ color: cfg!.color }}>
                         {analysis.progress || 0}%
                       </span>
                     </div>
                     <div className="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
                       <motion.div
                         className="h-full rounded-full transition-all"
-                        style={{ background: `linear-gradient(90deg, ${cfg.color}, ${cfg.color}dd)` }}
+                        style={{ background: `linear-gradient(90deg, ${cfg!.color}, ${cfg!.color}dd)` }}
                         initial={{ width: 0 }}
                         animate={{ width: `${analysis.progress || 0}%` }}
                         transition={{ duration: 0.5, ease: 'easeOut' }}

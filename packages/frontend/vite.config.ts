@@ -35,16 +35,25 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
-    // Optimizar tamaño de bundle
+    sourcemap: false, // Disable in production to reduce bundle
+    minify: 'esbuild', // Use esbuild for faster minification
+    // Optimizar tamaño de bundle con mejor code splitting
     rollupOptions: {
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
-          'd3-vendor': ['d3'],
           'query-vendor': ['@tanstack/react-query'],
+          'motion-vendor': ['framer-motion'],
+          'd3-vendor': ['d3'],
         },
       },
     },
+    // Chunk size warnings
+    chunkSizeWarningLimit: 1000,
+    // CSS optimization
+    cssMinify: true,
+    // Optimize images and assets
+    assetsDir: 'assets',
+    assetsInlineLimit: 4096, // 4kb threshold for inline assets
   },
 });

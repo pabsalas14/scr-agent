@@ -7,10 +7,10 @@ class NotificationsService {
    */
   async getNotifications(limit: number = 20): Promise<Notification[]> {
     try {
-      const response = await apiService.get<NotificationsResponse>(
+      const response = await apiService.get<any>(
         `/notifications?limit=${limit}`
       );
-      return response.data || [];
+      return (response.data?.data || response.data || []) as Notification[];
     } catch (error) {
       console.error('Error fetching notifications:', error);
       throw error;
@@ -22,10 +22,10 @@ class NotificationsService {
    */
   async getUnreadCount(): Promise<number> {
     try {
-      const response = await apiService.get<UnreadCountResponse>(
+      const response = await apiService.get<any>(
         '/notifications/unread-count'
       );
-      return response.data?.unreadCount || 0;
+      return (response.data?.unreadCount || response.data?.data?.unreadCount || 0) as number;
     } catch (error) {
       console.error('Error fetching unread count:', error);
       return 0;

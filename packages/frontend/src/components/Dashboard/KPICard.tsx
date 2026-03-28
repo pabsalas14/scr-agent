@@ -38,7 +38,7 @@ export default function KPICard({
 }: KPICardProps) {
   return (
     <div
-      className="relative rounded-xl p-6 transition-all duration-300 hover:shadow-2xl hover:-translate-y-1 border-2 group overflow-hidden"
+      className="relative rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-300 hover:shadow-lg sm:hover:shadow-2xl hover:-translate-y-0.5 sm:hover:-translate-y-1 border border-opacity-50 sm:border-2 group overflow-hidden"
       style={{
         borderColor: accentColor,
         background: `linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)`,
@@ -46,17 +46,17 @@ export default function KPICard({
     >
       {/* Gradiente de fondo animado en hover */}
       <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"
+        className="absolute inset-0 opacity-0 group-hover:opacity-5 sm:group-hover:opacity-10 transition-opacity duration-300"
         style={{ backgroundColor: accentColor }}
       />
 
       {/* Content */}
       <div className="relative z-10">
         {/* Header con icon y menu */}
-        <div className="flex justify-between items-start mb-6">
-          {/* Icon grande y vibrante */}
+        <div className="flex justify-between items-start mb-3 sm:mb-6">
+          {/* Icon grande y vibrante - Responsive */}
           <div
-            className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl bg-gradient-to-br transition-all duration-300 group-hover:scale-110 shadow-lg"
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl bg-gradient-to-br transition-all duration-300 group-hover:scale-105 sm:group-hover:scale-110 shadow-md"
             style={{
               background: `linear-gradient(135deg, ${accentColor}, ${accentColor}dd)`,
             }}
@@ -68,7 +68,7 @@ export default function KPICard({
           {onMenu && (
             <button
               onClick={onMenu}
-              className="p-1.5 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+              className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white flex-shrink-0"
               aria-label="Opciones"
             >
               <MoreVertical className="w-4 h-4" />
@@ -76,25 +76,25 @@ export default function KPICard({
           )}
         </div>
 
-        {/* Título */}
+        {/* Título - Responsive */}
         <p
-          className="text-sm font-semibold mb-3 transition-colors duration-300"
+          className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 transition-colors duration-300 line-clamp-1"
           style={{ color: accentColor }}
         >
           {title}
         </p>
 
-        {/* Número grande y destacado */}
-        <div className="mb-4">
-          <p className="text-4xl font-bold text-white">
+        {/* Número grande y destacado - Responsive */}
+        <div className="mb-3 sm:mb-4">
+          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
             {value}
           </p>
         </div>
 
         {/* Información adicional */}
-        <div className="flex justify-between items-end pt-3 border-t border-white/10">
+        <div className="flex justify-between items-end pt-2 sm:pt-3 border-t border-white/10 gap-2">
           {subtitle && (
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-400 flex-1 line-clamp-1">
               {subtitle}
             </p>
           )}
@@ -102,7 +102,7 @@ export default function KPICard({
           {/* Trend si existe */}
           {trend && (
             <div
-              className={`text-xs font-semibold px-2 py-1 rounded-md ${
+              className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0 ${
                 trend.isPositive
                   ? 'bg-green-500/20 text-green-400'
                   : 'bg-red-500/20 text-red-400'

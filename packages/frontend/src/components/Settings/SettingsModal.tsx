@@ -6,8 +6,9 @@ import Button from '../ui/Button';
 import { useToast } from '../../hooks/useToast';
 import { setApiKey, clearApiKey, getMaskedApiKey } from '../../services/config.service';
 import { settingsService } from '../../services/settings.service';
+import NotificationPreferences from './NotificationPreferences';
 
-type Tab = 'api' | 'github' | 'preferences';
+type Tab = 'api' | 'github' | 'notifications';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -112,23 +113,23 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="⚙️ Configuración" size="lg">
-      {/* Tabs con nuevo diseño */}
-      <div className="bg-gradient-to-r from-gray-900/50 to-gray-800/50 backdrop-blur-md rounded-lg border border-gray-700/50 p-1 mb-6 shadow-lg">
-        <div className="flex gap-2">
+      {/* Tabs - Responsive */}
+      <div className="bg-gradient-to-r from-slate-900/50 to-slate-800/50 backdrop-blur-md rounded-lg border border-slate-700/50 p-1 mb-4 sm:mb-6 shadow-lg overflow-x-auto">
+        <div className="flex gap-1 min-w-min sm:min-w-full">
           {[
-            { id: 'api', label: '🔑 API Key', color: '#0EA5E9' },
-            { id: 'github', label: '🐙 GitHub', color: '#EC4899' },
-            { id: 'preferences', label: '⚙️ Preferencias', color: '#8B5CF6' },
+            { id: 'api', label: '🔑 API Key', color: 'rgb(6, 182, 212)' },      // cyan-500
+            { id: 'github', label: '🐙 GitHub', color: 'rgb(168, 85, 247)' },   // purple-500
+            { id: 'notifications', label: '🔔 Notificaciones', color: 'rgb(34, 197, 94)' }, // green-500
           ].map((tab) => (
             <motion.button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as Tab)}
-              whileHover={{ scale: 1.05 }}
+              whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className={`px-4 py-2.5 rounded-md text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-1 ${
+              className={`px-2 sm:px-4 py-2 sm:py-2.5 rounded-md text-xs sm:text-sm font-semibold transition-all duration-200 whitespace-nowrap flex-1 sm:flex-none border ${
                 activeTab === tab.id
-                  ? 'text-white border shadow-lg'
-                  : 'text-gray-400 border border-transparent hover:text-gray-300'
+                  ? 'text-white shadow-lg'
+                  : 'text-gray-400 border-transparent hover:text-gray-300'
               }`}
               style={{
                 borderColor: activeTab === tab.id ? tab.color : 'transparent',
@@ -142,33 +143,33 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </div>
 
-      {/* Tab Content */}
-      <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-5">
+      {/* Tab Content - Responsive */}
+      <motion.div key={activeTab} initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3 sm:space-y-5">
         {/* API KEY TAB */}
         {activeTab === 'api' && (
           <>
-            {/* Status Box */}
+            {/* Status Box - Responsive */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className={`rounded-lg p-4 border ${
+              className={`rounded-lg p-3 sm:p-4 border transition-all ${
                 maskedKey
                   ? 'bg-gradient-to-r from-emerald-900/20 to-emerald-800/10 border-emerald-500/30'
                   : 'bg-gradient-to-r from-gray-800/50 to-gray-700/30 border-gray-600/50'
               }`}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-2 sm:gap-3">
                 {maskedKey ? (
-                  <Check className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
+                  <Check className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
                 ) : (
-                  <AlertCircle className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 flex-shrink-0 mt-0.5" />
                 )}
-                <div>
-                  <p className={`font-semibold ${maskedKey ? 'text-emerald-300' : 'text-gray-300'}`}>
+                <div className="flex-1 min-w-0">
+                  <p className={`font-semibold text-xs sm:text-base ${maskedKey ? 'text-emerald-300' : 'text-gray-300'}`}>
                     {maskedKey ? '✓ API Key Configurado' : 'Sin API Key configurado'}
                   </p>
                   {maskedKey && (
-                    <p className="text-xs text-gray-400 mt-2 font-mono bg-gray-900/50 px-3 py-1 rounded inline-block">
+                    <p className="text-xs text-gray-400 mt-2 font-mono bg-gray-900/50 px-2 sm:px-3 py-0.5 sm:py-1 rounded inline-block break-all">
                       {maskedKey}
                     </p>
                   )}
@@ -176,9 +177,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
               </div>
             </motion.div>
 
-            {/* Input */}
+            {/* Input - Responsive */}
             <div>
-              <label className="block text-sm font-semibold text-gray-200 mb-3">
+              <label className="block text-xs sm:text-sm font-semibold text-gray-200 mb-2 sm:mb-3">
                 🔐 Nuevo API Key
               </label>
               <div className="relative">
@@ -187,38 +188,40 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                   placeholder="sk-... (dejar vacío para no cambiar)"
                   value={apiKey}
                   onChange={(e) => setLocalApiKey(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-600/50 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30 transition-all"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm border border-gray-600/50 rounded-lg bg-gray-800/50 text-white placeholder-gray-500 focus:outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-500/30 transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowApiKey(!showApiKey)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                  className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300 transition-colors"
+                  aria-label="Toggle visibility"
                 >
                   {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+              <p className="text-xs text-gray-400 mt-1.5 sm:mt-2">
                 💾 Se almacena de forma segura en tu navegador
               </p>
             </div>
 
-            {/* Buttons */}
-            <div className="flex gap-3 pt-2">
+            {/* Buttons - Responsive */}
+            <div className="flex gap-2 sm:gap-3 pt-1 sm:pt-2">
               <Button
                 variant="primary"
                 onClick={handleSaveApiKey}
                 disabled={loading || !apiKey.trim()}
                 isLoading={loading}
-                className="flex-1 flex items-center justify-center gap-2"
+                className="flex-1 flex items-center justify-center gap-1 sm:gap-2 text-xs sm:text-base px-2 sm:px-4 py-1.5 sm:py-2"
               >
-                <RefreshCw className="w-4 h-4" />
-                Guardar API Key
+                <RefreshCw className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="hidden xs:inline">Guardar API Key</span>
+                <span className="xs:hidden">Guardar</span>
               </Button>
               {maskedKey && (
                 <Button
                   variant="secondary"
                   onClick={handleClearApiKey}
-                  className="flex-1"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2"
                 >
                   <Trash2 className="w-4 h-4" />
                 </Button>
@@ -321,20 +324,14 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </>
         )}
 
-        {/* PREFERENCES TAB */}
-        {activeTab === 'preferences' && (
+        {/* NOTIFICATIONS TAB */}
+        {activeTab === 'notifications' && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             className="space-y-4"
           >
-            <div className="bg-gradient-to-r from-purple-900/20 to-purple-800/10 border border-purple-500/30 rounded-lg p-6 text-center">
-              <p className="text-3xl mb-3">🚀</p>
-              <p className="text-gray-300 font-semibold mb-1">Próximamente</p>
-              <p className="text-gray-400 text-sm">
-                Tema, idioma, notificaciones y más opciones de personalización
-              </p>
-            </div>
+            <NotificationPreferences />
           </motion.div>
         )}
       </motion.div>

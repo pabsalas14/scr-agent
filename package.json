@@ -43,5 +43,11 @@
       "esbuild",
       "prisma"
     ]
+  },
+  "dependencies": {
+    "@types/socket.io": "^3.0.2",
+    "recharts": "^3.8.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   }
 }

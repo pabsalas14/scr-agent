@@ -3,6 +3,7 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { findingsService } from '../services/findings.service';
 import { usersService } from '../services/users.service';
 import { notificationsService } from '../services/notifications.service';
+import { socketService } from '../services/socket.service';
 import { logger } from '../services/logger.service';
 
 const router: ExpressRouter = Router();
@@ -121,6 +122,13 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
         status as any,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
+
+      // Emit WebSocket event for real-time update
+      socketService.emitFindingStatusChanged(
+        findingId!,
+        status,
+        (updated as any).assignment.assignedTo
+      );
     }
 
     res.json({
@@ -163,6 +171,13 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
       assignedTo,
       findingId!,
       (assigner as any)?.name || (assigner as any)?.email || 'Sistema'
+    );
+
+    // Emit WebSocket event for real-time update
+    socketService.emitFindingAssigned(
+      findingId!,
+      assignedTo,
+      userId || 'Sistema'
     );
 
     res.json({
@@ -261,6 +276,12 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
         'IN_PROGRESS' as any,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
+
+      // Emit WebSocket event for real-time update
+      socketService.emitRemediationUpdated(
+        findingId!,
+        (finding as any).assignment.assignedTo
+      );
     }
 
     res.json({
@@ -318,6 +339,12 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
         (finding as any).assignment.assignedTo,
         findingId!,
         (user as any)?.name || (user as any)?.email || 'Sistema'
+      );
+
+      // Emit WebSocket event for real-time update
+      socketService.emitRemediationVerified(
+        findingId!,
+        (finding as any).assignment.assignedTo
       );
     }
 

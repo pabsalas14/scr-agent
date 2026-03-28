@@ -234,6 +234,36 @@ class ApiService {
       return false;
     }
   }
+
+  // ==================== GENERIC METHODS ====================
+
+  /**
+   * Generic GET request
+   */
+  async get<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    return this.client.get<T>(url, config);
+  }
+
+  /**
+   * Generic POST request
+   */
+  async post<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    return this.client.post<T>(url, data, config);
+  }
+
+  /**
+   * Generic PUT request
+   */
+  async put<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    return this.client.put<T>(url, data, config);
+  }
+
+  /**
+   * Generic DELETE request
+   */
+  async delete<T = any>(url: string, config?: any): Promise<{ data: T }> {
+    return this.client.delete<T>(url, config);
+  }
 }
 
 export const apiService = new ApiService();

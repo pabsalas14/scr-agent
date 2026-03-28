@@ -19,7 +19,9 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
+import { createServer } from 'http';
 import { logger } from './services/logger.service';
+import { socketService } from './services/socket.service';
 
 // Cargar variables de entorno
 dotenv.config();
@@ -141,6 +143,9 @@ import githubRoutes from './routes/github.routes';
 import findingsRoutes from './routes/findings.routes';
 import usersRoutes from './routes/users.routes';
 import notificationsRoutes from './routes/notifications.routes';
+import commentsRoutes from './routes/comments.routes';
+import analyticsRoutes from './routes/analytics.routes';
+import userSettingsRoutes from './routes/user-settings.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 
 // Rutas públicas de autenticación (sin JWT)
@@ -156,7 +161,10 @@ app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/github', githubRoutes);
 app.use('/api/v1/findings', findingsRoutes);
 app.use('/api/v1/users', usersRoutes);
+app.use('/api/v1/users', userSettingsRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
+app.use('/api/v1/findings', commentsRoutes);
+app.use('/api/v1/analytics', analyticsRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 
@@ -192,10 +200,18 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 
 // ==================== INICIAR SERVIDOR ====================
 
-const server = app.listen(PORT, () => {
+// Crear servidor HTTP para Express
+const httpServer = createServer(app);
+
+// Inicializar Socket.io para notificaciones en tiempo real
+socketService.init(httpServer, allowedOrigins);
+
+// Iniciar servidor
+const server = httpServer.listen(PORT, () => {
   logger.info(`🚀 Servidor SCR Agent iniciado en puerto ${PORT}`);
   logger.info(`📍 Entorno: ${NODE_ENV}`);
   logger.info(`🔗 API base: http://localhost:${PORT}/api/v1`);
+  logger.info(`🔌 WebSocket listo en ws://localhost:${PORT}`);
 });
 
 /**

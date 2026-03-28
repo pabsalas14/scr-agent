@@ -9,10 +9,10 @@ class UsersService {
    */
   async getAllUsers(): Promise<User[]> {
     try {
-      const response = await apiService.get<{ success: boolean; data: User[] }>(
+      const response = await apiService.get<any>(
         '/users'
       );
-      return response.data || [];
+      return (response.data?.data || response.data || []) as User[];
     } catch (error) {
       console.error('Error fetching users:', error);
       throw error;
@@ -37,10 +37,10 @@ class UsersService {
    */
   async getUsersByRole(role: Role): Promise<User[]> {
     try {
-      const response = await apiService.get<{ success: boolean; data: User[] }>(
+      const response = await apiService.get<any>(
         `/users/role/${role}`
       );
-      return response.data || [];
+      return (response.data?.data || response.data || []) as User[];
     } catch (error) {
       console.error('Error fetching users by role:', error);
       throw error;
@@ -77,10 +77,10 @@ class UsersService {
    */
   async getUserAssignments(userId: string): Promise<any[]> {
     try {
-      const response = await apiService.get<{ success: boolean; data: any[] }>(
+      const response = await apiService.get<any>(
         `/users/${userId}/assignments`
       );
-      return response.data || [];
+      return (response.data?.data || response.data || []) as any[];
     } catch (error) {
       console.error('Error fetching user assignments:', error);
       throw error;
@@ -92,10 +92,10 @@ class UsersService {
    */
   async getAnalysisAssignments(analysisId: string): Promise<any[]> {
     try {
-      const response = await apiService.get<{ success: boolean; data: any[] }>(
+      const response = await apiService.get<any>(
         `/users/analysis/${analysisId}/assignments`
       );
-      return response.data || [];
+      return (response.data?.data || response.data || []) as any[];
     } catch (error) {
       console.error('Error fetching analysis assignments:', error);
       throw error;

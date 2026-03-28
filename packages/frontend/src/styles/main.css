@@ -27,15 +27,15 @@
   --spacing-5xl: 48px;
 
   /* ===== COLORES - PALETA CORPORATIVA ===== */
-  /* Primarios */
-  --color-primary: #0066cc;      /* Azul profesional */
-  --color-primary-light: #3399ff;
-  --color-primary-dark: #003d99;
-  --color-primary-bg: #f0f4ff;   /* Para backgrounds sutiles */
+  /* Primarios - Azul profesional moderno */
+  --color-primary: #0284c7;        /* sky-600 - Más moderno que azul puro */
+  --color-primary-light: #38bdf8;  /* sky-400 */
+  --color-primary-dark: #0c63e4;   /* sky-700 */
+  --color-primary-bg: #e0f2fe;     /* sky-100 */
 
-  /* Secundarios */
-  --color-secondary: #00aa66;    /* Verde éxito */
-  --color-accent: #ff6600;       /* Naranja llamadas a acción */
+  /* Secundarios - Verde profesional */
+  --color-secondary: #16a34a;       /* green-600 */
+  --color-accent: #ea580c;          /* orange-600 - Llamadas a acción más visibles */
 
   /* SEVERIDAD */
   --severity-critical: #dc2626;  /* Rojo crítico */
@@ -539,6 +539,26 @@ pre code {
 }
 
 html.dark .glass {
-  background-color: rgba(30, 30, 30, 0.9);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/**
+ * ============================================================================
+ * DARK MODE OVERRIDES ADICIONALES
+ * ============================================================================
+ */
+
+html.dark code {
+  background-color: rgba(30, 41, 59, 0.8);
+  color: #f1f5f9;
+}
+
+html.dark pre {
+  background-color: rgba(15, 23, 42, 0.8);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+html.dark pre code {
+  color: #e2e8f0;
 }

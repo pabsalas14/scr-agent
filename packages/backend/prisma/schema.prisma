@@ -32,6 +32,9 @@ model User {
   roles        UserRole[]
   assignments  FindingAssignment[]
   statusChanges FindingStatusChange[]
+  notifications Notification[]
+  comments     Comment[]
+  notificationPreferences NotificationPreferences?
 
   @@index([email])
   @@map("users")
@@ -112,6 +115,7 @@ model Analysis {
   // Estado de análisis
   status   AnalysisStatus @default(PENDING)
   progress Int            @default(0) // 0-100
+  errorMessage String? @db.Text // Mensaje de error si el análisis falla
 
   // Datos
   findings       Finding[]
@@ -162,6 +166,8 @@ model Finding {
   assignment FindingAssignment?
   statusHistory FindingStatusChange[]
   remediation RemediationEntry?
+  comments Comment[]
+  notifications Notification[]
 
   @@index([analysisId])
   @@index([severity])
@@ -382,4 +388,98 @@ enum RemediationStatus {
   COMPLETED // Completado
   VERIFIED // Verificado
   REJECTED // Rechazado por QA
+}
+
+// ==================== PHASE 4: REAL-TIME & COLLABORATION ====================
+
+/// Notificación - Para sistema de notificaciones en tiempo real
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String   @db.Text
+  severity  NotificationSeverity @default(INFO)
+
+  // Relación opcional a hallazgo
+  findingId String?
+  finding   Finding? @relation(fields: [findingId], references: [id], onDelete: SetNull)
+
+  // Datos adicionales
+  metadata  Json?
+  read      Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+/// Comentario - Para discusiones en hallazgos
+model Comment {
+  id        String   @id @default(cuid())
+  findingId String
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  content   String   @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([findingId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("comments")
+}
+
+/// Preferencias de notificación del usuario
+model NotificationPreferences {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Tipos de notificación habilitados
+  enableAssignments      Boolean @default(true)
+  enableStatusChanges    Boolean @default(true)
+  enableRemediations     Boolean @default(true)
+  enableComments         Boolean @default(true)
+  enableDigestEmail      Boolean @default(false)
+
+  // Configuración
+  digestFrequency        String  @default("DAILY") // DAILY, WEEKLY, NEVER
+  emailNotifications     Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+// ==================== ENUMS: PHASE 4 ====================
+
+/// Tipo de notificación
+enum NotificationType {
+  STATUS_CHANGE       // Cambio de estado de hallazgo
+  ASSIGNMENT          // Asignación de hallazgo
+  REMEDIATION         // Actualización de remediación
+  VERIFICATION        // Verificación de remediación
+  COMMENT             // Nuevo comentario
+  SYSTEM              // Notificación del sistema
+}
+
+/// Severidad de notificación
+enum NotificationSeverity {
+  INFO
+  SUCCESS
+  WARNING
+  ERROR
 }

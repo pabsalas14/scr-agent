@@ -37,8 +37,8 @@ export default function CostsMonitor() {
     );
   }
 
-  const totalPercentages = costs.entries.map((entry) =>
-    costs.totalCostUSD > 0 ? (entry.costUSD / costs.totalCostUSD) * 100 : 0
+  const totalPercentages = (costs?.entries || []).map((entry) =>
+    (costs?.totalCostUSD || 0) > 0 ? (entry.costUSD / (costs?.totalCostUSD || 1)) * 100 : 0
   );
 
   const colors = [
@@ -97,7 +97,7 @@ export default function CostsMonitor() {
                     ${entry.costUSD.toFixed(4)}
                   </td>
                   <td className="px-4 py-3 text-gray-600 dark:text-gray-400 text-right">
-                    {totalPercentages[i].toFixed(1)}%
+                    {totalPercentages[i]!.toFixed(1)}%
                   </td>
                 </tr>
               ))}
@@ -133,7 +133,7 @@ export default function CostsMonitor() {
                 />
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {totalPercentages[i].toFixed(1)}% del total
+                {totalPercentages[i]!.toFixed(1)}% del total
               </p>
             </div>
           ))}
