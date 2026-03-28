@@ -12,6 +12,7 @@
  */
 
 import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Download } from 'lucide-react';
@@ -25,8 +26,7 @@ import FindingsTracker from '../Dashboard/FindingsTracker';
 import AnalysisReport from '../Analysis/AnalysisReport';
 
 interface ReportViewerProps {
-  analysisId: string;
-  onVolver: () => void;
+  // No longer needed - parameters come from URL
 }
 
 /**
@@ -96,7 +96,14 @@ function GaugeRiesgo({ puntuacion }: { puntuacion: number }) {
   );
 }
 
-export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps) {
+export default function ReportViewer() {
+  const { projectId, analysisId } = useParams<{ projectId: string; analysisId: string }>();
+  const navigate = useNavigate();
+
+  if (!analysisId) {
+    return <div className="text-red-500">Error: Analysis ID not found in URL</div>;
+  }
+
   const [seccionActiva, setSeccionActiva] = useState<
     'resumen' | 'hallazgos' | 'timeline' | 'remediacion' | 'gestor'
   >('resumen');
@@ -163,7 +170,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
         <div className="flex justify-between items-start gap-4">
           <div>
             <div className="flex items-center gap-2 text-sm text-gray-400 mb-4">
-              <button onClick={onVolver} className="hover:text-white transition-colors">
+              <button onClick={() => navigate('/dashboard')} className="hover:text-white transition-colors">
                 Proyectos
               </button>
               <span>/</span>
@@ -172,7 +179,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
             <h1 className="text-4xl font-black text-white">Análisis de Seguridad</h1>
             <p className="text-gray-400 mt-2">Monitoreo del análisis en tiempo real</p>
           </div>
-          <Button variant="secondary" onClick={onVolver} className="flex items-center gap-2">
+          <Button variant="secondary" onClick={() => navigate('/dashboard')} className="flex items-center gap-2">
             <ArrowLeft className="w-4 h-4" />
             Volver
           </Button>
@@ -195,7 +202,7 @@ export default function ReportViewer({ analysisId, onVolver }: ReportViewerProps
       {/* Header con Breadcrumb */}
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
         <div className="flex items-center gap-2 text-sm text-gray-400">
-          <button onClick={onVolver} className="hover:text-white transition-colors">
+          <button onClick={() => navigate('/dashboard')} className="hover:text-white transition-colors">
             Proyectos
           </button>
           <span>/</span>

@@ -22,7 +22,7 @@ import NuevoProyectoModerno from './NuevoProyectoModerno';
 import ProyectoCard from './ProyectoCard';
 
 interface DashboardProps {
-  onVerAnalisis: (analysisId: string) => void;
+  onVerAnalisis: (projectId: string, analysisId: string) => void;
 }
 
 export default function Dashboard({ onVerAnalisis }: DashboardProps) {

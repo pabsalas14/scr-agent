@@ -14,7 +14,7 @@ import ProjectDetailView from './ProjectDetailView';
 
 interface ProyectoCardProps {
   proyecto: Proyecto;
-  onVerAnalisis: (id: string) => void;
+  onVerAnalisis: (projectId: string, analysisId: string) => void;
 }
 
 const SCOPE_LABELS: Record<string, string> = {
@@ -40,7 +40,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
    */
   const iniciar = useMutation({
     mutationFn: () => apiService.iniciarAnalisis(proyecto.id),
-    onSuccess: (analisis) => onVerAnalisis(analisis.id),
+    onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
   });
 
   const analisisList = analisisData || [];
@@ -128,7 +128,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             variant="secondary"
             size="sm"
             className="px-2 sm:px-3 py-1.5 sm:py-2"
-            onClick={() => onVerAnalisis(ultimoAnalisis.id)}
+            onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
             title="Ver reporte"
             aria-label="Ver reporte"
           >

@@ -1,35 +1,32 @@
 import { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Moon, Sun, Settings, LogOut, User, Shield, Menu, X } from 'lucide-react';
 
 interface HeaderProps {
-  vista: 'dashboard' | 'reporte' | 'login';
   theme: 'light' | 'dark';
-  onLogoClick: () => void;
   onThemeToggle: () => void;
   onSettingsClick: () => void;
-  onNavClick?: (nav: string) => void;
 }
 
 export default function Header({
-  vista,
   theme,
-  onLogoClick,
   onThemeToggle,
   onSettingsClick,
-  onNavClick,
 }: HeaderProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isLogin = location.pathname === '/login';
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
   const getNavLabel = () => {
-    switch (vista) {
-      case 'reporte':
-        return 'Reporte';
-      case 'dashboard':
-        return 'Proyectos';
-      default:
-        return '';
+    if (location.pathname.includes('/analyses/')) {
+      return 'Análisis';
     }
+    if (location.pathname.includes('/dashboard')) {
+      return 'Proyectos';
+    }
+    return '';
   };
 
   const getInitials = () => {
@@ -54,7 +51,7 @@ export default function Header({
         <div className="flex items-center justify-between h-16">
           {/* Logo - Responsive */}
           <button
-            onClick={onLogoClick}
+            onClick={() => navigate('/dashboard')}
             className="flex items-center gap-2 sm:gap-3 hover:opacity-85 transition-opacity duration-300 group flex-shrink-0"
             aria-label="Go to dashboard"
           >
@@ -68,15 +65,15 @@ export default function Header({
           </button>
 
           {/* Breadcrumb / Navigation - Center (Hidden on mobile) */}
-          {vista !== 'login' && (
+          {!isLogin && (
             <div className="hidden md:flex items-center gap-2 flex-1 ml-8 lg:ml-12">
               <button
-                onClick={() => onNavClick?.('dashboard')}
+                onClick={() => navigate('/dashboard')}
                 className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
               >
                 Proyectos
               </button>
-              {vista === 'reporte' && (
+              {location.pathname.includes('/analyses/') && (
                 <>
                   <span className="text-gray-400 dark:text-gray-600 text-sm">/</span>
                   <span className="text-sm font-medium text-gray-900 dark:text-white">
@@ -88,7 +85,7 @@ export default function Header({
           )}
 
           {/* Right Controls - Responsive */}
-          {vista !== 'login' && (
+          {!isLogin && (
             <div className="flex items-center gap-1 sm:gap-2">
               {/* Theme Toggle */}
               <button

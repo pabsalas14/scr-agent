@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FileText, Zap, Wand2, DollarSign, Cog, Shield, TrendingUp } from 'lucide-react';
 import Dashboard from '../Dashboard/Dashboard';
@@ -18,10 +19,6 @@ import SettingsModule from '../Settings/SettingsModule';
 type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'settings';
 type AgentView = 'list' | 'detail';
 
-interface MainDashboardProps {
-  onVerAnalisis?: (analysisId: string) => void;
-}
-
 const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode; color: string }> = [
   { id: 'projects', label: 'Dashboard', icon: <Shield className="w-5 h-5" />, color: '#0EA5E9' },
   { id: 'analyses', label: 'Reportes', icon: <FileText className="w-5 h-5" />, color: '#10B981' },
@@ -32,7 +29,8 @@ const TABS: Array<{ id: Tab; label: string; icon: React.ReactNode; color: string
   { id: 'settings', label: 'Settings', icon: <Cog className="w-5 h-5" />, color: '#6B7280' },
 ];
 
-export default function MainDashboard({ onVerAnalisis }: MainDashboardProps) {
+export default function MainDashboard() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('projects');
   const [agentView, setAgentView] = useState<AgentView>('list');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
@@ -50,7 +48,7 @@ export default function MainDashboard({ onVerAnalisis }: MainDashboardProps) {
   const renderContent = () => {
     switch (activeTab) {
       case 'projects':
-        return <Dashboard onVerAnalisis={onVerAnalisis || (() => {})} />;
+        return <Dashboard onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)} />;
       case 'analyses':
         return <AnalysisMonitor />;
       case 'agents':

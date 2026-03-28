@@ -5,17 +5,15 @@
  */
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 
-interface LoginPageProps {
-  onLoginSuccess: () => void;
-}
-
-export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
+export default function LoginPage() {
   const { setToken } = useAuth();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -42,7 +40,7 @@ export default function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
       const data = await response.json();
       setToken(data.token);
-      onLoginSuccess();
+      navigate('/dashboard');
     } catch (err: unknown) {
       const errorMsg = err instanceof Error ? err.message : 'Error al iniciar sesión';
       setError(errorMsg);
