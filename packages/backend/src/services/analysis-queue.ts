@@ -91,6 +91,16 @@ async function processAnalysisQueue() {
 
     logger.info(`✅ Inspector encontró ${maliciaOutput.cantidad_hallazgos} hallazgos`);
 
+    // Mapear severidad español → enum Prisma
+    const mapSeverity = (s: string): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' => {
+      const normalized = (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      if (normalized.includes('CRITIC') || normalized.includes('CRITICO')) return 'CRITICAL';
+      if (normalized.includes('ALTO') || normalized.includes('HIGH')) return 'HIGH';
+      if (normalized.includes('MEDIO') || normalized.includes('MEDIUM')) return 'MEDIUM';
+      if (normalized.includes('BAJO') || normalized.includes('LOW')) return 'LOW';
+      return 'MEDIUM';
+    };
+
     // Guardar hallazgos
     if (maliciaOutput.hallazgos && maliciaOutput.hallazgos.length > 0) {
       logger.info(`Guardando ${maliciaOutput.hallazgos.length} hallazgos en BD...`);
@@ -98,14 +108,14 @@ async function processAnalysisQueue() {
         await prisma.finding.create({
           data: {
             analysisId,
-            severity: hallazgo.severidad || 'MEDIUM',
+            severity: mapSeverity(hallazgo.severidad),
             riskType: hallazgo.tipo || 'UNKNOWN',
             file: hallazgo.archivo || 'unknown',
             lineRange: hallazgo.linea ? String(hallazgo.linea) : '0',
-            codeSnippet: hallazgo.codigo || undefined,
-            whySuspicious: hallazgo.descripcion || 'No description',
-            remediationSteps: hallazgo.recomendacion ? [hallazgo.recomendacion] : [],
-            confidence: 0.8,
+            codeSnippet: hallazgo.codigo || hallazgo.fragmento_codigo || undefined,
+            whySuspicious: hallazgo.descripcion || hallazgo.por_que_sospechoso || 'No description',
+            remediationSteps: hallazgo.recomendacion ? [hallazgo.recomendacion] : (hallazgo.pasos_remediacion || []),
+            confidence: hallazgo.confianza || 0.8,
           },
         });
       }

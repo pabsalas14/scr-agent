@@ -83,8 +83,10 @@ export class GitService {
 
     try {
       const url = new URL(repoUrl);
-      // Insertar token en la URL: https://token@github.com/owner/repo
-      url.username = githubToken;
+      // Fine-grained tokens (github_pat_*) require x-access-token format
+      // Classic tokens work with either format
+      url.username = 'x-access-token';
+      url.password = githubToken;
       // Asegurar que la URL termina en .git para operaciones de git
       const urlString = url.toString();
       return urlString.endsWith('.git') ? urlString : `${urlString}.git`;
