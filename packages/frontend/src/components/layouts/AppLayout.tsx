@@ -5,6 +5,7 @@ import Header from '../Header';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../hooks/useAuth';
 import ToastContainer from '../ui/Toast';
+import LoadingBar from '../ui/LoadingBar';
 import { socketClientService } from '../../services/socket.service';
 import { SocketProvider } from '../../contexts/SocketContext';
 
@@ -90,6 +91,7 @@ export default function AppLayout() {
   return (
     <SocketProvider socketConnected={socketConnected}>
       <ProtectedRoute onUnauthenticated={() => window.location.href = '/login'}>
+        <LoadingBar />
         <div className="min-h-screen flex flex-col bg-gradient-to-br from-teal-600 to-blue-600 dark:from-slate-900 dark:to-slate-800">
           {/* Header Component */}
           <Header
