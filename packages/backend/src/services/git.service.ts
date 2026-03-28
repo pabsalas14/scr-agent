@@ -324,15 +324,31 @@ export class GitService {
     localPath: string,
     extensions: string[] = ['.ts', '.js', '.py', '.java', '.go', '.rb', '.php', '.cs', '.json', '.yaml', '.yml', '.sh', '.env']
   ): { files: Array<{ path: string; content: string; size: number }>; totalSize: number; fileCount: number } {
-    const MAX_FILE_SIZE = 500 * 1024; // 500 KB por archivo
-    const MAX_TOTAL_SIZE = 5 * 1024 * 1024; // 5 MB total
-    const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '__pycache__', 'venv', '.venv']);
+    // LARGE REPOSITORY STRATEGY:
+    // - Reduced limits to handle large repos without token overflow
+    // - Aggressive directory exclusion to focus on source code only
+    // - Prioritizes main source over tests/examples
+    const MAX_FILE_SIZE = 150 * 1024; // 150 KB per file (was 500 KB)
+    const MAX_TOTAL_SIZE = 2 * 1024 * 1024; // 2 MB total (was 5 MB)
+    const EXCLUDED_DIRS = new Set([
+      'node_modules', '.git', 'dist', 'build', '.next', '__pycache__', 'venv', '.venv',
+      'test', 'tests', 'spec', 'specs', 'coverage', '.coverage',
+      'vendor', 'third_party', 'external',
+      'examples', 'samples', 'demo', 'docs',
+      '.github', '.gitlab', '.gitignore',
+      'public', 'static', 'assets',
+      'tmp', 'temp', 'cache', '.cache',
+      'node', 'pip', 'gem', 'npm'
+    ]);
 
     const files: Array<{ path: string; content: string; size: number }> = [];
     let totalSize = 0;
+    let skippedLargeFiles = 0;
+    let skippedBySize = 0;
 
-    const walk = (dir: string): void => {
-      if (totalSize >= MAX_TOTAL_SIZE) return;
+    const walk = (dir: string, depth: number = 0): void => {
+      // Skip deep nested directories (often generated code)
+      if (depth > 6 || totalSize >= MAX_TOTAL_SIZE) return;
 
       let entries: fs.Dirent[];
       try {
@@ -346,7 +362,7 @@ export class GitService {
 
         if (entry.isDirectory()) {
           if (!EXCLUDED_DIRS.has(entry.name)) {
-            walk(path.join(dir, entry.name));
+            walk(path.join(dir, entry.name), depth + 1);
           }
         } else if (entry.isFile()) {
           const ext = path.extname(entry.name).toLowerCase();
@@ -354,7 +370,10 @@ export class GitService {
             const filePath = path.join(dir, entry.name);
             try {
               const stat = fs.statSync(filePath);
-              if (stat.size > MAX_FILE_SIZE) continue;
+              if (stat.size > MAX_FILE_SIZE) {
+                skippedLargeFiles++;
+                continue;
+              }
               const content = fs.readFileSync(filePath, 'utf-8');
               const relativePath = path.relative(localPath, filePath);
               files.push({ path: relativePath, content, size: stat.size });
@@ -369,7 +388,13 @@ export class GitService {
 
     walk(localPath);
 
-    logger.debug(`Archivos leídos: ${files.length}, tamaño total: ${totalSize} bytes`);
+    // Log strategy info for large repos
+    if (totalSize >= MAX_TOTAL_SIZE * 0.8) {
+      logger.warn(`⚠️ LARGE REPOSITORY: Using aggressive file filtering. Analyzed: ${files.length} files (${totalSize} bytes), Skipped: ${skippedLargeFiles} large files, Max total size: ${MAX_TOTAL_SIZE}`);
+    } else {
+      logger.debug(`Archivos leídos: ${files.length}, tamaño total: ${totalSize} bytes`);
+    }
+
     return { files, totalSize, fileCount: files.length };
   }
 
