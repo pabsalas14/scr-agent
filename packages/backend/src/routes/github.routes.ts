@@ -13,6 +13,7 @@ import { Router, type Router as ExpressRouter, Response } from 'express';
 import { AuthenticatedRequest, authMiddleware } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
+import { gitService } from '../services/git.service';
 import axios from 'axios';
 
 const router: ExpressRouter = Router();
@@ -219,6 +220,101 @@ router.get(
       const msg = error instanceof Error ? error.message : String(error);
       logger.error(`Error en /github/repos/:owner/:repo/branches: ${msg}`);
       res.status(500).json({ error: 'Error interno del servidor' });
+    }
+  }
+);
+
+/**
+ * POST /api/v1/github/repos/:owner/:repo/validate
+ * Validar que un repositorio es accesible
+ * Devuelve: { accessible: boolean, reason?: string }
+ */
+router.post(
+  '/repos/:owner/:repo/validate',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      const { owner, repo } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Usuario no autenticado' });
+        return;
+      }
+
+      if (!owner || !repo) {
+        res.status(400).json({ error: 'owner y repo son requeridos' });
+        return;
+      }
+
+      /**
+       * Obtener GitHub token del usuario
+       */
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId },
+      });
+
+      const githubToken = userSettings?.githubToken;
+
+      try {
+        /**
+         * Validar acceso al repositorio
+         */
+        const repoUrl = `https://github.com/${owner}/${repo}`;
+        await gitService.testRepositoryAccess(repoUrl, githubToken || undefined);
+
+        res.json({
+          accessible: true,
+          owner,
+          repo,
+          message: 'Repository is accessible',
+        });
+      } catch (error: any) {
+        const errorMessage = error.message || '';
+
+        // Determinar si es accessible o no
+        if (
+          errorMessage.includes('404') ||
+          errorMessage.startsWith('REPO_NOT_FOUND')
+        ) {
+          res.status(404).json({
+            accessible: false,
+            reason: 'REPO_NOT_FOUND',
+            message: 'Repository does not exist',
+          });
+        } else if (
+          errorMessage.includes('403') ||
+          errorMessage.startsWith('NO_ACCESS')
+        ) {
+          res.status(403).json({
+            accessible: false,
+            reason: 'NO_ACCESS',
+            message: 'No access to repository (private or insufficient permissions)',
+          });
+        } else if (
+          errorMessage.includes('401') ||
+          errorMessage.startsWith('INVALID_TOKEN')
+        ) {
+          res.status(401).json({
+            accessible: false,
+            reason: 'INVALID_TOKEN',
+            message: 'GitHub token is invalid or expired',
+          });
+        } else {
+          res.status(400).json({
+            accessible: false,
+            reason: 'VALIDATION_ERROR',
+            message: errorMessage,
+          });
+        }
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error(`Error en /github/repos/:owner/:repo/validate: ${msg}`);
+      res.status(500).json({
+        error: 'Error validating repository',
+        message: msg,
+      });
     }
   }
 );

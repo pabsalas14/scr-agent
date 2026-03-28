@@ -6,12 +6,13 @@
  * Componente que carga la lista de repositorios del usuario desde GitHub
  * y permite seleccionar uno para análisis.
  *
+ * NUEVO: Validación automática de acceso al repositorio
  * Requisito: GitHub token debe estar configurado en Configuración
  */
 
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, GitBranch, Lock, Star } from 'lucide-react';
+import { Search, GitBranch, Lock, Star, CheckCircle, AlertCircle } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 
 interface Repository {
@@ -28,18 +29,24 @@ interface Repository {
 
 interface RepositorySelectorProps {
   onSelect: (repo: Repository) => void;
+  onValidationChange?: (isValid: boolean, error?: string) => void;
   isLoading?: boolean;
   selectedRepo?: Repository | null;
 }
 
+type ValidationState = 'idle' | 'validating' | 'valid' | 'error';
+
 export default function RepositorySelector({
   onSelect,
+  onValidationChange,
   isLoading = false,
   selectedRepo = null,
 }: RepositorySelectorProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [validationState, setValidationState] = useState<ValidationState>('idle');
+  const [validationError, setValidationError] = useState<string>('');
 
   /**
    * Cargar repositorios del usuario desde GitHub
@@ -48,7 +55,6 @@ export default function RepositorySelector({
     data: reposData,
     isLoading: isLoadingRepos,
     error: reposError,
-    refetch,
   } = useQuery({
     queryKey: ['github-repos', search, page],
     queryFn: async () => {
@@ -68,15 +74,51 @@ export default function RepositorySelector({
   const repos = reposData?.repos || [];
   const hasMore = reposData?.hasMore || false;
 
+  /**
+   * Validar acceso al repositorio seleccionado
+   */
+  const validateRepositoryAccess = async (repo: Repository) => {
+    try {
+      setValidationState('validating');
+      setValidationError('');
+
+      // Extraer owner y repo de fullName (ej: "owner/repo")
+      const [owner, repoName] = repo.fullName.split('/');
+
+      const response = await apiService.post(`/github/repos/${owner}/${repoName}/validate`);
+
+      if (response.data.accessible) {
+        setValidationState('valid');
+        onValidationChange?.(true);
+      } else {
+        const message = response.data.message || 'Repository not accessible';
+        setValidationState('error');
+        setValidationError(message);
+        onValidationChange?.(false, message);
+      }
+    } catch (error: any) {
+      const errorMsg = error.response?.data?.message ||
+                      error.response?.data?.error ||
+                      'Failed to validate repository';
+      setValidationState('error');
+      setValidationError(errorMsg);
+      onValidationChange?.(false, errorMsg);
+    }
+  };
+
   const handleSelect = (repo: Repository) => {
     onSelect(repo);
     setSelectedIndex(repos.indexOf(repo));
+    // Validar acceso inmediatamente
+    validateRepositoryAccess(repo);
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearch(e.target.value);
     setPage(1);
     setSelectedIndex(null);
+    setValidationState('idle');
+    setValidationError('');
   };
 
   if (reposError) {
@@ -159,22 +201,68 @@ export default function RepositorySelector({
         )}
       </div>
 
-      {/* Selected Repo Display */}
+      {/* Selected Repo Display with Validation Status */}
       {selectedRepo && (
-        <div className="rounded-lg bg-emerald-900/20 border border-emerald-600/30 p-3">
+        <div className={`rounded-lg border p-3 transition-colors ${
+          validationState === 'valid'
+            ? 'bg-emerald-900/20 border-emerald-600/30'
+            : validationState === 'validating'
+            ? 'bg-blue-900/20 border-blue-600/30'
+            : validationState === 'error'
+            ? 'bg-red-900/20 border-red-600/30'
+            : 'bg-slate-900/20 border-slate-600/30'
+        }`}>
           <div className="flex items-start justify-between gap-2">
             <div className="flex items-start gap-2 min-w-0">
-              <GitBranch className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+              <GitBranch className={`w-4 h-4 flex-shrink-0 mt-0.5 ${
+                validationState === 'valid' ? 'text-emerald-400' :
+                validationState === 'validating' ? 'text-blue-400' :
+                validationState === 'error' ? 'text-red-400' :
+                'text-gray-400'
+              }`} />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-emerald-300">
+                <p className={`text-sm font-medium ${
+                  validationState === 'valid' ? 'text-emerald-300' :
+                  validationState === 'validating' ? 'text-blue-300' :
+                  validationState === 'error' ? 'text-red-300' :
+                  'text-gray-300'
+                }`}>
                   {selectedRepo.fullName}
                 </p>
-                <p className="text-xs text-emerald-400/70 truncate">
+                <p className={`text-xs truncate ${
+                  validationState === 'valid' ? 'text-emerald-400/70' :
+                  validationState === 'validating' ? 'text-blue-400/70' :
+                  validationState === 'error' ? 'text-red-400/70' :
+                  'text-gray-400/70'
+                }`}>
                   {selectedRepo.cloneUrl}
                 </p>
               </div>
             </div>
+
+            {/* Validation Status Icon */}
+            {validationState === 'validating' && (
+              <div className="animate-spin text-blue-400 flex-shrink-0">⟳</div>
+            )}
+            {validationState === 'valid' && (
+              <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+            )}
+            {validationState === 'error' && (
+              <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
+            )}
           </div>
+
+          {/* Validation Error Message */}
+          {validationState === 'error' && validationError && (
+            <p className="text-xs text-red-400 mt-2 pl-6">
+              {validationError}
+            </p>
+          )}
+          {validationState === 'valid' && (
+            <p className="text-xs text-emerald-400 mt-2 pl-6">
+              ✓ Repository is accessible
+            </p>
+          )}
         </div>
       )}
 

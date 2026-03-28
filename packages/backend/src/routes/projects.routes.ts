@@ -3,11 +3,13 @@
  * Endpoints para gestionar proyectos de análisis
  */
 
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Router, type Request, type Response, type NextFunction, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
+import { queueService } from '../services/queue.service';
+import { gitService } from '../services/git.service';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * GET /api/v1/projects
@@ -100,14 +102,67 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, description, repositoryUrl, scope } = req.body;
+    const userId = (req as any).user?.id; // Obtenido del middleware de auth
 
-    // Validar datos
+    // Validar datos básicos
     if (!name || !repositoryUrl || !scope) {
       return res.status(400).json({
         success: false,
         error: 'Campos requeridos: name, repositoryUrl, scope',
       });
     }
+
+    // ========== VALIDACIÓN DE REPOSITORIO ==========
+    try {
+      // Obtener GitHub token del usuario si está disponible
+      let githubToken: string | undefined;
+      if (userId) {
+        const userSettings = await prisma.userSettings.findUnique({
+          where: { userId },
+        });
+        githubToken = userSettings?.githubToken || undefined;
+      }
+
+      // Validar acceso al repositorio
+      await gitService.testRepositoryAccess(repositoryUrl, githubToken);
+    } catch (validationError: any) {
+      const errorMessage = validationError.message || '';
+
+      // Extraer código de error específico
+      let code = 'VALIDATION_ERROR';
+      let statusCode = 400;
+      let userMessage = 'Repository validation failed';
+
+      if (errorMessage.startsWith('INVALID_URL:')) {
+        code = 'INVALID_URL';
+        userMessage = 'Invalid repository URL format (must be HTTPS from GitHub, GitLab, or Bitbucket)';
+      } else if (errorMessage.startsWith('REPO_NOT_FOUND:')) {
+        code = 'REPO_NOT_FOUND';
+        userMessage = 'Repository not found. Please check the URL and try again.';
+      } else if (errorMessage.startsWith('NO_ACCESS:')) {
+        code = 'NO_ACCESS';
+        userMessage = 'No access to this repository. It may be private - configure your GitHub token in Settings.';
+      } else if (errorMessage.startsWith('INVALID_TOKEN:')) {
+        code = 'INVALID_TOKEN';
+        userMessage = 'GitHub token is invalid or expired. Please refresh it in Settings.';
+      } else if (errorMessage.startsWith('NETWORK_')) {
+        code = 'NETWORK_ERROR';
+        statusCode = 503;
+        userMessage = 'Failed to verify repository access. Please try again later.';
+      }
+
+      logger.warn(`Repository validation failed for ${repositoryUrl}: ${errorMessage}`);
+
+      return res.status(statusCode).json({
+        success: false,
+        error: userMessage,
+        details: {
+          code,
+          message: errorMessage,
+        },
+      });
+    }
+    // ========== FIN VALIDACIÓN ==========
 
     const project = await prisma.project.create({
       data: {
@@ -151,16 +206,27 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
     // Crear análisis
     const analysis = await prisma.analysis.create({
       data: {
-        projectId,
-        status: 'PENDING',
+        projectId: projectId!,
+        status: 'PENDING' as const,
         progress: 0,
       },
     });
 
+    // Encolar análisis en background
+    queueService.encolar({
+      analysisId: analysis.id,
+      projectId: projectId!,
+      repositoryUrl: project.repositoryUrl,
+      scope: project.scope as any,
+      githubToken: project.githubToken || undefined,
+    });
+
+    logger.info(`Analysis ${analysis.id} enqueued for processing`);
+
     res.status(201).json({
       success: true,
       data: analysis,
-      message: 'Análisis iniciado. Procesando...',
+      message: 'Análisis iniciado. Procesando en background...',
     });
   } catch (error) {
     next(error);

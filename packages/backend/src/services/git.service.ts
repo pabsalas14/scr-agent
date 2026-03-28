@@ -18,6 +18,7 @@ import simpleGit, { SimpleGit } from 'simple-git';
 import { logger, auditLog, AuditEventType } from './logger.service';
 import path from 'path';
 import fs from 'fs';
+import axios from 'axios';
 
 /**
  * Interfaz para un commit de Git
@@ -136,7 +137,8 @@ export class GitService {
       return localPath;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Error al clonar/pullear repositorio: ${errorMessage}`);
+      const errorStack = error instanceof Error ? error.stack : '';
+      logger.error(`Error al clonar/pullear repositorio: ${errorMessage}\nURL: ${repoUrl}\nLocalPath: ${localPath}\nStack: ${errorStack}`);
       throw new Error(`No se pudo acceder al repositorio: ${errorMessage}`);
     }
   }
@@ -369,6 +371,104 @@ export class GitService {
       );
     } catch {
       return false;
+    }
+  }
+
+  /**
+   * Probar acceso a repositorio (validación avanzada)
+   * Verifica que el repositorio existe y es accesible con el token proporcionado
+   * Lanza error descriptivo si hay problemas
+   */
+  async testRepositoryAccess(
+    repoUrl: string,
+    githubToken?: string
+  ): Promise<boolean> {
+    // Primero validar formato de URL
+    if (!this.validateRepositoryUrl(repoUrl)) {
+      throw new Error(
+        'INVALID_URL: Invalid repository URL format (must be HTTPS, no credentials embedded, and from allowed hosts)'
+      );
+    }
+
+    try {
+      const urlObj = new URL(repoUrl);
+      const hostname = urlObj.hostname.toLowerCase();
+
+      // Para repositorios de GitHub, verificar acceso vía API
+      if (
+        hostname === 'github.com' ||
+        hostname.endsWith('.github.com')
+      ) {
+        // Extraer owner/repo de la URL
+        // Ej: https://github.com/owner/repo o https://github.com/owner/repo.git
+        const pathParts = urlObj.pathname
+          .split('/')
+          .filter((p) => p && !p.endsWith('.git'));
+        if (pathParts.length < 2) {
+          throw new Error('INVALID_URL: GitHub URL must be in format https://github.com/owner/repo');
+        }
+
+        const [owner, repo] = pathParts as [string, string];
+        const repoName = repo!.replace('.git', '');
+        const apiUrl = `https://api.github.com/repos/${owner}/${repoName}`;
+
+        try {
+          const headers: Record<string, string> = {
+            'User-Agent': 'SCR-Agent',
+            Accept: 'application/vnd.github.v3+json',
+          };
+
+          // Agregar token si disponible
+          if (githubToken) {
+            headers['Authorization'] = `token ${githubToken}`;
+          }
+
+          const response = await axios.get(apiUrl, { headers, timeout: 5000 });
+
+          // Si llegamos aquí, el repositorio es accesible
+          logger.debug(
+            `Repository access verified: ${owner}/${repoName} (Public: ${!response.data.private})`
+          );
+          return true;
+        } catch (error: any) {
+          // Manejar diferentes códigos de error
+          if (error.response?.status === 404) {
+            throw new Error(
+              'REPO_NOT_FOUND: Repository does not exist or has been deleted'
+            );
+          } else if (error.response?.status === 403) {
+            throw new Error(
+              'NO_ACCESS: Repository is private or you do not have access (check GitHub token in Settings)'
+            );
+          } else if (error.response?.status === 401) {
+            throw new Error(
+              'INVALID_TOKEN: GitHub token is invalid or has expired (refresh in Settings)'
+            );
+          } else if (error.code === 'ECONNABORTED') {
+            throw new Error('NETWORK_TIMEOUT: Failed to verify repository (GitHub API timeout)');
+          } else {
+            throw new Error(
+              `NETWORK_ERROR: Failed to verify repository access (${error.message})`
+            );
+          }
+        }
+      }
+
+      // Para otras plataformas (GitLab, Bitbucket), simplemente validar que es una URL válida
+      // Validación más robusta se hace durante el clone
+      logger.debug(`Repository URL validated: ${repoUrl}`);
+      return true;
+    } catch (error: any) {
+      // Si el error ya es uno de nuestros errores específicos, re-lanzar
+      if (error.message?.startsWith('INVALID_URL:') ||
+          error.message?.startsWith('REPO_NOT_FOUND:') ||
+          error.message?.startsWith('NO_ACCESS:') ||
+          error.message?.startsWith('INVALID_TOKEN:') ||
+          error.message?.startsWith('NETWORK_')) {
+        throw error;
+      }
+      // Otros errores inesperados
+      throw new Error(`VALIDATION_ERROR: ${error.message}`);
     }
   }
 }
