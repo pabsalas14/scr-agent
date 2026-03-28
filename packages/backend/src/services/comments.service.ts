@@ -334,20 +334,6 @@ export class CommentsService {
       // No lanzar error, solo loguear para no romper el flow
     }
   }
-              name: true,
-              email: true,
-            },
-          },
-        },
-      });
-
-      logger.info(`Comment updated: ${commentId}`);
-      return comment;
-    } catch (error) {
-      logger.error('Error updating comment:', error);
-      throw error;
-    }
-  }
 
   /**
    * Obtener usuarios interesados en un hallazgo (asignado y usuarios que comentaron)
