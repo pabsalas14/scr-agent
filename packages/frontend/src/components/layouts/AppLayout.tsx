@@ -16,7 +16,7 @@ export default function AppLayout() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [socketConnected, setSocketConnected] = useState(false);
 
-  // Initialize Socket.io connection when authenticated
+  // Initialize Socket.io connection when authenticated (non-blocking, optional)
   useEffect(() => {
     if (!isAuthenticated()) return;
 
@@ -25,37 +25,42 @@ export default function AppLayout() {
         const backendUrl = import.meta.env['VITE_BACKEND_URL'] ||
           `${window.location.protocol}//${window.location.hostname}:${import.meta.env['VITE_BACKEND_PORT'] || '3001'}`;
 
-        await socketClientService.connect(backendUrl);
-        setSocketConnected(true);
-        console.log('✅ Socket.io connected and ready');
+        // Try to connect socket, but don't block app if it fails
+        socketClientService.connect(backendUrl).then(() => {
+          setSocketConnected(true);
+          console.log('✅ Socket.io connected and ready');
 
-        // Set up event listeners for real-time updates
-        socketClientService.onFindingStatusChanged((data) => {
-          console.log('📢 Finding status changed via socket:', data);
-          window.dispatchEvent(new CustomEvent('finding-updated', { detail: data }));
-        });
+          // Set up event listeners for real-time updates
+          socketClientService.onFindingStatusChanged((data) => {
+            console.log('📢 Finding status changed via socket:', data);
+            window.dispatchEvent(new CustomEvent('finding-updated', { detail: data }));
+          });
 
-        socketClientService.onFindingAssigned((data) => {
-          console.log('📢 Finding assigned via socket:', data);
-          window.dispatchEvent(new CustomEvent('finding-assigned', { detail: data }));
-        });
+          socketClientService.onFindingAssigned((data) => {
+            console.log('📢 Finding assigned via socket:', data);
+            window.dispatchEvent(new CustomEvent('finding-assigned', { detail: data }));
+          });
 
-        socketClientService.onRemediationUpdated((data) => {
-          console.log('📢 Remediation updated via socket:', data);
-          window.dispatchEvent(new CustomEvent('remediation-updated', { detail: data }));
-        });
+          socketClientService.onRemediationUpdated((data) => {
+            console.log('📢 Remediation updated via socket:', data);
+            window.dispatchEvent(new CustomEvent('remediation-updated', { detail: data }));
+          });
 
-        socketClientService.onRemediationVerified((data) => {
-          console.log('📢 Remediation verified via socket:', data);
-          window.dispatchEvent(new CustomEvent('remediation-verified', { detail: data }));
-        });
+          socketClientService.onRemediationVerified((data) => {
+            console.log('📢 Remediation verified via socket:', data);
+            window.dispatchEvent(new CustomEvent('remediation-verified', { detail: data }));
+          });
 
-        socketClientService.onCommentAdded((data) => {
-          console.log('📢 Comment added via socket:', data);
-          window.dispatchEvent(new CustomEvent('comment-added', { detail: data }));
+          socketClientService.onCommentAdded((data) => {
+            console.log('📢 Comment added via socket:', data);
+            window.dispatchEvent(new CustomEvent('comment-added', { detail: data }));
+          });
+        }).catch((error) => {
+          console.warn('⚠️ Socket connection failed, but app will continue working without real-time updates:', error);
+          setSocketConnected(false);
         });
       } catch (error) {
-        console.error('❌ Failed to connect socket:', error);
+        console.warn('⚠️ Socket initialization failed:', error);
         setSocketConnected(false);
       }
     };

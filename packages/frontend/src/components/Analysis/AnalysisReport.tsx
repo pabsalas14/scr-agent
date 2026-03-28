@@ -154,7 +154,7 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
         </div>
 
         {/* Progress Bar */}
-        {analysis.status !== 'COMPLETADO' && analysis.status !== 'ERROR' && analysis.status !== 'FAILED' && (
+        {analysis.status !== 'COMPLETADO' && (
           <div className="mt-4 w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
@@ -167,7 +167,7 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
       </div>
 
       {/* Error Message */}
-      {(analysis.status === 'ERROR' || analysis.status === 'FAILED') && (
+      {(analysis as any).errorMessage && (
         <div className="rounded-lg bg-red-900/20 border border-red-600/30 p-4">
           <p className="text-red-400 text-sm">
             <strong>Error:</strong> {(analysis as any).errorMessage || 'El análisis falló durante la ejecución.'}
@@ -193,7 +193,7 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
           {/* Findings Panel */}
           <FindingsPanel analysisId={analysisId} />
         </>
-      ) : analysis.status === 'ERROR' || analysis.status === 'FAILED' ? (
+      ) : (analysis as any).errorMessage ? (
         <div className="rounded-lg bg-gray-900/30 border border-gray-700/50 p-6 text-center">
           <p className="text-gray-400">
             El análisis no pudo completarse. Por favor, intenta de nuevo o verifica los logs.

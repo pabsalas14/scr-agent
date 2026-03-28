@@ -111,9 +111,28 @@ export class GitService {
 
     try {
       if (!fs.existsSync(localPath)) {
-        // Clonar repositorio
+        // Clonar repositorio - crear directorio parent si no existe
+        if (!fs.existsSync(path.dirname(localPath))) {
+          fs.mkdirSync(path.dirname(localPath), { recursive: true });
+        }
+
         logger.info(`Clonando repositorio: ${repoUrl}${githubToken ? ' [con GitHub token]' : ''}`);
-        await simpleGit().clone(urlToUse, localPath);
+
+        try {
+          // Use simpleGit without options to clone
+          await simpleGit().clone(urlToUse, localPath);
+          logger.info(`✓ Repository cloned successfully`);
+        } catch (cloneError: any) {
+          const errorMsg = cloneError?.message || String(cloneError);
+          logger.error(`Git clone failed: ${errorMsg}`);
+          throw new Error(`Failed to clone repository: ${errorMsg}`);
+        }
+
+        // Verify clone was successful
+        if (!fs.existsSync(localPath) || fs.readdirSync(localPath).length === 0) {
+          throw new Error('Repository cloning succeeded but directory is empty - possible network issue');
+        }
+
         auditLog(AuditEventType.DB_OPERATION, `Repositorio clonado`, {
           repoUrl,
           localPath,
@@ -132,6 +151,11 @@ export class GitService {
           repoUrl,
           hasToken: !!githubToken,
         });
+      }
+
+      // Verificar que la clonación fue exitosa comprobando que existen archivos
+      if (!fs.existsSync(localPath) || fs.readdirSync(localPath).length === 0) {
+        throw new Error('Repository cloning failed - directory is empty');
       }
 
       return localPath;

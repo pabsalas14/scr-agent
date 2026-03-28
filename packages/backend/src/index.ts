@@ -20,11 +20,13 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
+import path from 'path';
 import { logger } from './services/logger.service';
 import { socketService } from './services/socket.service';
 
-// Cargar variables de entorno
-dotenv.config();
+// Cargar variables de entorno desde el archivo .env en el directorio actual del proyecto
+const envPath = path.resolve(__dirname, '../.env');
+dotenv.config({ path: envPath });
 
 // ==================== CONFIGURACIÓN ====================
 
@@ -205,6 +207,12 @@ const httpServer = createServer(app);
 
 // Inicializar Socket.io para notificaciones en tiempo real
 socketService.init(httpServer, allowedOrigins);
+
+// ==================== QUEUE PROCESSOR ====================
+
+// Importar y iniciar el procesador de análisis
+import { startAnalysisProcessor } from './services/analysis-queue';
+startAnalysisProcessor();
 
 // Iniciar servidor
 const server = httpServer.listen(PORT, () => {

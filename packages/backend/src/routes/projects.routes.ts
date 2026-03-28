@@ -6,7 +6,7 @@
 import { Router, type Request, type Response, type NextFunction, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
-import { queueService } from '../services/queue.service';
+import { enqueueAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
 
 const router: ExpressRouter = Router();
@@ -207,19 +207,13 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
     const analysis = await prisma.analysis.create({
       data: {
         projectId: projectId!,
-        status: 'PENDING' as const,
+        status: 'PENDING',
         progress: 0,
       },
     });
 
-    // Encolar análisis en background
-    queueService.encolar({
-      analysisId: analysis.id,
-      projectId: projectId!,
-      repositoryUrl: project.repositoryUrl,
-      scope: project.scope as any,
-      githubToken: project.githubToken || undefined,
-    });
+    // Encolar análisis en background para procesamiento
+    enqueueAnalysis(analysis.id, projectId!);
 
     logger.info(`Analysis ${analysis.id} enqueued for processing`);
 

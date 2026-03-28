@@ -18,11 +18,14 @@ class SocketClientService {
         console.log(`🔌 Attempting to connect to Socket.io at: ${serverUrl}`);
 
         this.socket = io(serverUrl, {
-          transports: ['websocket', 'polling'],
+          transports: ['polling', 'websocket'],  // Try polling first (more stable in browsers)
           reconnection: true,
-          reconnectionDelay: 1000,
-          reconnectionDelayMax: 5000,
-          reconnectionAttempts: 5,
+          reconnectionDelay: 500,
+          reconnectionDelayMax: 3000,
+          reconnectionAttempts: 10,
+          path: '/socket.io/',
+          secure: false,
+          rejectUnauthorized: false,
         });
 
         let timeoutHandle: NodeJS.Timeout;

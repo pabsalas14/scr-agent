@@ -31,7 +31,8 @@ export class DetectiveAgentService {
   /**
    * Cliente de Anthropic
    */
-  private anthropic: Anthropic;
+  private anthropic: Anthropic | null = null;
+  private apiKey: string | undefined;
 
   /**
    * Modelo a usar (Haiku para rapidez y economía)
@@ -39,9 +40,21 @@ export class DetectiveAgentService {
   private model = 'claude-3-5-haiku-20241022';
 
   constructor(apiKey?: string) {
-    this.anthropic = new Anthropic({
-      apiKey: apiKey || process.env['ANTHROPIC_API_KEY'],
-    });
+    this.apiKey = apiKey;
+  }
+
+  /**
+   * Obtener cliente de Anthropic (lazy init)
+   */
+  private getAnthropicClient(): Anthropic {
+    if (!this.anthropic) {
+      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
+      if (!key) {
+        throw new Error('ANTHROPIC_API_KEY environment variable not set');
+      }
+      this.anthropic = new Anthropic({ apiKey: key });
+    }
+    return this.anthropic;
   }
 
   /**
@@ -82,7 +95,7 @@ export class DetectiveAgentService {
        * Llamar a Claude Haiku
        */
       logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.anthropic.messages.create({
+      const response = await this.getAnthropicClient().messages.create({
         model: this.model,
         max_tokens: 2048,
         messages: [

@@ -47,7 +47,7 @@ describe('CommentsService', () => {
     };
 
     expect(mockComment.mentions).toContain('@user2@example.com');
-    expect(mockComment.mentions.length).toBe(1);
+    expect(mockComment.mentions?.length).toBe(1);
   });
 
   it('should support creating comment without mentions', () => {

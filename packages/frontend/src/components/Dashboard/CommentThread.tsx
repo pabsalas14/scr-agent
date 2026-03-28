@@ -28,7 +28,7 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
   const [mentionQuery, setMentionQuery] = useState('');
   const [mentionSuggestions, setMentionSuggestions] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { getToken, user } = useAuth();
+  const { getToken } = useAuth();
   const toast = useToast();
   const queryClient = useQueryClient();
 
@@ -100,7 +100,7 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
       }
     },
     onCommentMentioned: (data) => {
-      if (user?.id === data.mentionedUserId) {
+      if (getCurrentUserId() === data.mentionedUserId) {
         console.log('👤 You were mentioned in a comment');
         toast.info('Fuiste mencionado en un comentario');
       }
