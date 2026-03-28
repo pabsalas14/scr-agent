@@ -201,6 +201,100 @@ class SocketService {
   }
 
   /**
+   * Emit when analysis status changes
+   */
+  emitAnalysisStatusChanged(
+    analysisId: string,
+    projectId: string,
+    newStatus: string,
+    progress: number,
+    userId: string
+  ): void {
+    if (!this.io) return;
+
+    const event = 'analysis:statusChanged';
+    const data = {
+      analysisId,
+      projectId,
+      newStatus,
+      progress,
+      timestamp: new Date(),
+    };
+
+    this.notifyUser(userId, event, data);
+    logger.info(`Analysis ${analysisId} status changed to ${newStatus}`);
+  }
+
+  /**
+   * Emit when findings are discovered during analysis
+   */
+  emitAnalysisFindingsDiscovered(
+    analysisId: string,
+    projectId: string,
+    findingCount: number,
+    userId: string
+  ): void {
+    if (!this.io) return;
+
+    const event = 'analysis:findingsDiscovered';
+    const data = {
+      analysisId,
+      projectId,
+      findingCount,
+      timestamp: new Date(),
+    };
+
+    this.notifyUser(userId, event, data);
+    logger.info(`Analysis ${analysisId} discovered ${findingCount} findings`);
+  }
+
+  /**
+   * Emit when analysis is completed
+   */
+  emitAnalysisCompleted(
+    analysisId: string,
+    projectId: string,
+    summary: any,
+    userId: string
+  ): void {
+    if (!this.io) return;
+
+    const event = 'analysis:completed';
+    const data = {
+      analysisId,
+      projectId,
+      summary,
+      timestamp: new Date(),
+    };
+
+    this.notifyUser(userId, event, data);
+    logger.info(`Analysis ${analysisId} completed`);
+  }
+
+  /**
+   * Emit when analysis encounters an error
+   */
+  emitAnalysisError(
+    analysisId: string,
+    projectId: string,
+    errorMessage: string,
+    userId: string
+  ): void {
+    if (!this.io) return;
+
+    const event = 'analysis:error';
+    const data = {
+      analysisId,
+      projectId,
+      errorMessage,
+      timestamp: new Date(),
+    };
+
+    this.notifyUser(userId, event, data);
+    logger.error(`Analysis ${analysisId} error: ${errorMessage}`);
+  }
+
+  /**
    * Get user socket connection status
    */
   isUserOnline(userId: string): boolean {

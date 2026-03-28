@@ -5,87 +5,126 @@
  *
  * Hook para suscribirse a eventos de WebSocket en componentes
  * Simplifica la integración de actualizaciones en tiempo real
+ *
+ * Soporta eventos de análisis, hallazgos, remediación y comentarios
  */
 
 import { useEffect } from 'react';
+import { io, Socket } from 'socket.io-client';
 
-interface SocketEventData {
+// ── Tipos de Eventos ────────────────────────────────────────────────────
+
+interface FindingEventData {
   findingId: string;
   timestamp: Date;
   [key: string]: unknown;
 }
 
+interface AnalysisEventData {
+  analysisId: string;
+  projectId: string;
+  newStatus?: string;
+  progress?: number;
+  findingCount?: number;
+  summary?: any;
+  errorMessage?: string;
+  timestamp: Date;
+}
+
+interface AnalysisStatusChangedData extends AnalysisEventData {
+  newStatus: string;
+  progress: number;
+}
+
+interface AnalysisFindingsDiscoveredData extends AnalysisEventData {
+  findingCount: number;
+}
+
+interface AnalysisCompletedData extends AnalysisEventData {
+  summary: any;
+}
+
+interface AnalysisErrorData extends AnalysisEventData {
+  errorMessage: string;
+}
+
+// ── Hook ────────────────────────────────────────────────────────────────
+
 export function useSocketEvents(callbacks: {
-  onFindingUpdated?: (data: SocketEventData) => void;
-  onFindingAssigned?: (data: SocketEventData) => void;
-  onRemediationUpdated?: (data: SocketEventData) => void;
-  onRemediationVerified?: (data: SocketEventData) => void;
-  onCommentAdded?: (data: SocketEventData) => void;
+  // Finding events
+  onFindingUpdated?: (data: FindingEventData) => void;
+  onFindingAssigned?: (data: FindingEventData) => void;
+  onRemediationUpdated?: (data: FindingEventData) => void;
+  onRemediationVerified?: (data: FindingEventData) => void;
+  onCommentAdded?: (data: FindingEventData) => void;
+
+  // Analysis events
+  onAnalysisStatusChanged?: (data: AnalysisStatusChangedData) => void;
+  onAnalysisFindingsDiscovered?: (data: AnalysisFindingsDiscoveredData) => void;
+  onAnalysisCompleted?: (data: AnalysisCompletedData) => void;
+  onAnalysisError?: (data: AnalysisErrorData) => void;
 }) {
   useEffect(() => {
-    // Listener para cambios de estado
-    const handleFindingUpdated = (event: Event) => {
-      const customEvent = event as CustomEvent<SocketEventData>;
-      callbacks.onFindingUpdated?.(customEvent.detail);
-    };
+    let socket: Socket | null = null;
 
-    // Listener para asignaciones
-    const handleFindingAssigned = (event: Event) => {
-      const customEvent = event as CustomEvent<SocketEventData>;
-      callbacks.onFindingAssigned?.(customEvent.detail);
-    };
+    // Conectar a Socket.io
+    try {
+      const token = localStorage.getItem('token');
+      socket = io(window.location.origin, {
+        auth: { token },
+        reconnection: true,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: 5,
+      });
 
-    // Listener para actualizaciones de remediación
-    const handleRemediationUpdated = (event: Event) => {
-      const customEvent = event as CustomEvent<SocketEventData>;
-      callbacks.onRemediationUpdated?.(customEvent.detail);
-    };
+      // ── Handlers para Eventos Finding ────────────────────────────────
 
-    // Listener para verificación de remediación
-    const handleRemediationVerified = (event: Event) => {
-      const customEvent = event as CustomEvent<SocketEventData>;
-      callbacks.onRemediationVerified?.(customEvent.detail);
-    };
+      socket.on('finding:updated', (data: FindingEventData) => {
+        callbacks.onFindingUpdated?.(data);
+      });
 
-    // Listener para comentarios
-    const handleCommentAdded = (event: Event) => {
-      const customEvent = event as CustomEvent<SocketEventData>;
-      callbacks.onCommentAdded?.(customEvent.detail);
-    };
+      socket.on('finding:assigned', (data: FindingEventData) => {
+        callbacks.onFindingAssigned?.(data);
+      });
 
-    // Registrar listeners
-    if (callbacks.onFindingUpdated) {
-      window.addEventListener('finding-updated', handleFindingUpdated);
-    }
-    if (callbacks.onFindingAssigned) {
-      window.addEventListener('finding-assigned', handleFindingAssigned);
-    }
-    if (callbacks.onRemediationUpdated) {
-      window.addEventListener('remediation-updated', handleRemediationUpdated);
-    }
-    if (callbacks.onRemediationVerified) {
-      window.addEventListener('remediation-verified', handleRemediationVerified);
-    }
-    if (callbacks.onCommentAdded) {
-      window.addEventListener('comment-added', handleCommentAdded);
+      socket.on('remediation:updated', (data: FindingEventData) => {
+        callbacks.onRemediationUpdated?.(data);
+      });
+
+      socket.on('remediation:verified', (data: FindingEventData) => {
+        callbacks.onRemediationVerified?.(data);
+      });
+
+      socket.on('comment:added', (data: FindingEventData) => {
+        callbacks.onCommentAdded?.(data);
+      });
+
+      // ── Handlers para Eventos Analysis ───────────────────────────────
+
+      socket.on('analysis:statusChanged', (data: AnalysisStatusChangedData) => {
+        callbacks.onAnalysisStatusChanged?.(data);
+      });
+
+      socket.on('analysis:findingsDiscovered', (data: AnalysisFindingsDiscoveredData) => {
+        callbacks.onAnalysisFindingsDiscovered?.(data);
+      });
+
+      socket.on('analysis:completed', (data: AnalysisCompletedData) => {
+        callbacks.onAnalysisCompleted?.(data);
+      });
+
+      socket.on('analysis:error', (data: AnalysisErrorData) => {
+        callbacks.onAnalysisError?.(data);
+      });
+    } catch (error) {
+      console.error('Error initializing Socket.io:', error);
     }
 
     // Cleanup
     return () => {
-      if (callbacks.onFindingUpdated) {
-        window.removeEventListener('finding-updated', handleFindingUpdated);
-      }
-      if (callbacks.onFindingAssigned) {
-        window.removeEventListener('finding-assigned', handleFindingAssigned);
-      }
-      if (callbacks.onRemediationUpdated) {
-        window.removeEventListener('remediation-updated', handleRemediationUpdated);
-      }
-      if (callbacks.onRemediationVerified) {
-        window.removeEventListener('remediation-verified', handleRemediationVerified);
-      }
-      if (callbacks.onCommentAdded) {
-        window.removeEventListener('comment-added', handleCommentAdded);
+      if (socket) {
+        socket.disconnect();
       }
     };
   }, [callbacks]);

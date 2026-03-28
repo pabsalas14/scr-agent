@@ -18,6 +18,7 @@
 
 import { logger, auditLog, AuditEventType } from './logger.service';
 import { gitService } from './git.service';
+import { socketService } from './socket.service';
 import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
@@ -105,13 +106,24 @@ export class QueueService {
 
       // Guardar error en BD para que el usuario lo vea
       try {
-        await prisma.analysis.update({
+        const analysis = await prisma.analysis.update({
           where: { id: trabajo.analysisId },
           data: {
             status: 'FAILED',
             errorMessage: msg,
           },
+          include: { project: { include: { user: true } } },
         });
+
+        // Emitir evento de error vía WebSocket
+        if (analysis.project?.user?.id) {
+          socketService.emitAnalysisError(
+            trabajo.analysisId,
+            trabajo.projectId,
+            msg,
+            analysis.project.user.id.toString()
+          );
+        }
       } catch (dbError) {
         logger.error(`Error guardando fallo de análisis en BD: ${dbError}`);
       }
@@ -135,10 +147,22 @@ export class QueueService {
 
     try {
       // ── PASO 1: Marcar como RUNNING ─────────────────────────────────────
-      await prisma.analysis.update({
+      const analysisWithUser = await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'RUNNING', progress: 5, startedAt: new Date() },
+        include: { project: { include: { user: true } } },
       });
+
+      // Emitir evento WebSocket
+      if (analysisWithUser.project?.user?.id) {
+        socketService.emitAnalysisStatusChanged(
+          analysisId,
+          projectId,
+          'RUNNING',
+          5,
+          analysisWithUser.project.user.id.toString()
+        );
+      }
 
       // ── PASO 2: Obtener código fuente según SCOPE ────────────────────────────────────
       logger.info(`Clonando/actualizando repositorio (scope: ${scope})`);
@@ -164,10 +188,22 @@ export class QueueService {
       }
 
       // ── PASO 3: Agente Inspector ─────────────────────────────────────────
-      await prisma.analysis.update({
+      const inspectorUpdate = await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'INSPECTOR_RUNNING', progress: 20 },
+        include: { project: { include: { user: true } } },
       });
+
+      // Emitir evento WebSocket
+      if (inspectorUpdate.project?.user?.id) {
+        socketService.emitAnalysisStatusChanged(
+          analysisId,
+          projectId,
+          'INSPECTOR_RUNNING',
+          20,
+          inspectorUpdate.project.user.id.toString()
+        );
+      }
 
       logger.info('Ejecutando Agente Inspector');
       const maliciaOutput = await inspectorAgent.analizarCodigo({
@@ -191,6 +227,16 @@ export class QueueService {
             remediationSteps: h.pasos_remediacion,
           })),
         });
+
+        // Emitir evento de hallazgos descubiertos
+        if (inspectorUpdate.project?.user?.id) {
+          socketService.emitAnalysisFindingsDiscovered(
+            analysisId,
+            projectId,
+            maliciaOutput.hallazgos.length,
+            inspectorUpdate.project.user.id.toString()
+          );
+        }
       }
 
       auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Inspector completado y guardado', {
@@ -205,10 +251,22 @@ export class QueueService {
       }
 
       // ── PASO 4: Agente Detective ─────────────────────────────────────────
-      await prisma.analysis.update({
+      const detectiveUpdate = await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'DETECTIVE_RUNNING', progress: 50 },
+        include: { project: { include: { user: true } } },
       });
+
+      // Emitir evento WebSocket
+      if (detectiveUpdate.project?.user?.id) {
+        socketService.emitAnalysisStatusChanged(
+          analysisId,
+          projectId,
+          'DETECTIVE_RUNNING',
+          50,
+          detectiveUpdate.project.user.id.toString()
+        );
+      }
 
       const historialGit = await gitService.getCommitHistory(repositoryUrl, 50);
 
@@ -244,10 +302,22 @@ export class QueueService {
       }
 
       // ── PASO 5: Agente Fiscal ────────────────────────────────────────────
-      await prisma.analysis.update({
+      const fiscalUpdate = await prisma.analysis.update({
         where: { id: analysisId },
         data: { status: 'FISCAL_RUNNING', progress: 80 },
+        include: { project: { include: { user: true } } },
       });
+
+      // Emitir evento WebSocket
+      if (fiscalUpdate.project?.user?.id) {
+        socketService.emitAnalysisStatusChanged(
+          analysisId,
+          projectId,
+          'FISCAL_RUNNING',
+          80,
+          fiscalUpdate.project.user.id.toString()
+        );
+      }
 
       logger.info('Ejecutando Agente Fiscal');
       const sintesisOutput = await fiscalAgent.generarReporte({
@@ -272,14 +342,29 @@ export class QueueService {
       });
 
       // ── PASO 6: Marcar como COMPLETADO ──────────────────────────────────
-      await prisma.analysis.update({
+      const completedAnalysis = await prisma.analysis.update({
         where: { id: analysisId },
         data: {
           status: 'COMPLETED',
           progress: 100,
           completedAt: new Date(),
         },
+        include: { project: { include: { user: true } } },
       });
+
+      // Emitir evento de completación vía WebSocket
+      if (completedAnalysis.project?.user?.id) {
+        socketService.emitAnalysisCompleted(
+          analysisId,
+          projectId,
+          {
+            riskScore: sintesisOutput.puntuacion_riesgo,
+            findingsCount: sintesisOutput.cantidad_hallazgos,
+            severityBreakdown: sintesisOutput.desglose_severidad,
+          },
+          completedAnalysis.project.user.id.toString()
+        );
+      }
 
       const tiempoTotal = Math.round((Date.now() - tiempoInicio) / 1000);
       auditLog(AuditEventType.ANALYSIS_COMPLETED, 'Análisis completado', {
@@ -292,10 +377,21 @@ export class QueueService {
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
 
-      await prisma.analysis.update({
+      const failedAnalysis = await prisma.analysis.update({
         where: { id: analysisId },
-        data: { status: 'FAILED' },
-      }).catch(() => {}); // Ignorar si falla la actualización
+        data: { status: 'FAILED', errorMessage: msg },
+        include: { project: { include: { user: true } } },
+      }).catch(() => null); // Ignorar si falla la actualización
+
+      // Emitir evento de error vía WebSocket
+      if (failedAnalysis?.project?.user?.id) {
+        socketService.emitAnalysisError(
+          analysisId,
+          projectId,
+          msg,
+          failedAnalysis.project.user.id.toString()
+        );
+      }
 
       auditLog(AuditEventType.ANALYSIS_FAILED, 'Análisis fallido', {
         analysisId,
