@@ -9,6 +9,14 @@ export default function LoadingBar() {
     const handleStart = () => {
       setIsLoading(true);
       setProgress(10);
+      // Incremento gradual de progreso
+      const interval = setInterval(() => {
+        setProgress(prev => {
+          if (prev >= 90) return 90;
+          return prev + Math.random() * 30;
+        });
+      }, 200);
+      return () => clearInterval(interval);
     };
 
     const handleEnd = () => {
@@ -16,7 +24,7 @@ export default function LoadingBar() {
       setTimeout(() => {
         setIsLoading(false);
         setProgress(0);
-      }, 300);
+      }, 600);
     };
 
     // Escuchar eventos de navegación
@@ -28,8 +36,7 @@ export default function LoadingBar() {
     window.fetch = function (...args) {
       handleStart();
       return originalFetch.apply(this, args).finally(() => {
-        // Simuler progreso gradual
-        setTimeout(handleEnd, 500);
+        setTimeout(handleEnd, 800);
       });
     };
 
@@ -40,14 +47,36 @@ export default function LoadingBar() {
     };
   }, []);
 
-  if (!isLoading && progress === 0) return null;
-
   return (
-    <div className="fixed top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-teal-500 to-green-500 origin-left transition-all duration-300 ease-out z-[9999]"
-      style={{
-        transform: `scaleX(${progress / 100})`,
-        opacity: progress === 100 ? 0 : 1,
-      }}
-    />
+    <>
+      {/* Barra superior brillante con gradiente */}
+      <div
+        className="fixed top-0 left-0 w-full z-[9999] transition-all duration-300"
+        style={{
+          height: isLoading ? '3px' : '0px',
+          opacity: isLoading ? 1 : 0,
+        }}
+      >
+        <div
+          className="h-full bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 shadow-lg shadow-blue-500/50"
+          style={{
+            width: `${progress}%`,
+            transition: 'width 0.3s ease-out',
+          }}
+        />
+      </div>
+
+      {/* Brillo adicional detrás */}
+      {isLoading && (
+        <div
+          className="fixed top-0 left-0 h-1 z-[9998] blur-md bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600"
+          style={{
+            width: `${progress}%`,
+            opacity: 0.5,
+            transition: 'width 0.3s ease-out',
+          }}
+        />
+      )}
+    </>
   );
 }
