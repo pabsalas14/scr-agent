@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Eye, EyeOff, Trash2, Check, AlertCircle, Copy, RefreshCw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, EyeOff, Trash2, Check, AlertCircle, Copy, RefreshCw, Clock, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
@@ -25,9 +25,34 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const [loading, setLoading] = useState(false);
   const [validatingToken, setValidatingToken] = useState(false);
   const [tokenValid, setTokenValid] = useState<boolean | null>(null);
+  const [lastValidatedAt, setLastValidatedAt] = useState<number | null>(null);
   const toast = useToast();
 
+  // Load validation timestamp from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('github_token_validated_at');
+    if (saved) {
+      setLastValidatedAt(parseInt(saved));
+    }
+  }, []);
+
   const maskedKey = getMaskedApiKey();
+
+  const getValidationTimeText = () => {
+    if (!lastValidatedAt) return null;
+    const now = Date.now();
+    const diffMs = now - lastValidatedAt;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Hace unos segundos';
+    if (diffMins < 60) return `Hace ${diffMins} ${diffMins === 1 ? 'minuto' : 'minutos'}`;
+    if (diffHours < 24) return `Hace ${diffHours} ${diffHours === 1 ? 'hora' : 'horas'}`;
+    return `Hace ${diffDays} ${diffDays === 1 ? 'día' : 'días'}`;
+  };
+
+  const isTokenStale = lastValidatedAt && Date.now() - lastValidatedAt > 30 * 86400000; // 30 days
 
   const handleSaveApiKey = async () => {
     try {
@@ -66,6 +91,9 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
       if (response.valid) {
         setTokenValid(true);
+        const now = Date.now();
+        setLastValidatedAt(now);
+        localStorage.setItem('github_token_validated_at', now.toString());
         toast.success('Token válido y guardado en el servidor');
         setGithubToken('');
       } else {
@@ -98,6 +126,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         await settingsService.deleteGitHubToken();
         setGithubToken('');
         setTokenValid(null);
+        setLastValidatedAt(null);
+        localStorage.removeItem('github_token_validated_at');
         toast.warning('GitHub token eliminado');
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Error eliminando token';
@@ -233,29 +263,50 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* GITHUB TAB */}
         {activeTab === 'github' && (
           <>
-            {/* Status Box */}
+            {/* Status Box with Validation Info */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               className={`rounded-lg p-4 border ${
-                tokenValid
+                isTokenStale
+                  ? 'bg-gradient-to-r from-yellow-900/20 to-yellow-800/10 border-yellow-500/30'
+                  : tokenValid
                   ? 'bg-gradient-to-r from-pink-900/20 to-pink-800/10 border-pink-500/30'
                   : 'bg-gradient-to-r from-gray-800/50 to-gray-700/30 border-gray-600/50'
               }`}
             >
               <div className="flex items-start gap-3">
-                {tokenValid ? (
+                {isTokenStale ? (
+                  <AlertTriangle className="w-6 h-6 text-yellow-400 flex-shrink-0 mt-0.5" />
+                ) : tokenValid ? (
                   <Check className="w-6 h-6 text-pink-400 flex-shrink-0 mt-0.5" />
                 ) : (
                   <AlertCircle className="w-6 h-6 text-gray-400 flex-shrink-0 mt-0.5" />
                 )}
-                <div>
-                  <p className={`font-semibold ${tokenValid ? 'text-pink-300' : 'text-gray-300'}`}>
-                    {tokenValid ? '✓ GitHub Token Válido' : 'Sin GitHub Token configurado'}
+                <div className="flex-1">
+                  <p className={`font-semibold ${
+                    isTokenStale
+                      ? 'text-yellow-300'
+                      : tokenValid ? 'text-pink-300' : 'text-gray-300'
+                  }`}>
+                    {isTokenStale
+                      ? '⚠️ Token no validado recientemente'
+                      : tokenValid ? '✓ GitHub Token Válido' : 'Sin GitHub Token configurado'}
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     📦 Acceso a repositorios privados y contribuyentes
                   </p>
+                  {lastValidatedAt && (
+                    <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      Validado {getValidationTimeText()}
+                    </p>
+                  )}
+                  {isTokenStale && (
+                    <p className="text-xs text-yellow-300 mt-2">
+                      💡 Se recomienda revalidar el token para asegurar que sigue siendo válido
+                    </p>
+                  )}
                 </div>
               </div>
             </motion.div>
