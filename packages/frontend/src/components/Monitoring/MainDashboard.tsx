@@ -108,10 +108,10 @@ export default function MainDashboard() {
                 whileHover={{ y: -2 }}
                 whileTap={{ y: 0 }}
                 className={`
-                  relative min-w-[150px] p-4 rounded-3xl transition-all duration-300 flex flex-col gap-3 group
+                  relative min-w-[140px] p-3.5 rounded-2xl transition-all duration-500 flex flex-col gap-2.5 group
                   border border-transparent
                   ${isActive 
-                    ? 'bg-gradient-to-br from-white/[0.05] to-transparent shadow-[0_10px_20px_rgba(0,0,0,0.5)] border-white/[0.05]' 
+                    ? 'bg-white/[0.03] shadow-[0_15px_30px_rgba(0,0,0,0.4)] border-white/[0.05]' 
                     : 'hover:bg-white/[0.02]'
                   }
                 `}
@@ -119,33 +119,36 @@ export default function MainDashboard() {
                 {isActive && (
                   <motion.div 
                     layoutId="active-bg"
-                    className="absolute inset-0 rounded-3xl border border-white/10 pointer-events-none"
-                    style={{ borderColor: `${tab.color}40`, boxShadow: `0 0 15px ${tab.color}10` }}
+                    className="absolute inset-0 rounded-2xl border border-white/10 pointer-events-none"
+                    style={{ 
+                      borderColor: `${tab.color}30`, 
+                      boxShadow: `0 0 25px ${tab.color}15, inset 0 1px 0 rgba(255,255,255,0.05)` 
+                    }}
                   />
                 )}
                 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between relative z-10">
                   <div 
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 ${
                       isActive ? 'text-white' : 'text-[#475569] group-hover:text-[#94A3B8]'
                     }`}
                     style={{ 
-                      backgroundColor: isActive ? tab.color : 'rgba(255,255,255,0.03)',
-                      boxShadow: isActive ? `0 0 20px ${tab.color}40` : 'none'
+                      backgroundColor: isActive ? tab.color : 'rgba(255,255,255,0.02)',
+                      boxShadow: isActive ? `0 4px 12px ${tab.color}30` : 'none'
                     }}
                   >
-                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <Icon className="w-4.5 h-4.5 flex-shrink-0" />
                   </div>
                   {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: tab.color }} />
+                    <div className="w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_currentColor]" style={{ backgroundColor: tab.color, color: tab.color }} />
                   )}
                 </div>
                 
-                <div className="text-left space-y-0.5">
-                  <p className={`text-[11px] font-black uppercase tracking-widest ${isActive ? 'text-white' : 'text-[#64748B]'}`}>
+                <div className="text-left space-y-0.5 relative z-10">
+                  <p className={`text-[10px] font-black uppercase tracking-[0.15em] ${isActive ? 'text-white' : 'text-[#64748B]'}`}>
                     {tab.label}
                   </p>
-                  <p className="text-[9px] font-bold text-[#3D4A5C] uppercase tracking-tighter truncate opacity-60">
+                  <p className="text-[8px] font-bold text-[#3D4A5C] uppercase tracking-tighter truncate opacity-60">
                     {tab.description}
                   </p>
                 </div>

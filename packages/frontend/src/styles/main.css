@@ -94,7 +94,7 @@ body {
 
 /* Global Glassmorphism & UI Utilities */
 .glass-panel {
-  @apply bg-[#0A0B10]/60 backdrop-blur-2xl border border-white/[0.05] shadow-[0_8px_32px_rgba(0,0,0,0.4)];
+  @apply bg-[#0A0B10]/40 backdrop-blur-xl border border-white/[0.03] shadow-[0_15px_35px_rgba(0,0,0,0.4)];
 }
 
 .text-gradient {
@@ -102,7 +102,12 @@ body {
 }
 
 .neural-glow {
-  box-shadow: 0 0 40px rgba(0, 209, 255, 0.1);
+  box-shadow: 0 0 50px rgba(0, 209, 255, 0.08);
+}
+
+.layout-grid {
+  display: grid;
+  gap: 2.5rem; /* Symmetric 40px spacing */
 }
 
 @keyframes pulse-soft {

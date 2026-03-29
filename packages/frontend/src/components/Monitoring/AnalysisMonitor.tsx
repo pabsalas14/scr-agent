@@ -48,90 +48,93 @@ export default function AnalysisMonitor() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-1000">
-      {/* Header Panel */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-[#1F2937]/30 pb-10">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#00FF94]">
-            <Activity className="w-3 h-3" />
-            <span>Monitor de Observabilidad en Tiempo Real</span>
+    <div className="space-y-12 animate-in fade-in duration-1000">
+      {/* Refined Header Panel */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/[0.03] pb-8">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-[#00FF94] shadow-[0_0_8px_#00FF94]" />
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#00FF94]">Sistema de Observabilidad</span>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter leading-none">REPORTES</h1>
-          <p className="text-[#64748B] text-sm font-medium max-w-xl">
-             Auditoría central de escaneos de seguridad. Seguimiento de estados desde la inspección hasta el veredicto fiscal.
+          <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter leading-none">REPORTES</h1>
+          <p className="text-[#64748B] text-xs font-medium max-w-lg leading-relaxed">
+             Auditoría centralizada de escaneos de seguridad. Seguimiento de estados en tiempo real desde la inspección inicial hasta el veredicto final.
           </p>
         </div>
       </div>
 
-      {/* Stats Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Balanced Stats Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[
-          { label: 'Escaneos Activos', value: enProgreso.length, icon: Zap, color: '#0EA5E9', bg: 'from-blue-600/20 to-transparent' },
-          { label: 'Exitosos (Recientes)', value: completados.length, icon: CheckCircle, color: '#10B981', bg: 'from-emerald-600/20 to-transparent' },
-          { label: 'Anomalías / Fallos', value: fallidos.length, icon: ShieldAlert, color: '#FF3B3B', bg: 'from-red-600/20 to-transparent' },
+          { label: 'Escaneos Activos', value: enProgreso.length, icon: Zap, color: '#0EA5E9', bg: 'bg-[#0EA5E9]/5' },
+          { label: 'Exitosos (Recientes)', value: completados.length, icon: CheckCircle, color: '#10B981', bg: 'bg-[#10B981]/5' },
+          { label: 'Anomalías / Fallos', value: fallidos.length, icon: ShieldAlert, color: '#FF3B3B', bg: 'bg-[#FF3B3B]/5' },
         ].map((stat, i) => (
           <motion.div 
             key={i}
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
+            className={`relative p-6 rounded-3xl bg-[#0A0B10]/40 border border-white/[0.03] backdrop-blur-md overflow-hidden group hover:border-white/10 transition-all duration-500`}
           >
-            <Card className={`relative overflow-hidden bg-gradient-to-br ${stat.bg} border-white/[0.03]`}>
-              <div className="flex items-center justify-between relative z-10">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">{stat.label}</p>
-                  <p className="text-4xl font-black text-white">{stat.value}</p>
-                </div>
-                <stat.icon className="w-12 h-12 opacity-20" style={{ color: stat.color }} />
+            <div className={`absolute top-0 right-0 w-24 h-24 blur-[50px] opacity-10 rounded-full -translate-y-1/2 translate-x-1/2 transition-opacity group-hover:opacity-20`} style={{ backgroundColor: stat.color }} />
+            
+            <div className="flex items-center justify-between relative z-10">
+              <div className="space-y-2">
+                <p className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.2em]">{stat.label}</p>
+                <p className="text-3xl font-black text-white tracking-tighter">{stat.value}</p>
               </div>
-            </Card>
+              <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center translate-y-1">
+                <stat.icon className="w-5 h-5" style={{ color: stat.color }} />
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        {/* Main List Area */}
-        <div className="lg:col-span-8 space-y-8">
-          {/* Active Analyses */}
+      <div className="grid lg:grid-cols-12 gap-10">
+        {/* Main Operational Area (Success & Progress) */}
+        <div className="lg:col-span-8 space-y-10">
+          {/* Active Executions */}
           {enProgreso.length > 0 && (
-            <section className="space-y-4">
-              <h2 className="text-xs font-black text-white uppercase tracking-[0.25em] flex items-center gap-3 ml-2">
-                <div className="w-2 h-2 rounded-full bg-[#00D1FF] animate-pulse" />
-                Ejecuciones en Proceso
-              </h2>
-              <div className="space-y-3">
+            <section className="space-y-5">
+              <div className="flex items-center gap-3 ml-1">
+                <div className="w-1 h-3 bg-[#00D1FF] rounded-full shadow-[0_0_8px_#00D1FF]" />
+                <h2 className="text-[10px] font-black text-white uppercase tracking-[0.25em]">Ejecuciones en Proceso</h2>
+              </div>
+              <div className="grid gap-4">
                 {enProgreso.map((analysis: any) => {
                   const cfg = STATUS_CONFIG[analysis.status] || STATUS_CONFIG['RUNNING']!;
                   return (
                     <motion.div key={analysis.id} layout>
-                      <Card className="hover:border-white/10 transition-all group pointer-events-none">
-                        <div className="flex flex-col gap-4">
+                      <div className="p-6 rounded-3xl bg-[#0A0B10]/40 border border-white/[0.03] backdrop-blur-md transition-all group">
+                        <div className="flex flex-col gap-5">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                               <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${cfg.bg} border border-white/5`}>
-                                 <cfg.icon className="w-6 h-6" style={{ color: cfg.color }} />
+                               <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${cfg.bg} border border-white/5`}>
+                                 <cfg.icon className="w-5 h-5" style={{ color: cfg.color }} />
                                </div>
                                <div>
-                                 <p className="text-[10px] font-black uppercase tracking-widest opacity-60" style={{ color: cfg.color }}>{cfg.label}</p>
-                                 <h4 className="text-lg font-black text-white tracking-tight">{analysis.projectName}</h4>
+                                 <p className="text-[9px] font-black uppercase tracking-widest opacity-60" style={{ color: cfg.color }}>{cfg.label}</p>
+                                 <h4 className="text-md font-black text-white tracking-tight">{analysis.projectName}</h4>
                                </div>
                             </div>
                             <div className="text-right">
-                              <span className="text-2xl font-black text-white">{analysis.progress || 0}%</span>
+                              <span className="text-xl font-black text-white">{analysis.progress || 0}%</span>
                             </div>
                           </div>
                           
-                          <div className="h-1.5 w-full bg-white/[0.03] rounded-full overflow-hidden">
+                          <div className="h-1 w-full bg-white/[0.03] rounded-full overflow-hidden">
                             <motion.div 
                               className="h-full rounded-full"
                               initial={{ width: 0 }}
                               animate={{ width: `${analysis.progress || 10}%` }}
-                              style={{ backgroundColor: cfg.color, boxShadow: `0 0 10px ${cfg.color}40` }}
-                              transition={{ duration: 0.5 }}
+                              style={{ backgroundColor: cfg.color, boxShadow: `0 0 10px ${cfg.color}30` }}
+                              transition={{ duration: 0.8, ease: "easeOut" }}
                             />
                           </div>
                         </div>
-                      </Card>
+                      </div>
                     </motion.div>
                   );
                 })}
@@ -139,73 +142,85 @@ export default function AnalysisMonitor() {
             </section>
           )}
 
-          {/* Success List */}
-          <section className="space-y-4">
-             <h2 className="text-xs font-black text-[#64748B] uppercase tracking-[0.25em] flex items-center gap-3 ml-2">
-                <CheckCircle className="w-3.5 h-3.5" />
-                Historial de Éxitos
-              </h2>
+          {/* Success History */}
+          <section className="space-y-5">
+              <div className="flex items-center gap-3 ml-1">
+                <div className="w-1 h-3 bg-[#10B981] rounded-full shadow-[0_0_8px_#10B981]" />
+                <h2 className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.25em]">Historial de Éxitos</h2>
+              </div>
               <div className="grid gap-3">
                 {completados.length > 0 ? completados.map((analysis: any, idx) => (
                    <motion.div
                     key={analysis.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: idx * 0.05 }}
+                    className="p-4 rounded-2xl bg-[#0A0B10]/20 border border-white/[0.02] hover:bg-white/[0.03] hover:border-white/10 transition-all flex items-center justify-between group cursor-pointer"
                    >
-                     <Card className="hover:bg-white/[0.02] border-white/[0.03] hover:border-white/10 transition-all flex items-center justify-between group cursor-pointer">
                         <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-xl bg-[#10B981]/10 flex items-center justify-center text-[#10B981] group-hover:bg-[#10B981]/20 transition-colors">
-                             <FileText className="w-5 h-5" />
+                           <div className="w-10 h-10 rounded-xl bg-white/[0.02] border border-white/[0.05] flex items-center justify-center text-[#10B981] group-hover:text-white transition-colors">
+                             <FileText className="w-4.5 h-4.5" />
                            </div>
                            <div>
                               <h5 className="font-black text-white text-sm tracking-tight">{analysis.projectName}</h5>
                               <p className="text-[9px] font-bold text-[#475569] uppercase tracking-widest mt-1">
-                                Sincronizado: {new Date(analysis.createdAt).toLocaleDateString()} · {new Date(analysis.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(analysis.createdAt).toLocaleDateString()} · {new Date(analysis.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                            </div>
                         </div>
                         <ArrowRight className="w-4 h-4 text-[#2D3748] group-hover:text-[#10B981] group-hover:translate-x-1 transition-all" />
-                     </Card>
                    </motion.div>
                 )) : (
-                  <p className="text-center py-10 text-[10px] uppercase font-black tracking-widest text-[#2D3748]">Sin registros completados</p>
+                  <div className="text-center py-16 bg-[#0A0B10]/10 border border-dashed border-white/[0.03] rounded-[2rem]">
+                    <p className="text-[10px] uppercase font-black tracking-[0.25em] text-[#3D4A5C]">Sin registros completados</p>
+                  </div>
                 )}
               </div>
           </section>
         </div>
 
-        {/* Sidebar Info Area */}
-        <div className="lg:col-span-4 space-y-6">
+        {/* Sidebar Intelligence Panel */}
+        <div className="lg:col-span-4 space-y-8">
            {/* Failed Stack */}
-           <Card className="bg-[#FF3B3B]/5 border-[#FF3B3B]/10">
-              <h3 className="text-[10px] font-black text-[#FF3B3B] uppercase tracking-widest mb-6 flex items-center gap-2">
-                <AlertCircle className="w-3 h-3" /> Fallos de Conexión / Análisis
-              </h3>
+           <div className="p-8 rounded-[2rem] bg-[#FF3B3B]/5 border border-[#FF3B3B]/10 space-y-6">
+              <div className="flex items-center justify-between border-b border-[#FF3B3B]/10 pb-4">
+                 <h3 className="text-[10px] font-black text-[#FF3B3B] uppercase tracking-[0.2em] flex items-center gap-2">
+                   <AlertCircle className="w-3.5 h-3.5" /> Anomalías
+                 </h3>
+                 <span className="text-[10px] font-black text-white">{fallidos.length}</span>
+              </div>
+              
               <div className="space-y-4">
                 {fallidos.length > 0 ? fallidos.map((analysis: any) => (
-                  <div key={analysis.id} className="p-4 rounded-2xl bg-black/40 border border-[#FF3B3B]/5 space-y-2">
+                  <div key={analysis.id} className="p-4 rounded-2xl bg-black/40 border border-white/[0.03] space-y-2 group transition-colors hover:border-[#FF3B3B]/30">
                     <p className="text-white font-black text-xs">{analysis.projectName}</p>
                     <p className="text-[9px] text-[#FF3B3B]/70 font-mono leading-relaxed line-clamp-2 uppercase">
                        {analysis.error || 'ERROR_UNDEFINED: Motor de análisis offline'}
                     </p>
                   </div>
                 )) : (
-                  <div className="text-center py-6 opacity-20">
-                     <CheckCircle className="w-10 h-10 mx-auto mb-2 text-[#10B981]" />
-                     <p className="text-[9px] font-black uppercase tracking-widest">Canales Limpios</p>
+                  <div className="text-center py-8 space-y-4">
+                     <div className="w-10 h-10 rounded-full bg-[#10B981]/10 flex items-center justify-center mx-auto border border-[#10B981]/20">
+                        <CheckCircle className="w-5 h-5 text-[#10B981]" />
+                     </div>
+                     <p className="text-[9px] font-black uppercase tracking-[0.25em] text-[#10B981] opacity-60">Canales Limpios</p>
                   </div>
                 )}
               </div>
-           </Card>
+           </div>
 
-           {/* Quick Tips */}
-           <Card className="bg-[#00D1FF]/5 border-[#00D1FF]/10">
-              <h3 className="text-[10px] font-black text-[#00D1FF] uppercase tracking-widest mb-4">Protocolo de Reporte</h3>
-              <p className="text-[11px] text-[#64748B] leading-relaxed">
-                Los reportes son generados automáticamente tras completar las tres fases de auditoría (Inspección, Detección y Dictamen). Un reporte fallido puede indicar problemas de conexión con el repositorio de origen.
+           {/* Professional Knowledge Card */}
+           <div className="p-8 rounded-[2rem] bg-[#00D1FF]/5 border border-[#00D1FF]/10 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                 <Activity className="w-20 h-20" />
+              </div>
+              <h3 className="text-[10px] font-black text-[#00D1FF] uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                 <ShieldAlert className="w-3.5 h-3.5" /> Protocolo
+              </h3>
+              <p className="text-[11px] text-[#64748B] leading-[1.8] font-medium selection:bg-[#00D1FF]/30">
+                Los reportes son generados automáticamente tras completar las tres fases de auditoría técnica: **Inspección de Origen**, **Detección de Vectores** y **Dictamen Final**. Un estado fallido generalmente indica una brecha de sincronización con el repositorio.
               </p>
-           </Card>
+           </div>
         </div>
       </div>
     </div>

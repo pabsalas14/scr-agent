@@ -63,29 +63,29 @@ export default function CostsMonitor() {
   }
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-1000">
-      {/* Header Section */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-[#8B5CF6]/10 pb-10">
-        <div className="space-y-4">
-          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#8B5CF6]">
-            <Target className="w-3 h-3" />
-            <span>Control de Presupuesto Global</span>
+    <div className="space-y-12 animate-in fade-in duration-1000">
+      {/* Refined Header - Budget Control */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/[0.03] pb-8">
+        <div className="space-y-3">
+          <div className="flex items-center gap-2.5">
+             <div className="w-1.5 h-1.5 rounded-full bg-[#8B5CF6] shadow-[0_0_8px_#8B5CF6] animate-pulse" />
+             <span className="text-[9px] font-black uppercase tracking-[0.3em] text-[#8B5CF6]">Control de Presupuesto Global</span>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter leading-none">COSTOS</h1>
-          <p className="text-[#64748B] text-sm font-medium max-w-xl">
-            Análisis detallado de inversión en tokens. Visualiza el gasto por modelo y optimiza el ROI de tus auditorías automáticas.
+          <h1 className="text-4xl lg:text-5xl font-black text-white tracking-tighter leading-none uppercase">COSTOS</h1>
+          <p className="text-[#64748B] text-xs font-medium max-w-lg leading-relaxed">
+            Análisis detallado de inversión en tokens. Visualización de gasto por modelo y optimización de ROI en auditorías.
           </p>
         </div>
         
-        <div className="flex items-center bg-[#0A0B10] border border-[#1F2937] rounded-3xl p-1.5 shadow-xl">
+        <div className="flex items-center bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.05] rounded-[1.5rem] p-1 shadow-xl">
           {PERIODS.map((p) => (
             <button
               key={p.id}
               onClick={() => setPeriod(p.id as any)}
-              className={`px-6 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 ${
+              className={`px-6 py-2 rounded-[1.25rem] text-[9px] font-black uppercase tracking-widest transition-all duration-300 ${
                 period === p.id 
                   ? 'bg-[#8B5CF6] text-white shadow-[0_0_15px_rgba(139,92,246,0.3)]' 
-                  : 'text-[#64748B] hover:text-white'
+                  : 'text-[#475569] hover:text-white'
               }`}
             >
               {p.label}
@@ -95,79 +95,101 @@ export default function CostsMonitor() {
       </div>
 
       {!hasData ? (
-        <Card className="border-dashed border-[#1F2937] bg-transparent py-24 flex flex-col items-center justify-center space-y-6">
-           <div className="w-20 h-20 rounded-[2.5rem] bg-white/[0.02] flex items-center justify-center text-[#3D4A5C]">
-             <CreditCard className="w-10 h-10" />
+        <Card className="border-dashed border-white/[0.03] bg-[#0A0B10]/20 py-24 flex flex-col items-center justify-center space-y-6 rounded-[2.5rem]">
+           <div className="w-16 h-16 rounded-[2rem] bg-white/[0.02] flex items-center justify-center text-[#3D4A5C]">
+             <CreditCard className="w-8 h-8 opacity-40" />
            </div>
            <div className="text-center space-y-2">
-              <h3 className="text-white font-black uppercase tracking-widest">Sin Consumo Detectado</h3>
-              <p className="text-[#64748B] text-xs max-w-xs leading-relaxed">
+              <h3 className="text-white text-xs font-black uppercase tracking-widest">Sin Consumo Detectado</h3>
+              <p className="text-[#64748B] text-[10px] max-w-xs leading-relaxed uppercase tracking-tight font-medium">
                 Los costos se calculan basándose en los análisis completados. Inicia un nuevo escaneo para ver datos financieros.
               </p>
            </div>
         </Card>
       ) : (
         <>
-          {/* Main KPI Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#8B5CF6]/10 to-transparent border-white/[0.05]">
-               <div className="space-y-1 relative z-10">
-                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Gasto Total ({period})</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">${costs.totalCostUSD.toFixed(2)} <span className="text-xl text-[#64748B] ml-1">USD</span></p>
+          {/* Main KPI Cards - Proportional Redesign */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.03] p-8 group transition-all duration-500 hover:border-[#8B5CF6]/20">
+               <div className="space-y-4 relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-[#8B5CF6]/10 flex items-center justify-center text-[#8B5CF6] border border-[#8B5CF6]/20 mb-4">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.2em]">Gasto Total ({period})</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">${costs.totalCostUSD.toFixed(2)} <span className="text-base text-[#64748B] ml-1 uppercase font-bold tracking-widest">USD</span></p>
+                  </div>
                </div>
-               <DollarSign className="absolute top-4 right-4 w-12 h-12 text-[#8B5CF6] opacity-20" />
-            </Card>
+               <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700">
+                  <TrendingUp className="w-24 h-24" />
+               </div>
+            </div>
 
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#00D1FF]/10 to-transparent border-white/[0.05]">
-               <div className="space-y-1 relative z-10">
-                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Tokens Procesados</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">
-                    {costs.entries.reduce((acc: number, curr: any) => acc + curr.inputTokens + curr.outputTokens, 0).toLocaleString()}
-                  </p>
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.03] p-8 group transition-all duration-500 hover:border-[#00D1FF]/20">
+               <div className="space-y-4 relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-[#00D1FF]/10 flex items-center justify-center text-[#00D1FF] border border-[#00D1FF]/20 mb-4">
+                    <BarChart3 className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.2em]">Tokens Procesados</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">
+                      {costs.entries.reduce((acc: number, curr: any) => acc + curr.inputTokens + curr.outputTokens, 0).toLocaleString()}
+                    </p>
+                  </div>
                </div>
-               <BarChart3 className="absolute top-4 right-4 w-12 h-12 text-[#00D1FF] opacity-20" />
-            </Card>
+               <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700">
+                  <Zap className="w-24 h-24" />
+               </div>
+            </div>
 
-            <Card className="relative overflow-hidden bg-gradient-to-br from-[#00FF94]/10 to-transparent border-white/[0.05]">
-               <div className="space-y-1 relative z-10">
-                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Llamadas API</p>
-                  <p className="text-4xl font-black text-white tracking-tighter">
-                    {costs.entries.reduce((acc: number, curr: any) => acc + curr.calls, 0)}
-                  </p>
+            <div className="relative overflow-hidden rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.03] p-8 group transition-all duration-500 hover:border-[#00FF94]/20">
+               <div className="space-y-4 relative z-10">
+                  <div className="w-10 h-10 rounded-xl bg-[#00FF94]/10 flex items-center justify-center text-[#00FF94] border border-[#00FF94]/20 mb-4">
+                    <Target className="w-5 h-5" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.2em]">Llamadas API</p>
+                    <p className="text-4xl font-black text-white tracking-tighter">
+                      {costs.entries.reduce((acc: number, curr: any) => acc + curr.calls, 0)}
+                    </p>
+                  </div>
                </div>
-               <Zap className="absolute top-4 right-4 w-12 h-12 text-[#00FF94] opacity-20" />
-            </Card>
+               <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-10 transition-opacity duration-700">
+                  <PieChartIcon className="w-24 h-24" />
+               </div>
+            </div>
           </div>
 
-          <div className="grid lg:grid-cols-12 gap-8">
-            {/* Chart Area */}
+          <div className="grid lg:grid-cols-12 gap-10">
+            {/* Chart Area - Elite Refinement */}
             <div className="lg:col-span-8">
-              <Card className="h-full border-white/[0.03] space-y-8">
-                <div className="flex justify-between items-center">
-                   <h3 className="text-sm font-black text-white uppercase tracking-widest flex items-center gap-2">
-                     <TrendingUp className="w-4 h-4 text-[#8B5CF6]" />
+              <div className="h-full rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.03] p-8 space-y-10">
+                <div className="flex justify-between items-center pb-4 border-b border-white/[0.03]">
+                   <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em] flex items-center gap-2.5">
+                     <TrendingUp className="w-4 h-4 text-[#8B5CF6]/70" />
                      Distribución por Modelo
                    </h3>
                 </div>
                 
-                <div className="h-[350px] w-full">
+                <div className="h-[320px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={costs.entries}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                       <XAxis 
                         dataKey="model" 
                         stroke="#475569" 
-                        fontSize={10} 
+                        fontSize={9} 
                         tickLine={false} 
                         axisLine={false}
                         tickFormatter={(val) => val.split('-').pop()?.toUpperCase() || val}
                       />
-                      <YAxis stroke="#475569" fontSize={10} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#475569" fontSize={9} tickLine={false} axisLine={false} />
                       <Tooltip 
-                        contentStyle={{ backgroundColor: '#0A0B10', borderColor: '#1F2937', borderRadius: '16px' }}
-                        itemStyle={{ fontSize: '12px', fontWeight: 'bold' }}
+                        cursor={{ fill: 'rgba(255,255,255,0.02)' }}
+                        contentStyle={{ backgroundColor: '#0A0B10', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '1.5rem', backdropFilter: 'blur(10px)' }}
+                        itemStyle={{ fontSize: '10px', fontWeight: '900', textTransform: 'uppercase' }}
                       />
-                      <Bar dataKey="costUSD" radius={[6, 6, 0, 0]}>
+                      <Bar dataKey="costUSD" radius={[4, 4, 0, 0]} barSize={40}>
                         {costs.entries.map((entry: any, index: number) => (
                           <Cell key={`cell-${index}`} fill={MODEL_COLORS[entry.model] || '#8B5CF6'} />
                         ))}
@@ -175,37 +197,36 @@ export default function CostsMonitor() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-              </Card>
+              </div>
             </div>
 
-            {/* List area */}
-            <div className="lg:col-span-4 space-y-6">
-              <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-4">Desglose Técnico</h3>
+            {/* List area - Intelligence Card Style */}
+            <div className="lg:col-span-4 space-y-8">
               <div className="space-y-4">
                 {costs.entries.map((entry: any, i: number) => (
                   <motion.div
                     key={entry.model}
-                    initial={{ opacity: 0, x: 20 }}
+                    initial={{ opacity: 0, x: 15 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.1 }}
                   >
-                    <div className="bg-[#0A0B10] border border-[#1F2937] p-6 rounded-3xl space-y-4 group hover:border-white/10 transition-colors">
+                    <div className="bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.03] p-6 rounded-[2rem] space-y-5 transition-all duration-300 hover:border-white/10 group">
                       <div className="flex items-center justify-between">
                          <div className="flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: MODEL_COLORS[entry.model] || '#8B5CF6', boxShadow: `0 0 10px ${MODEL_COLORS[entry.model] || '#8B5CF6'}60` }} />
-                            <span className="text-xs font-black text-white uppercase tracking-tight">{entry.model}</span>
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: MODEL_COLORS[entry.model] || '#8B5CF6', boxShadow: `0_0_8px_${MODEL_COLORS[entry.model] || '#8B5CF6'}` }} />
+                            <span className="text-[10px] font-black text-white uppercase tracking-tight">{entry.model}</span>
                          </div>
-                         <span className="text-sm font-black text-white">${entry.costUSD.toFixed(2)}</span>
+                         <span className="text-sm font-black text-white tracking-tighter">${entry.costUSD.toFixed(2)}</span>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
+                      <div className="grid grid-cols-2 gap-6 border-t border-white/[0.03] pt-5">
                          <div className="space-y-1">
-                            <p className="text-[9px] font-bold text-[#475569] uppercase tracking-widest">Input Tokens</p>
-                            <p className="text-xs font-black text-white">{entry.inputTokens.toLocaleString()}</p>
+                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Input Tokens</p>
+                            <p className="text-[10px] font-black text-white uppercase tracking-tighter">{entry.inputTokens.toLocaleString()}</p>
                          </div>
                          <div className="space-y-1">
-                            <p className="text-[9px] font-bold text-[#475569] uppercase tracking-widest">Output Tokens</p>
-                            <p className="text-xs font-black text-white">{entry.outputTokens.toLocaleString()}</p>
+                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Output Tokens</p>
+                            <p className="text-[10px] font-black text-white uppercase tracking-tighter">{entry.outputTokens.toLocaleString()}</p>
                          </div>
                       </div>
                     </div>
@@ -213,13 +234,13 @@ export default function CostsMonitor() {
                 ))}
               </div>
 
-              <div className="p-6 rounded-3xl bg-black/40 border border-[#8B5CF6]/20 space-y-3">
-                 <div className="flex items-center gap-2 text-[#8B5CF6]">
-                    <PieChartIcon className="w-4 h-4" />
-                    <span className="text-[10px] font-black uppercase tracking-widest">Nota de Facturación</span>
+              <div className="p-8 rounded-[2rem] bg-white/[0.01] border border-white/[0.03] space-y-4">
+                 <div className="flex items-center gap-2.5 text-[#8B5CF6]/60">
+                    <PieChartIcon className="w-3.5 h-3.5" />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">Nota de Facturación</span>
                  </div>
-                 <p className="text-[10px] text-[#64748B] leading-relaxed">
-                   Los precios se basan en tarifas oficiales de los proveedores (OpenAI, Anthropic). No incluyen impuestos aplicables ni créditos promocionales.
+                 <p className="text-[9px] text-[#475569] leading-relaxed uppercase tracking-tight font-medium">
+                   Tarifas oficiales (OpenAI / Anthropic). No incluye impuestos. Monitoreo en tiempo real sincronizado con CODA-CORE.
                  </p>
               </div>
             </div>
