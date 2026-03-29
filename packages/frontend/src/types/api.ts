@@ -4,12 +4,14 @@
 
 export type AlcanceAnalisis = 'REPOSITORIO' | 'ORGANIZACION' | 'PULL_REQUEST';
 export type EstadoAnalisis =
-  | 'PENDIENTE'
+  | 'PENDING'
   | 'RUNNING'
-  | 'MALICIA_RUNNING'
-  | 'FORENSES_RUNNING'
-  | 'SINTESIS_RUNNING'
-  | 'COMPLETADO'
+  | 'INSPECTOR_RUNNING'
+  | 'DETECTIVE_RUNNING'
+  | 'FISCAL_RUNNING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
   | 'ERROR';
 
 export interface Proyecto {

@@ -96,6 +96,33 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * GET /api/v1/projects/:projectId/analyses
+ * Listar análisis de un proyecto
+ */
+router.get('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId } = req.params;
+
+    const analyses = await prisma.analysis.findMany({
+      where: { projectId },
+      include: {
+        findings: {
+          select: { id: true, severity: true },
+        },
+        report: {
+          select: { id: true, riskScore: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({ success: true, data: analyses });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/v1/projects
  * Crear un nuevo proyecto
  */

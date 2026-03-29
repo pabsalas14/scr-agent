@@ -10,6 +10,17 @@ interface BadgeRiesgoProps {
   size?: 'sm' | 'md';
 }
 
+const SEVERITY_MAP: Record<string, NivelRiesgo> = {
+  CRITICAL: 'CRÍTICO',
+  HIGH: 'ALTO',
+  MEDIUM: 'MEDIO',
+  LOW: 'BAJO',
+  CRÍTICO: 'CRÍTICO',
+  ALTO: 'ALTO',
+  MEDIO: 'MEDIO',
+  BAJO: 'BAJO',
+};
+
 const LABELS: Record<NivelRiesgo, string> = {
   CRÍTICO: '🚨 CRÍTICO',
   ALTO: '⚠️ ALTO',
@@ -25,15 +36,16 @@ const CLASES: Record<NivelRiesgo, string> = {
 };
 
 export default function BadgeRiesgo({ nivel, size = 'md' }: BadgeRiesgoProps) {
+  const mapped = SEVERITY_MAP[nivel] || nivel;
   return (
     <span
       className={`
         inline-flex items-center border rounded-full font-semibold
-        ${CLASES[nivel]}
+        ${CLASES[mapped] || CLASES['BAJO']}
         ${size === 'sm' ? 'text-xs px-2 py-0.5' : 'text-sm px-3 py-1'}
       `}
     >
-      {LABELS[nivel]}
+      {LABELS[mapped] || nivel}
     </span>
   );
 }

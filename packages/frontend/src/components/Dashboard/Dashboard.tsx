@@ -39,7 +39,16 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   } = useQuery({
     queryKey: ['projects'],
     queryFn: () => apiService.obtenerProyectos(),
-    refetchInterval: 10_000, // Refrescar cada 10s
+    refetchInterval: 10_000,
+  });
+
+  const { data: analyticsData } = useQuery({
+    queryKey: ['analytics-summary'],
+    queryFn: async () => {
+      const { data } = await apiService.get('/analytics/summary');
+      return (data as any).data;
+    },
+    refetchInterval: 15_000,
   });
 
   /**
@@ -75,12 +84,23 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
 
   const proyectos = proyectosData?.data || [];
 
-  // Calcular estadísticas
+  // Calcular estadísticas desde los datos de proyectos
+  const analisisCompletados = proyectos.reduce(
+    (acc: number, p: any) =>
+      acc + (p.analyses?.filter((a: any) => a.status === 'COMPLETED').length || 0),
+    0
+  );
+  const totalAnalisis = proyectos.reduce(
+    (acc: number, p: any) => acc + (p.analyses?.length || 0),
+    0
+  );
   const stats = {
     totalProyectos: proyectos.length,
-    analisisCompletados: 0, // Se cargarán dinámicamente desde cada ProyectoCard
-    hallazgosCriticos: 0, // Se cargarán dinámicamente desde cada ProyectoCard
-    riskScorePromedio: 0, // Se cargarán dinámicamente desde cada ProyectoCard
+    analisisCompletados,
+    hallazgosCriticos: analyticsData?.criticalFindings || 0,
+    riskScorePromedio: analyticsData?.totalFindings
+      ? Math.round(((analyticsData.criticalFindings + analyticsData.highFindings) / analyticsData.totalFindings) * 100)
+      : 0,
   };
 
   return (

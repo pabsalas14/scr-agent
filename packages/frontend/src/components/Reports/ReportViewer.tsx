@@ -380,9 +380,9 @@ export default function ReportViewer() {
                 transition={{ delay: idx * 0.05 }}
               >
                 <Card className="border-l-4" style={{ borderLeftColor:
-                  hallazgo.severity === 'CRÍTICO' ? '#dc2626' :
-                  hallazgo.severity === 'ALTO' ? '#ea580c' :
-                  hallazgo.severity === 'MEDIO' ? '#eab308' : '#22c55e'
+                  ['CRITICAL', 'CRÍTICO'].includes(hallazgo.severity) ? '#dc2626' :
+                  ['HIGH', 'ALTO'].includes(hallazgo.severity) ? '#ea580c' :
+                  ['MEDIUM', 'MEDIO'].includes(hallazgo.severity) ? '#eab308' : '#22c55e'
                 }}>
                   <div className="flex justify-between items-start mb-3">
                     <BadgeRiesgo nivel={hallazgo.severity as any} size="sm" />

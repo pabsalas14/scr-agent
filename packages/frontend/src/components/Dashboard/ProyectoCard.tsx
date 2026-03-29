@@ -90,7 +90,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             <EstadoChip status={ultimoAnalisis.status} />
           </div>
 
-          {ultimoAnalisis.status === 'COMPLETADO' && (
+          {ultimoAnalisis.status === 'COMPLETED' && (
             <div className="mt-2 sm:mt-3">
               <div className="flex justify-between items-center mb-1">
                 <span className="text-xs text-gray-500">Progreso</span>
@@ -123,7 +123,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
           <span className="hidden xs:inline">{enProceso || iniciar.isPending ? 'Analizando...' : 'Analizar'}</span>
           <span className="xs:hidden">{enProceso || iniciar.isPending ? '...' : '▶'}</span>
         </Button>
-        {ultimoAnalisis?.status === 'COMPLETADO' && (
+        {ultimoAnalisis?.status === 'COMPLETED' && (
           <Button
             variant="secondary"
             size="sm"
@@ -163,13 +163,14 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
 
 function EstadoChip({ status }: { status: string }) {
   const CONFIG: Record<string, { label: string; clase: string; icon: string }> = {
-    PENDIENTE: { label: 'Pendiente', clase: 'bg-gray-500/20 text-gray-300 border border-gray-500/30', icon: '⏳' },
+    PENDING: { label: 'Pendiente', clase: 'bg-gray-500/20 text-gray-300 border border-gray-500/30', icon: '⏳' },
     RUNNING: { label: 'Analizando', clase: 'bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse', icon: '⚡' },
     INSPECTOR_RUNNING: { label: 'Inspector', clase: 'bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse', icon: '🔍' },
     DETECTIVE_RUNNING: { label: 'Detective', clase: 'bg-purple-500/20 text-purple-300 border border-purple-500/30 animate-pulse', icon: '🔎' },
     FISCAL_RUNNING: { label: 'Fiscal', clase: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 animate-pulse', icon: '⚖️' },
-    COMPLETADO: { label: 'Completado', clase: 'bg-green-500/20 text-green-300 border border-green-500/30', icon: '✅' },
-    ERROR: { label: 'Error', clase: 'bg-red-500/20 text-red-300 border border-red-500/30', icon: '❌' },
+    COMPLETED: { label: 'Completado', clase: 'bg-green-500/20 text-green-300 border border-green-500/30', icon: '✅' },
+    FAILED: { label: 'Error', clase: 'bg-red-500/20 text-red-300 border border-red-500/30', icon: '❌' },
+    CANCELLED: { label: 'Cancelado', clase: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30', icon: '🚫' },
   };
   const cfg = CONFIG[status] || { label: status, clase: 'bg-gray-500/20 text-gray-300 border border-gray-500/30', icon: '•' };
   return (

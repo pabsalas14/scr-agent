@@ -7,89 +7,30 @@
  * progreso, y hallazgos encontrados.
  */
 
-import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { CheckCircle, Clock, AlertTriangle, Download } from 'lucide-react';
 import { apiService } from '../../services/api.service';
-import { useSocketEvents } from '../../hooks/useSocketEvents';
 import Button from '../ui/Button';
 import FindingsPanel from './FindingsPanel';
-import type { Analisis, EstadoAnalisis } from '../../types/api';
 
 interface AnalysisReportProps {
   analysisId: string;
 }
 
 export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
-  const [analysis, setAnalysis] = useState<Analisis | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // Cargar análisis inicial
-  useEffect(() => {
-    const loadAnalysis = async () => {
-      try {
-        setIsLoading(true);
-        const data = await apiService.obtenerAnalisis(analysisId);
-        setAnalysis(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Error loading analysis');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadAnalysis();
-  }, [analysisId]);
-
-  // Escuchar eventos WebSocket para actualizaciones en tiempo real
-  useSocketEvents({
-    onAnalysisStatusChanged: (data) => {
-      if (data.analysisId === analysisId) {
-        setAnalysis((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: data.newStatus as any,
-                progress: data.progress,
-              }
-            : null
-        );
-      }
-    },
-    onAnalysisFindingsDiscovered: (data) => {
-      if (data.analysisId === analysisId) {
-        setAnalysis((prev) => (prev ? { ...prev, progress: data.findingCount } : null));
-      }
-    },
-    onAnalysisCompleted: (data) => {
-      if (data.analysisId === analysisId) {
-        setAnalysis((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: 'COMPLETADO' as any,
-                progress: 100,
-              }
-            : null
-        );
-      }
-    },
-    onAnalysisError: (data) => {
-      if (data.analysisId === analysisId) {
-        setAnalysis((prev) =>
-          prev
-            ? {
-                ...prev,
-                status: 'ERROR' as any,
-                errorMessage: data.errorMessage,
-              }
-            : null
-        );
-      }
+  // Poll analysis status every 3 seconds while it's running
+  const { data: analysis, isLoading, error: queryError } = useQuery({
+    queryKey: ['analysis', analysisId],
+    queryFn: () => apiService.obtenerAnalisis(analysisId),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      if (!status) return 3000;
+      const terminal = ['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'];
+      return terminal.includes(status) ? false : 3000;
     },
   });
+  const error = queryError ? (queryError instanceof Error ? queryError.message : 'Error loading analysis') : null;
 
   if (isLoading) {
     return (
@@ -109,20 +50,18 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
   }
 
   const statusConfig = {
-    PENDIENTE: { icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-900/20', label: 'Pendiente' },
+    PENDING: { icon: Clock, color: 'text-yellow-400', bg: 'bg-yellow-900/20', label: 'Pendiente' },
     RUNNING: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-900/20', label: 'En progreso' },
     INSPECTOR_RUNNING: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-900/20', label: 'Inspector analizando...' },
     DETECTIVE_RUNNING: { icon: Clock, color: 'text-purple-400', bg: 'bg-purple-900/20', label: 'Detective investigando...' },
     FISCAL_RUNNING: { icon: Clock, color: 'text-indigo-400', bg: 'bg-indigo-900/20', label: 'Fiscal compilando reporte...' },
-    MALICIA_RUNNING: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-900/20', label: 'Inspector analizando...' },
-    FORENSES_RUNNING: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-900/20', label: 'Detective investigando...' },
-    SINTESIS_RUNNING: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-900/20', label: 'Fiscal compilando reporte...' },
-    COMPLETADO: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-900/20', label: 'Completado' },
+    COMPLETED: { icon: CheckCircle, color: 'text-green-400', bg: 'bg-green-900/20', label: 'Completado' },
     ERROR: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-900/20', label: 'Error' },
     FAILED: { icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-900/20', label: 'Error' },
+    CANCELLED: { icon: AlertTriangle, color: 'text-yellow-400', bg: 'bg-yellow-900/20', label: 'Cancelado' },
   };
 
-  const config = statusConfig[analysis.status as keyof typeof statusConfig] || statusConfig.PENDIENTE;
+  const config = statusConfig[analysis.status as keyof typeof statusConfig] || statusConfig.PENDING;
   const StatusIcon = config.icon;
 
   return (
@@ -154,7 +93,7 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
         </div>
 
         {/* Progress Bar */}
-        {analysis.status !== 'COMPLETADO' && (
+        {analysis.status !== 'COMPLETED' && (
           <div className="mt-4 w-full bg-gray-700/50 rounded-full h-2 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
@@ -176,7 +115,7 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
       )}
 
       {/* Findings or Loading Message */}
-      {analysis.status === 'COMPLETADO' ? (
+      {analysis.status === 'COMPLETED' ? (
         <>
           {/* Download Report Button */}
           <div className="flex justify-end gap-2">
