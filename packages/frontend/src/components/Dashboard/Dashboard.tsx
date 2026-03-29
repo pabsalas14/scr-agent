@@ -1,36 +1,45 @@
-import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Folder, CheckCircle2, AlertOctagon, BarChart3, Activity } from 'lucide-react';
+/**
+ * ============================================================================
+ * COMMAND CENTER (DASHBOARD) - Vista de Resumen Estratégico
+ * ============================================================================
+ * 
+ * Este componente es el núcleo de monitoreo global. Proporciona una vista
+ * de alto nivel de la salud de seguridad, costos y actividad reciente de
+ * todos los assets vinculados.
+ */
+
+import { useQuery } from '@tanstack/react-query';
+import { motion } from 'framer-motion';
+import { 
+  Shield, 
+  Zap, 
+  Activity, 
+  TrendingUp, 
+  AlertCircle, 
+  FileText, 
+  CheckCircle2, 
+  AlertOctagon,
+  ArrowUpRight,
+  Target
+} from 'lucide-react';
 import { apiService } from '../../services/api.service';
-import type { CrearProyectoDTO } from '../../types/api';
-import Button from '../ui/Button';
+import { useNavigate } from 'react-router-dom';
 import KPICard from './KPICard';
-import NuevoProyectoModerno from './NuevoProyectoModerno';
-import ProyectoCard from './ProyectoCard';
+import { useTheme } from '../../contexts/ThemeProvider';
 
 interface DashboardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
+  onVerLogs?: () => void;
 }
 
-export default function Dashboard({ onVerAnalisis }: DashboardProps) {
-  const queryClient = useQueryClient();
-  const [modalAbierto, setModalAbierto] = useState(false);
+export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) {
+  const navigate = useNavigate();
+  const { theme } = useTheme();
 
   /**
-   * Cargar proyectos del backend
+   * Cargar datos analíticos globales
    */
-  const {
-    data: proyectosData,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => apiService.obtenerProyectos(),
-    refetchInterval: 10_000,
-  });
-
-  const { data: analyticsData } = useQuery({
+  const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
       const { data } = await apiService.get('/analytics/summary');
@@ -40,229 +49,255 @@ export default function Dashboard({ onVerAnalisis }: DashboardProps) {
   });
 
   /**
-   * Crear proyecto nuevo
+   * Cargar proyectos para ver scans activos
    */
-  const crearProyecto = useMutation({
-    mutationFn: (dto: CrearProyectoDTO) => apiService.crearProyecto(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects'] });
-      setModalAbierto(false);
-    },
+  const { data: proyectosData, isLoading: isLoadingProyectos } = useQuery({
+    queryKey: ['projects'],
+    queryFn: () => apiService.obtenerProyectos(),
+    refetchInterval: 10_000,
   });
 
-  if (isLoading) {
+  const proyectos = proyectosData?.data || [];
+  const scansActivos = proyectos.filter((p: any) => 
+    p.analyses?.some((a: any) => !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(a.status))
+  );
+
+  const stats = {
+    totalProyectos: proyectos.length,
+    analisisCompletados: analyticsData?.totalAnalyses || 0,
+    hallazgosCriticos: analyticsData?.criticalFindings || 0,
+    riskScoreGlobal: analyticsData?.averageRiskScore || 0,
+  };
+
+  if (isLoadingAnalytics || isLoadingProyectos) {
     return (
       <div className="flex flex-col justify-center items-center py-32 space-y-4">
         <div className="w-12 h-12 border-4 border-[#00D1FF]/20 border-t-[#00D1FF] rounded-full animate-spin" />
-        <span className="text-[#64748B] font-bold uppercase tracking-widest text-xs">Cargando Sistema...</span>
+        <span className="text-[#64748B] font-black uppercase tracking-[0.3em] text-[10px]">Sincronizando Sistema...</span>
       </div>
     );
   }
-
-  if (error) {
-    return (
-      <div className="bg-[#FF3B3B]/10 border border-[#FF3B3B]/30 rounded-2xl p-8 text-center backdrop-blur-md">
-        <AlertOctagon className="w-12 h-12 text-[#FF3B3B] mx-auto mb-4" />
-        <p className="text-white font-bold text-lg">Error de Conexión</p>
-        <p className="text-[#94A3B8] text-sm mt-2">
-          No se pudo establecer comunicación con el núcleo de CODA.
-        </p>
-      </div>
-    );
-  }
-
-  const proyectos = proyectosData?.data || [];
-
-  const analisisCompletados = proyectos.reduce(
-    (acc: number, p: any) =>
-      acc + (p.analyses?.filter((a: any) => a.status === 'COMPLETED').length || 0),
-    0
-  );
-  
-  const stats = {
-    totalProyectos: proyectos.length,
-    analisisCompletados,
-    hallazgosCriticos: analyticsData?.criticalFindings || 0,
-    riskScorePromedio: analyticsData?.totalFindings
-      ? Math.round(((analyticsData.criticalFindings + analyticsData.highFindings) / analyticsData.totalFindings) * 100)
-      : 0,
-  };
 
   return (
-    <div className="space-y-10">
-      {/* Header Centralizado */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6 border-b border-[#1F2937]/50 pb-8">
-        <div className="space-y-2">
+    <div className="space-y-12 animate-in fade-in duration-1000">
+      {/* Strategic Header */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 border-b border-white/[0.03] pb-10">
+        <div className="space-y-3">
           <div className="flex items-center gap-3">
-            <div className="w-2 h-8 bg-[#00D1FF] rounded-full shadow-[0_0_15px_rgba(0,209,255,0.5)]" />
-            <h1 className="text-4xl font-black text-white tracking-tighter">
-              Bóveda de Control
-            </h1>
+             <div className="w-1.5 h-1.5 rounded-full bg-[#00FF94] shadow-[0_0_10px_#00FF94] animate-pulse" />
+             <span className="text-[10px] font-black text-[#00FF94] uppercase tracking-[0.3em]">Protocolo de Monitorización Activo</span>
           </div>
-          <p className="text-[#64748B] font-medium max-w-xl">
-            Monitoreo en tiempo real de la salud y seguridad de tus activos digitales mediante inteligencia diagnóstica.
+          <h1 className="text-5xl font-black text-white tracking-tighter uppercase leading-none">
+            Monitor <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#00D1FF] to-[#7000FF]">Central</span>
+          </h1>
+          <p className="text-[#64748B] text-xs font-medium max-w-xl leading-relaxed uppercase tracking-tight">
+            Consola centralizada para la supervisión de riesgos, costos operativos y orquestación de agentes automas de seguridad.
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
-          <Button
-            variant="secondary"
-            className="bg-[#111218] border-[#1F2937] text-white hover:bg-[#1F2937] px-6"
-            onClick={() => {}}
+        <div className="flex flex-col sm:flex-row items-center gap-4">
+          <button
+            onClick={onVerLogs}
+            className="group flex items-center gap-2.5 px-6 py-4 rounded-2xl bg-[#0A0B10]/40 border border-white/5 hover:border-[#00D1FF]/30 transition-all"
           >
-            <Activity className="w-4 h-4 mr-2 text-[#00D1FF]" />
-            Logs
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => setModalAbierto(true)}
-            className="bg-[#00D1FF] text-black font-black hover:bg-[#00D1FF]/80 shadow-[0_0_20px_rgba(0,209,255,0.2)] px-6"
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Nuevo Proyecto
-          </Button>
+            <Activity className="w-4 h-4 text-[#00D1FF]" />
+            <span className="text-[10px] font-black text-[#64748B] uppercase tracking-widest group-hover:text-white transition-colors">Logs de Agente</span>
+          </button>
+
+          <div className="bg-[#0A0B10]/60 backdrop-blur-xl border border-white/[0.05] rounded-2xl px-8 py-4 flex flex-col items-center">
+             <span className="text-[8px] font-black text-[#64748B] uppercase tracking-[0.2em] mb-1">Global Health Index</span>
+             <div className="flex items-center gap-3">
+                <span className={`text-2xl font-black tracking-tighter ${stats.riskScoreGlobal > 70 ? 'text-[#FF3B3B]' : stats.riskScoreGlobal > 40 ? 'text-[#F59E0B]' : 'text-[#00FF94]'}`}>
+                  {100 - stats.riskScoreGlobal}%
+                </span>
+                <div className="w-20 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                   <div 
+                     className="h-full bg-gradient-to-r from-[#00FF94] to-[#00D1FF]" 
+                     style={{ width: `${100 - stats.riskScoreGlobal}%` }} 
+                   />
+                </div>
+             </div>
+          </div>
         </div>
       </div>
 
-      {/* Grid de Estadísticas (Bento Style) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Primary KPIs - Premium Bento Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard
-          title="Assets Totales"
+          title="Assets Protegidos"
           value={stats.totalProyectos}
-          subtitle="repositorios vinculados"
-          icon={<Folder className="w-5 h-5" />}
+          subtitle="repositorios en vigilancia"
+          icon={<Shield className="w-5 h-5" />}
           accentColor="#00D1FF"
         />
         <KPICard
-          title="Escaneos"
+          title="Scans Ejecutados"
           value={stats.analisisCompletados}
-          subtitle="análisis finalizados"
-          icon={<CheckCircle2 className="w-5 h-5" />}
-          accentColor="#00FF94"
+          subtitle="auditorías finalizadas"
+          icon={<Activity className="w-5 h-5" />}
+          accentColor="#7000FF"
         />
         <KPICard
-          title="Vulnerabilidades"
+          title="Alerta de Riesgo"
           value={stats.hallazgosCriticos}
-          subtitle="críticas detectadas"
+          subtitle="vulnerabilidades críticas"
           icon={<AlertOctagon className="w-5 h-5" />}
           accentColor="#FF3B3B"
-          trend={{ value: 12, isPositive: false }}
+          trend={{ value: 5, isPositive: false }}
         />
         <KPICard
-          title="Risk Index"
-          value={`${stats.riskScorePromedio}%`}
-          subtitle="puntuación global"
-          icon={<BarChart3 className="w-5 h-5" />}
-          accentColor="#FFD600"
+          title="Eficiencia de Costos"
+          value="94%"
+          subtitle="optimización de tokens"
+          icon={<TrendingUp className="w-5 h-5" />}
+          accentColor="#00FF94"
         />
       </div>
 
-      {/* Bandeja de Análisis Activos - Sleek Monitor */}
-      {proyectos.some(p => p.analyses?.some((a: any) => !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(a.status))) && (
-        <div className="bg-[#0A0B10] border border-[#00D1FF]/30 rounded-2xl p-6 shadow-[0_0_30px_rgba(0,209,255,0.05)] backdrop-blur-xl group">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D1FF] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00D1FF]"></span>
-              </div>
-              <h3 className="text-white font-black text-xs tracking-[0.2em] uppercase">Procesamiento en Vivo</h3>
+      <div className="grid lg:grid-cols-12 gap-8">
+        {/* Active Processing & Incidents */}
+        <div className="lg:col-span-8 space-y-8">
+          {/* Active Scans */}
+          <div className="bg-[#0A0B10]/40 backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8 overflow-hidden relative">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Zap className="w-24 h-24 text-[#00D1FF]" />
             </div>
-            <span className="text-[10px] font-bold text-[#475569] uppercase tracking-widest">Agentes CODA Activos</span>
+            
+            <div className="flex items-center justify-between mb-8 relative z-10">
+              <div className="space-y-1">
+                 <h3 className="text-sm font-black text-white uppercase tracking-[0.2em]">Orquestación en Vivo</h3>
+                 <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest">Procesamiento de Agentes IA</p>
+              </div>
+              <div className="px-3 py-1 rounded-full bg-[#00D1FF]/10 border border-[#00D1FF]/20 text-[9px] font-black text-[#00D1FF] uppercase tracking-widest">
+                {scansActivos.length} Activos
+              </div>
+            </div>
+
+            {scansActivos.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-4">
+                 <Target className="w-8 h-8 text-[#1F2937]" />
+                 <p className="text-[10px] font-bold text-[#475569] uppercase tracking-widest">Sin procesos activos en el perímetro</p>
+              </div>
+            ) : (
+              <div className="space-y-4 relative z-10">
+                {scansActivos.slice(0, 3).map((p: any) => {
+                  const running = p.analyses?.find((a: any) => !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(a.status));
+                  return (
+                    <div key={p.id} className="bg-white/[0.02] border border-white/[0.03] rounded-2xl p-4 flex items-center justify-between group hover:border-[#00D1FF]/30 transition-all">
+                      <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 rounded-xl bg-black/40 flex items-center justify-center border border-white/5">
+                            <Activity className="w-4 h-4 text-[#00D1FF] animate-pulse" />
+                         </div>
+                         <div>
+                            <p className="text-xs font-black text-white uppercase tracking-tight">{p.name}</p>
+                            <p className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest">{running?.status?.replace('_', ' ')}</p>
+                         </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-end gap-1.5 min-w-[120px]">
+                           <span className="text-[9px] font-black text-white">{running?.progress || 0}%</span>
+                           <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                              <motion.div 
+                                initial={{ width: 0 }}
+                                animate={{ width: `${running?.progress || 0}%` }}
+                                className="h-full bg-gradient-to-r from-[#00D1FF] to-[#7000FF]" 
+                              />
+                           </div>
+                        </div>
+                        <ArrowUpRight className="w-4 h-4 text-[#475569] opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {proyectos
-              .filter(p => p.analyses?.some((a: any) => !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(a.status)))
-              .map(p => {
-                const runningAnalysis = p.analyses?.find((a: any) => !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(a.status));
-                const progress = runningAnalysis?.progress || 0;
-                return (
-                  <div key={`active-${p.id}`} className="bg-[#111218] rounded-xl p-4 border border-[#1F2937] hover:border-[#00D1FF]/50 transition-colors">
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-white font-bold text-xs truncate">{p.name}</span>
-                      <span className="text-[#00D1FF] text-[10px] font-black">{progress}%</span>
-                    </div>
-                    <div className="w-full bg-[#050505] rounded-full h-1 overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${progress}%` }}
-                        className="h-full bg-gradient-to-r from-[#00D1FF] to-[#7000FF] shadow-[0_0_10px_#00D1FF]"
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+
+          {/* New Critical Alerts Section */}
+          <div className="bg-[#0A0B10]/40 backdrop-blur-xl border border-white/[0.05] rounded-[2.5rem] p-8">
+            <h3 className="text-sm font-black text-white uppercase tracking-[0.2em] mb-8">Alertas de Seguridad Recientes</h3>
+            <div className="space-y-4">
+               {/* Mock alerts for UI preview until we have a real alerts API */}
+               {[
+                 { msg: 'Detección de Ofuscación en Core-Service', time: '2h ago', level: 'CRITICAL' },
+                 { msg: 'Múltiples fallos de auth en API-Gateway', time: '5h ago', level: 'HIGH' },
+                 { msg: 'Nuevo autor no identificado en repo Bank-Svc', time: '8h ago', level: 'MEDIUM' }
+               ].map((alert, i) => (
+                 <div key={i} className="flex items-center gap-4 p-4 rounded-2xl bg-white/[0.01] border border-white/5 hover:bg-white/[0.03] transition-all">
+                   <div className={`w-2 h-2 rounded-full ${alert.level === 'CRITICAL' ? 'bg-[#FF3B3B]' : alert.level === 'HIGH' ? 'bg-[#F59E0B]' : 'bg-[#00D1FF]'}`} />
+                   <p className="text-xs font-bold text-[#94A3B8] flex-1 truncate uppercase tracking-tight">{alert.msg}</p>
+                   <span className="text-[9px] font-black text-[#475569] uppercase tracking-widest whitespace-nowrap">{alert.time}</span>
+                 </div>
+               ))}
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Lista de proyectos */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
-            Explorador de Assets
-            <span className="text-[10px] bg-[#111218] text-[#64748B] px-2 py-0.5 rounded-full border border-[#1F2937]">
-              {proyectos.length}
-            </span>
-          </h2>
-        </div>
-
-        {proyectos.length === 0 ? (
-          <EmptyState onNuevo={() => setModalAbierto(true)} />
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {proyectos.map((proyecto, i) => (
-              <motion.div
-                key={proyecto.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-              >
-                <ProyectoCard
-                  proyecto={proyecto}
-                  onVerAnalisis={onVerAnalisis}
-                />
-              </motion.div>
-            ))}
+        {/* Sidebar Intel Section */}
+        <div className="lg:col-span-4 space-y-8">
+          {/* Recent Reports List */}
+          <div className="bg-gradient-to-b from-[#111218] to-[#0A0B10] border border-white/[0.05] rounded-[2.5rem] p-8 shadow-2xl">
+            <div className="flex items-center justify-between mb-8">
+               <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Últimos Reportes</h3>
+               <FileText className="w-4 h-4 text-[#7000FF]" />
+            </div>
+            
+            <div className="space-y-6">
+              {proyectos.flatMap(p => p.analyses || [])
+                .filter(a => a.status === 'COMPLETED' && a.report)
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .slice(0, 5)
+                .map((a: any) => (
+                  <button 
+                    key={a.id} 
+                    onClick={() => onVerAnalisis(a.projectId, a.id)}
+                    className="w-full text-left group space-y-2"
+                  >
+                    <div className="flex justify-between items-center group-hover:px-1 transition-all">
+                      <p className="text-xs font-black text-white uppercase tracking-tight group-hover:text-[#00D1FF] truncate flex-1 mr-2">{proyectos.find(p => p.id === a.projectId)?.name}</p>
+                      <span className="text-[9px] font-bold text-[#475569] uppercase tracking-widest">{new Date(a.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                       <div className="flex-1 h-0.5 bg-white/5 group-hover:bg-[#00D1FF]/20" />
+                       <span className="text-[10px] font-black text-[#F59E0B] tracking-tighter">{a.report?.riskScore}/100</span>
+                    </div>
+                  </button>
+                ))}
+            </div>
+            
+            <button 
+              onClick={() => navigate('/projects')}
+              className="w-full mt-10 py-4 rounded-xl border border-white/10 text-[9px] font-black text-[#64748B] uppercase tracking-[0.2em] hover:bg-white/5 hover:text-[#00D1FF] transition-all"
+            >
+              Ver Todos los Assets
+            </button>
           </div>
-        )}
-      </div>
 
-      {/* Modal de nuevo proyecto */}
-      <AnimatePresence>
-        {modalAbierto && (
-          <NuevoProyectoModerno
-            onCrear={(dto) => crearProyecto.mutate(dto)}
-            onCerrar={() => setModalAbierto(false)}
-            cargando={crearProyecto.isPending}
-          />
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
-
-function EmptyState({ onNuevo }: { onNuevo: () => void }) {
-  return (
-    <div className="text-center py-24 bg-[#0A0B10] border border-dashed border-[#1F2937] rounded-3xl px-6 group hover:border-[#00D1FF]/30 transition-colors">
-      <div className="w-20 h-20 bg-[#111218] rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#1F2937] group-hover:scale-110 transition-transform duration-500">
-        <Folder className="w-10 h-10 text-[#475569] group-hover:text-[#00D1FF] transition-colors" />
+          {/* Quick Stats Panel */}
+          <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#00D1FF]/5 to-[#7000FF]/5 border border-white/[0.05] relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-6 opacity-10">
+                <CheckCircle2 className="w-12 h-12 text-[#00FF94]" />
+             </div>
+             <div className="space-y-6 relative z-10">
+                <h4 className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.3em]">Resumen de Flujo</h4>
+                <div className="space-y-4">
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-[#94A3B8] uppercase">Tasa de Remediación</span>
+                      <span className="text-sm font-black text-white tracking-tighter">82%</span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-[#94A3B8] uppercase">Incidentes Cerrados</span>
+                      <span className="text-sm font-black text-white tracking-tighter">124</span>
+                   </div>
+                   <div className="flex justify-between items-center">
+                      <span className="text-[10px] font-bold text-[#94A3B8] uppercase">Media de Respuesta</span>
+                      <span className="text-sm font-black text-white tracking-tighter">1.4h</span>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
       </div>
-      <h2 className="text-2xl font-black text-white mb-2 tracking-tight">
-        Silos de Datos Vacíos
-      </h2>
-      <p className="text-[#64748B] text-sm mb-10 max-w-sm mx-auto font-medium">
-        Integra tu primer repositorio para activar los protocolos de observabilidad y defensa estratégica de CODA.
-      </p>
-      <Button
-        variant="primary"
-        onClick={onNuevo}
-        className="bg-[#00D1FF] text-black font-black hover:bg-[#00D1FF]/80 shadow-[0_0_20px_rgba(0,209,255,0.2)] px-8"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        Vincular Repositorio
-      </Button>
     </div>
   );
 }

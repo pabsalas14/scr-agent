@@ -112,12 +112,12 @@ export default function NuevoProyectoModerno({
           className="bg-[#050505] border border-[#1F2937] rounded-[2rem] max-w-2xl w-full shadow-[0_0_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col relative"
         >
           {/* Progress Indicator Dots */}
-          <div className="absolute top-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          <div className="absolute top-8 left-1/2 -translate-x-1/2 flex gap-3 z-10">
             {[1, 2, 3, 4].map((s) => (
               <div 
                 key={s} 
-                className={`w-1.5 h-1.5 rounded-full transition-all duration-500 ${
-                  s === step ? 'bg-[#00D1FF] w-4 shadow-[0_0_10px_#00D1FF]' : s < step ? 'bg-[#00D1FF]/40' : 'bg-[#1F2937]'
+                className={`h-1.5 rounded-full transition-all duration-700 ${
+                  s === step ? 'bg-gradient-to-r from-[#00D1FF] to-[#7000FF] w-6 shadow-[0_0_15px_rgba(0,209,255,0.5)]' : s < step ? 'bg-[#00D1FF]/40 w-1.5' : 'bg-white/10 w-1.5'
                 }`} 
               />
             ))}
@@ -223,6 +223,7 @@ export default function NuevoProyectoModerno({
                       selectedRepo={selectedRepo}
                       selectedBranch={selectedBranch}
                       isLoading={cargando}
+                      hideBranchSelector={selectedScope === 'REPOSITORIO'}
                     />
                     {repoValidationError && (
                       <div className="mt-4 flex items-center gap-2 text-[#FF3B3B] text-[10px] font-bold">

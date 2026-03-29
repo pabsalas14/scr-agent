@@ -41,6 +41,9 @@ export interface Analisis {
   startedAt?: string;
   completedAt?: string;
   createdAt: string;
+  report?: Reporte;
+  findings?: Hallazgo[];
+  forensicEvents?: EventoForense[];
 }
 
 export interface Hallazgo {

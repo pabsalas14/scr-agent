@@ -26,12 +26,14 @@ import AnalysisReport from '../Analysis/AnalysisReport';
 import FindingsPanel from '../Analysis/FindingsPanel';
 import RiskScoreGauge from '../Analysis/RiskScoreGauge';
 import { usePdfExport } from '../../hooks/usePdfExport';
+import { useToast } from '../../hooks/useToast';
 
 export default function ReportViewer() {
   const { projectId, analysisId } = useParams<{ projectId: string; analysisId: string }>();
   const navigate = useNavigate();
   const reportRef = useRef<HTMLDivElement>(null);
   const { exportToPdf, isExporting } = usePdfExport();
+  const toast = useToast();
 
   if (!analysisId) {
     return (
@@ -53,6 +55,12 @@ export default function ReportViewer() {
   const { data: reporte, isLoading: cargandoReporte } = useQuery({
     queryKey: ['report', analysisId],
     queryFn: () => apiService.obtenerReporte(analysisId),
+  });
+
+  const { data: proyecto } = useQuery({
+    queryKey: ['project', projectId],
+    queryFn: () => apiService.obtenerProyecto(projectId!),
+    enabled: !!projectId,
   });
 
   const { data: hallazgos } = useQuery({
@@ -81,9 +89,16 @@ export default function ReportViewer() {
   }));
 
   const descargarPDF = () => {
-    exportToPdf('report-content', {
-      filename: `reporte-coda-${analysisId}.pdf`,
-      padding: 12,
+    if (!proyecto || !reporte || !hallazgos || !analysisId) {
+      toast.warning('Datos incompletos para exportar');
+      return;
+    }
+    
+    exportToPdf({
+      proyecto,
+      reporte,
+      hallazgos,
+      analisisId: analysisId
     });
   };
 

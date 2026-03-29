@@ -5,6 +5,7 @@ import AppLayout from '../components/layouts/AppLayout';
 
 // Lazy load heavy components
 const MainDashboard = lazy(() => import('../components/Monitoring/MainDashboard'));
+const ProjectsPage = lazy(() => import('../components/Projects/ProjectsPage'));
 const ReportViewer = lazy(() => import('../components/Reports/ReportViewer'));
 const AnalyticsDashboard = lazy(() => import('../components/Analytics/AnalyticsDashboard'));
 const SettingsModule = lazy(() => import('../components/Settings/SettingsModule'));
@@ -35,6 +36,14 @@ export const router = createBrowserRouter([
         element: (
           <Suspense fallback={<LoadingFallback />}>
             <MainDashboard />
+          </Suspense>
+        ),
+      },
+      {
+        path: 'projects',
+        element: (
+          <Suspense fallback={<LoadingFallback />}>
+            <ProjectsPage />
           </Suspense>
         ),
       },

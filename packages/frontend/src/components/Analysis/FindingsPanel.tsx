@@ -8,35 +8,45 @@ interface FindingsPanelProps {
   analysisId: string;
 }
 
-const SEVERITY_CONFIG = {
-  'CRÍTICO': {
+const SEVERITY_CONFIG: Record<string, any> = {
+  'CRITICAL': {
     icon: AlertOctagon,
     color: 'text-[#FF3B3B]',
     borderColor: 'border-[#FF3B3B]/30',
     bgColor: 'bg-[#FF3B3B]/5',
-    label: 'CRITICAL',
+    label: 'CRÍTICO',
   },
-  'ALTO': {
+  'HIGH': {
     icon: ShieldAlert,
     color: 'text-[#FF8A00]',
     borderColor: 'border-[#FF8A00]/30',
     bgColor: 'bg-[#FF8A00]/5',
-    label: 'HIGH RISK',
+    label: 'ALTO RIESGO',
   },
-  'MEDIO': {
+  'MEDIUM': {
     icon: AlertCircle,
     color: 'text-[#FFD600]',
     borderColor: 'border-[#FFD600]/30',
     bgColor: 'bg-[#FFD600]/5',
-    label: 'MEDIUM',
+    label: 'MEDIO',
   },
-  'BAJO': {
+  'LOW': {
     icon: Info,
     color: 'text-[#00FF94]',
     borderColor: 'border-[#00FF94]/30',
     bgColor: 'bg-[#00FF94]/5',
-    label: 'LOW',
+    label: 'BAJO',
   },
+};
+
+// Mapa de normalización para soportar español e inglés viniendo de la API
+const normalizeSeverity = (s: string): string => {
+  const norm = (s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (norm.includes('CRITIC')) return 'CRITICAL';
+  if (norm.includes('HIGH') || norm.includes('ALTO')) return 'HIGH';
+  if (norm.includes('MEDIUM') || norm.includes('MEDIO')) return 'MEDIUM';
+  if (norm.includes('LOW') || norm.includes('BAJO')) return 'LOW';
+  return 'MEDIUM';
 };
 
 export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
@@ -79,10 +89,10 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
   }
 
   const findingsBySeverity = {
-    'CRÍTICO': findings.filter((f) => f.severity === 'CRÍTICO'),
-    'ALTO': findings.filter((f) => f.severity === 'ALTO'),
-    'MEDIO': findings.filter((f) => f.severity === 'MEDIO'),
-    'BAJO': findings.filter((f) => f.severity === 'BAJO'),
+    'CRITICAL': findings.filter((f) => normalizeSeverity(f.severity) === 'CRITICAL'),
+    'HIGH': findings.filter((f) => normalizeSeverity(f.severity) === 'HIGH'),
+    'MEDIUM': findings.filter((f) => normalizeSeverity(f.severity) === 'MEDIUM'),
+    'LOW': findings.filter((f) => normalizeSeverity(f.severity) === 'LOW'),
   };
 
   return (

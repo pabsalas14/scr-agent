@@ -123,23 +123,29 @@ async function processAnalysisQueue() {
       return 'SUSPICIOUS';
     };
 
-    // Guardar hallazgos
+    // Guardar hallazgos y crear mapa para Detective
+    const findingMap = new Map<string, string>(); // clave: "archivo:funcion", valor: id_prisma
+
     if (maliciaOutput.hallazgos && maliciaOutput.hallazgos.length > 0) {
       logger.info(`Guardando ${maliciaOutput.hallazgos.length} hallazgos en BD...`);
       for (const hallazgo of maliciaOutput.hallazgos) {
-        await prisma.finding.create({
+        const createdFinding = await prisma.finding.create({
           data: {
             analysisId,
             severity: mapSeverity(hallazgo.severidad),
             riskType: mapRiskType(hallazgo.tipo || hallazgo.tipo_riesgo || ''),
             file: hallazgo.archivo || 'unknown',
-            lineRange: hallazgo.linea ? String(hallazgo.linea) : '0',
+            lineRange: Array.isArray(hallazgo.rango_lineas) ? hallazgo.rango_lineas.join('-') : (hallazgo.linea ? String(hallazgo.linea) : '0'),
             codeSnippet: hallazgo.codigo || hallazgo.fragmento_codigo || undefined,
-            whySuspicious: hallazgo.descripcion || hallazgo.por_que_sospechoso || 'No description',
-            remediationSteps: hallazgo.recomendacion ? [hallazgo.recomendacion] : (hallazgo.pasos_remediacion || []),
+            whySuspicious: hallazgo.descripcion || hallazgo.por_que_sospechoso || 'Sin descripción',
+            remediationSteps: hallazgo.remediationSteps || (hallazgo.recomendacion ? [hallazgo.recomendacion] : (hallazgo.pasos_remediacion || [])),
             confidence: hallazgo.confianza || 0.8,
           },
         });
+        
+        // Registrar en el mapa para el Agente Detective
+        const key = `${hallazgo.archivo}:${hallazgo.funcion || 'file'}`;
+        findingMap.set(key, createdFinding.id);
       }
       logger.info(`✅ Hallazgos guardados exitosamente`);
     } else {
@@ -187,25 +193,30 @@ async function processAnalysisQueue() {
 
     logger.info(`✅ Detective encontró ${forensesOutput.linea_tiempo.length} eventos`);
 
-    // Guardar eventos forenses
+    // Guardar eventos forenses vinculados
     if (forensesOutput.linea_tiempo && forensesOutput.linea_tiempo.length > 0) {
       logger.info(`Guardando ${forensesOutput.linea_tiempo.length} eventos forenses en BD...`);
       for (const evento of forensesOutput.linea_tiempo) {
         try {
+          // Intentar vincular con un hallazgo
+          const findingId = findingMap.get(`${evento.archivo}:${evento.funcion || 'file'}`);
+
           await prisma.forensicEvent.create({
             data: {
               analysisId,
-              commitHash: evento.commitHash || evento.hash || 'unknown',
-              commitMessage: evento.commitMessage || evento.descripcion || '',
+              findingId, // Vínculo real
+              commitHash: evento.commit || evento.commitHash || evento.hash || 'unknown',
+              commitMessage: evento.mensaje_commit || evento.commitMessage || evento.descripcion || '',
               author: evento.autor || 'unknown',
-              action: 'MODIFIED', // Default value - file was modified
+              action: (evento.accion || 'MODIFIED') as any,
               file: evento.archivo || '',
-              changesSummary: evento.descripcion,
+              function: evento.funcion,
+              changesSummary: evento.resumen_cambios || evento.descripcion,
               timestamp: new Date(evento.timestamp || Date.now()),
             },
           });
         } catch (e) {
-          logger.warn(`Could not save forensic event: ${(e as any).message}`);
+          logger.warn(`No se pudo guardar evento forense: ${(e as any).message}`);
         }
       }
       logger.info(`✅ Eventos forenses guardados`);
@@ -252,22 +263,33 @@ async function processAnalysisQueue() {
 
     logger.info(`✅ Fiscal generó reporte con puntuación: ${sintesisOutput.puntuacion_riesgo}/100`);
 
-    // Guardar reporte
-    logger.info(`Guardando reporte en BD...`);
+    // Calcular totales para el reporte
+    const totalInput = (maliciaOutput.usage?.input_tokens || 0) + 
+                      (forensesOutput.usage?.input_tokens || 0) + 
+                      (sintesisOutput.usage?.input_tokens || 0);
+    const totalOutput = (maliciaOutput.usage?.output_tokens || 0) + 
+                       (forensesOutput.usage?.output_tokens || 0) + 
+                       (sintesisOutput.usage?.output_tokens || 0);
+
+    // Guardar reporte con metadatos reales
+    logger.info(`Guardando reporte final en BD...`);
     await prisma.report.create({
       data: {
         analysisId,
         riskScore: sintesisOutput.puntuacion_riesgo || 50,
-        executiveSummary: sintesisOutput.resumen_ejecutivo || 'Analysis completed',
+        executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
         findingsCount: maliciaOutput.cantidad_hallazgos || 0,
-        severityBreakdown: {}, // JSON field
-        compromisedFunctions: [],
-        affectedAuthors: [],
-        remediationSteps: sintesisOutput.pasos_remediacion || [],
-        generalRecommendation: sintesisOutput.recomendaciones?.join('\n') || 'Follow security best practices',
+        severityBreakdown: sintesisOutput.desglose_severidad || {},
+        compromisedFunctions: sintesisOutput.funciones_comprometidas || [],
+        affectedAuthors: sintesisOutput.autores_afectados || [],
+        remediationSteps: sintesisOutput.prioridad_remediacion || [],
+        generalRecommendation: sintesisOutput.recomendacion_general || 'Se recomienda una revisión inmediata de los hallazgos críticos.',
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
       },
     });
-    logger.info(`✅ Reporte guardado`);
+    logger.info(`✅ Reporte guardado con éxito (Tokens: ${totalInput} in / ${totalOutput} out)`);
 
 
     // ========== COMPLETADO ==========

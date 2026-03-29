@@ -70,7 +70,12 @@ export default function MainDashboard() {
   const renderContent = () => {
     switch (activeTab) {
       case 'projects':
-        return <Dashboard onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)} />;
+        return (
+          <Dashboard 
+            onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)} 
+            onVerLogs={() => handleTabChange('system')}
+          />
+        );
       case 'incidents':
         return <IncidentMonitor />;
       case 'analyses':

@@ -10,11 +10,10 @@ import { socketClientService } from '../../services/socket.service';
 import { SocketProvider } from '../../contexts/SocketContext';
 import { useToast } from '../../hooks/useToast';
 
-const SettingsModal = lazy(() => import('../Settings/SettingsModal'));
+
 
 export default function AppLayout() {
   const { isAuthenticated, user } = useAuth();
-  const [settingsOpen, setSettingsOpen] = useState(false);
   const [socketConnected, setSocketConnected] = useState(false);
   const toast = useToast();
 
@@ -90,7 +89,7 @@ export default function AppLayout() {
         <LoadingBar />
         <div className="min-h-screen bg-[#050505] flex text-[#94A3B8]">
           {/* Sidebar Navigation */}
-          <Sidebar onSettingsClick={() => setSettingsOpen(true)} />
+          <Sidebar />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 pl-20 lg:pl-64 transition-all duration-300">
@@ -113,9 +112,7 @@ export default function AppLayout() {
           </div>
         </div>
 
-        <Suspense fallback={null}>
-          <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
-        </Suspense>
+
         <ToastContainer />
       </ProtectedRoute>
     </SocketProvider>

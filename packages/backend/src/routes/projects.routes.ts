@@ -24,6 +24,11 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
             id: true,
             status: true,
             createdAt: true,
+            report: {
+              select: {
+                riskScore: true,
+              },
+            },
           },
           orderBy: {
             createdAt: 'desc',

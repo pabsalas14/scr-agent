@@ -8,21 +8,23 @@ import {
   User, 
   ShieldAlert,
   ChevronRight,
-  Monitor
+  Monitor,
+  Folder
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface SidebarProps {
-  onSettingsClick: () => void;
+  onSettingsClick?: () => void;
 }
 
-export default function Sidebar({ onSettingsClick }: SidebarProps) {
+export default function Sidebar({ onSettingsClick = () => {} }: SidebarProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
-    { id: 'dashboard', label: 'Monitor', icon: LayoutDashboard, path: '/dashboard' },
+    { id: 'dashboard', label: 'Monitor Central', icon: LayoutDashboard, path: '/dashboard' },
+    { id: 'projects', label: 'Proyectos', icon: Folder, path: '/projects' }, // New dedicated page
     { id: 'analytics', label: 'Analíticas', icon: BarChart3, path: '/analytics' },
     { id: 'incidents', label: 'Incidentes', icon: ShieldAlert, path: '/dashboard?tab=incidents' },
     { id: 'monitors', label: 'Estado Global', icon: Monitor, path: '/dashboard?tab=system' },
@@ -45,23 +47,25 @@ export default function Sidebar({ onSettingsClick }: SidebarProps) {
       }`}
     >
       {/* Brand Section */}
-      <div className="p-6 flex items-center gap-4 overflow-hidden border-b border-[#1F2937]/30">
+      <div className="p-6 flex items-center gap-4 overflow-hidden border-b border-white/[0.03]">
         <div className="relative group">
-          <div className="absolute inset-0 bg-[#00D1FF]/20 blur-lg rounded-xl opacity-0 group-hover:opacity-100 transition-opacity" />
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#00D1FF] to-[#7000FF] flex-shrink-0 flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(0,209,255,0.4)]">
-            <img src="/logo.png" alt="CODA" className="w-6 h-6 object-contain" />
+          <div className="absolute inset-0 bg-gradient-to-br from-[#00D1FF] to-[#7000FF] blur-xl rounded-xl opacity-20 group-hover:opacity-40 transition-opacity" />
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#00D1FF] to-[#7000FF] flex-shrink-0 flex items-center justify-center relative z-10 shadow-[0_0_20px_rgba(0,209,255,0.4)] border border-white/20">
+            <img src="/logo.png" alt="CODA" className="w-7 h-7 object-contain" />
           </div>
         </div>
+        {!isCollapsed && (
           <div className="flex flex-col animate-in fade-in slide-in-from-left-4 duration-700">
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black text-white tracking-tighter leading-none">CODA</h1>
+              <h1 className="text-2xl font-black text-white tracking-tighter leading-none">CODA</h1>
               <div className="flex items-center gap-1 bg-[#00FF94]/10 border border-[#00FF94]/20 px-1.5 py-0.5 rounded-md">
                  <div className="w-1 h-1 rounded-full bg-[#00FF94] animate-pulse shadow-[0_0_5px_#00FF94]" />
                  <span className="text-[7px] font-black text-[#00FF94] uppercase tracking-tighter">Live</span>
               </div>
             </div>
-            <p className="text-[9px] text-[#00D1FF] font-black uppercase tracking-[0.2em] mt-1.5 opacity-80">Defensa Agéntica</p>
+            <p className="text-[9px] text-[#00D1FF] font-black uppercase tracking-[0.2em] mt-2 opacity-100 drop-shadow-[0_0_8px_rgba(0,209,255,0.3)]">Defensa Agéntica</p>
           </div>
+        )}
       </div>
 
       {/* Navigation */}
@@ -99,7 +103,7 @@ export default function Sidebar({ onSettingsClick }: SidebarProps) {
       {/* Bottom Actions */}
       <div className="p-4 bg-black/20 border-t border-[#1F2937]/30 space-y-2">
         <button
-          onClick={onSettingsClick}
+          onClick={() => navigate('/dashboard?tab=settings')}
           className="w-full flex items-center gap-3 p-3.5 rounded-2xl text-[#64748B] hover:bg-white/5 hover:text-white transition-all group group-hover:shadow-inner"
         >
           <Settings className="w-5 h-5 group-hover:rotate-90 transition-transform duration-700" />

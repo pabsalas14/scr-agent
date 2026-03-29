@@ -124,12 +124,22 @@ export class FiscalAgentService {
       const reporte = this.parseReporte(textoRespuesta);
 
       /**
+       * Extraer usage de la respuesta de Anthropic
+       */
+      const usage = {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        model: response.model,
+      };
+
+      /**
        * Construir salida
        */
-      const output: SintesisOutput = {
+      const output: SintesisOutput & { usage: any } = {
         ...reporte,
         cantidad_hallazgos: input.hallazgos_malicia.length,
         tiempo_ejecucion_ms: Date.now() - startTime,
+        usage,
       };
 
       /**
@@ -147,6 +157,7 @@ export class FiscalAgentService {
           cantidad_hallazgos: input.hallazgos_malicia.length,
           puntuacion_riesgo: output.puntuacion_riesgo,
           tiempo_ms: output.tiempo_ejecucion_ms,
+          usage,
         }
       );
 

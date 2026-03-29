@@ -298,6 +298,11 @@ model Report {
   compromisedFunctions String[]
   affectedAuthors      String[]
 
+  // Metadata de ejecución (Costos)
+  inputTokens  Int    @default(0)
+  outputTokens Int    @default(0)
+  model        String @default("claude-3-5-sonnet")
+
   // Remediación
   remediationSteps      Json
   generalRecommendation String @db.Text

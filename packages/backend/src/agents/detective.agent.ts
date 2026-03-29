@@ -125,6 +125,15 @@ export class DetectiveAgentService {
       const eventos = this.parseTimeline(textoRespuesta);
 
       /**
+       * Extraer usage de la respuesta de Anthropic
+       */
+      const usage = {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        model: response.model,
+      };
+
+      /**
        * Detectar patrones y autores sospechosos
        */
       const { patrones, autores } = this.analizarPatrones(eventos);
@@ -132,12 +141,13 @@ export class DetectiveAgentService {
       /**
        * Construir salida
        */
-      const output: ForensesOutput = {
+      const output: ForensesOutput & { usage: any } = {
         linea_tiempo: eventos,
         resumen_forense: `Se analizaron ${eventos.length} eventos en la línea de tiempo. Se detectaron ${patrones.length} patrones sospechosos.`,
         patrones_detectados: patrones,
         autores_sospechosos: autores,
         tiempo_ejecucion_ms: Date.now() - startTime,
+        usage,
       };
 
       /**
@@ -153,6 +163,7 @@ export class DetectiveAgentService {
         patrones_detectados: patrones.length,
         autores_sospechosos: autores.length,
         tiempo_ms: output.tiempo_ejecucion_ms,
+        usage,
       });
 
       return output;
