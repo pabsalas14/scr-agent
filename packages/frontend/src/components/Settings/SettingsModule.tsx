@@ -1,243 +1,213 @@
 /**
- * Módulo de Configuración
- * Page completa con todas las configuraciones del usuario
+ * Módulo de Configuración - Premium Redesign
+ * Gestión de tokens, preferencias y perfiles de usuario
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Check, X, Eye, EyeOff, Save } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Settings, 
+  Shield, 
+  Eye, 
+  EyeOff, 
+  Save, 
+  Database,
+  Key,
+  Bell,
+  Monitor,
+  CheckCircle,
+  AlertCircle,
+  Terminal
+} from 'lucide-react';
 import { apiService } from '../../services/api.service';
-import Button from '../ui/Button';
 import Card from '../ui/Card';
+import Badge from '../ui/Badge';
 
 export default function SettingsModule() {
   const queryClient = useQueryClient();
   const [githubToken, setGithubToken] = useState('');
   const [showToken, setShowToken] = useState(false);
-  const [validationStatus, setValidationStatus] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle');
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Obtener configuración del usuario
-  const { data: userSettings } = useQuery({
+  const { data: userSettings, isLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
     select: (data: any) => data?.data,
   });
 
-  // Guardar token GitHub
-  const guardarToken = useMutation({
+  useEffect(() => {
+    if (userSettings?.githubToken) {
+      setGithubToken(userSettings.githubToken);
+    }
+  }, [userSettings]);
+
+  // Mutación para guardar token
+  const guardarTokenMutation = useMutation({
     mutationFn: (token: string) => apiService.guardarTokenGithub(token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      setValidationStatus('valid');
-      setTimeout(() => setValidationStatus('idle'), 3000);
+      setStatus({ type: 'success', message: 'Token de GitHub actualizado y cifrado.' });
+      setTimeout(() => setStatus(null), 5000);
     },
     onError: () => {
-      setValidationStatus('invalid');
-      setTimeout(() => setValidationStatus('idle'), 3000);
+      setStatus({ type: 'error', message: 'Error al procesar el token en el servidor.' });
+      setTimeout(() => setStatus(null), 5000);
     },
   });
 
-  const handleValidarToken = async () => {
-    if (!githubToken.trim()) {
-      setValidationStatus('invalid');
-      return;
-    }
-    setValidationStatus('validating');
-    guardarToken.mutate(githubToken);
+  const handleSaveToken = () => {
+    if (!githubToken.trim()) return;
+    guardarTokenMutation.mutate(githubToken);
   };
 
-  const handleTemaChange = (nuevoTema: 'light' | 'dark') => {
-    setTheme(nuevoTema);
-    const html = document.documentElement;
-    if (nuevoTema === 'dark') {
-      html.classList.add('dark');
-    } else {
-      html.classList.remove('dark');
-    }
-  };
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 space-y-4">
+        <Settings className="w-12 h-12 text-[#64748B] animate-spin" />
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">Sincronizando Preferencias de Usuario...</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Configuración</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Gestiona tu perfil, integraciones y preferencias
-        </p>
+    <div className="max-w-4xl mx-auto space-y-10 animate-in fade-in slide-in-from-bottom-6 duration-1000">
+      {/* Header Section */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-[#1F2937]/30 pb-10">
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-[#64748B]">
+            <Settings className="w-3 h-3" />
+            <span>Centro de Control de Preferencias</span>
+          </div>
+          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter leading-none">AJUSTES</h1>
+          <p className="text-[#64748B] text-sm font-medium max-w-xl">
+             Personaliza tu entorno de auditoría, gestiona integraciones externas y configura los niveles de seguridad de los agentes.
+          </p>
+        </div>
       </div>
 
-      {/* GitHub Token */}
-      <Card>
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-              <span>🔐 Token de GitHub</span>
-              {userSettings?.githubToken && validationStatus === 'valid' && (
-                <span className="ml-auto">
-                  <Check className="w-5 h-5 text-green-600" />
-                </span>
-              )}
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Conecta tu cuenta de GitHub para acceder a tus repositorios
-            </p>
-          </div>
+      <div className="grid gap-8">
+        {/* Profile Card */}
+        <Card className="relative overflow-hidden border-white/[0.03] bg-gradient-to-br from-white/[0.02] to-transparent">
+           <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
+              <div className="w-24 h-24 rounded-[2rem] bg-gradient-to-br from-[#00D1FF] to-[#7000FF] flex items-center justify-center text-3xl font-black text-white shadow-[0_0_30px_rgba(0,209,255,0.3)]">
+                 A
+              </div>
+              <div className="flex-1 text-center md:text-left space-y-2">
+                 <h2 className="text-2xl font-black text-white tracking-tight">Admin CODA</h2>
+                 <p className="text-[#64748B] font-medium text-sm">admin@coda.local</p>
+                 <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-4">
+                    <Badge type="success" size="sm">USUARIO VERIFICADO</Badge>
+                    <Badge type="info" size="sm">ADMIN ACCESS</Badge>
+                 </div>
+              </div>
+           </div>
+        </Card>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Token Personal de Acceso
-            </label>
-            <div className="relative">
-              <input
-                type={showToken ? 'text' : 'password'}
-                placeholder="github_pat_..."
-                value={githubToken || userSettings?.githubToken || ''}
-                onChange={(e) => setGithubToken(e.target.value)}
-                className={`w-full px-4 py-2 border rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 ${
-                  validationStatus === 'valid'
-                    ? 'border-green-500 focus:ring-green-500'
-                    : validationStatus === 'invalid'
-                      ? 'border-red-500 focus:ring-red-500'
-                      : 'border-gray-300 dark:border-gray-600 focus:ring-blue-500'
-                }`}
-              />
-              <button
-                onClick={() => setShowToken(!showToken)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-              >
-                {showToken ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Necesita permisos: repo, admin:org_hook
-            </p>
-          </div>
+        {/* Configuration Groups */}
+        <div className="grid md:grid-cols-2 gap-8">
+           {/* GitHub Integration */}
+           <Card className="space-y-6 border-white/[0.03]">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-xl bg-[#1F2937] flex items-center justify-center text-white">
+                    <Terminal className="w-5 h-5" />
+                 </div>
+                 <h3 className="text-xs font-black text-white uppercase tracking-widest">Integración GitHub</h3>
+              </div>
+              
+              <div className="space-y-4">
+                 <div className="space-y-2">
+                    <label className="text-[10px] font-black text-[#64748B] uppercase tracking-widest ml-1">Personal Access Token</label>
+                    <div className="relative">
+                       <input 
+                         type={showToken ? 'text' : 'password'}
+                         value={githubToken}
+                         onChange={(e) => setGithubToken(e.target.value)}
+                         placeholder="ghp_xxxxxxxxxxxx"
+                         className="w-full bg-[#0A0B10] border border-[#1F2937] rounded-2xl px-5 py-4 text-sm text-white placeholder:text-[#3D4A5C] focus:border-[#00D1FF]/50 focus:ring-1 focus:ring-[#00D1FF]/50 transition-all outline-none pr-12 font-mono"
+                       />
+                       <button 
+                         onClick={() => setShowToken(!showToken)}
+                         className="absolute right-4 top-1/2 -translate-y-1/2 text-[#3D4A5C] hover:text-white transition-colors"
+                       >
+                         {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                       </button>
+                    </div>
+                 </div>
+                 
+                 <div className="flex gap-3 pt-2">
+                    <button 
+                      onClick={handleSaveToken}
+                      disabled={guardarTokenMutation.isPending}
+                      className="flex-1 bg-white text-black text-[10px] font-black uppercase tracking-widest py-4 rounded-2xl hover:bg-[#00D1FF] transition-all flex items-center justify-center gap-2 hover:shadow-[0_0_20px_rgba(0,209,255,0.4)]"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      {guardarTokenMutation.isPending ? 'Validando...' : 'Actualizar'}
+                    </button>
+                 </div>
+              </div>
+              
+              <AnimatePresence>
+                {status && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className={`flex items-center gap-2 p-4 rounded-2xl text-[10px] font-bold uppercase tracking-widest ${
+                      status.type === 'success' ? 'bg-[#00FF94]/10 text-[#00FF94]' : 'bg-[#FF3B3B]/10 text-[#FF3B3B]'
+                    }`}
+                  >
+                    {status.type === 'success' ? <CheckCircle className="w-3.5 h-3.5" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                    {status.message}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+           </Card>
 
-          <Button
-            variant="primary"
-            onClick={handleValidarToken}
-            disabled={!githubToken.trim() || guardarToken.isPending}
-            isLoading={guardarToken.isPending}
-            className="w-full"
-          >
-            <Save className="w-4 h-4" />
-            {validationStatus === 'validating'
-              ? 'Validando...'
-              : validationStatus === 'valid'
-                ? '✓ Guardado'
-                : 'Guardar Token'}
-          </Button>
-
-          {validationStatus === 'invalid' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2"
-            >
-              <X className="w-5 h-5 text-red-600" />
-              <span className="text-sm text-red-700 dark:text-red-400">
-                Token inválido. Verifica que sea correcto y tenga los permisos necesarios
-              </span>
-            </motion.div>
-          )}
+           {/* System Preferences */}
+           <Card className="space-y-6 border-white/[0.03]">
+              <div className="flex items-center gap-3">
+                 <div className="w-10 h-10 rounded-xl bg-[#00D1FF]/10 flex items-center justify-center text-[#00D1FF]">
+                    <Monitor className="w-5 h-5" />
+                 </div>
+                 <h3 className="text-xs font-black text-white uppercase tracking-widest">Interfaz y Sistema</h3>
+              </div>
+              
+              <div className="space-y-4">
+                 {[
+                   { icon: Bell, label: 'Notificaciones de Seguridad', enabled: true },
+                   { icon: Shield, label: 'Modo de Auditoría Agresivo', enabled: false },
+                   { icon: Database, label: 'Persistencia de Memoria IA', enabled: true },
+                   { icon: Key, label: 'Autenticación Biométrica (FIDO2)', enabled: false },
+                 ].map((item, i) => (
+                   <div key={i} className="flex items-center justify-between p-4 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors group">
+                      <div className="flex items-center gap-3">
+                        <item.icon className="w-4 h-4 text-[#475569] group-hover:text-[#00D1FF] transition-colors" />
+                        <span className="text-[11px] font-bold text-[#94A3B8] tracking-tight">{item.label}</span>
+                      </div>
+                      <div className={`w-10 h-5 rounded-full p-1 transition-colors relative cursor-pointer ${item.enabled ? 'bg-[#00D1FF]' : 'bg-[#1F2937]'}`}>
+                         <div className={`w-3 h-3 bg-white rounded-full shadow-sm transition-transform ${item.enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </div>
+                   </div>
+                 ))}
+              </div>
+           </Card>
         </div>
-      </Card>
 
-      {/* Tema */}
-      <Card>
-        <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🎨 Tema</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Elige tu tema preferido
-            </p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <button
-              onClick={() => handleTemaChange('light')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                theme === 'light'
-                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="text-2xl mb-2">☀️</div>
-              <p className="font-medium text-gray-900 dark:text-white">Claro</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Fondo blanco</p>
-            </button>
-
-            <button
-              onClick={() => handleTemaChange('dark')}
-              className={`p-4 rounded-lg border-2 transition-all ${
-                theme === 'dark'
-                  ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-              }`}
-            >
-              <div className="text-2xl mb-2">🌙</div>
-              <p className="font-medium text-gray-900 dark:text-white">Oscuro</p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Fondo oscuro</p>
-            </button>
-          </div>
-        </div>
-      </Card>
-
-      {/* Información de la Cuenta */}
-      <Card>
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">👤 Cuenta</h2>
-
-          <div>
-            <label className="block text-sm text-gray-600 dark:text-gray-400 mb-1">
-              Email
-            </label>
-            <p className="text-gray-900 dark:text-white font-medium">admin@coda.local</p>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Miembro desde</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                {new Date().toLocaleDateString('es-ES', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
+        {/* Security Footer */}
+        <div className="p-8 rounded-[2.5rem] bg-[#FF3B3B]/5 border border-[#FF3B3B]/10 flex flex-col md:flex-row items-center gap-6">
+           <div className="w-12 h-12 rounded-2xl bg-[#FF3B3B]/10 flex items-center justify-center text-[#FF3B3B]">
+              <Shield className="w-6 h-6" />
+           </div>
+           <div className="flex-1 space-y-1 text-center md:text-left">
+              <p className="text-white font-black text-sm uppercase tracking-widest">ZONA DE SEGURIDAD CRÍTICA</p>
+              <p className="text-[11px] text-[#64748B] font-medium leading-relaxed">
+                Toda la información sensible, incluyendo tokens de acceso, se almacena de forma cifrada en el backend de CODA. Los agentes utilizan estos tokens para acceder a tus recursos de forma segura.
               </p>
-            </div>
-            <div>
-              <p className="text-xs text-gray-600 dark:text-gray-400">Plan</p>
-              <p className="text-sm font-semibold text-gray-900 dark:text-white">Profesional</p>
-            </div>
-          </div>
+           </div>
         </div>
-      </Card>
-
-      {/* API Keys */}
-      <Card>
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">🔑 API Keys</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            Generan claves de API para acceso programático (próximamente)
-          </p>
-          <Button variant="secondary" disabled className="w-full">
-            Crear Clave de API
-          </Button>
-        </div>
-      </Card>
-
-      {/* Peligro */}
-      <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/10">
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold text-red-900 dark:text-red-200">⚠️ Zona de Peligro</h2>
-          <Button variant="danger" disabled className="w-full">
-            Eliminar Cuenta
-          </Button>
-        </div>
-      </Card>
+      </div>
     </div>
   );
 }

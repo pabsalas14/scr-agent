@@ -22,6 +22,24 @@ export function useAuth() {
     localStorage.removeItem(TOKEN_KEY);
   }
 
+  function getUser(): { id: string; email: string; name?: string; role: string } | null {
+    const token = getToken();
+    if (!token) return null;
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+      return {
+        id: payload.sub || payload.userId || payload.id,
+        email: payload.email,
+        name: payload.name,
+        role: payload.role,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  const user = getUser();
+
   function isAuthenticated(): boolean {
     const token = getToken();
     if (!token) return false;
@@ -35,5 +53,5 @@ export function useAuth() {
     }
   }
 
-  return { getToken, setToken, clearToken, isAuthenticated };
+  return { getToken, setToken, clearToken, isAuthenticated, user };
 }

@@ -9,8 +9,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Send, Trash2, MessageSquare, User, AtSign } from 'lucide-react';
+import { MessageSquare, User, AtSign, Send, Trash2 } from 'lucide-react';
 import { commentsService, Comment } from '../../services/comments.service';
+import { usersService } from '../../services/users.service';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
 import Button from '../ui/Button';
@@ -53,9 +54,17 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
     refetchInterval: 10000, // Refetch every 10 seconds
   });
 
+  // Fetch all users for @mentions
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => usersService.getAllUsers(),
+    staleTime: 1000 * 60 * 15, // Cache users for 15 mins
+  });
+
   // Create comment mutation
   const createCommentMutation = useMutation({
-    mutationFn: (content: string) => commentsService.createComment(findingId, content, mentions),
+    mutationFn: (data: { content: string; mentions: string[] }) => 
+      commentsService.createComment(findingId, data.content, data.mentions),
     onSuccess: () => {
       setNewComment('');
       setMentions([]);
@@ -155,7 +164,7 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
 
     setIsSubmitting(true);
     try {
-      await createCommentMutation.mutateAsync(newComment);
+      await createCommentMutation.mutateAsync({ content: newComment, mentions });
     } finally {
       setIsSubmitting(false);
     }
@@ -281,15 +290,17 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
           {/* Mention Suggestions */}
           {showMentionSuggestions && (
             <div className="absolute bottom-full left-0 right-0 mb-1 bg-slate-700 border border-slate-600 rounded-lg p-2 max-h-40 overflow-y-auto z-10">
-              {['user1@example.com', 'user2@example.com', 'analyst@example.com'].map((email) => (
+              {allUsers
+                .filter(u => u.email.toLowerCase().includes(mentionQuery) || u.name?.toLowerCase().includes(mentionQuery))
+                .map((user) => (
                 <button
-                  key={email}
+                  key={user.id}
                   type="button"
-                  onClick={() => addMention(email)}
+                  onClick={() => addMention(user.email)}
                   className="w-full text-left px-2 py-1 text-sm text-gray-300 hover:bg-blue-500/20 rounded hover:text-blue-300 transition-colors"
                 >
                   <AtSign className="w-3 h-3 inline mr-1" />
-                  {email}
+                  {user.name || user.email}
                 </button>
               ))}
             </div>

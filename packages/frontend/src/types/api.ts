@@ -22,6 +22,7 @@ export interface Proyecto {
   scope: AlcanceAnalisis;
   createdAt: string;
   updatedAt: string;
+  analyses?: Analisis[];
 }
 
 export interface CrearProyectoDTO {

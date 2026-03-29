@@ -108,7 +108,7 @@ class SocketClientService {
    * Listen for finding assignments
    */
   onFindingAssigned(
-    callback: (data: { findingId: string; assignedBy: string; timestamp: Date }) => void
+    callback: (data: { findingId: string; assignedTo: string; assignedBy: string; timestamp: Date }) => void
   ): void {
     if (this.socket) {
       this.socket.on('finding:assigned', (data) => {

@@ -15,6 +15,7 @@ import { gitService } from './git.service';
 import { InspectorAgentService } from '../agents/inspector.agent';
 import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
+import { socketService } from './socket.service';
 
 // Instanciar agentes
 const inspectorAgent = new InspectorAgentService();
@@ -33,12 +34,14 @@ async function processAnalysisQueue() {
 
   isProcessing = true;
   let analysisId: string | null = null;
+  let currentProjectId: string | null = null;
   try {
     const job = analysisQueue.shift();
     if (!job) return;
 
     const { id, projectId } = job;
     analysisId = id;
+    currentProjectId = projectId;
 
     logger.info(`⚙️ Procesando análisis ${analysisId}...`);
 
@@ -61,10 +64,15 @@ async function processAnalysisQueue() {
         startedAt: new Date(),
       },
     });
+    socketService.emitAnalysisStatusChanged(analysisId, projectId, 'INSPECTOR_RUNNING', 10);
 
     // Clonar/descargar repositorio
     logger.info(`Descargando repositorio: ${project.repositoryUrl}`);
-    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl, process.env.GITHUB_TOKEN, project.branch || undefined);
+    const localPath = await gitService.cloneOrPullRepository(
+      project.repositoryUrl,
+      process.env['GITHUB_TOKEN'],
+      project.branch || undefined
+    );
 
     // Leer código fuente
     logger.info(`Leyendo código fuente...`);
@@ -142,6 +150,7 @@ async function processAnalysisQueue() {
     if (isAnalysisCancelled(analysisId)) {
       cancelledAnalyses.delete(analysisId);
       await prisma.analysis.update({ where: { id: analysisId }, data: { status: 'CANCELLED', progress: 0 } });
+      socketService.emitAnalysisStatusChanged(analysisId, projectId, 'CANCELLED', 0);
       logger.info(`🚫 Análisis ${analysisId} cancelado antes de Detective`);
       return;
     }
@@ -155,6 +164,7 @@ async function processAnalysisQueue() {
         progress: 40,
       },
     });
+    socketService.emitAnalysisStatusChanged(analysisId, projectId, 'DETECTIVE_RUNNING', 40);
 
     logger.info(`Obteniendo historial de Git...`);
     const historialGit = await gitService.getCommitHistory(project.repositoryUrl, 50);
@@ -207,6 +217,7 @@ async function processAnalysisQueue() {
     if (isAnalysisCancelled(analysisId)) {
       cancelledAnalyses.delete(analysisId);
       await prisma.analysis.update({ where: { id: analysisId }, data: { status: 'CANCELLED', progress: 0 } });
+      socketService.emitAnalysisStatusChanged(analysisId, projectId, 'CANCELLED', 0);
       logger.info(`🚫 Análisis ${analysisId} cancelado antes de Fiscal`);
       return;
     }
@@ -220,6 +231,7 @@ async function processAnalysisQueue() {
         progress: 70,
       },
     });
+    socketService.emitAnalysisStatusChanged(analysisId, projectId, 'FISCAL_RUNNING', 70);
 
     logger.info(`Sintetizando análisis y generando reporte...`);
 
@@ -268,6 +280,7 @@ async function processAnalysisQueue() {
         completedAt: new Date(),
       },
     });
+    socketService.emitAnalysisStatusChanged(analysisId, projectId, 'COMPLETED', 100);
 
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
@@ -282,6 +295,11 @@ async function processAnalysisQueue() {
           errorMessage: errorMsg,
           completedAt: new Date(),
         },
+      }).then(() => {
+        if (currentProjectId) {
+          socketService.emitAnalysisError(analysisId!, currentProjectId, errorMsg, '');
+          socketService.emitAnalysisStatusChanged(analysisId!, currentProjectId, 'FAILED', 0);
+        }
       }).catch((err) => logger.error('Error al guardar fallo:', err));
     }
   } finally {

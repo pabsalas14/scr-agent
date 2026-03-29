@@ -1,312 +1,328 @@
 /**
  * ============================================================================
- * ANALYTICS DASHBOARD - Métricas y gráficos de seguridad
+ * ANALYTICS DASHBOARD - VISTA GLOBAL DE SEGURIDAD
  * ============================================================================
+ * 
+ * Dashboard integral que agrega métricas de múltiples análisis:
+ * - Resumen de hallazgos por severidad
+ * - Tasa de remediación global
+ * - Línea de tiempo de detección de vulnerabilidades
+ * - Desglose por tipo de riesgo
+ * - Tiempo medio de resolución
  */
 
-import { useMemo } from 'react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Download, TrendingUp, AlertCircle, CheckCircle } from 'lucide-react';
-import Button from '../ui/Button';
-import { exportDashboardToPDF } from '../../services/pdf.service';
-
-interface AnalyticData {
-  findings: Array<{
-    id: string;
-    severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'LOW';
-    status: string;
-    createdAt: string;
-  }>;
-  analyses: Array<{
-    id: string;
-    status: string;
-    completedAt?: string;
-  }>;
-}
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  ShieldAlert, 
+  Activity, 
+  TrendingUp, 
+  Clock, 
+  ShieldCheck, 
+  Zap,
+  Calendar,
+  Layers,
+  BarChart3,
+  PieChart as PieChartIcon
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from 'recharts';
+import { analyticsService, AnalyticsSummary, TimelineData, TypeData } from '../../services/analytics.service';
+import KPICard from '../Dashboard/KPICard';
+import RiskScoreGauge from '../Analysis/RiskScoreGauge';
+import LoadingBar from '../ui/LoadingBar';
 
 const SEVERITY_COLORS = {
-  CRITICAL: '#dc2626',
-  HIGH: '#ea580c',
-  MEDIUM: '#eab308',
-  LOW: '#22c55e',
+  critical: '#FF3B3B',
+  high: '#FF8A00',
+  medium: '#FFD600',
+  low: '#00FF94',
 };
 
-interface AnalyticsDashboardProps {
-  data?: AnalyticData;
-}
+export default function AnalyticsDashboard() {
+  const [days, setDays] = useState(30);
 
-export default function AnalyticsDashboard({ data }: AnalyticsDashboardProps) {
-  // Process data for charts
-  const chartData = useMemo(() => {
-    if (!data) return null;
+  // Data Fetching
+  const { data: summary, isLoading: loadingSummary } = useQuery({
+    queryKey: ['analytics', 'summary'],
+    queryFn: () => analyticsService.getSummary(),
+  });
 
-    // Severity breakdown
-    const severityCount = {
-      CRITICAL: 0,
-      HIGH: 0,
-      MEDIUM: 0,
-      LOW: 0,
-    };
+  const { data: timeline = [], isLoading: loadingTimeline } = useQuery({
+    queryKey: ['analytics', 'timeline', days],
+    queryFn: () => analyticsService.getTimeline(days),
+  });
 
-    data.findings.forEach((f) => {
-      severityCount[f.severity]++;
-    });
+  const { data: typeData = [], isLoading: loadingType } = useQuery({
+    queryKey: ['analytics', 'by-type'],
+    queryFn: () => analyticsService.getByType(),
+  });
 
-    const severityData = Object.entries(severityCount).map(([key, value]) => ({
-      name: key,
-      value,
-      color: SEVERITY_COLORS[key as keyof typeof SEVERITY_COLORS],
-    }));
-
-    // Status breakdown
-    const statusCount: Record<string, number> = {};
-    data.findings.forEach((f) => {
-      statusCount[f.status] = (statusCount[f.status] || 0) + 1;
-    });
-
-    const statusData = Object.entries(statusCount).map(([status, count]) => ({
-      name: status,
-      value: count,
-    }));
-
-    // Timeline (last 7 days)
-    const timelineData: Record<string, number> = {};
-    const now = new Date();
-
-    for (let i = 6; i >= 0; i--) {
-      const date = new Date(now);
-      date.setDate(date.getDate() - i);
-      const dateStr = date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-      timelineData[dateStr] = 0;
-    }
-
-    data.findings.forEach((f) => {
-      const date = new Date(f.createdAt);
-      const dateStr = date.toLocaleDateString('es-ES', { month: 'short', day: 'numeric' });
-      if (dateStr in timelineData) {
-        timelineData[dateStr]!++;
-      }
-    });
-
-    const timelineChartData = Object.entries(timelineData).map(([date, count]) => ({
-      date,
-      hallazgos: count,
-    }));
-
-    // Summary stats
-    const totalFindings = data.findings.length;
-    const resolvedFindings = data.findings.filter((f) => f.status === 'CLOSED' || f.status === 'VERIFIED').length;
-    const avgTimeToResolve = 2.5; // Mock data
-    const riskScore = Math.round((severityCount.CRITICAL * 30 + severityCount.HIGH * 20 + severityCount.MEDIUM * 10 + severityCount.LOW * 5) / (totalFindings || 1));
-
-    return {
-      severityData,
-      statusData,
-      timelineChartData,
-      totalFindings,
-      resolvedFindings,
-      avgTimeToResolve,
-      riskScore,
-    };
-  }, [data]);
-
-  if (!chartData) {
-    return (
-      <div className="p-8 text-center">
-        <p className="text-gray-400">No hay datos disponibles para mostrar</p>
-      </div>
-    );
+  if (loadingSummary || loadingTimeline || loadingType) {
+    return <LoadingBar />;
   }
 
-  const handleExportPDF = async () => {
-    try {
-      await exportDashboardToPDF({
-        severityData: chartData.severityData,
-        statusData: chartData.statusData,
-        timelineData: chartData.timelineChartData,
-        stats: {
-          totalFindings: chartData.totalFindings,
-          resolvedFindings: chartData.resolvedFindings,
-          avgTimeToResolve: chartData.avgTimeToResolve,
-          riskScore: chartData.riskScore,
-        },
-      });
-    } catch (error) {
-      console.error('Error exporting PDF:', error);
-    }
-  };
+  // Formatting resolution time (ms to hours)
+  const avgResolutionHours = summary 
+    ? Math.round(summary.averageResolutionTime / (1000 * 60 * 60)) 
+    : 0;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-3xl font-bold text-white">Dashboard de Análisis</h2>
-          <p className="text-gray-400 mt-1">Métricas de seguridad y tendencias</p>
+    <div className="max-w-7xl mx-auto px-6 space-y-10 pb-20 animate-in fade-in duration-1000">
+      {/* Header Section */}
+      <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">
+            <Activity className="w-3 h-3" />
+            <span>CENTRAL DE INTELIGENCIA</span>
+          </div>
+          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">ANALYTICS</h1>
+          <p className="text-[#64748B] text-sm font-medium max-w-xl leading-relaxed">
+            Consolidado estratégico de hallazgos, remediaciones y vectores de ataque a través de todo el perímetro de código analizado.
+          </p>
         </div>
-        <Button
-          onClick={handleExportPDF}
-          className="flex items-center gap-2"
+        
+        <div className="bg-[#0A0B10] border border-[#1F2937] rounded-2xl p-1.5 flex gap-1 h-fit">
+          {[7, 30, 90].map((d) => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                days === d ? 'bg-white text-black' : 'text-[#475569] hover:text-white'
+              }`}
+            >
+              {d} DÍAS
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Primary KPIs */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <KPICard 
+          title="Hallazgos Totales" 
+          value={summary?.totalFindings || 0} 
+          icon={<ShieldAlert />} 
+          accentColor="#FF3B3B" 
+          subtitle="Detectados en sistema"
+        />
+        <KPICard 
+          title="Tasa Remediación" 
+          value={`${Math.round((summary?.remediationRate || 0) * 100)}%`} 
+          icon={<ShieldCheck />} 
+          accentColor="#00FF94" 
+          subtitle="Hallazgos verificados"
+        />
+        <KPICard 
+          title="Tiempo Promedio" 
+          value={`${avgResolutionHours}h`} 
+          icon={<Clock />} 
+          accentColor="#00D1FF" 
+          subtitle="Detección a resolución"
+        />
+        <KPICard 
+          title="Análisis Ejecutados" 
+          value={summary?.totalAnalyses || 0} 
+          icon={<Zap />} 
+          accentColor="#7000FF" 
+          subtitle="Escaneos completados"
+        />
+      </div>
+
+      {/* Main Charts Area */}
+      <div className="grid lg:grid-cols-12 gap-8">
+        {/* Timeline Area Chart */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="lg:col-span-8 bg-[#0A0B10] border border-[#1F2937] rounded-[2.5rem] p-8 lg:p-10 space-y-8"
         >
-          <Download className="w-4 h-4" />
-          Exportar PDF
-        </Button>
-      </div>
-
-      {/* Summary Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Score de Riesgo</p>
-              <p className="text-3xl font-bold text-white mt-2">{chartData.riskScore}</p>
+          <div className="flex justify-between items-center">
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-[#00D1FF]" />
+                Tendencia de Amenazas
+              </h3>
+              <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Detección acumulada {days} días</p>
             </div>
-            <AlertCircle className="w-8 h-8 text-orange-500" />
           </div>
-        </div>
+          
+          <div className="h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={timeline} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorCritical" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={SEVERITY_COLORS.critical} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={SEVERITY_COLORS.critical} stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="colorHigh" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={SEVERITY_COLORS.high} stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor={SEVERITY_COLORS.high} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1F2937" vertical={false} />
+                <XAxis 
+                  dataKey="date" 
+                  stroke="#475569" 
+                  fontSize={10} 
+                  tickFormatter={(val) => new Date(val).toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis stroke="#475569" fontSize={10} axisLine={false} tickLine={false} />
+                <Tooltip 
+                  contentStyle={{ backgroundColor: '#0F172A', borderColor: '#1F2937', borderRadius: '12px', fontSize: '10px' }}
+                  itemStyle={{ fontWeight: 'bold' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="critical" 
+                  name="Crítico"
+                  stroke={SEVERITY_COLORS.critical} 
+                  fillOpacity={1} 
+                  fill="url(#colorCritical)" 
+                  strokeWidth={3}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="high" 
+                  name="Alto"
+                  stroke={SEVERITY_COLORS.high} 
+                  fillOpacity={1} 
+                  fill="url(#colorHigh)" 
+                  strokeWidth={3}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </motion.div>
 
-        <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Total Hallazgos</p>
-              <p className="text-3xl font-bold text-white mt-2">{chartData.totalFindings}</p>
+        {/* Breakdown Panel */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="lg:col-span-4 space-y-8"
+        >
+          {/* Severity Breakdown Card */}
+          <div className="bg-[#0A0B10] border border-[#1F2937] rounded-[2.5rem] p-8 space-y-8 h-full">
+            <div className="space-y-1">
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <PieChartIcon className="w-5 h-5 text-[#FF3B3B]" />
+                Severidades
+              </h3>
+              <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Distribución de riesgo</p>
             </div>
-            <AlertCircle className="w-8 h-8 text-red-500" />
-          </div>
-        </div>
 
-        <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Resueltos</p>
-              <p className="text-3xl font-bold text-white mt-2">{chartData.resolvedFindings}</p>
-            </div>
-            <CheckCircle className="w-8 h-8 text-green-500" />
-          </div>
-        </div>
-
-        <div className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm">Tasa Resolución</p>
-              <p className="text-3xl font-bold text-white mt-2">
-                {chartData.totalFindings > 0 ? Math.round((chartData.resolvedFindings / chartData.totalFindings) * 100) : 0}%
-              </p>
-            </div>
-            <TrendingUp className="w-8 h-8 text-blue-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Charts Grid */}
-      <div className="grid grid-cols-2 gap-6">
-        {/* Severity Distribution */}
-        <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600">
-          <h3 className="text-lg font-semibold text-white mb-4">Distribución por Severidad</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={chartData.severityData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, value }) => `${name}: ${value}`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {chartData.severityData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color} />
-                ))}
-              </Pie>
-              <Tooltip formatter={(value) => `${value} hallazgos`} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Status Distribution */}
-        <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600">
-          <h3 className="text-lg font-semibold text-white mb-4">Estado de Hallazgos</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData.statusData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis dataKey="name" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
-                labelStyle={{ color: '#e2e8f0' }}
-              />
-              <Bar dataKey="value" fill="#3b82f6" name="Cantidad" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Timeline */}
-        <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600 col-span-2">
-          <h3 className="text-lg font-semibold text-white mb-4">Tendencia de Hallazgos (Últimos 7 días)</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData.timelineChartData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
-              <XAxis dataKey="date" stroke="#94a3b8" />
-              <YAxis stroke="#94a3b8" />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#1e293b', border: '1px solid #475569' }}
-                labelStyle={{ color: '#e2e8f0' }}
-              />
-              <Legend />
-              <Line
-                type="monotone"
-                dataKey="hallazgos"
-                stroke="#f59e0b"
-                strokeWidth={2}
-                dot={{ fill: '#f59e0b', r: 4 }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Detailed Table */}
-      <div className="bg-slate-700/50 rounded-lg p-6 border border-slate-600">
-        <h3 className="text-lg font-semibold text-white mb-4">Detalle por Severidad</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-slate-600">
-                <th className="text-left py-2 px-4 text-gray-300">Severidad</th>
-                <th className="text-left py-2 px-4 text-gray-300">Cantidad</th>
-                <th className="text-left py-2 px-4 text-gray-300">Porcentaje</th>
-                <th className="text-left py-2 px-4 text-gray-300">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.severityData.map((row) => (
-                <tr key={row.name} className="border-b border-slate-700 hover:bg-slate-600/50">
-                  <td className="py-2 px-4">
-                    <span
-                      className="px-2 py-1 rounded text-xs font-semibold"
-                      style={{ backgroundColor: `${row.color}20`, color: row.color }}
-                    >
-                      {row.name}
-                    </span>
-                  </td>
-                  <td className="py-2 px-4 text-gray-300">{row.value}</td>
-                  <td className="py-2 px-4 text-gray-300">
-                    {chartData.totalFindings > 0 ? Math.round((row.value / chartData.totalFindings) * 100) : 0}%
-                  </td>
-                  <td className="py-2 px-4">
-                    {row.value > 0 ? (
-                      <span className="text-yellow-400">⚠️ Revisión pendiente</span>
-                    ) : (
-                      <span className="text-green-400">✓ Completado</span>
-                    )}
-                  </td>
-                </tr>
+            <div className="space-y-6">
+              {[
+                { label: 'Crítico', value: summary?.criticalFindings || 0, color: SEVERITY_COLORS.critical },
+                { label: 'Alto', value: summary?.highFindings || 0, color: SEVERITY_COLORS.high },
+                { label: 'Medio', value: summary?.mediumFindings || 0, color: SEVERITY_COLORS.medium },
+                { label: 'Bajo', value: summary?.lowFindings || 0, color: SEVERITY_COLORS.low },
+              ].map((item, idx) => (
+                <div key={idx} className="space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8]">{item.label}</span>
+                    <span className="text-lg font-black text-white">{item.value}</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-[#111218] rounded-full overflow-hidden">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${(item.value / (summary?.totalFindings || 1)) * 100}%` }}
+                      transition={{ duration: 1, delay: idx * 0.1 }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: item.color }}
+                    />
+                  </div>
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+
+            <div className="pt-8 border-t border-[#1F2937]">
+               <div className="bg-[#111218] rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
+                  <div className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Remediación Global</div>
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-[#00FF94]/5 blur-xl rounded-full scale-125" />
+                    <div className="text-3xl font-black text-[#00FF94] tracking-tighter">
+                      {Math.round((summary?.remediationRate || 0) * 100)}%
+                    </div>
+                  </div>
+               </div>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Grid: Type Distribution and Resolution Stats */}
+      <div className="grid lg:grid-cols-2 gap-8">
+        {/* Risk Types Pie Chart */}
+        <section className="bg-[#0A0B10] border border-[#1F2937] rounded-[2.5rem] p-10 space-y-10">
+           <div className="space-y-1">
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center gap-2">
+                <Layers className="w-5 h-5 text-[#7000FF]" />
+                Vectores de Ataque
+              </h3>
+              <p className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Desglose por categoría de riesgo</p>
+            </div>
+
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={typeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={8}
+                    dataKey="value"
+                  >
+                    {typeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={[
+                        '#7000FF', '#00D1FF', '#00FF94', '#FF3B3B', '#FFD600', '#EC4899'
+                      ][index % 6]} stroke="none" />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: '#0F172A', border: 'none', borderRadius: '12px' }}
+                    itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '10px', color: '#94A3B8', textTransform: 'uppercase', fontWeight: 'bold' }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+        </section>
+
+        {/* Global Risk Intensity Display */}
+        <section className="bg-[#0A0B10] border border-[#1F2937] rounded-[2.5rem] p-10 flex flex-col items-center justify-center space-y-10">
+           <div className="text-center space-y-2">
+              <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.2em]">Intensidad de Amenaza Global</h3>
+              <p className="text-3xl font-black text-white tracking-tighter">CODA SHIELD SCORE</p>
+           </div>
+           
+           <div className="relative group">
+              <div className="absolute inset-0 bg-[#FF3B3B]/5 blur-[80px] rounded-full scale-150 group-hover:bg-[#FF3B3B]/10 transition-colors duration-1000" />
+              <RiskScoreGauge score={summary ? (summary.criticalFindings * 10 + summary.highFindings * 5) / (summary.totalFindings || 1) * 10 : 0} size={280} strokeWidth={14} />
+           </div>
+
+           <div className="bg-[#111218] border border-[#1F2937] px-8 py-4 rounded-full flex items-center gap-4">
+              <div className="animate-pulse w-2 h-2 rounded-full bg-[#FF3B3B]" />
+              <span className="text-[10px] font-black text-white uppercase tracking-widest">Monitoreo Activo - Escaneo Continuo</span>
+           </div>
+        </section>
       </div>
     </div>
   );

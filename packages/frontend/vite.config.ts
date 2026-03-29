@@ -31,6 +31,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/api'),
       },
+      '/socket.io': {
+        target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
   build: {

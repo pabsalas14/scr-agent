@@ -22,21 +22,21 @@ const SEVERITY_MAP: Record<string, NivelRiesgo> = {
 };
 
 const LABELS: Record<NivelRiesgo, string> = {
-  CRÍTICO: '🚨 CRÍTICO',
-  ALTO: '⚠️ ALTO',
-  MEDIO: '❔ MEDIO',
-  BAJO: '✓ BAJO',
+  CRÍTICO: 'CRÍTICO',
+  ALTO: 'ALTO',
+  MEDIO: 'MEDIO',
+  BAJO: 'BAJO',
 };
 
 const CLASES: Record<NivelRiesgo, string> = {
-  CRÍTICO: 'bg-red-100 text-red-800 border-red-300',
-  ALTO: 'bg-orange-100 text-orange-800 border-orange-300',
-  MEDIO: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-  BAJO: 'bg-green-100 text-green-800 border-green-300',
+  CRÍTICO: 'bg-[#FF3B3B]/10 text-[#FF3B3B] border-[#FF3B3B]/40 shadow-[0_0_10px_rgba(255,59,59,0.15)]',
+  ALTO: 'bg-[#FF8A00]/10 text-[#FF8A00] border-[#FF8A00]/40',
+  MEDIO: 'bg-[#FFD600]/10 text-[#FFD600] border-[#FFD600]/40',
+  BAJO: 'bg-[#00FF94]/10 text-[#00FF94] border-[#00FF94]/40',
 };
 
 export default function BadgeRiesgo({ nivel, size = 'md' }: BadgeRiesgoProps) {
-  const mapped = SEVERITY_MAP[nivel] || nivel;
+  const mapped = SEVERITY_MAP[nivel] || (nivel.toUpperCase() as NivelRiesgo);
   return (
     <span
       className={`

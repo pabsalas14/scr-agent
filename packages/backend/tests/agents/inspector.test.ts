@@ -10,6 +10,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { InspectorAgentService } from '../../src/agents/inspector.agent';
 
+let createMock = vi.fn();
+
 /**
  * Mock del cliente Anthropic
  * Simula respuestas del LLM sin llamadas reales
@@ -18,7 +20,7 @@ vi.mock('@anthropic-ai/sdk', () => {
   return {
     default: vi.fn().mockImplementation(() => ({
       messages: {
-        create: vi.fn(),
+        create: createMock,
       },
     })),
   };
@@ -39,26 +41,18 @@ vi.mock('../../src/services/cache.service', () => ({
 
 describe('InspectorAgentService', () => {
   let agente: InspectorAgentService;
-  let anthropicMock: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    createMock = vi.fn();
     agente = new InspectorAgentService('api-key-test');
-    // Obtener la instancia mockeada creada dentro del agente
-    const { default: Anthropic } = await import('@anthropic-ai/sdk');
-    const AnthropicMock = vi.mocked(Anthropic);
-    anthropicMock = AnthropicMock.mock.results[0]?.value;
-
-    if (!anthropicMock?.messages?.create) {
-      throw new Error('No se pudo obtener el mock de Anthropic.messages.create');
-    }
   });
 
   it('detecta un backdoor en código sospechoso', async () => {
     /**
      * Respuesta simulada del LLM con un hallazgo de backdoor
      */
-    anthropicMock.messages.create.mockResolvedValueOnce({
+    createMock.mockResolvedValueOnce({
       content: [
         {
           type: 'text',
@@ -97,7 +91,7 @@ describe('InspectorAgentService', () => {
   });
 
   it('retorna lista vacía cuando el código es limpio', async () => {
-    anthropicMock.messages.create.mockResolvedValueOnce({
+    createMock.mockResolvedValueOnce({
       content: [
         {
           type: 'text',
@@ -122,7 +116,7 @@ describe('InspectorAgentService', () => {
     /**
      * LLM devuelve texto no JSON
      */
-    anthropicMock.messages.create.mockResolvedValueOnce({
+    createMock.mockResolvedValueOnce({
       content: [
         {
           type: 'text',
@@ -140,7 +134,7 @@ describe('InspectorAgentService', () => {
   });
 
   it('detecta múltiples tipos de riesgo', async () => {
-    anthropicMock.messages.create.mockResolvedValueOnce({
+    createMock.mockResolvedValueOnce({
       content: [
         {
           type: 'text',
@@ -185,7 +179,7 @@ describe('InspectorAgentService', () => {
   });
 
   it('incluye tiempo de ejecución en la respuesta', async () => {
-    anthropicMock.messages.create.mockResolvedValueOnce({
+    createMock.mockResolvedValueOnce({
       content: [{ type: 'text', text: JSON.stringify({ hallazgos: [] }) }],
     });
 

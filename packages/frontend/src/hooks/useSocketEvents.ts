@@ -16,6 +16,8 @@ import { io, Socket } from 'socket.io-client';
 
 interface FindingEventData {
   findingId: string;
+  assignedTo?: string;
+  newStatus?: string;
   timestamp: Date;
   [key: string]: unknown;
 }

@@ -141,6 +141,7 @@ class SocketService {
   ): void {
     this.notifyUser(assignedUserId, 'finding:assigned', {
       findingId,
+      assignedTo: assignedUserId,
       assignedBy: assignedByUser,
       timestamp: new Date(),
     });
@@ -257,7 +258,7 @@ class SocketService {
     projectId: string,
     newStatus: string,
     progress: number,
-    userId: string
+    userId?: string
   ): void {
     if (!this.io) return;
 
@@ -270,7 +271,11 @@ class SocketService {
       timestamp: new Date(),
     };
 
-    this.notifyUser(userId, event, data);
+    if (userId) {
+      this.notifyUser(userId, event, data);
+    } else {
+      this.broadcast(event, data);
+    }
     logger.info(`Analysis ${analysisId} status changed to ${newStatus}`);
   }
 

@@ -1,15 +1,9 @@
-/**
- * Card de un proyecto en el dashboard
- * Muestra info básica y permite iniciar análisis
- */
-
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Eye, Play, Settings } from 'lucide-react';
+import { Eye, Play, Settings as SettingsIcon, Shield, Server, Box, GitPullRequest, Laptop, Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
 import Button from '../ui/Button';
-import Card from '../ui/Card';
 import ProjectDetailView from './ProjectDetailView';
 
 interface ProyectoCardProps {
@@ -17,166 +11,158 @@ interface ProyectoCardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
 }
 
-const SCOPE_LABELS: Record<string, string> = {
-  REPOSITORY: '📁 Repositorio',
-  ORGANIZATION: '🏢 Organización',
-  PULL_REQUEST: '📌 Pull Request',
+const SCOPE_CONFIG: Record<string, { label: string, icon: any }> = {
+  REPOSITORY: { label: 'Repo', icon: Server },
+  ORGANIZATION: { icon: Box, label: 'Org' },
+  PULL_REQUEST: { icon: GitPullRequest, label: 'PR' },
 };
 
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  /**
-   * Análisis del proyecto
-   */
   const { data: analisisData } = useQuery({
     queryKey: ['analyses', proyecto.id],
     queryFn: () => apiService.obtenerAnalisisDeProyecto(proyecto.id),
     refetchInterval: 5_000,
   });
 
-  /**
-   * Iniciar nuevo análisis
-   */
   const iniciar = useMutation({
     mutationFn: () => apiService.iniciarAnalisis(proyecto.id),
     onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
   });
 
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  };
+
   const analisisList = analisisData || [];
   const ultimoAnalisis = analisisList[0];
-  const enProceso = ultimoAnalisis?.status.includes('RUNNING');
+  const enProceso = ultimoAnalisis && !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(ultimoAnalisis.status);
+  const ScopeIcon = SCOPE_CONFIG[proyecto.scope]?.icon || Laptop;
 
   return (
-    <Card interactive elevated={!!ultimoAnalisis} className="hover:border-blue-500/50 transition-all duration-300">
-      {/* Header Section - Responsive */}
-      <div className="mb-3 sm:mb-4">
-        <div className="flex justify-between items-start gap-2 sm:gap-3 mb-2 sm:mb-3">
-          <div className="flex-1 min-w-0">
-            <h3 className="text-base sm:text-lg font-bold text-white mb-1 line-clamp-2">
-              {proyecto.name}
-            </h3>
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-              <span className="text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-blue-500/20 text-blue-300 font-medium border border-blue-500/30 whitespace-nowrap">
-                {SCOPE_LABELS[proyecto.scope]}
-              </span>
-              <span className="text-xs px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-gray-500/20 text-gray-300 border border-gray-500/30 whitespace-nowrap">
-                {analisisList.length} análisis
-              </span>
-            </div>
-          </div>
-        </div>
+    <div 
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      className={`group relative rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border transition-all duration-700 overflow-hidden hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] ${
+        enProceso 
+          ? 'border-[#00D1FF]/40 shadow-[0_0_30px_rgba(0,209,255,0.05)]' 
+          : 'border-white/[0.03] hover:border-white/10'
+      }`}
+    >
+      {/* Dynamic Spotlight Effect */}
+      <div 
+        className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+        style={{
+          background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 209, 255, 0.08), transparent 40%)`,
+        }}
+      />
 
-        {/* Repository URL */}
-        <p className="text-xs text-gray-400 font-mono mb-2 truncate hover:text-gray-300 transition-colors" title={proyecto.repositoryUrl}>
-          {proyecto.repositoryUrl}
-        </p>
-
-        {/* Description */}
-        {proyecto.description && (
-          <p className="text-xs sm:text-sm text-gray-400 line-clamp-2 mb-2 sm:mb-3">
-            {proyecto.description}
-          </p>
-        )}
-      </div>
-
-      {/* Status & Progress Section - Responsive */}
-      {ultimoAnalisis && (
-        <div className="mb-3 sm:mb-4 pb-3 sm:pb-4 border-b border-gray-700/50">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-              Último Análisis
-            </span>
-            <EstadoChip status={ultimoAnalisis.status} />
-          </div>
-
-          {ultimoAnalisis.status === 'COMPLETED' && (
-            <div className="mt-2 sm:mt-3">
-              <div className="flex justify-between items-center mb-1">
-                <span className="text-xs text-gray-500">Progreso</span>
-                <span className="text-xs text-gray-400 font-medium">
-                  {ultimoAnalisis.progress || 100}%
+      <div className="relative z-10 p-6 space-y-6">
+        {/* Header Section */}
+        <div className="flex justify-between items-start gap-4">
+          <div className="space-y-1 content-start flex-1 min-w-0">
+             <div className="flex items-center gap-2 mb-2">
+                <div className="p-1.5 rounded-lg bg-[#111218] border border-[#1F2937] text-[#00D1FF]">
+                   <ScopeIcon className="w-3.5 h-3.5" />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">
+                   {SCOPE_CONFIG[proyecto.scope]?.label || 'General'}
                 </span>
-              </div>
-              <div className="w-full h-1.5 sm:h-2 bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-full transition-all duration-300"
-                  style={{ width: `${ultimoAnalisis.progress || 100}%` }}
-                />
-              </div>
-            </div>
-          )}
+             </div>
+             <h3 className="text-xl font-black text-white tracking-tighter truncate">
+                {proyecto.name}
+             </h3>
+             <p className="text-[10px] text-[#475569] font-mono truncate" title={proyecto.repositoryUrl}>
+                {proyecto.repositoryUrl.replace('https://github.com/', '')}
+             </p>
+          </div>
+          
+          <div className="flex-shrink-0">
+             <div className={`w-2.5 h-2.5 rounded-full ${enProceso ? 'bg-[#00D1FF] animate-pulse shadow-[0_0_10px_#00D1FF]' : 'bg-[#1F2937]'}`} />
+          </div>
         </div>
-      )}
 
-      {/* Action Buttons - Responsive */}
-      <div className="flex gap-1.5 sm:gap-2 pt-1 sm:pt-2">
-        <Button
-          variant="primary"
-          size="sm"
-          className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2"
-          onClick={() => iniciar.mutate()}
-          disabled={enProceso || iniciar.isPending}
-          isLoading={enProceso || iniciar.isPending}
-        >
-          <Play className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
-          <span className="hidden xs:inline">{enProceso || iniciar.isPending ? 'Analizando...' : 'Analizar'}</span>
-          <span className="xs:hidden">{enProceso || iniciar.isPending ? '...' : '▶'}</span>
-        </Button>
-        {ultimoAnalisis?.status === 'COMPLETED' && (
+        {/* Stats / Status Row */}
+        <div className="grid grid-cols-2 gap-3 py-4 border-y border-[#1F2937]/50">
+           <div className="space-y-1">
+              <p className="text-[9px] font-bold text-[#475569] uppercase tracking-wider">Último Status</p>
+              {ultimoAnalisis ? <EstadoChip status={ultimoAnalisis.status} /> : <span className="text-xs text-[#64748B] font-medium">Sin datos</span>}
+           </div>
+           <div className="space-y-1">
+              <p className="text-[9px] font-bold text-[#475569] uppercase tracking-wider">Historial</p>
+              <p className="text-xs text-white font-bold tracking-tight">{analisisList.length} Escaneos</p>
+           </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex items-center gap-2 pt-2">
           <Button
-            variant="secondary"
-            size="sm"
-            className="px-2 sm:px-3 py-1.5 sm:py-2"
-            onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
-            title="Ver reporte"
-            aria-label="Ver reporte"
+            onClick={() => iniciar.mutate()}
+            disabled={enProceso || iniciar.isPending}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all ${
+              enProceso || iniciar.isPending
+                ? 'bg-[#111218] text-[#64748B] border border-[#1F2937]'
+                : 'bg-[#111218] text-[#00D1FF] border border-[#00D1FF]/20 hover:bg-[#00D1FF] hover:text-black hover:shadow-[0_0_15px_rgba(0,209,255,0.3)]'
+            }`}
           >
-            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+            {enProceso || iniciar.isPending ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
+            {enProceso || iniciar.isPending ? 'Sincronizando' : 'Lanzar Aliz'}
           </Button>
-        )}
-        <Button
-          variant="secondary"
-          size="sm"
-          className="px-2 sm:px-3 py-1.5 sm:py-2"
-          onClick={() => setDetalleAbierto(true)}
-          title="Ver detalles"
-          aria-label="Ver detalles del proyecto"
-        >
-          <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
-        </Button>
+
+          {ultimoAnalisis?.status === 'COMPLETED' && (
+            <button
+              onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
+              className="p-2.5 rounded-xl bg-[#111218] border border-[#1F2937] text-white hover:border-[#00D1FF]/50 transition-all group/btn"
+              title="Ver reporte detallado"
+            >
+              <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+            </button>
+          )}
+
+          <button
+            onClick={() => setDetalleAbierto(true)}
+            className="p-2.5 rounded-xl bg-[#111218] border border-[#1F2937] text-[#64748B] hover:text-white hover:border-[#374151] transition-all"
+            title="Protocolos de Configuración"
+          >
+            <SettingsIcon className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
-      {/* Modal de detalles */}
       <ProjectDetailView
         projectId={proyecto.id}
         isOpen={detalleAbierto}
         onClose={() => setDetalleAbierto(false)}
-        onProjectDeleted={() => {
-          setDetalleAbierto(false);
-          // Refresh projects list (parent handles this via query invalidation)
-        }}
+        onProjectDeleted={() => setDetalleAbierto(false)}
       />
-    </Card>
+    </div>
   );
 }
 
 function EstadoChip({ status }: { status: string }) {
-  const CONFIG: Record<string, { label: string; clase: string; icon: string }> = {
-    PENDING: { label: 'Pendiente', clase: 'bg-gray-500/20 text-gray-300 border border-gray-500/30', icon: '⏳' },
-    RUNNING: { label: 'Analizando', clase: 'bg-blue-500/20 text-blue-300 border border-blue-500/30 animate-pulse', icon: '⚡' },
-    INSPECTOR_RUNNING: { label: 'Inspector', clase: 'bg-orange-500/20 text-orange-300 border border-orange-500/30 animate-pulse', icon: '🔍' },
-    DETECTIVE_RUNNING: { label: 'Detective', clase: 'bg-purple-500/20 text-purple-300 border border-purple-500/30 animate-pulse', icon: '🔎' },
-    FISCAL_RUNNING: { label: 'Fiscal', clase: 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 animate-pulse', icon: '⚖️' },
-    COMPLETED: { label: 'Completado', clase: 'bg-green-500/20 text-green-300 border border-green-500/30', icon: '✅' },
-    FAILED: { label: 'Error', clase: 'bg-red-500/20 text-red-300 border border-red-500/30', icon: '❌' },
-    CANCELLED: { label: 'Cancelado', clase: 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30', icon: '🚫' },
+  const CONFIG: Record<string, { label: string; color: string; icon: any }> = {
+    PENDING: { label: 'En Espera', color: 'text-[#64748B]', icon: Clock },
+    RUNNING: { label: 'Analizando', color: 'text-[#00D1FF]', icon: Activity },
+    INSPECTOR_RUNNING: { label: 'Inspector', color: 'text-[#FF8A00]', icon: Shield },
+    DETECTIVE_RUNNING: { label: 'Detective', color: 'text-[#7000FF]', icon: Eye },
+    FISCAL_RUNNING: { label: 'Fiscal', color: 'text-[#00D1FF]', icon: Activity },
+    COMPLETED: { label: 'Asegurado', color: 'text-[#00FF94]', icon: CheckCircle2 },
+    FAILED: { label: 'Fallo Crítico', color: 'text-[#FF3B3B]', icon: AlertTriangle },
+    CANCELLED: { label: 'Abortado', color: 'text-[#FFD600]', icon: AlertTriangle },
   };
-  const cfg = CONFIG[status] || { label: status, clase: 'bg-gray-500/20 text-gray-300 border border-gray-500/30', icon: '•' };
+  
+  const cfg = CONFIG[status] || { label: status, color: 'text-[#64748B]', icon: Activity };
+  const Icon = cfg.icon;
+
   return (
-    <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-xs font-semibold flex items-center gap-0.5 sm:gap-1 whitespace-nowrap flex-shrink-0 transition-all duration-200 ${cfg.clase}`}>
-      <span className="text-sm">{cfg.icon}</span>
-      <span className="hidden xs:inline">{cfg.label}</span>
-    </span>
+    <div className={`flex items-center gap-1.5 ${cfg.color} font-black text-[10px] tracking-tight`}>
+       <Icon className="w-3 h-3" />
+       <span className="uppercase">{cfg.label}</span>
+    </div>
   );
 }

@@ -16,14 +16,14 @@ export default function Card({
   ...props
 }: CardProps) {
   const baseClasses = glass
-    ? 'bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border border-white/20 dark:border-gray-700/50 rounded-lg transition-all'
-    : 'bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-lg transition-all';
+    ? 'bg-[#0A0B10]/95 backdrop-blur-2xl border border-white/5 shadow-2xl rounded-[2rem] transition-all'
+    : 'bg-[#0A0B10] border border-[#1F2937] rounded-[2rem] transition-all';
 
   const hoverClasses = interactive
-    ? 'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700 cursor-pointer'
-    : 'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700';
+    ? 'hover:border-[#00D1FF]/50 hover:shadow-[0_0_30px_rgba(0,209,255,0.1)] cursor-pointer'
+    : '';
 
-  const shadowClass = elevated ? 'shadow-md' : 'shadow-sm';
+  const shadowClass = elevated ? 'shadow-2xl' : '';
 
   return (
     <div

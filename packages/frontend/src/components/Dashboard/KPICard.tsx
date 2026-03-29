@@ -12,15 +12,14 @@
  */
 
 import { ReactNode } from 'react';
-import { MoreVertical } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 interface KPICardProps {
   title: string;
   value: string | number;
   subtitle?: string;
   icon: ReactNode;
-  accentColor: string; // Color vibrante del icono (ej: '#0284c7')
-  onMenu?: () => void;
+  accentColor: string; 
   trend?: {
     value: number;
     isPositive: boolean;
@@ -33,86 +32,60 @@ export default function KPICard({
   subtitle,
   icon,
   accentColor,
-  onMenu,
   trend,
 }: KPICardProps) {
   return (
-    <div
-      className="relative rounded-lg sm:rounded-xl p-4 sm:p-6 transition-all duration-300 hover:shadow-lg sm:hover:shadow-2xl hover:-translate-y-0.5 sm:hover:-translate-y-1 border border-opacity-50 sm:border-2 group overflow-hidden"
-      style={{
-        borderColor: accentColor,
-        background: `linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 41, 59, 0.6) 100%)`,
-      }}
-    >
-      {/* Gradiente de fondo animado en hover */}
-      <div
-        className="absolute inset-0 opacity-0 group-hover:opacity-5 sm:group-hover:opacity-10 transition-opacity duration-300"
+    <div className="group relative rounded-2xl bg-[#0A0B10] border border-[#1F2937] p-6 hover:border-[#374151] transition-all duration-300 overflow-hidden shadow-2xl">
+      {/* Dynamic Glow Effect */}
+      <div 
+        className="absolute -right-8 -top-8 w-24 h-24 blur-[60px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-full"
         style={{ backgroundColor: accentColor }}
       />
-
-      {/* Content */}
+      
       <div className="relative z-10">
-        {/* Header con icon y menu */}
-        <div className="flex justify-between items-start mb-3 sm:mb-6">
-          {/* Icon grande y vibrante - Responsive */}
-          <div
-            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center text-xl sm:text-2xl bg-gradient-to-br transition-all duration-300 group-hover:scale-105 sm:group-hover:scale-110 shadow-md"
-            style={{
-              background: `linear-gradient(135deg, ${accentColor}, ${accentColor}dd)`,
-            }}
+        <div className="flex items-center gap-4 mb-6">
+          <div 
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-[#111218] border border-[#1F2937] group-hover:scale-110 transition-transform duration-500 shadow-inner"
+            style={{ color: accentColor }}
           >
             {icon}
           </div>
-
-          {/* Menu button (ellipsis) */}
-          {onMenu && (
-            <button
-              onClick={onMenu}
-              className="p-1 sm:p-1.5 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white flex-shrink-0"
-              aria-label="Opciones"
-            >
-              <MoreVertical className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Título - Responsive */}
-        <p
-          className="text-xs sm:text-sm font-semibold mb-2 sm:mb-3 transition-colors duration-300 line-clamp-1"
-          style={{ color: accentColor }}
-        >
-          {title}
-        </p>
-
-        {/* Número grande y destacado - Responsive */}
-        <div className="mb-3 sm:mb-4">
-          <p className="text-2xl sm:text-3xl md:text-4xl font-bold text-white leading-tight">
-            {value}
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">
+            {title}
           </p>
         </div>
 
-        {/* Información adicional */}
-        <div className="flex justify-between items-end pt-2 sm:pt-3 border-t border-white/10 gap-2">
-          {subtitle && (
-            <p className="text-xs text-gray-400 flex-1 line-clamp-1">
-              {subtitle}
-            </p>
-          )}
-
-          {/* Trend si existe */}
-          {trend && (
-            <div
-              className={`text-xs font-semibold px-2 py-1 rounded-md whitespace-nowrap flex-shrink-0 ${
-                trend.isPositive
-                  ? 'bg-green-500/20 text-green-400'
-                  : 'bg-red-500/20 text-red-400'
-              }`}
+        <div className="flex items-end justify-between">
+          <div>
+            <motion.p 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-4xl font-black text-white tracking-tighter"
             >
+              {value}
+            </motion.p>
+            {subtitle && (
+              <p className="text-[10px] font-bold text-[#475569] mt-1 uppercase tracking-wider">
+                {subtitle}
+              </p>
+            )}
+          </div>
+
+          {trend && (
+            <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full ${
+              trend.isPositive ? 'text-[#00FF94] bg-[#00FF94]/10' : 'text-[#FF3B3B] bg-[#FF3B3B]/10'
+            }`}>
               {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
             </div>
           )}
         </div>
       </div>
+
+      {/* Subtle indicator bar */}
+      <div 
+        className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700"
+        style={{ backgroundColor: accentColor, boxShadow: `0 0 10px ${accentColor}` }}
+      />
     </div>
   );
 }

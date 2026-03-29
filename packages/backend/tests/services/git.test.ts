@@ -50,12 +50,12 @@ vi.mock('fs', () => ({
     existsSync: vi.fn().mockReturnValue(true),
     mkdirSync: vi.fn(),
     readFileSync: vi.fn().mockReturnValue(''),
-    readdirSync: vi.fn().mockReturnValue([]),
+    readdirSync: vi.fn().mockReturnValue(['.git']),
   },
   existsSync: vi.fn().mockReturnValue(true),
   mkdirSync: vi.fn(),
   readFileSync: vi.fn().mockReturnValue(''),
-  readdirSync: vi.fn().mockReturnValue([]),
+  readdirSync: vi.fn().mockReturnValue(['.git']),
 }));
 
 describe('GitService', () => {

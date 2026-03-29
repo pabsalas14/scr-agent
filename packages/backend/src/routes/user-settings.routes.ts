@@ -48,45 +48,39 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Check if user_settings table exists (for Prisma)
-    // For now, we'll store preferences in a JSON field or separate table
-    // This is a simplified implementation - adjust based on actual DB schema
-
-    // Try to find existing preferences
     try {
-      // Assuming there's a user_settings table or preferences stored somewhere
-      // For this implementation, we'll return default preferences if none exist
-      const settings = await (prisma as any).userSettings?.findUnique({
-        where: { userId },
-        select: {
-          id: true,
-          userId: true,
-          emailOnFindingDetected: true,
-          emailOnFindingAssigned: true,
-          emailOnRemediationVerified: true,
-          emailOnCommentAdded: true,
-          pushNotifications: true,
-          inAppNotifications: true,
-          dailyDigest: true,
-          digestTime: true
-        }
+      const dbPrefs = await prisma.notificationPreferences.findUnique({
+        where: { userId }
       });
 
-      if (settings) {
-        return res.json({ data: settings });
+      if (dbPrefs) {
+        return res.json({
+          data: {
+            id: dbPrefs.id,
+            userId: dbPrefs.userId,
+            emailOnFindingDetected: dbPrefs.enableStatusChanges,
+            emailOnFindingAssigned: dbPrefs.enableAssignments,
+            emailOnRemediationVerified: dbPrefs.enableRemediations,
+            emailOnCommentAdded: dbPrefs.enableComments,
+            pushNotifications: false,
+            inAppNotifications: true,
+            dailyDigest: dbPrefs.enableDigestEmail,
+            digestTime: '09:00'
+          }
+        });
       }
     } catch (e) {
-      // Table may not exist yet
+      console.warn('Could not read notificationPreferences:', e);
     }
 
-    // Return default preferences for new users
-    const defaultPrefs: NotificationPreference = {
-      id: `pref-${userId}`,
-      userId: String(userId),
-      ...DEFAULT_PREFERENCES
-    };
-
-    res.json({ data: defaultPrefs });
+    // Return default preferences
+    res.json({
+      data: {
+        id: `pref-${userId}`,
+        userId: String(userId),
+        ...DEFAULT_PREFERENCES
+      }
+    });
   } catch (error) {
     console.error('Error fetching user preferences:', error);
     res.status(500).json({ error: 'Failed to fetch preferences' });
@@ -106,65 +100,47 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Validate preference keys
-    const validKeys = [
-      'emailOnFindingDetected',
-      'emailOnFindingAssigned',
-      'emailOnRemediationVerified',
-      'emailOnCommentAdded',
-      'pushNotifications',
-      'inAppNotifications',
-      'dailyDigest',
-      'digestTime'
-    ];
-
-    for (const key in updates) {
-      if (!validKeys.includes(key)) {
-        return res.status(400).json({ error: `Invalid preference key: ${key}` });
-      }
-    }
-
-    // Try to update or create user settings
     try {
-      const updated = await (prisma as any).userSettings?.upsert({
+      const dbUpdateData: any = {};
+      if (updates.emailOnFindingDetected !== undefined) dbUpdateData.enableStatusChanges = updates.emailOnFindingDetected;
+      if (updates.emailOnFindingAssigned !== undefined) dbUpdateData.enableAssignments = updates.emailOnFindingAssigned;
+      if (updates.emailOnRemediationVerified !== undefined) dbUpdateData.enableRemediations = updates.emailOnRemediationVerified;
+      if (updates.emailOnCommentAdded !== undefined) dbUpdateData.enableComments = updates.emailOnCommentAdded;
+      if (updates.dailyDigest !== undefined) dbUpdateData.enableDigestEmail = updates.dailyDigest;
+
+      const updatedDbPrefs = await prisma.notificationPreferences.upsert({
         where: { userId },
-        update: {
-          ...updates,
-          updatedAt: new Date()
-        },
+        update: dbUpdateData,
         create: {
           userId,
-          ...DEFAULT_PREFERENCES,
-          ...updates,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        },
-        select: {
-          id: true,
-          userId: true,
-          emailOnFindingDetected: true,
-          emailOnFindingAssigned: true,
-          emailOnRemediationVerified: true,
-          emailOnCommentAdded: true,
-          pushNotifications: true,
-          inAppNotifications: true,
-          dailyDigest: true,
-          digestTime: true
+          ...dbUpdateData
         }
       });
 
-      return res.json({ data: updated });
+      return res.json({
+        data: {
+          id: updatedDbPrefs.id,
+          userId: updatedDbPrefs.userId,
+          emailOnFindingDetected: updatedDbPrefs.enableStatusChanges,
+          emailOnFindingAssigned: updatedDbPrefs.enableAssignments,
+          emailOnRemediationVerified: updatedDbPrefs.enableRemediations,
+          emailOnCommentAdded: updatedDbPrefs.enableComments,
+          pushNotifications: updates.pushNotifications ?? DEFAULT_PREFERENCES.pushNotifications,
+          inAppNotifications: updates.inAppNotifications ?? DEFAULT_PREFERENCES.inAppNotifications,
+          dailyDigest: updatedDbPrefs.enableDigestEmail,
+          digestTime: updates.digestTime ?? DEFAULT_PREFERENCES.digestTime
+        }
+      });
     } catch (e) {
-      // If userSettings table doesn't exist, return updated preferences
-      // In production, create the table migration
-      const updated: NotificationPreference = {
-        id: `pref-${userId}`,
-        userId: String(userId),
-        ...DEFAULT_PREFERENCES,
-        ...updates
-      };
-
-      return res.json({ data: updated });
+      console.warn('Failed to upsert notification preferences:', e);
+      return res.json({
+        data: {
+          id: `pref-${userId}`,
+          userId: String(userId),
+          ...DEFAULT_PREFERENCES,
+          ...updates
+        }
+      });
     }
   } catch (error) {
     console.error('Error updating user preferences:', error);

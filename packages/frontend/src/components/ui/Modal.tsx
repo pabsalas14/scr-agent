@@ -42,10 +42,9 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className={`fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full mx-4 ${sizeClasses[size]}`}
-            style={{ maxHeight: '85vh' }}
+            className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6`}
           >
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col h-full">
+            <div className={`bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-800 overflow-hidden flex flex-col w-full max-h-full ${sizeClasses[size]}`}>
               {/* Header */}
               {title && (
                 <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex-shrink-0">
