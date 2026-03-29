@@ -64,7 +64,7 @@ async function processAnalysisQueue() {
 
     // Clonar/descargar repositorio
     logger.info(`Descargando repositorio: ${project.repositoryUrl}`);
-    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl, process.env.GITHUB_TOKEN);
+    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl, process.env.GITHUB_TOKEN, project.branch || undefined);
 
     // Leer código fuente
     logger.info(`Leyendo código fuente...`);
@@ -124,6 +124,14 @@ async function processAnalysisQueue() {
       logger.info(`ℹ️ No se encontraron hallazgos en Inspector`);
     }
 
+    // Check cancellation before Phase 2
+    if (isAnalysisCancelled(analysisId)) {
+      cancelledAnalyses.delete(analysisId);
+      await prisma.analysis.update({ where: { id: analysisId }, data: { status: 'CANCELLED', progress: 0 } });
+      logger.info(`🚫 Análisis ${analysisId} cancelado antes de Detective`);
+      return;
+    }
+
     // ========== FASE 2: DETECTIVE AGENT ==========
     logger.info(`[2/3] 🔎 Ejecutando Detective Agent...`);
     await prisma.analysis.update({
@@ -179,6 +187,14 @@ async function processAnalysisQueue() {
       logger.info(`✅ Eventos forenses guardados`);
     } else {
       logger.info(`ℹ️ No se encontraron eventos en Detective`);
+    }
+
+    // Check cancellation before Phase 3
+    if (isAnalysisCancelled(analysisId)) {
+      cancelledAnalyses.delete(analysisId);
+      await prisma.analysis.update({ where: { id: analysisId }, data: { status: 'CANCELLED', progress: 0 } });
+      logger.info(`🚫 Análisis ${analysisId} cancelado antes de Fiscal`);
+      return;
     }
 
     // ========== FASE 3: FISCAL AGENT ==========
@@ -261,6 +277,33 @@ async function processAnalysisQueue() {
       setTimeout(processAnalysisQueue, 1000);
     }
   }
+}
+
+/** Set de análisis cancelados */
+const cancelledAnalyses = new Set<string>();
+
+/**
+ * Cancelar un análisis en progreso o en cola
+ */
+export function cancelAnalysis(analysisId: string): boolean {
+  // Remove from queue if pending
+  const queueIndex = analysisQueue.findIndex(a => a.id === analysisId);
+  if (queueIndex !== -1) {
+    analysisQueue.splice(queueIndex, 1);
+    logger.info(`🚫 Análisis ${analysisId} removido de la cola`);
+    return true;
+  }
+  // Mark as cancelled so running analysis stops at next checkpoint
+  cancelledAnalyses.add(analysisId);
+  logger.info(`🚫 Análisis ${analysisId} marcado para cancelación`);
+  return true;
+}
+
+/**
+ * Check if analysis was cancelled
+ */
+export function isAnalysisCancelled(analysisId: string): boolean {
+  return cancelledAnalyses.has(analysisId);
 }
 
 /**

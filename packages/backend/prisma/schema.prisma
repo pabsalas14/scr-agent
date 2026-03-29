@@ -88,6 +88,7 @@ model Project {
   name          String  @db.VarChar(255)
   description   String?
   repositoryUrl String  @unique @db.VarChar(500)
+  branch        String? @default("main") @db.VarChar(255)
 
   // Configuración de alcance
   scope AnalysisScope @default(REPOSITORY)

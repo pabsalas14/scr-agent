@@ -101,7 +101,7 @@ export class GitService {
    * Clonar o pullear un repositorio
    * Maneja tanto clones iniciales como updates
    */
-  async cloneOrPullRepository(repoUrl: string, githubToken?: string): Promise<string> {
+  async cloneOrPullRepository(repoUrl: string, githubToken?: string, branch?: string): Promise<string> {
     if (!this.validateRepositoryUrl(repoUrl)) {
       throw new Error('URL de repositorio inválida o no soportada');
     }
@@ -122,7 +122,8 @@ export class GitService {
 
         try {
           // Use simpleGit without options to clone
-          await simpleGit().clone(urlToUse, localPath);
+          const cloneOptions = branch ? ['--branch', branch] : [];
+          await simpleGit().clone(urlToUse, localPath, cloneOptions);
           logger.info(`✓ Repository cloned successfully`);
         } catch (cloneError: any) {
           const errorMsg = cloneError?.message || String(cloneError);

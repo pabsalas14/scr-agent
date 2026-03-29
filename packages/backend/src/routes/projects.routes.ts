@@ -6,7 +6,7 @@
 import { Router, type Request, type Response, type NextFunction, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
-import { enqueueAnalysis } from '../services/analysis-queue';
+import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
 
 const router: ExpressRouter = Router();
@@ -101,7 +101,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, description, repositoryUrl, scope } = req.body;
+    const { name, description, repositoryUrl, branch, scope } = req.body;
     const userId = (req as any).user?.id; // Obtenido del middleware de auth
 
     // Validar datos básicos
@@ -169,6 +169,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         name,
         description,
         repositoryUrl,
+        branch: branch || 'main',
         scope,
       },
     });
@@ -222,6 +223,46 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
       data: analysis,
       message: 'Análisis iniciado. Procesando en background...',
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * POST /api/v1/projects/:projectId/analyses/:analysisId/cancel
+ * Cancelar un análisis en progreso
+ */
+router.post('/:projectId/analyses/:analysisId/cancel', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { projectId, analysisId } = req.params;
+
+    const analysis = await prisma.analysis.findFirst({
+      where: { id: analysisId, projectId },
+    });
+
+    if (!analysis) {
+      return res.status(404).json({ success: false, error: 'Análisis no encontrado' });
+    }
+
+    // Only cancel if still running
+    const cancellableStatuses = ['PENDING', 'RUNNING', 'INSPECTOR_RUNNING', 'DETECTIVE_RUNNING', 'FISCAL_RUNNING'];
+    if (!cancellableStatuses.includes(analysis.status)) {
+      return res.status(400).json({
+        success: false,
+        error: `Análisis no se puede cancelar (estado: ${analysis.status})`,
+      });
+    }
+
+    cancelAnalysis(analysisId!);
+
+    await prisma.analysis.update({
+      where: { id: analysisId },
+      data: { status: 'CANCELLED' },
+    });
+
+    logger.info(`Analysis ${analysisId} cancelled by user`);
+
+    res.json({ success: true, message: 'Análisis cancelado exitosamente' });
   } catch (error) {
     next(error);
   }

@@ -26,6 +26,7 @@ export interface CrearProyectoDTO {
   name: string;
   description?: string;
   repositoryUrl: string;
+  branch?: string;
   scope?: AlcanceAnalisis;
 }
 

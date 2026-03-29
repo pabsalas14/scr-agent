@@ -64,6 +64,7 @@ export default function NuevoProyectoModerno({
   const [step, setStep] = useState<Step>(1);
   const [selectedScope, setSelectedScope] = useState<ScopeType | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [repoValidationError, setRepoValidationError] = useState<string>('');
   const [isRepoValid, setIsRepoValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -116,8 +117,9 @@ export default function NuevoProyectoModerno({
     onCrear(data);
   };
 
-  // Registrar campo repositoryUrl (oculto, se llena via setValue)
+  // Registrar campos ocultos (se llenan via setValue)
   register('repositoryUrl', { required: true });
+  register('branch');
 
   return (
     <motion.div
@@ -257,13 +259,19 @@ export default function NuevoProyectoModerno({
                 <RepositorySelector
                   onSelect={(repo) => {
                     setSelectedRepo(repo);
+                    setSelectedBranch(null);
                     setValue('repositoryUrl', repo.cloneUrl);
+                  }}
+                  onBranchSelect={(branch) => {
+                    setSelectedBranch(branch);
+                    setValue('branch', branch);
                   }}
                   onValidationChange={(isValid, error) => {
                     setIsRepoValid(isValid);
                     setRepoValidationError(error || '');
                   }}
                   selectedRepo={selectedRepo}
+                  selectedBranch={selectedBranch}
                   isLoading={cargando}
                 />
                 {errors.repositoryUrl && (
