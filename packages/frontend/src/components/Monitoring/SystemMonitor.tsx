@@ -206,28 +206,28 @@ export default function SystemMonitor() {
                 <h3 className="text-[10px] font-black text-white uppercase tracking-[0.2em]">Arquitectura</h3>
               </div>
               <ul className="space-y-5">
-                 {[
-                   { label: 'OS TYPE', value: 'LINUX / MACOS' },
-                   { label: 'PROCESSOR', value: 'AGENT-CORE-V1' },
-                   { label: 'NETWORK', value: 'SECURED' },
-                   { label: 'ENGINE', value: 'CODA-POLYMER' },
-                 ].map((item, i) => (
-                   <li key={i} className="flex justify-between items-center group">
-                      <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest transition-colors group-hover:text-white/40">{item.label}</span>
-                      <span className="text-[10px] font-black text-white uppercase tracking-tighter">{item.value}</span>
-                   </li>
-                 ))}
-              </ul>
-           </div>
+                  {[
+                    { label: 'TIPO DE SO', value: 'LINUX / MACOS' },
+                    { label: 'PROCESADOR', value: 'AGENT-CORE-V1' },
+                    { label: 'RED', value: 'PROTEGIDA' },
+                    { label: 'MOTOR', value: 'CODA-POLYMER' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex justify-between items-center group">
+                       <span className="text-[9px] font-bold text-[#64748B] uppercase tracking-widest transition-colors group-hover:text-white/40">{item.label}</span>
+                       <span className="text-[10px] font-black text-white uppercase tracking-tighter">{item.value}</span>
+                    </li>
+                  ))}
+               </ul>
+            </div>
 
-           <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#7000FF] to-[#00D1FF] flex flex-col items-center justify-center text-center space-y-5 shadow-[0_20px_60px_rgba(112,0,255,0.3)] relative overflow-hidden group">
-              <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <CloudLightning className="w-10 h-10 text-white animate-pulse relative z-10" />
-              <div className="space-y-2 relative z-10">
-                <p className="text-white font-black uppercase tracking-[0.2em] text-sm">Coda Engine Active</p>
-                <p className="text-white/70 text-[10px] font-medium leading-[1.6] max-w-[180px] mx-auto uppercase tracking-wide">Optimization in progress. Memory management: AGGRESSIVE.</p>
-              </div>
-           </div>
+            <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-[#7000FF] to-[#00D1FF] flex flex-col items-center justify-center text-center space-y-5 shadow-[0_20px_60px_rgba(112,0,255,0.3)] relative overflow-hidden group">
+               <div className="absolute inset-0 bg-black/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+               <CloudLightning className="w-10 h-10 text-white animate-pulse relative z-10" />
+               <div className="space-y-2 relative z-10">
+                 <p className="text-white font-black uppercase tracking-[0.2em] text-sm">Motor Coda Activo</p>
+                 <p className="text-white/70 text-[10px] font-medium leading-[1.6] max-w-[180px] mx-auto uppercase tracking-wide">Optimización en curso. Gestión de memoria: AGRESIVA.</p>
+               </div>
+            </div>
         </div>
       </div>
     </div>

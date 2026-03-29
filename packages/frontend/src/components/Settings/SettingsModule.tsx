@@ -101,7 +101,7 @@ export default function SettingsModule() {
                  </div>
                  <div className="flex flex-wrap justify-center md:justify-start gap-2.5">
                     <div className="px-2 py-0.5 rounded-md bg-[#00FF94]/10 border border-[#00FF94]/20 text-[8px] font-black text-[#00FF94] uppercase tracking-widest">USUARIO VERIFICADO</div>
-                    <div className="px-2 py-0.5 rounded-md bg-[#00D1FF]/10 border border-[#00D1FF]/20 text-[8px] font-black text-[#00D1FF] uppercase tracking-widest">ADMIN ACCESS</div>
+                    <div className="px-2 py-0.5 rounded-md bg-[#00D1FF]/10 border border-[#00D1FF]/20 text-[8px] font-black text-[#00D1FF] uppercase tracking-widest">ACCESO ADMIN</div>
                  </div>
               </div>
            </div>
@@ -125,7 +125,7 @@ export default function SettingsModule() {
               
               <div className="space-y-6">
                  <div className="space-y-2.5">
-                    <label className="text-[9px] font-black text-[#64748B] uppercase tracking-widest ml-1">Personal Access Token</label>
+                    <label className="text-[9px] font-black text-[#64748B] uppercase tracking-widest ml-1">Token de Acceso Personal</label>
                     <div className="relative group">
                        <input 
                          type={showToken ? 'text' : 'password'}

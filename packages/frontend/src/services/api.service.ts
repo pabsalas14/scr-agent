@@ -235,31 +235,31 @@ class ApiService {
     }
   }
 
-  // ==================== GENERIC METHODS ====================
+  // ==================== MÉTODOS GENÉRICOS ====================
 
   /**
-   * Generic GET request
+   * Petición GET genérica
    */
   async get<T = any>(url: string, config?: any): Promise<{ data: T }> {
     return this.client.get<T>(url, config);
   }
 
   /**
-   * Generic POST request
+   * Petición POST genérica
    */
   async post<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
     return this.client.post<T>(url, data, config);
   }
 
   /**
-   * Generic PUT request
+   * Petición PUT genérica
    */
   async put<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
     return this.client.put<T>(url, data, config);
   }
 
   /**
-   * Generic DELETE request
+   * Petición DELETE genérica
    */
   async delete<T = any>(url: string, config?: any): Promise<{ data: T }> {
     return this.client.delete<T>(url, config);

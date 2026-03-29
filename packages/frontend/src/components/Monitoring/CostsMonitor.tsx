@@ -221,11 +221,11 @@ export default function CostsMonitor() {
                       
                       <div className="grid grid-cols-2 gap-6 border-t border-white/[0.03] pt-5">
                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Input Tokens</p>
+                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Tokens de Entrada</p>
                             <p className="text-[10px] font-black text-white uppercase tracking-tighter">{entry.inputTokens.toLocaleString()}</p>
                          </div>
                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Output Tokens</p>
+                            <p className="text-[8px] font-black text-[#475569] uppercase tracking-widest">Tokens de Salida</p>
                             <p className="text-[10px] font-black text-white uppercase tracking-tighter">{entry.outputTokens.toLocaleString()}</p>
                          </div>
                       </div>

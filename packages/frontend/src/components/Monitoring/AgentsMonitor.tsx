@@ -95,11 +95,11 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
                         <div className={`px-2 py-0.5 rounded-md border text-[8px] font-black uppercase tracking-widest ${
                            agent.status === 'active' ? 'bg-[#00FF94]/10 border-[#00FF94]/20 text-[#00FF94]' : 'bg-[#64748B]/10 border-[#64748B]/20 text-[#64748B]'
                         }`}>
-                          {agent.status.toUpperCase()}
+                          {agent.status === 'active' ? 'ACTIVO' : 'INACTIVO'}
                         </div>
                         <div className="flex items-center gap-1.5">
                            <div className={`w-1 h-1 rounded-full ${agent.status === 'active' ? 'bg-[#00FF94] shadow-[0_0_5px_#00FF94]' : 'bg-[#64748B]'}`} />
-                           <span className="text-[7px] font-black text-[#64748B] uppercase tracking-widest leading-none">Status Pulse</span>
+                           <span className="text-[7px] font-black text-[#64748B] uppercase tracking-widest leading-none">Pulso de Estado</span>
                         </div>
                       </div>
                    </div>
