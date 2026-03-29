@@ -86,9 +86,9 @@ export default function AnalyticsDashboard() {
         <div className="space-y-4">
           <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">
             <Activity className="w-3 h-3" />
-            <span>CENTRAL DE INTELIGENCIA</span>
+            <span>CENTRAL DE INTELIGENCIA ESTRATÉGICA</span>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">ESTADÍSTICAS</h1>
+          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">ANÁLISIS GLOBAL</h1>
           <p className="text-[#64748B] text-sm font-medium max-w-xl leading-relaxed">
             Consolidado estratégico de hallazgos, remediaciones y vectores de ataque a través de todo el perímetro de código analizado.
           </p>
@@ -235,13 +235,13 @@ export default function AnalyticsDashboard() {
               ].map((item, idx) => (
                 <div key={idx} className="space-y-2">
                   <div className="flex justify-between items-end">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-[#94A3B8]">{item.label}</span>
-                    <span className="text-lg font-black text-white">{item.value}</span>
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[#94A3B8]">{item.label}</span>
+                    <span className="text-xl font-black text-white">{item.value}</span>
                   </div>
                   <div className="h-1.5 w-full bg-[#111218] rounded-full overflow-hidden">
                     <motion.div 
                       initial={{ width: 0 }}
-                      animate={{ width: `${(item.value / (summary?.totalFindings || 1)) * 100}%` }}
+                      animate={{ width: `${(item.value / Math.max(summary?.totalFindings || 1, 1)) * 100}%` }}
                       transition={{ duration: 1, delay: idx * 0.1 }}
                       className="h-full rounded-full"
                       style={{ backgroundColor: item.color }}

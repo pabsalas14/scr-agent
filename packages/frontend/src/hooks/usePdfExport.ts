@@ -8,6 +8,7 @@
 import { useState, useCallback } from 'react';
 import { useToast } from './useToast';
 import type { Reporte, Hallazgo, Proyecto } from '../types/api';
+import { CODA_LOGO_BASE64 } from '../assets/logo';
 
 interface ExportData {
   proyecto: Proyecto;
@@ -108,24 +109,30 @@ export function usePdfExport() {
 
         // --- PÁGINA 2: RESUMEN EJECUTIVO ---
         doc.addPage();
+        
+        // Header with Logo
+        doc.addImage(CODA_LOGO_BASE64, 'PNG', margin, 10, 15, 15);
         doc.setTextColor(cPrimary[0], cPrimary[1], cPrimary[2]);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text('1. Resumen Ejecutivo', margin, 30);
+        doc.text('1. Resumen Ejecutivo', margin + 20, 20);
 
+        let currentY = 35;
         const cText = getC('text');
         doc.setTextColor(cText[0], cText[1], cText[2]);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
         const splitSummary = doc.splitTextToSize(reporte.executiveSummary, pageWidth - (margin * 2));
-        doc.text(splitSummary, margin, 45);
+        doc.text(splitSummary, margin, currentY);
+        
+        currentY += (splitSummary.length * 5) + 15;
 
         doc.setFont('helvetica', 'bold');
-        doc.text('Distribución de Amenazas:', margin, 100);
+        doc.text('Distribución de Amenazas:', margin, currentY);
         
         const severityData = Object.entries(reporte.severityBreakdown).map(([k, v]) => [k, v.toString()]);
         autoTable(doc, {
-          startY: 105,
+          startY: currentY + 5,
           head: [['Severidad', 'Contador']],
           body: severityData,
           theme: 'striped',
@@ -161,12 +168,16 @@ export function usePdfExport() {
           }
         });
 
-        let currentY = (doc as any).lastAutoTable.finalY + 20;
+        currentY = (doc as any).lastAutoTable.finalY + 15;
         
-        hallazgos.slice(0, 10).forEach((f, idx) => {
-          if (currentY > pageHeight - 50) {
+        hallazgos.slice(0, 15).forEach((f, idx) => {
+          const details = doc.splitTextToSize(`Diagnóstico: ${f.whySuspicious}`, pageWidth - (margin * 2));
+          const snippet = f.codeSnippet ? doc.splitTextToSize(f.codeSnippet, pageWidth - (margin * 3)) : [];
+          const blockHeight = 25 + (details.length * 4) + (snippet.length > 0 ? (snippet.length * 4) + 10 : 0);
+
+          if (currentY + blockHeight > pageHeight - 20) {
             doc.addPage();
-            currentY = 30;
+            currentY = 25;
           }
 
           doc.setFontSize(10);
@@ -180,10 +191,22 @@ export function usePdfExport() {
           doc.text(`Archivo: ${f.file} (Líneas: ${f.lineRange || 'N/A'})`, margin, currentY + 5);
           
           doc.setTextColor(cText[0], cText[1], cText[2]);
-          const details = doc.splitTextToSize(`Diagnóstico: ${f.whySuspicious}`, pageWidth - (margin * 2));
           doc.text(details, margin, currentY + 12);
           
-          currentY += 15 + (details.length * 4);
+          let nextY = currentY + 15 + (details.length * 4);
+
+          if (f.codeSnippet) {
+            doc.setFillColor(248, 250, 252); // Light gray background for code
+            doc.roundedRect(margin, nextY, pageWidth - (margin * 2), (snippet.length * 4) + 6, 2, 2, 'F');
+            doc.setFont('courier', 'normal');
+            doc.setFontSize(7);
+            doc.setTextColor(getC('critical')[0], getC('critical')[1], getC('critical')[2]);
+            doc.text(snippet, margin + 5, nextY + 5);
+            nextY += (snippet.length * 4) + 12;
+            doc.setFont('helvetica', 'normal');
+          }
+          
+          currentY = nextY + 5;
         });
 
         // --- PÁGINA FINAL: RECOMENDACIONES ---

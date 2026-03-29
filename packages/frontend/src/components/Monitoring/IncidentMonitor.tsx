@@ -21,10 +21,19 @@ export default function IncidentMonitor() {
   
   // Extraer incidentes: análisis con errores o hallazgos críticos
   const allAnalyses = proyectos.flatMap((p: any) => 
-    (p.analyses || []).map((a: any) => ({ ...a, projectName: p.name, projectId: p.id }))
+    (p.analyses || []).map((a: any) => ({ 
+      ...a, 
+      projectName: p.name, 
+      projectId: p.id,
+      highSeverityFindings: (a.findings || []).filter((f: any) => f.severity === 'ALTO' || f.severity === 'CRÍTICO').length
+    }))
   );
 
-  const incidentes = allAnalyses.filter((a: any) => a.status === 'ERROR' || a.riskScore > 80);
+  const incidentes = allAnalyses.filter((a: any) => 
+    a.status === 'ERROR' || 
+    a.riskScore > 70 || 
+    a.highSeverityFindings > 0
+  );
   
   if (isLoading) {
     return (

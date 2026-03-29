@@ -95,7 +95,8 @@ export default function AppLayout() {
           <div className="flex-1 flex flex-col min-w-0 pl-20 lg:pl-64 transition-all duration-300">
             {/* Soft Radial Spotlight Effect */}
             <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-               <div className="absolute -top-[10%] left-[20%] w-[60%] h-[40%] bg-[#00D1FF]/5 blur-[120px] rounded-full" />
+               <div className="absolute -top-[10%] left-[10%] w-[60%] h-[40%] bg-[#00D1FF]/5 blur-[120px] rounded-full" />
+               <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] bg-[#7000FF]/5 blur-[120px] rounded-full" />
             </div>
 
             <main className="flex-1 relative z-10 p-6 sm:p-8 lg:p-10">

@@ -98,11 +98,15 @@ body {
 }
 
 .text-gradient {
-  @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-[#64748B];
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-[#00D1FF] to-[#7000FF];
 }
 
-.neural-glow {
-  box-shadow: 0 0 50px rgba(0, 209, 255, 0.08);
+.glow-cyan {
+  box-shadow: 0 0 50px rgba(0, 209, 255, 0.1);
+}
+
+.glow-purple {
+  box-shadow: 0 0 50px rgba(112, 0, 255, 0.1);
 }
 
 .layout-grid {
