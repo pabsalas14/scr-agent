@@ -111,7 +111,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             }`}
           >
             {enProceso || iniciar.isPending ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            {enProceso || iniciar.isPending ? 'Sincronizando' : 'Lanzar Aliz'}
+            {enProceso || iniciar.isPending ? 'Sincronizando' : 'Iniciar Auditoría'}
           </Button>
 
           {ultimoAnalisis?.status === 'COMPLETED' && (

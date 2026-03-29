@@ -24,10 +24,10 @@ export default function RiskScoreGauge({
   };
 
   const getLabel = (s: number) => {
-    if (s < 30) return 'Assured';
-    if (s < 60) return 'Elevated';
-    if (s < 85) return 'Critical';
-    return 'Breach Risk';
+    if (s < 30) return 'Protegido';
+    if (s < 60) return 'Elevado';
+    if (s < 85) return 'Crítico';
+    return 'Riesgo de Brecha';
   };
 
   const color = getColor(score);
@@ -93,7 +93,7 @@ export default function RiskScoreGauge({
               transition={{ delay: 0.5, duration: 0.8 }}
               className="text-5xl font-black text-white tracking-tighter leading-none"
             >
-              {score}
+              {Math.round(score)}
             </motion.span>
             <motion.div 
               initial={{ opacity: 0 }}
@@ -102,7 +102,7 @@ export default function RiskScoreGauge({
               className="mt-2 flex flex-col items-center"
             >
                 <div className="h-[1px] w-8 bg-[#1F2937] mb-2" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">Risk Score</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">Índice de Riesgo</span>
                 <span 
                   className="text-[9px] font-black uppercase tracking-widest mt-1 px-2 py-0.5 rounded border border-current shadow-sm"
                   style={{ color, borderColor: `${color}40` }}
