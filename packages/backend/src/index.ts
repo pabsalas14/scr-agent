@@ -24,9 +24,16 @@ import path from 'path';
 import { logger } from './services/logger.service';
 import { socketService } from './services/socket.service';
 
-// Cargar variables de entorno desde el archivo .env en el directorio actual del proyecto
-const envPath = path.resolve(__dirname, '../.env');
-dotenv.config({ path: envPath });
+// Cargar variables de entorno - intentar múltiples rutas (override para evitar vars vacías del sistema)
+const envPaths = [
+  path.resolve(__dirname, '../.env'),
+  path.resolve(process.cwd(), 'packages/backend/.env'),
+  path.resolve(process.cwd(), '.env'),
+];
+for (const p of envPaths) {
+  const result = dotenv.config({ path: p, override: true });
+  if (!result.error) break;
+}
 
 // ==================== CONFIGURACIÓN ====================
 

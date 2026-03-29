@@ -101,6 +101,20 @@ async function processAnalysisQueue() {
       return 'MEDIUM';
     };
 
+    const VALID_RISK_TYPES = ['BACKDOOR', 'INJECTION', 'LOGIC_BOMB', 'OBFUSCATION', 'SUSPICIOUS', 'ERROR_HANDLING', 'HARDCODED_VALUES'] as const;
+    type RiskType = typeof VALID_RISK_TYPES[number];
+    const mapRiskType = (tipo: string): RiskType => {
+      const t = (tipo || '').toUpperCase().replace(/[^A-Z_]/g, '').replace(/\s+/g, '_');
+      if (VALID_RISK_TYPES.includes(t as any)) return t as RiskType;
+      if (t.includes('BACKDOOR') || t.includes('PUERTA_TRASERA')) return 'BACKDOOR';
+      if (t.includes('INJECT') || t.includes('INYEC')) return 'INJECTION';
+      if (t.includes('LOGIC') || t.includes('BOMB') || t.includes('LOGICA')) return 'LOGIC_BOMB';
+      if (t.includes('OBFUSC') || t.includes('OFUSC')) return 'OBFUSCATION';
+      if (t.includes('HARDCOD') || t.includes('CREDENC') || t.includes('SECRET') || t.includes('HIDDEN') || t.includes('OCULTO')) return 'HARDCODED_VALUES';
+      if (t.includes('ERROR') || t.includes('EXCEPTION')) return 'ERROR_HANDLING';
+      return 'SUSPICIOUS';
+    };
+
     // Guardar hallazgos
     if (maliciaOutput.hallazgos && maliciaOutput.hallazgos.length > 0) {
       logger.info(`Guardando ${maliciaOutput.hallazgos.length} hallazgos en BD...`);
@@ -109,7 +123,7 @@ async function processAnalysisQueue() {
           data: {
             analysisId,
             severity: mapSeverity(hallazgo.severidad),
-            riskType: hallazgo.tipo || 'UNKNOWN',
+            riskType: mapRiskType(hallazgo.tipo || hallazgo.tipo_riesgo || ''),
             file: hallazgo.archivo || 'unknown',
             lineRange: hallazgo.linea ? String(hallazgo.linea) : '0',
             codeSnippet: hallazgo.codigo || hallazgo.fragmento_codigo || undefined,
