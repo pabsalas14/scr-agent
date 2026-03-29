@@ -131,72 +131,114 @@ export default function ReportViewer() {
   ] as const;
 
   return (
-    <div id="report-content" ref={reportRef} className="max-w-7xl mx-auto px-6 space-y-12 pb-24 animate-in fade-in duration-1000">
-      {/* Dynamic Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-end gap-8">
-        <div className="space-y-6 flex-1">
-          <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">
-            <button onClick={() => navigate('/dashboard')} className="hover:text-[#00D1FF] transition-colors">CENTRAL</button>
-            <ChevronRight className="w-3 h-3" />
-            <span className="text-white">INTELIGENCIA DE AMENAZAS</span>
+    <div id="report-content" ref={reportRef} className="max-w-7xl mx-auto px-6 space-y-8 pb-24 animate-in fade-in duration-1000">
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-6 pt-2">
+        <div className="space-y-3 flex-1">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.25em] text-[#3D4A5C]">
+            <button onClick={() => navigate('/dashboard')} className="hover:text-[#00D1FF] transition-colors">Central</button>
+            <span className="opacity-40">›</span>
+            <span>Inteligencia de Amenazas</span>
           </div>
-          <div className="space-y-2">
-             <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">CODA REPORT</h1>
-             <p className="text-[#475569] font-mono text-xs uppercase tracking-[0.3em] pl-1">ID: {analysisId.split('-')[0]}</p>
+          {/* Title */}
+          <div className="flex items-end gap-4">
+            <h1 className="text-5xl lg:text-6xl font-black text-white tracking-tighter leading-none">CODA</h1>
+            <div className="pb-1 space-y-1">
+              <div className="h-[3px] w-16 rounded" style={{ background: 'linear-gradient(90deg, #00D1FF, #7000FF)' }} />
+              <div className="h-[2px] w-8 rounded bg-[#7000FF] opacity-40" />
+              <p className="text-[9px] font-black text-[#64748B] uppercase tracking-[0.25em] pt-0.5">Security Report</p>
+            </div>
           </div>
+          <p className="font-mono text-[9px] text-[#2D3748] uppercase tracking-[0.35em]">
+            UID · <span className="text-[#3D4A5C]">{analysisId.toUpperCase()}</span>
+          </p>
         </div>
-        <div className="flex gap-4">
-            <Button
-              className="bg-[#111218] border border-[#1F2937] text-white rounded-2xl px-8 py-3 text-[10px] font-black uppercase tracking-widest hover:border-[#00D1FF] transition-all flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={descargarPDF}
-              disabled={isExporting}
+        {/* PDF Button */}
+        <button
+          onClick={descargarPDF}
+          disabled={isExporting}
+          className="flex items-center gap-2.5 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+          style={{
+            background: 'rgba(0,209,255,0.07)',
+            border: '1px solid rgba(0,209,255,0.22)',
+            color: '#00D1FF',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+          {isExporting ? 'Generando...' : 'Exportar PDF'}
+        </button>
+      </div>
+
+      {/* ── KPI Grid ────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {KPI_STATS.map((stat, i) => {
+          const hex = stat.color.replace('text-[', '').replace(']', '');
+          return (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.07 }}
+              className="relative overflow-hidden rounded-2xl cursor-default"
+              style={{ background: 'rgba(7,8,13,0.95)', border: '1px solid #1A1F2E' }}
+              whileHover={{ borderColor: `${hex}35`, boxShadow: `0 0 20px ${hex}12` } as any}
             >
-              {isExporting
-                ? <Loader2 className="w-4 h-4 animate-spin" />
-                : <Download className="w-4 h-4" />}
-              {isExporting ? 'Generando...' : 'Extraer Protocolo (PDF)'}
-            </Button>
-        </div>
+              {/* Left accent bar */}
+              <div className="absolute left-0 top-3 bottom-3 w-[2px] rounded-full" style={{ background: hex }} />
+              <div className="pl-5 pr-4 py-4 flex items-center gap-3">
+                <div className="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: `${hex}12`, border: `1px solid ${hex}25` }}>
+                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-white tracking-tight leading-none">{stat.value}</p>
+                  <p className="text-[9px] font-black uppercase tracking-[0.18em] mt-0.5" style={{ color: hex, opacity: 0.65 }}>{stat.label}</p>
+                </div>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
-      {/* Grid Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        {KPI_STATS.map((stat, i) => (
-          <motion.div 
-            key={i}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1 }}
-            className="bg-[#0A0B10] border border-[#1F2937] rounded-[2rem] p-8 space-y-4 hover:border-[#374151] transition-all group"
-          >
-            <div className="flex justify-between items-center">
-              <stat.icon className={`${stat.color} w-5 h-5 opacity-50 group-hover:opacity-100 transition-opacity`} />
-              <div className="h-4 w-4 rounded bg-[#1F2937]/30" />
-            </div>
-            <div className="space-y-1">
-               <p className="text-4xl font-black text-white tracking-tighter">{stat.value}</p>
-               <p className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.15em]">{stat.label}</p>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* Modern Tabs Navigation */}
-      <div className="sticky top-6 z-40 bg-[#0A0B10]/80 backdrop-blur-2xl border border-[#1F2937] rounded-3xl p-1.5 flex gap-1 overflow-x-auto no-scrollbar shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
-        {SECCIONES.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setSeccionActiva(s.id)}
-            className={`flex-1 min-w-[120px] filter px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 ${
-              seccionActiva === s.id
-                ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-                : 'text-[#475569] hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <s.icon className={`w-3.5 h-3.5 ${seccionActiva === s.id ? 'text-black' : 'opacity-40'}`} />
-            {s.label}
-          </button>
-        ))}
+      {/* Premium Tabs Navigation */}
+      <div className="sticky top-6 z-40 bg-[#07080D]/90 backdrop-blur-2xl border border-[#1A1F2E] rounded-3xl p-1.5 flex gap-1 overflow-x-auto no-scrollbar shadow-[0_8px_40px_rgba(0,0,0,0.5)]">
+        {SECCIONES.map((s) => {
+          const isActive = seccionActiva === s.id;
+          return (
+            <button
+              key={s.id}
+              onClick={() => setSeccionActiva(s.id)}
+              style={isActive ? {
+                background: `linear-gradient(135deg, ${s.color}18, ${s.color}08)`,
+                borderColor: `${s.color}50`,
+                boxShadow: `0 0 20px ${s.color}20, inset 0 1px 0 ${s.color}15`,
+                color: s.color,
+              } : {}}
+              className={`
+                flex-1 min-w-[120px] px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest
+                transition-all duration-300 flex items-center justify-center gap-2.5
+                border border-transparent
+                ${isActive
+                  ? ''
+                  : 'text-[#3D4A5C] hover:text-[#7A8799] hover:bg-white/[0.03]'
+                }
+              `}
+            >
+              <s.icon
+                size={13}
+                style={isActive ? { color: s.color, opacity: 1 } : { opacity: 0.35 }}
+              />
+              <span>{s.label}</span>
+              {isActive && (
+                <span
+                  className="ml-1 w-1.5 h-1.5 rounded-full animate-pulse"
+                  style={{ background: s.color, boxShadow: `0 0 6px ${s.color}` }}
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* Content Engine */}

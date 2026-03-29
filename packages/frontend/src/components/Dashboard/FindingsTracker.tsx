@@ -1,28 +1,18 @@
 /**
- * FindingsTracker - Panel Profesional de Control de Hallazgos
- * Diseño completamente renovado con interfaz moderna y fluida
+ * FindingsTracker — Rediseño Premium Dark
+ * Glassmorphism, sistema de colores coherente, cards compactas y densas.
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Search,
-  Filter,
-  Eye,
-  Edit2,
-  Zap,
-  TrendingUp,
-  Shield,
+  AlertCircle, CheckCircle2, Eye, Edit2, Zap,
+  Shield, Search, SlidersHorizontal, ChevronDown,
+  GitCommit, User, Clock,
 } from 'lucide-react';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
 import { findingsService } from '../../services/findings.service';
 import { usersService } from '../../services/users.service';
-import { notificationsService } from '../../services/notifications.service';
 import { Finding, FindingStatus, Severity } from '../../types/findings';
 import FindingDetailModal from './FindingDetailModal';
 import RemediationModal from './RemediationModal';
@@ -32,79 +22,36 @@ interface FindingsTrackerProps {
   analysisId: string;
 }
 
-const STATUS_CONFIG: Record<
-  FindingStatus,
-  { label: string; color: string; bgColor: string; icon: React.ReactNode; badge: string }
-> = {
-  DETECTED: {
-    label: 'Detectado',
-    color: '#EC4899',
-    bgColor: 'bg-pink-500/10',
-    icon: <AlertCircle className="w-4 h-4" />,
-    badge: '🔴',
-  },
-  IN_REVIEW: {
-    label: 'En Revisión',
-    color: '#0EA5E9',
-    bgColor: 'bg-blue-500/10',
-    icon: <Eye className="w-4 h-4" />,
-    badge: '🔵',
-  },
-  IN_CORRECTION: {
-    label: 'En Corrección',
-    color: '#F59E0B',
-    bgColor: 'bg-orange-500/10',
-    icon: <Edit2 className="w-4 h-4" />,
-    badge: '🟡',
-  },
-  CORRECTED: {
-    label: 'Corregido',
-    color: '#8B5CF6',
-    bgColor: 'bg-purple-500/10',
-    icon: <CheckCircle2 className="w-4 h-4" />,
-    badge: '🟣',
-  },
-  VERIFIED: {
-    label: 'Verificado',
-    color: '#10B981',
-    bgColor: 'bg-emerald-500/10',
-    icon: <CheckCircle2 className="w-4 h-4" />,
-    badge: '✓',
-  },
-  FALSE_POSITIVE: {
-    label: 'Falso Positivo',
-    color: '#6B7280',
-    bgColor: 'bg-gray-500/10',
-    icon: <AlertCircle className="w-4 h-4" />,
-    badge: '⊘',
-  },
-  CLOSED: {
-    label: 'Cerrado',
-    color: '#4B5563',
-    bgColor: 'bg-slate-500/10',
-    icon: <CheckCircle2 className="w-4 h-4" />,
-    badge: '✓✓',
-  },
+// ── Configs ───────────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<FindingStatus, {
+  label: string; color: string; bg: string; dot: string;
+  icon: React.ElementType;
+}> = {
+  DETECTED:      { label: 'Detectado',      color: '#FF3B3B', bg: 'rgba(255,59,59,0.08)',    dot: '#FF3B3B', icon: AlertCircle },
+  IN_REVIEW:     { label: 'En Revisión',    color: '#00D1FF', bg: 'rgba(0,209,255,0.08)',    dot: '#00D1FF', icon: Eye },
+  IN_CORRECTION: { label: 'En Corrección',  color: '#FFD600', bg: 'rgba(255,214,0,0.08)',    dot: '#FFD600', icon: Edit2 },
+  CORRECTED:     { label: 'Corregido',      color: '#7000FF', bg: 'rgba(112,0,255,0.08)',    dot: '#7000FF', icon: CheckCircle2 },
+  VERIFIED:      { label: 'Verificado',     color: '#00FF94', bg: 'rgba(0,255,148,0.08)',    dot: '#00FF94', icon: CheckCircle2 },
+  FALSE_POSITIVE:{ label: 'Falso Positivo', color: '#475569', bg: 'rgba(71,85,105,0.08)',    dot: '#475569', icon: AlertCircle },
+  CLOSED:        { label: 'Cerrado',        color: '#334155', bg: 'rgba(51,65,85,0.08)',     dot: '#334155', icon: CheckCircle2 },
 };
 
-const SEVERITY_CONFIG: Record<
-  Severity,
-  { label: string; color: string; badge: string }
-> = {
-  CRITICAL: { label: 'Crítico', color: '#DC2626', badge: '🔴' },
-  HIGH: { label: 'Alto', color: '#EA580C', badge: '🟠' },
-  MEDIUM: { label: 'Medio', color: '#EAB308', badge: '🟡' },
-  LOW: { label: 'Bajo', color: '#22C55E', badge: '🟢' },
+const SEV_CONFIG: Record<Severity, { label: string; color: string; border: string; bg: string }> = {
+  CRITICAL: { label: 'CRÍTICO', color: '#FF3B3B', border: '#FF3B3B60', bg: 'rgba(255,59,59,0.12)' },
+  HIGH:     { label: 'ALTO',    color: '#FF8A00', border: '#FF8A0060', bg: 'rgba(255,138,0,0.12)' },
+  MEDIUM:   { label: 'MEDIO',   color: '#FFD600', border: '#FFD60060', bg: 'rgba(255,214,0,0.10)' },
+  LOW:      { label: 'BAJO',    color: '#00FF94', border: '#00FF9460', bg: 'rgba(0,255,148,0.08)' },
 };
 
+// ── Componente principal ──────────────────────────────────────────────────
 export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<FindingStatus | 'ALL'>('ALL');
-  const [filterSeverity, setFilterSeverity] = useState<Severity | 'ALL'>('ALL');
-  const [selectedFinding, setSelectedFinding] = useState<Finding | null>(null);
-  const [remediationFinding, setRemediationFinding] = useState<Finding | null>(null);
+  const [searchTerm, setSearchTerm]       = useState('');
+  const [filterStatus, setFilterStatus]   = useState<FindingStatus | 'ALL'>('ALL');
+  const [filterSeverity, setFilterSev]    = useState<Severity | 'ALL'>('ALL');
+  const [selectedFinding, setSelected]    = useState<Finding | null>(null);
+  const [remediationFinding, setRemediation] = useState<Finding | null>(null);
 
-  const { data: findings = [], isLoading: findingsLoading, refetch } = useQuery({
+  const { data: findings = [], isLoading, refetch } = useQuery({
     queryKey: ['findings', analysisId],
     queryFn: () => findingsService.getFindings(analysisId),
     refetchInterval: 5000,
@@ -115,292 +62,280 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
     queryFn: () => usersService.getUsersByRole('ANALYST'),
   });
 
-  // Listen to socket events and refetch findings when changes occur
   useSocketEvents({
-    onFindingUpdated: (data) => {
-      console.log('🔄 Refetching findings due to status change:', data);
-      refetch();
-    },
-    onFindingAssigned: (data) => {
-      console.log('🔄 Refetching findings due to assignment:', data);
-      refetch();
-    },
-    onRemediationUpdated: (data) => {
-      console.log('🔄 Refetching findings due to remediation update:', data);
-      refetch();
-    },
-    onRemediationVerified: (data) => {
-      console.log('🔄 Refetching findings due to remediation verification:', data);
-      refetch();
-    },
+    onFindingUpdated:     () => refetch(),
+    onFindingAssigned:    () => refetch(),
+    onRemediationUpdated: () => refetch(),
+    onRemediationVerified:() => refetch(),
   });
 
-  // Filtrar hallazgos
-  const filteredFindings = findings.filter((finding) => {
-    const matchesSearch =
-      finding.file.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      finding.whySuspicious.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const latestStatus = finding.statusHistory?.[0]?.status || 'DETECTED';
-    const matchesStatus = filterStatus === 'ALL' || latestStatus === filterStatus;
-    const matchesSeverity = filterSeverity === 'ALL' || finding.severity === filterSeverity;
-
-    return matchesSearch && matchesStatus && matchesSeverity;
-  });
-
-  // Agrupar por status
-  const groupedByStatus = Object.values(STATUS_CONFIG).reduce((acc, config) => {
-    acc[config.label] = filteredFindings.filter(
-      (f) => (f.statusHistory?.[0]?.status || 'DETECTED') === Object.keys(STATUS_CONFIG).find(
-        (k) => STATUS_CONFIG[k as FindingStatus].label === config.label
-      )
+  // Filtros
+  const filtered = findings.filter((f) => {
+    const latest = f.statusHistory?.[0]?.status || 'DETECTED';
+    return (
+      (searchTerm === '' || f.file.toLowerCase().includes(searchTerm.toLowerCase()) || f.whySuspicious.toLowerCase().includes(searchTerm.toLowerCase())) &&
+      (filterStatus   === 'ALL' || latest === filterStatus) &&
+      (filterSeverity === 'ALL' || f.severity === filterSeverity)
     );
-    return acc;
-  }, {} as Record<string, Finding[]>);
+  });
 
   // Stats
-  const stats = [
-    {
-      label: 'Total',
-      value: filteredFindings.length,
-      icon: '📊',
-      color: '#0EA5E9',
-    },
-    {
-      label: 'Críticos',
-      value: filteredFindings.filter((f) => f.severity === 'CRITICAL').length,
-      icon: '🔴',
-      color: '#DC2626',
-    },
-    {
-      label: 'En Progreso',
-      value: filteredFindings.filter((f) =>
-        ['IN_REVIEW', 'IN_CORRECTION'].includes(f.statusHistory?.[0]?.status || 'DETECTED')
-      ).length,
-      icon: '⚙️',
-      color: '#F59E0B',
-    },
-    {
-      label: 'Remediados',
-      value: filteredFindings.filter((f) =>
-        ['VERIFIED', 'CLOSED'].includes(f.statusHistory?.[0]?.status || 'DETECTED')
-      ).length,
-      icon: '✓',
-      color: '#10B981',
-    },
+  const total    = filtered.length;
+  const critical = filtered.filter((f) => f.severity === 'CRITICAL').length;
+  const inProg   = filtered.filter((f) => ['IN_REVIEW','IN_CORRECTION'].includes(f.statusHistory?.[0]?.status || '')).length;
+  const remedied = filtered.filter((f) => ['VERIFIED','CLOSED'].includes(f.statusHistory?.[0]?.status || '')).length;
+
+  const STATS = [
+    { label: 'Total',       value: total,    color: '#00D1FF', Icon: Shield },
+    { label: 'Críticos',    value: critical, color: '#FF3B3B', Icon: AlertCircle },
+    { label: 'En Progreso', value: inProg,   color: '#FFD600', Icon: Clock },
+    { label: 'Remediados',  value: remedied, color: '#00FF94', Icon: CheckCircle2 },
   ];
 
   return (
-    <div className="space-y-6">
-      {/* Header profesional */}
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-orange-500/20 rounded-lg">
-              <Zap className="w-6 h-6 text-orange-400" />
+    <div className="space-y-6 p-2">
+
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <div className="flex items-center gap-4">
+        <div
+          style={{
+            width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+            background: 'linear-gradient(135deg, rgba(255,214,0,0.2), rgba(255,138,0,0.1))',
+            border: '1px solid rgba(255,214,0,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}
+        >
+          <Zap size={20} color="#FFD600" />
+        </div>
+        <div>
+          <h2 style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.03em', margin: 0 }}>
+            Visor IR
+          </h2>
+          <p style={{ fontSize: 11, color: '#475569', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>
+            Ciclo de vida de vulnerabilidades
+          </p>
+        </div>
+      </div>
+
+      {/* ── Mini KPIs ────────────────────────────────────────────── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+        {STATS.map(({ label, value, color, Icon }, i) => (
+          <motion.div
+            key={label}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.06 }}
+            style={{
+              background: `linear-gradient(135deg, ${color}0D, transparent)`,
+              border: `1px solid ${color}28`,
+              borderRadius: 16,
+              padding: '14px 16px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+            }}
+          >
+            <div style={{
+              width: 34, height: 34, borderRadius: 10, flexShrink: 0,
+              background: `${color}18`,
+              border: `1px solid ${color}40`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Icon size={15} color={color} />
             </div>
             <div>
-              <h1 className="text-3xl font-black text-white">Control de Hallazgos</h1>
-              <p className="text-sm text-gray-400 mt-1">Gestión integral del lifecycle de vulnerabilidades</p>
+              <p style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', margin: 0, lineHeight: 1 }}>{value}</p>
+              <p style={{ fontSize: 9, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>{label}</p>
             </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* KPI Cards */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-3"
-      >
-        {stats.map((stat, i) => (
-          <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }}>
-            <Card className="relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-20 h-20 opacity-10" style={{ backgroundColor: stat.color }} />
-              <div className="relative">
-                <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">{stat.label}</p>
-                <p className="text-3xl font-black mt-2" style={{ color: stat.color }}>
-                  {stat.value}
-                </p>
-                <div className="text-2xl mt-2">{stat.icon}</div>
-              </div>
-            </Card>
           </motion.div>
         ))}
-      </motion.div>
+      </div>
 
-      {/* Filters - Modernizado */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="space-y-3"
+      {/* ── Filtros ──────────────────────────────────────────────── */}
+      <div
+        style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10,
+          background: 'rgba(10,11,16,0.6)', border: '1px solid #1A1F2E',
+          borderRadius: 16, padding: '12px 14px', backdropFilter: 'blur(12px)',
+        }}
       >
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-gray-400" />
-          <span className="text-sm font-medium text-gray-300">Filtros</span>
+        {/* Search */}
+        <div style={{ position: 'relative' }}>
+          <Search size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)' }} />
+          <input
+            type="text"
+            placeholder="Buscar archivo o descripción..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              paddingLeft: 34, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              borderRadius: 10, fontSize: 11, color: '#CBD5E1',
+              outline: 'none', fontFamily: 'inherit',
+            }}
+          />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-            <input
-              type="text"
-              placeholder="Buscar por archivo..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white placeholder-gray-500 focus:outline-none focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/30"
-            />
-          </div>
-
-          {/* Status */}
+        {/* Status */}
+        <div style={{ position: 'relative' }}>
+          <SlidersHorizontal size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value as FindingStatus | 'ALL')}
-            className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/30"
+            style={{
+              width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              borderRadius: 10, fontSize: 11, color: '#CBD5E1',
+              outline: 'none', appearance: 'none', fontFamily: 'inherit', cursor: 'pointer',
+            }}
           >
-            <option value="ALL">Todos los estados</option>
-            {Object.entries(STATUS_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.label}
-              </option>
+            <option value="ALL" style={{ background: '#0A0B10' }}>Todos los estados</option>
+            {Object.entries(STATUS_CONFIG).map(([k, c]) => (
+              <option key={k} value={k} style={{ background: '#0A0B10' }}>{c.label}</option>
             ))}
           </select>
+          <ChevronDown size={12} color="#3D4A5C" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+        </div>
 
-          {/* Severity */}
+        {/* Severity */}
+        <div style={{ position: 'relative' }}>
+          <AlertCircle size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterSeverity}
-            onChange={(e) => setFilterSeverity(e.target.value as Severity | 'ALL')}
-            className="px-4 py-2.5 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-red-500/50 focus:ring-1 focus:ring-red-500/30"
+            onChange={(e) => setFilterSev(e.target.value as Severity | 'ALL')}
+            style={{
+              width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
+              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              borderRadius: 10, fontSize: 11, color: '#CBD5E1',
+              outline: 'none', appearance: 'none', fontFamily: 'inherit', cursor: 'pointer',
+            }}
           >
-            <option value="ALL">Todas las severidades</option>
-            {Object.entries(SEVERITY_CONFIG).map(([key, config]) => (
-              <option key={key} value={key}>
-                {config.label}
-              </option>
+            <option value="ALL" style={{ background: '#0A0B10' }}>Todas las severidades</option>
+            {Object.entries(SEV_CONFIG).map(([k, c]) => (
+              <option key={k} value={k} style={{ background: '#0A0B10' }}>{c.label}</option>
             ))}
           </select>
+          <ChevronDown size={12} color="#3D4A5C" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
         </div>
-      </motion.div>
+      </div>
 
-      {/* Findings Grid - Diseño profesional */}
-      {findingsLoading ? (
-        <Card>
-          <div className="text-center py-12">
-            <Zap className="w-12 h-12 text-orange-400 mx-auto mb-3 animate-pulse" />
-            <p className="text-gray-400">Cargando hallazgos...</p>
-          </div>
-        </Card>
-      ) : filteredFindings.length === 0 ? (
-        <Card>
-          <div className="text-center py-12">
-            <Shield className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-            <p className="text-gray-300 font-semibold">Sin hallazgos</p>
-            <p className="text-gray-500 text-sm mt-1">Ajusta los filtros para ver más resultados</p>
-          </div>
-        </Card>
+      {/* ── Findings list ────────────────────────────────────────── */}
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: '48px 0' }}>
+          <Zap size={32} color="#FFD600" style={{ margin: '0 auto 12px', opacity: 0.5 }} className="animate-pulse" />
+          <p style={{ color: '#475569', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Cargando hallazgos...</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '48px 0' }}>
+          <Shield size={32} color="#1F2937" style={{ margin: '0 auto 12px' }} />
+          <p style={{ color: '#475569', fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.15em' }}>Sin resultados</p>
+        </div>
       ) : (
-        <div className="space-y-4">
-          {Object.entries(STATUS_CONFIG).map(([statusKey, config]) => {
-            const statusFindings = filteredFindings.filter(
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {Object.entries(STATUS_CONFIG).map(([statusKey, cfg]) => {
+            const group = filtered.filter(
               (f) => (f.statusHistory?.[0]?.status || 'DETECTED') === (statusKey as FindingStatus)
             );
-
-            if (statusFindings.length === 0) return null;
+            if (group.length === 0) return null;
+            const StatusIcon = cfg.icon;
 
             return (
-              <motion.div key={statusKey} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-                <Card>
-                  {/* Section Header */}
-                  <div className="mb-4 pb-4 border-b border-gray-700 flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: config.color }} />
-                    <h3 className="text-lg font-bold text-white flex-1">{config.label}</h3>
-                    <span className="px-2.5 py-1 bg-gray-800/50 rounded text-xs font-semibold" style={{ color: config.color }}>
-                      {statusFindings.length}
-                    </span>
+              <motion.div key={statusKey} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+                {/* Group header */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  marginBottom: 6, paddingLeft: 2,
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: 3, background: cfg.color, boxShadow: `0 0 8px ${cfg.color}` }} />
+                  <span style={{ fontSize: 10, fontWeight: 900, color: cfg.color, textTransform: 'uppercase', letterSpacing: '0.14em' }}>
+                    {cfg.label}
+                  </span>
+                  <div style={{
+                    fontSize: 9, fontWeight: 900, color: cfg.color,
+                    background: `${cfg.color}18`, border: `1px solid ${cfg.color}40`,
+                    borderRadius: 6, padding: '1px 7px', letterSpacing: '0.1em',
+                  }}>
+                    {group.length}
                   </div>
+                </div>
 
-                  {/* Items */}
-                  <div className="space-y-2">
-                    {statusFindings.map((finding, idx) => {
-                      const severity = SEVERITY_CONFIG[finding.severity];
-                      return (
-                        <motion.div
-                          key={finding.id}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.03 }}
-                          className="group p-3 rounded-lg border border-gray-700/50 hover:border-gray-600 bg-gray-800/20 hover:bg-gray-800/40 transition-all cursor-pointer"
-                          onClick={() => setSelectedFinding(finding)}
-                        >
-                          <div className="flex items-start gap-3">
-                            {/* Severity Badge */}
-                            <div
-                              className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                              style={{
-                                backgroundColor: `${severity.color}20`,
-                                color: severity.color,
-                              }}
-                            >
-                              {severity.badge}
-                            </div>
+                {/* Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {group.map((finding, idx) => {
+                    const sev = SEV_CONFIG[finding.severity];
+                    return (
+                      <motion.div
+                        key={finding.id}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.025 }}
+                        onClick={() => setSelected(finding)}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          padding: '10px 14px',
+                          background: 'rgba(10,11,16,0.7)',
+                          border: '1px solid #1A1F2E',
+                          borderLeft: `3px solid ${sev.color}`,
+                          borderRadius: 12,
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                        whileHover={{
+                          background: 'rgba(16,18,26,0.9)',
+                          borderColor: `${sev.color}50`,
+                          x: 2,
+                        }}
+                      >
+                        {/* Severity badge */}
+                        <div style={{
+                          flexShrink: 0, padding: '2px 7px',
+                          background: sev.bg, border: `1px solid ${sev.border}`,
+                          borderRadius: 6,
+                          fontSize: 8, fontWeight: 900, color: sev.color,
+                          letterSpacing: '0.12em', textTransform: 'uppercase',
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {sev.label}
+                        </div>
 
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-white font-semibold text-sm truncate group-hover:text-orange-400 transition-colors">
-                                {finding.file.split('/').pop()}
-                              </p>
-                              {finding.function && (
-                                <p className="text-xs text-gray-500 mt-0.5">{finding.function}</p>
-                              )}
-                              <p className="text-xs text-gray-400 mt-1 line-clamp-1">{finding.whySuspicious}</p>
-
-                              {/* Tags */}
-                              <div className="flex gap-2 mt-2">
-                                {finding.assignment && (
-                                  <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
-                                    👤 {finding.assignment.assignedUser?.name || 'Asignado'}
-                                  </span>
-                                )}
-                                {finding.remediation?.status === 'VERIFIED' && (
-                                  <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded">
-                                    ✓ Remediado
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedFinding(finding);
-                                }}
-                                className="p-2 rounded hover:bg-blue-500/20 transition-colors"
-                                title="Ver detalle"
-                              >
-                                <Eye className="w-4 h-4 text-blue-400" />
-                              </button>
-                              {(statusKey === 'IN_CORRECTION' || statusKey === 'CORRECTED') && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setRemediationFinding(finding);
-                                  }}
-                                  className="p-2 rounded hover:bg-green-500/20 transition-colors"
-                                  title="Remediación"
-                                >
-                                  <CheckCircle2 className="w-4 h-4 text-green-400" />
-                                </button>
-                              )}
-                            </div>
+                        {/* Main info */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: '#E2E8F0', fontFamily: 'monospace' }}>
+                              {finding.file.split('/').pop()}
+                            </span>
+                            {finding.function && (
+                              <span style={{ fontSize: 10, color: '#475569', fontFamily: 'monospace' }}>
+                                {finding.function}()
+                              </span>
+                            )}
                           </div>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
-                </Card>
+                          <p style={{
+                            fontSize: 11, color: '#64748B', margin: '2px 0 0',
+                            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                            maxWidth: '100%',
+                          }}>
+                            {finding.whySuspicious}
+                          </p>
+                        </div>
+
+                        {/* Right side */}
+                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                          {finding.assignment && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <User size={10} color="#475569" />
+                              <span style={{ fontSize: 10, color: '#475569' }}>
+                                {finding.assignment.assignedUser?.name?.split(' ')[0] || '—'}
+                              </span>
+                            </div>
+                          )}
+                          <Eye size={13} color="#1F2937" style={{ transition: 'color 0.15s' }} />
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
               </motion.div>
             );
           })}
@@ -412,22 +347,15 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
         <FindingDetailModal
           finding={selectedFinding}
           analysts={analysts}
-          onClose={() => setSelectedFinding(null)}
-          onStatusChange={() => {
-            setSelectedFinding(null);
-            refetch();
-          }}
+          onClose={() => setSelected(null)}
+          onStatusChange={() => { setSelected(null); refetch(); }}
         />
       )}
-
       {remediationFinding && (
         <RemediationModal
           finding={remediationFinding}
-          onClose={() => setRemediationFinding(null)}
-          onSave={() => {
-            setRemediationFinding(null);
-            refetch();
-          }}
+          onClose={() => setRemediation(null)}
+          onSave={() => { setRemediation(null); refetch(); }}
         />
       )}
     </div>
