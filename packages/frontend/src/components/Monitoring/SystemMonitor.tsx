@@ -79,14 +79,14 @@ export default function SystemMonitor() {
         
         <div className="flex gap-3">
            <div className="bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.05] rounded-2xl px-6 py-3 flex flex-col items-center min-w-[120px]">
-              <span className="text-[8px] font-black text-[#64748B] uppercase tracking-widest mb-1">Status</span>
+              <span className="text-[8px] font-black text-[#64748B] uppercase tracking-widest mb-1">ESTADO</span>
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#00FF94] shadow-[0_0_5px_#00FF94]" />
                 <span className="text-sm font-black text-white tracking-tight uppercase">Nominal</span>
               </div>
            </div>
            <div className="bg-[#0A0B10]/40 backdrop-blur-md border border-white/[0.05] rounded-2xl px-6 py-3 flex flex-col items-center min-w-[120px]">
-              <span className="text-[8px] font-black text-[#64748B] uppercase tracking-widest mb-1">Uptime</span>
+              <span className="text-[8px] font-black text-[#64748B] uppercase tracking-widest mb-1">TIEMPO ACTIVO</span>
               <span className="text-sm font-black text-white tracking-tight">{formatUptime(metrics.uptime)}</span>
            </div>
         </div>
@@ -174,7 +174,7 @@ export default function SystemMonitor() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                      <span className="text-2xl font-black text-white tracking-tighter">{Math.round(metrics.disk.usage)}%</span>
-                     <span className="text-[7px] font-black text-[#64748B] uppercase tracking-widest">DISK</span>
+                     <span className="text-[7px] font-black text-[#64748B] uppercase tracking-widest">DISCO</span>
                   </div>
                </div>
                

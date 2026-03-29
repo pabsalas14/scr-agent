@@ -88,7 +88,7 @@ export default function AnalyticsDashboard() {
             <Activity className="w-3 h-3" />
             <span>CENTRAL DE INTELIGENCIA</span>
           </div>
-          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">ANALYTICS</h1>
+          <h1 className="text-5xl lg:text-7xl font-black text-white tracking-tighter">ESTADÍSTICAS</h1>
           <p className="text-[#64748B] text-sm font-medium max-w-xl leading-relaxed">
             Consolidado estratégico de hallazgos, remediaciones y vectores de ataque a través de todo el perímetro de código analizado.
           </p>
@@ -109,7 +109,7 @@ export default function AnalyticsDashboard() {
         </div>
       </div>
 
-      {/* Primary KPIs */}
+      {/* KPIs Primarios */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard 
           title="Hallazgos Totales" 
@@ -253,7 +253,7 @@ export default function AnalyticsDashboard() {
 
             <div className="pt-8 border-t border-[#1F2937]">
                <div className="bg-[#111218] rounded-2xl p-6 flex flex-col items-center gap-4 text-center">
-                  <div className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Remediación Global</div>
+                  <div className="text-[10px] font-black text-[#64748B] uppercase tracking-widest">Efectividad de Remediación</div>
                   <div className="relative">
                     <div className="absolute inset-0 bg-[#00FF94]/5 blur-xl rounded-full scale-125" />
                     <div className="text-3xl font-black text-[#00FF94] tracking-tighter">
@@ -310,7 +310,7 @@ export default function AnalyticsDashboard() {
         <section className="bg-[#0A0B10] border border-[#1F2937] rounded-[2.5rem] p-10 flex flex-col items-center justify-center space-y-10">
            <div className="text-center space-y-2">
               <h3 className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.2em]">Intensidad de Amenaza Global</h3>
-              <p className="text-3xl font-black text-white tracking-tighter">CODA SHIELD SCORE</p>
+              <p className="text-3xl font-black text-white tracking-tighter">ÍNDICE DE BLINDAJE</p>
            </div>
            
            <div className="relative group">
