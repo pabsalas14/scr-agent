@@ -102,6 +102,7 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       }));
 
       res.json({
+        success: true,
         data: {
           repos,
           total: searchResp.data.total_count,
@@ -199,6 +200,7 @@ router.get(
         });
 
         res.json({
+          success: true,
           data: {
             owner,
             repo,
@@ -265,6 +267,7 @@ router.post(
         await gitService.testRepositoryAccess(repoUrl, githubToken || undefined);
 
         res.json({
+          success: true,
           accessible: true,
           owner,
           repo,

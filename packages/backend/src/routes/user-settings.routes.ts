@@ -55,6 +55,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
 
       if (dbPrefs) {
         return res.json({
+          success: true,
           data: {
             id: dbPrefs.id,
             userId: dbPrefs.userId,
@@ -75,6 +76,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
 
     // Return default preferences
     res.json({
+      success: true,
       data: {
         id: `pref-${userId}`,
         userId: String(userId),
@@ -134,6 +136,7 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
     } catch (e) {
       console.warn('Failed to upsert notification preferences:', e);
       return res.json({
+        success: true,
         data: {
           id: `pref-${userId}`,
           userId: String(userId),
@@ -173,7 +176,7 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ data: user });
+    res.json({ success: true, data: user });
   } catch (error) {
     console.error('Error fetching user settings:', error);
     res.status(500).json({ error: 'Failed to fetch user settings' });

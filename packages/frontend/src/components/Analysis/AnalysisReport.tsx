@@ -179,8 +179,8 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
             <div className="space-y-2">
                <h3 className="text-2xl font-semibold text-white">Interrupción Crítica</h3>
                <p className="text-[#64748B] max-w-md mx-auto font-medium">
-                 {(analysis as { errorMessage?: string }).errorMessage
-                   ? `El motor de análisis ha encontrado una excepción no controlada: ${(analysis as { errorMessage?: string }).errorMessage}`
+                 {analysis.errorMessage
+                   ? `El motor de análisis ha encontrado una excepción no controlada: ${analysis.errorMessage}`
                    : 'El análisis ha fallado. Puedes reintentarlo para volver a procesarlo.'}
                </p>
             </div>

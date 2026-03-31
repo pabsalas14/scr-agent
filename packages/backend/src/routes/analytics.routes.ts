@@ -109,6 +109,7 @@ router.get('/summary', async (req: Request, res: Response) => {
     };
 
     res.json({
+      success: true,
       data: summary
     });
   } catch (error) {
@@ -188,6 +189,7 @@ router.get('/timeline', async (req: Request, res: Response) => {
     );
 
     res.json({
+      success: true,
       data: timeline
     });
   } catch (error) {
@@ -228,6 +230,7 @@ router.get('/by-type', async (req: Request, res: Response) => {
     }));
 
     res.json({
+      success: true,
       data
     });
   } catch (error) {

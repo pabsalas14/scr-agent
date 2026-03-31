@@ -64,7 +64,7 @@ export default function LoginPage() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#F97316] rounded-2xl mb-4 shadow-[0_0_24px_rgba(249,115,22,0.3)]">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#F97316] rounded-xl mb-4 shadow-[0_0_24px_rgba(249,115,22,0.3)]">
             <Shield className="w-7 h-7 text-white" />
           </div>
           <h1 className="text-2xl font-semibold text-white">SCR Agent</h1>
@@ -72,7 +72,7 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-2xl p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
+        <div className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
           <AnimatePresence mode="wait">
             {phase === 'syncing' ? (
               <motion.div

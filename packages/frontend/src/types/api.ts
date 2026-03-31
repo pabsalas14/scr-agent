@@ -42,6 +42,7 @@ export interface Analisis {
   startedAt?: string;
   completedAt?: string;
   createdAt: string;
+  errorMessage?: string;
   report?: Reporte;
   findings?: Hallazgo[];
   forensicEvents?: EventoForense[];
