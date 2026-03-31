@@ -11,7 +11,10 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { logger } from '../services/logger.service';
 
-const JWT_SECRET = process.env['JWT_SECRET'] || 'scr-agent-dev-secret-change-in-production';
+const JWT_SECRET = process.env['JWT_SECRET'];
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 export interface AuthenticatedRequest extends Request {
   user?: {

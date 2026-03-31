@@ -87,27 +87,21 @@ export default function AppLayout() {
     <SocketProvider socketConnected={socketConnected}>
       <ProtectedRoute onUnauthenticated={() => window.location.href = '/login'}>
         <LoadingBar />
-        <div className="min-h-screen bg-[#050505] flex text-[#94A3B8]">
+        <div className="min-h-screen bg-[#111111] flex text-[#A0A0A0]">
           {/* Sidebar Navigation */}
           <Sidebar />
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 pl-20 lg:pl-64 transition-all duration-300">
-            {/* Soft Radial Spotlight Effect */}
-            <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
-               <div className="absolute -top-[10%] left-[10%] w-[60%] h-[40%] bg-[#00D1FF]/5 blur-[120px] rounded-full" />
-               <div className="absolute top-[20%] -right-[10%] w-[50%] h-[50%] bg-[#7000FF]/5 blur-[120px] rounded-full" />
-            </div>
-
             <main className="flex-1 relative z-10 p-6 sm:p-8 lg:p-10">
               <AnimatePresence mode="wait">
                 <Outlet />
               </AnimatePresence>
             </main>
 
-            <footer className="relative z-10 px-10 py-8 border-t border-[#1F2937]/30 text-center">
-              <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[#475569]">
-                CODA — Code Observability & Defense Agentic 
+            <footer className="relative z-10 px-10 py-6 border-t border-[#2D2D2D] text-center">
+              <p className="text-[11px] text-[#4B5563]">
+                SCR Agent — Code Observability & Defense
               </p>
             </footer>
           </div>

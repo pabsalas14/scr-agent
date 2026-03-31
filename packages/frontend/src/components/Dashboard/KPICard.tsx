@@ -1,16 +1,3 @@
-/**
- * ============================================================================
- * KPI CARD - ESTADÍSTICAS MODERNO
- * ============================================================================
- * Card de estadística moderna y dinámica con:
- * - Fondo oscuro con gradiente sutil
- * - Borde de color vibrante
- * - Icon grande y llamativo
- * - Número destacado
- * - Efecto hover con elevación
- * - Diseño profesional y dinámico
- */
-
 import { ReactNode } from 'react';
 import { motion } from 'framer-motion';
 
@@ -19,7 +6,7 @@ interface KPICardProps {
   value: string | number;
   subtitle?: string;
   icon: ReactNode;
-  accentColor: string; 
+  accentColor: string;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -35,56 +22,37 @@ export default function KPICard({
   trend,
 }: KPICardProps) {
   return (
-    <div className="group relative rounded-2xl bg-[#0A0B10] border border-[#1F2937] p-6 hover:border-[#374151] transition-all duration-300 overflow-hidden shadow-2xl">
-      {/* Dynamic Glow Effect */}
-      <div 
-        className="absolute -right-8 -top-8 w-24 h-24 blur-[60px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-full"
-        style={{ backgroundColor: accentColor }}
-      />
-      
-      <div className="relative z-10">
-        <div className="flex items-center gap-4 mb-6">
-          <div 
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-xl bg-[#111218] border border-[#1F2937] group-hover:scale-110 transition-transform duration-500 shadow-inner"
-            style={{ color: accentColor }}
-          >
-            {icon}
-          </div>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">
-            {title}
-          </p>
+    <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 hover:border-[#404040] transition-all duration-200 overflow-hidden relative group">
+      <div className="flex items-start justify-between mb-3">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ backgroundColor: `${accentColor}15`, color: accentColor }}
+        >
+          {icon}
         </div>
-
-        <div className="flex items-end justify-between">
-          <div>
-            <motion.p 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-4xl font-black text-white tracking-tighter"
-            >
-              {value}
-            </motion.p>
-            {subtitle && (
-              <p className="text-[10px] font-bold text-[#475569] mt-1 uppercase tracking-wider">
-                {subtitle}
-              </p>
-            )}
+        {trend && (
+          <div className={`flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-md ${
+            trend.isPositive ? 'text-[#22C55E] bg-[#22C55E]/10' : 'text-[#EF4444] bg-[#EF4444]/10'
+          }`}>
+            {trend.isPositive ? '+' : ''}{trend.value}%
           </div>
-
-          {trend && (
-            <div className={`flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full ${
-              trend.isPositive ? 'text-[#00FF94] bg-[#00FF94]/10' : 'text-[#FF3B3B] bg-[#FF3B3B]/10'
-            }`}>
-              {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
-            </div>
-          )}
-        </div>
+        )}
       </div>
 
-      {/* Subtle indicator bar */}
-      <div 
-        className="absolute bottom-0 left-0 h-[2px] w-0 group-hover:w-full transition-all duration-700"
-        style={{ backgroundColor: accentColor, boxShadow: `0 0 10px ${accentColor}` }}
+      <motion.p
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-2xl font-semibold text-white mb-0.5"
+      >
+        {value}
+      </motion.p>
+      <p className="text-xs text-[#6B7280]">{title}</p>
+      {subtitle && <p className="text-xs text-[#4B5563] mt-0.5">{subtitle}</p>}
+
+      {/* Bottom accent */}
+      <div
+        className="absolute bottom-0 left-0 h-[1px] w-0 group-hover:w-full transition-all duration-500"
+        style={{ backgroundColor: accentColor }}
       />
     </div>
   );

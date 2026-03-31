@@ -1,7 +1,3 @@
-/**
- * Badge de estado reutilizable
- */
-
 import { CheckCircle, AlertCircle, Pause, Clock } from 'lucide-react';
 
 type Status = 'active' | 'inactive' | 'error' | 'pending';
@@ -15,22 +11,22 @@ const statusConfig = {
   active: {
     icon: CheckCircle,
     label: 'Activo',
-    color: 'bg-green-500/20 dark:bg-green-500/20 border-green-400/50 dark:border-green-500/50 text-green-700 dark:text-green-200',
+    color: 'bg-[#22C55E]/10 border-[#22C55E]/25 text-[#22C55E]',
   },
   inactive: {
     icon: Pause,
     label: 'Inactivo',
-    color: 'bg-gray-500/20 dark:bg-gray-500/20 border-gray-400/50 dark:border-gray-500/50 text-gray-700 dark:text-gray-200',
+    color: 'bg-[#6B7280]/10 border-[#6B7280]/25 text-[#9CA3AF]',
   },
   error: {
     icon: AlertCircle,
     label: 'Error',
-    color: 'bg-red-500/20 dark:bg-red-500/20 border-red-400/50 dark:border-red-500/50 text-red-700 dark:text-red-200',
+    color: 'bg-[#EF4444]/10 border-[#EF4444]/25 text-[#EF4444]',
   },
   pending: {
     icon: Clock,
     label: 'Pendiente',
-    color: 'bg-yellow-500/20 dark:bg-yellow-500/20 border-yellow-400/50 dark:border-yellow-500/50 text-yellow-700 dark:text-yellow-200',
+    color: 'bg-[#EAB308]/10 border-[#EAB308]/25 text-[#EAB308]',
   },
 };
 
@@ -40,8 +36,8 @@ export default function StatusBadge({ status, label }: StatusBadgeProps) {
   const displayLabel = label || config.label;
 
   return (
-    <div className={`${config.color} border rounded-full px-3 py-1.5 inline-flex items-center gap-1.5 text-sm font-medium`}>
-      <Icon className="w-4 h-4" />
+    <div className={`${config.color} border rounded-lg px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-medium`}>
+      <Icon className="w-3.5 h-3.5" />
       <span>{displayLabel}</span>
     </div>
   );

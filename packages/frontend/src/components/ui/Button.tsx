@@ -1,4 +1,5 @@
 import React from 'react';
+import { Loader2 } from 'lucide-react';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'ghost' | 'danger';
 export type ButtonSize = 'sm' | 'md' | 'lg';
@@ -19,29 +20,26 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
-  /* Clases base */
   const baseClasses =
-    'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900';
+    'inline-flex items-center justify-center gap-2 font-medium transition-all duration-150 disabled:opacity-40 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-[#111111]';
 
-  /* Tamaños */
   const sizes = {
-    sm: 'px-3 py-1.5 text-xs rounded-md',
-    md: 'px-4 py-2 text-sm rounded-md',
-    lg: 'px-6 py-2.5 text-base rounded-lg',
+    sm: 'px-3 py-1.5 text-xs rounded-lg',
+    md: 'px-4 py-2 text-sm rounded-lg',
+    lg: 'px-5 py-2.5 text-sm rounded-lg',
   };
 
-  /* Variantes */
   const variants = {
     primary:
-      'bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm hover:shadow-md focus:ring-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700',
+      'bg-[#F97316] text-white hover:bg-[#EA6D00] active:bg-[#D96200] shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.3)] focus:ring-[#F97316]',
     secondary:
-      'bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 border border-gray-200 focus:ring-gray-400 dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600 dark:border-gray-600',
+      'bg-[#242424] text-[#A0A0A0] hover:bg-[#2D2D2F] hover:text-white border border-[#2D2D2D] hover:border-[#404040] focus:ring-[#404040]',
     tertiary:
-      'bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100 border border-gray-300 focus:ring-gray-400 dark:text-gray-200 dark:hover:bg-gray-800 dark:border-gray-600',
+      'bg-transparent text-[#A0A0A0] hover:bg-[#242424] hover:text-white border border-[#2D2D2D] hover:border-[#404040] focus:ring-[#404040]',
     ghost:
-      'bg-transparent text-gray-700 hover:bg-gray-50 active:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 dark:active:bg-gray-700 focus:ring-gray-400',
+      'bg-transparent text-[#A0A0A0] hover:bg-[#242424] hover:text-white focus:ring-[#404040]',
     danger:
-      'bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm hover:shadow-md focus:ring-red-500 dark:bg-red-600 dark:hover:bg-red-700',
+      'bg-[#EF4444] text-white hover:bg-[#DC2626] active:bg-[#B91C1C] shadow-sm hover:shadow-[0_4px_12px_rgba(239,68,68,0.3)] focus:ring-[#EF4444]',
   };
 
   return (
@@ -50,7 +48,7 @@ export default function Button({
       disabled={disabled || isLoading}
       {...props}
     >
-      {isLoading && <span className="animate-spin">⏳</span>}
+      {isLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
       {children}
     </button>
   );

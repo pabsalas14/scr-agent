@@ -1,17 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Zap, 
-  Wand2, 
-  DollarSign, 
-  Cog, 
-  Shield, 
-  TrendingUp, 
-  Radio, 
-  Activity,
-  ChevronRight
+import {
+  FileText,
+  Zap,
+  Wand2,
+  DollarSign,
+  Cog,
+  Shield,
+  TrendingUp,
+  Radio,
 } from 'lucide-react';
 import Dashboard from '../Dashboard/Dashboard';
 import AnalysisMonitor from './AnalysisMonitor';
@@ -26,15 +24,15 @@ import SettingsModule from '../Settings/SettingsModule';
 type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'settings' | 'incidents';
 type AgentView = 'list' | 'detail';
 
-const TABS: Array<{ id: Tab; label: string; icon: any; color: string; description: string }> = [
-  { id: 'projects', label: 'Monitor Central', icon: Shield, color: '#0EA5E9', description: 'Vista general' },
-  { id: 'incidents', label: 'Incidentes', icon: Radio, color: '#FF3B3B', description: 'Alertas críticas' },
-  { id: 'analyses', label: 'Reportes', icon: FileText, color: '#10B981', description: 'Histórico' },
-  { id: 'agents', label: 'Agentes IA', icon: Wand2, color: '#EC4899', description: 'Autómatas' },
-  { id: 'system', label: 'Sistema', icon: Zap, color: '#F59E0B', description: 'Estado HW' },
-  { id: 'costs', label: 'Costos', icon: DollarSign, color: '#8B5CF6', description: 'Gasto Real' },
-  { id: 'analytics', label: 'Estadísticas', icon: TrendingUp, color: '#00D1FF', description: 'Deep Analytics' },
-  { id: 'settings', label: 'Ajustes', icon: Cog, color: '#64748B', description: 'Configuraciones' },
+const TABS: Array<{ id: Tab; label: string; icon: any; description: string }> = [
+  { id: 'projects',   label: 'Monitor Central', icon: Shield,    description: 'Vista general' },
+  { id: 'incidents',  label: 'Incidentes',      icon: Radio,     description: 'Alertas críticas' },
+  { id: 'analyses',   label: 'Reportes',        icon: FileText,  description: 'Histórico' },
+  { id: 'agents',     label: 'Agentes IA',      icon: Wand2,     description: 'Autómatas' },
+  { id: 'system',     label: 'Sistema',         icon: Zap,       description: 'Estado HW' },
+  { id: 'costs',      label: 'Costos',          icon: DollarSign,description: 'Gasto Real' },
+  { id: 'analytics',  label: 'Estadísticas',    icon: TrendingUp,description: 'Deep Analytics' },
+  { id: 'settings',   label: 'Ajustes',         icon: Cog,       description: 'Configuraciones' },
 ];
 
 export default function MainDashboard() {
@@ -44,7 +42,6 @@ export default function MainDashboard() {
   const [agentView, setAgentView] = useState<AgentView>('list');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
-  // Sync state with URL
   useEffect(() => {
     const tabFromUrl = searchParams.get('tab') as Tab;
     if (tabFromUrl && tabFromUrl !== activeTab && TABS.some(t => t.id === tabFromUrl)) {
@@ -71,38 +68,31 @@ export default function MainDashboard() {
     switch (activeTab) {
       case 'projects':
         return (
-          <Dashboard 
-            onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)} 
+          <Dashboard
+            onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
             onVerLogs={() => handleTabChange('system')}
           />
         );
-      case 'incidents':
-        return <IncidentMonitor />;
-      case 'analyses':
-        return <AnalysisMonitor />;
+      case 'incidents':  return <IncidentMonitor />;
+      case 'analyses':   return <AnalysisMonitor />;
       case 'agents':
         if (agentView === 'detail' && selectedAgentId) {
           return <AgentDetail agentId={selectedAgentId} onBack={handleBackFromDetail} />;
         }
         return <AgentsMonitor onSelectAgent={handleSelectAgent} />;
-      case 'system':
-        return <SystemMonitor />;
-      case 'costs':
-        return <CostsMonitor />;
-      case 'analytics':
-        return <AnalyticsDashboard />;
-      case 'settings':
-        return <SettingsModule />;
-      default:
-        return null;
+      case 'system':     return <SystemMonitor />;
+      case 'costs':      return <CostsMonitor />;
+      case 'analytics':  return <AnalyticsDashboard />;
+      case 'settings':   return <SettingsModule />;
+      default:           return null;
     }
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-1000">
-      {/* Premium Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#050505]/60 backdrop-blur-2xl -mx-6 px-6 pt-2 pb-6 border-b border-[#1F2937]/30">
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-2 pt-1">
+    <div className="space-y-6 animate-in fade-in duration-500">
+      {/* Tab Navigation */}
+      <div className="sticky top-0 z-40 bg-[#111111]/95 backdrop-blur-md -mx-6 px-6 pt-4 pb-4 border-b border-[#2D2D2D]">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             const Icon = tab.icon;
@@ -110,53 +100,20 @@ export default function MainDashboard() {
               <motion.button
                 key={tab.id}
                 onClick={() => handleTabChange(tab.id)}
-                whileHover={{ y: -2 }}
-                whileTap={{ y: 0 }}
+                whileTap={{ scale: 0.97 }}
                 className={`
-                  relative min-w-[140px] p-3.5 rounded-2xl transition-all duration-500 flex flex-col gap-2.5 group
-                  border border-transparent
-                  ${isActive 
-                    ? 'bg-white/[0.03] shadow-[0_15px_30px_rgba(0,0,0,0.4)] border-white/[0.05]' 
-                    : 'hover:bg-white/[0.02]'
+                  relative flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all duration-200 flex-shrink-0
+                  ${isActive
+                    ? 'bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/25'
+                    : 'text-[#6B7280] hover:text-[#A0A0A0] hover:bg-[#1C1C1E] border border-transparent'
                   }
                 `}
               >
+                <Icon className="w-4 h-4 flex-shrink-0" />
+                <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
                 {isActive && (
-                  <motion.div 
-                    layoutId="active-bg"
-                    className="absolute inset-0 rounded-2xl border border-white/10 pointer-events-none"
-                    style={{ 
-                      borderColor: `${tab.color}30`, 
-                      boxShadow: `0 0 25px ${tab.color}15, inset 0 1px 0 rgba(255,255,255,0.05)` 
-                    }}
-                  />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#F97316] animate-pulse ml-0.5" />
                 )}
-                
-                <div className="flex items-center justify-between relative z-10">
-                  <div 
-                    className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-500 ${
-                      isActive ? 'text-white' : 'text-[#475569] group-hover:text-[#94A3B8]'
-                    }`}
-                    style={{ 
-                      backgroundColor: isActive ? tab.color : 'rgba(255,255,255,0.02)',
-                      boxShadow: isActive ? `0 4px 12px ${tab.color}30` : 'none'
-                    }}
-                  >
-                    <Icon className="w-4.5 h-4.5 flex-shrink-0" />
-                  </div>
-                  {isActive && (
-                    <div className="w-1.5 h-1.5 rounded-full animate-pulse shadow-[0_0_8px_currentColor]" style={{ backgroundColor: tab.color, color: tab.color }} />
-                  )}
-                </div>
-                
-                <div className="text-left space-y-0.5 relative z-10">
-                  <p className={`text-[10px] font-black uppercase tracking-[0.15em] ${isActive ? 'text-white' : 'text-[#64748B]'}`}>
-                    {tab.label}
-                  </p>
-                  <p className="text-[8px] font-bold text-[#3D4A5C] uppercase tracking-tighter truncate opacity-60">
-                    {tab.description}
-                  </p>
-                </div>
               </motion.button>
             );
           })}
@@ -164,19 +121,17 @@ export default function MainDashboard() {
       </div>
 
       {/* Content Area */}
-      <div className="relative z-10">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab + agentView + selectedAgentId}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -15 }}
-            transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-          >
-            {renderContent()}
-          </motion.div>
-        </AnimatePresence>
-      </div>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab + agentView + selectedAgentId}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.25, ease: 'easeOut' }}
+        >
+          {renderContent()}
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 }

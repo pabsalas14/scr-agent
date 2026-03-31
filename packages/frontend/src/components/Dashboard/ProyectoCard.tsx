@@ -1,9 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Eye, Play, Settings as SettingsIcon, Shield, Server, Box, GitPullRequest, Laptop, Activity, AlertTriangle, CheckCircle2, Clock } from 'lucide-react';
+import {
+  Eye, Play, Settings as SettingsIcon, Server, Box, GitPullRequest, Laptop,
+  Activity, AlertTriangle, CheckCircle2, Clock, GitBranch, ExternalLink
+} from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
-import Button from '../ui/Button';
 import ProjectDetailView from './ProjectDetailView';
 
 interface ProyectoCardProps {
@@ -11,16 +13,26 @@ interface ProyectoCardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
 }
 
-const SCOPE_CONFIG: Record<string, { label: string, icon: any }> = {
-  REPOSITORY: { label: 'Repo', icon: Server },
-  ORGANIZATION: { icon: Box, label: 'Org' },
-  PULL_REQUEST: { icon: GitPullRequest, label: 'PR' },
+const SCOPE_CONFIG: Record<string, { label: string; icon: any }> = {
+  REPOSITORY:   { label: 'Repositorio',   icon: Server },
+  ORGANIZATION: { label: 'Organización',  icon: Box },
+  PULL_REQUEST: { label: 'Pull Request',  icon: GitPullRequest },
+};
+
+const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string; icon: any }> = {
+  PENDING:           { label: 'En espera',    color: 'text-[#6B7280]',  dot: 'bg-[#6B7280]',  icon: Clock },
+  RUNNING:           { label: 'Analizando',   color: 'text-[#F97316]',  dot: 'bg-[#F97316]',  icon: Activity },
+  INSPECTOR_RUNNING: { label: 'Inspector',    color: 'text-[#EAB308]',  dot: 'bg-[#EAB308]',  icon: Activity },
+  DETECTIVE_RUNNING: { label: 'Detective',    color: 'text-[#6366F1]',  dot: 'bg-[#6366F1]',  icon: Activity },
+  FISCAL_RUNNING:    { label: 'Fiscal',       color: 'text-[#F97316]',  dot: 'bg-[#F97316]',  icon: Activity },
+  COMPLETED:         { label: 'Completado',   color: 'text-[#22C55E]',  dot: 'bg-[#22C55E]',  icon: CheckCircle2 },
+  FAILED:            { label: 'Fallido',      color: 'text-[#EF4444]',  dot: 'bg-[#EF4444]',  icon: AlertTriangle },
+  ERROR:             { label: 'Error',        color: 'text-[#EF4444]',  dot: 'bg-[#EF4444]',  icon: AlertTriangle },
+  CANCELLED:         { label: 'Cancelado',    color: 'text-[#EAB308]',  dot: 'bg-[#EAB308]',  icon: AlertTriangle },
 };
 
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
   const [detalleAbierto, setDetalleAbierto] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   const { data: analisisData } = useQuery({
     queryKey: ['analyses', proyecto.id],
@@ -33,104 +45,109 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
     onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
   });
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
-  };
-
   const analisisList = analisisData || [];
   const ultimoAnalisis = analisisList[0];
   const enProceso = ultimoAnalisis && !['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'].includes(ultimoAnalisis.status);
   const ScopeIcon = SCOPE_CONFIG[proyecto.scope]?.icon || Laptop;
+  const scopeLabel = SCOPE_CONFIG[proyecto.scope]?.label || 'General';
+
+  const statusCfg = ultimoAnalisis
+    ? STATUS_CONFIG[ultimoAnalisis.status] || { label: ultimoAnalisis.status, color: 'text-[#6B7280]', dot: 'bg-[#6B7280]', icon: Activity }
+    : null;
+  const StatusIcon = statusCfg?.icon;
+
+  const repoShort = proyecto.repositoryUrl
+    .replace('https://github.com/', '')
+    .replace('https://gitlab.com/', '')
+    .replace('https://', '');
 
   return (
-    <div 
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      className={`group relative rounded-[2.5rem] bg-[#0A0B10]/40 backdrop-blur-md border transition-all duration-700 overflow-hidden hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] ${
-        enProceso 
-          ? 'border-[#00D1FF]/40 shadow-[0_0_30px_rgba(0,209,255,0.05)]' 
-          : 'border-white/[0.03] hover:border-white/10'
-      }`}
-    >
-      {/* Dynamic Spotlight Effect */}
-      <div 
-        className="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-        style={{
-          background: `radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(0, 209, 255, 0.08), transparent 40%)`,
-        }}
-      />
+    <>
+      <div className={`bg-[#1E1E20] border rounded-xl overflow-hidden transition-all duration-200 hover:border-[#404040] group ${
+        enProceso ? 'border-[#F97316]/30' : 'border-[#2D2D2D]'
+      }`}>
+        {/* Top accent bar when active */}
+        {enProceso && (
+          <div className="h-0.5 bg-gradient-to-r from-[#F97316] to-[#EA6D00]" />
+        )}
 
-      <div className="relative z-10 p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex justify-between items-start gap-4">
-          <div className="space-y-1 content-start flex-1 min-w-0">
-             <div className="flex items-center gap-2 mb-2">
-                <div className="p-1.5 rounded-lg bg-[#111218] border border-[#1F2937] text-[#00D1FF]">
-                   <ScopeIcon className="w-3.5 h-3.5" />
+        <div className="p-4 space-y-4">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                enProceso ? 'bg-[#F97316]/10 text-[#F97316]' : 'bg-[#242424] text-[#6B7280]'
+              }`}>
+                <ScopeIcon className="w-4 h-4" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-white truncate">{proyecto.name}</h3>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <GitBranch className="w-3 h-3 text-[#4B5563] flex-shrink-0" />
+                  <p className="text-xs text-[#4B5563] font-mono truncate" title={proyecto.repositoryUrl}>
+                    {repoShort}
+                  </p>
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest text-[#64748B]">
-                   {SCOPE_CONFIG[proyecto.scope]?.label || 'General'}
-                </span>
-             </div>
-             <h3 className="text-xl font-black text-white tracking-tighter truncate">
-                {proyecto.name}
-             </h3>
-             <p className="text-[10px] text-[#475569] font-mono truncate" title={proyecto.repositoryUrl}>
-                {proyecto.repositoryUrl.replace('https://github.com/', '')}
-             </p>
+              </div>
+            </div>
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 mt-1 ${enProceso ? 'bg-[#F97316] animate-pulse' : 'bg-[#2D2D2D]'}`} />
           </div>
-          
-          <div className="flex-shrink-0">
-             <div className={`w-2.5 h-2.5 rounded-full ${enProceso ? 'bg-[#00D1FF] animate-pulse shadow-[0_0_10px_#00D1FF]' : 'bg-[#1F2937]'}`} />
+
+          {/* Status & Scope row */}
+          <div className="flex items-center justify-between py-2.5 border-y border-[#2D2D2D]">
+            <div className="flex items-center gap-1.5">
+              {statusCfg && StatusIcon ? (
+                <>
+                  <div className={`w-1.5 h-1.5 rounded-full ${statusCfg.dot} ${enProceso ? 'animate-pulse' : ''}`} />
+                  <span className={`text-xs font-medium ${statusCfg.color}`}>{statusCfg.label}</span>
+                </>
+              ) : (
+                <span className="text-xs text-[#4B5563]">Sin análisis</span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-[#6B7280]">{analisisList.length} escaneos</span>
+              <span className="text-[#2D2D2D]">·</span>
+              <span className="text-xs text-[#4B5563]">{scopeLabel}</span>
+            </div>
           </div>
-        </div>
 
-        {/* Stats / Status Row */}
-        <div className="grid grid-cols-2 gap-3 py-4 border-y border-[#1F2937]/50">
-           <div className="space-y-1">
-              <p className="text-[9px] font-bold text-[#475569] uppercase tracking-wider">Último Status</p>
-              {ultimoAnalisis ? <EstadoChip status={ultimoAnalisis.status} /> : <span className="text-xs text-[#64748B] font-medium">Sin datos</span>}
-           </div>
-           <div className="space-y-1">
-              <p className="text-[9px] font-bold text-[#475569] uppercase tracking-wider">Historial</p>
-              <p className="text-xs text-white font-bold tracking-tight">{analisisList.length} Escaneos</p>
-           </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 pt-2">
-          <Button
-            onClick={() => iniciar.mutate()}
-            disabled={enProceso || iniciar.isPending}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-[10px] tracking-widest uppercase transition-all ${
-              enProceso || iniciar.isPending
-                ? 'bg-[#111218] text-[#64748B] border border-[#1F2937]'
-                : 'bg-[#111218] text-[#00D1FF] border border-[#00D1FF]/20 hover:bg-[#00D1FF] hover:text-black hover:shadow-[0_0_15px_rgba(0,209,255,0.3)]'
-            }`}
-          >
-            {enProceso || iniciar.isPending ? <Activity className="w-3.5 h-3.5 animate-spin" /> : <Play className="w-3.5 h-3.5" />}
-            {enProceso || iniciar.isPending ? 'Sincronizando' : 'Iniciar Auditoría'}
-          </Button>
-
-          {ultimoAnalisis?.status === 'COMPLETED' && (
+          {/* Actions */}
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
-              className="p-2.5 rounded-xl bg-[#111218] border border-[#1F2937] text-white hover:border-[#00D1FF]/50 transition-all group/btn"
-              title="Ver reporte detallado"
+              onClick={() => iniciar.mutate()}
+              disabled={enProceso || iniciar.isPending}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+                enProceso || iniciar.isPending
+                  ? 'bg-[#242424] text-[#4B5563] cursor-not-allowed'
+                  : 'bg-[#F97316] text-white hover:bg-[#EA6D00] shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)]'
+              }`}
             >
-              <Eye className="w-4 h-4 group-hover/btn:scale-110 transition-transform" />
+              {enProceso || iniciar.isPending
+                ? <Activity className="w-3.5 h-3.5 animate-spin" />
+                : <Play className="w-3.5 h-3.5" />
+              }
+              {enProceso || iniciar.isPending ? 'Analizando...' : 'Iniciar auditoría'}
             </button>
-          )}
 
-          <button
-            onClick={() => setDetalleAbierto(true)}
-            className="p-2.5 rounded-xl bg-[#111218] border border-[#1F2937] text-[#64748B] hover:text-white hover:border-[#374151] transition-all"
-            title="Protocolos de Configuración"
-          >
-            <SettingsIcon className="w-4 h-4" />
-          </button>
+            {ultimoAnalisis?.status === 'COMPLETED' && (
+              <button
+                onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
+                className="p-2 rounded-lg bg-[#242424] border border-[#2D2D2D] text-[#A0A0A0] hover:text-white hover:border-[#22C55E]/40 transition-all"
+                title="Ver reporte"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
+
+            <button
+              onClick={() => setDetalleAbierto(true)}
+              className="p-2 rounded-lg bg-[#242424] border border-[#2D2D2D] text-[#6B7280] hover:text-white hover:border-[#404040] transition-all"
+              title="Configuración"
+            >
+              <SettingsIcon className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -140,29 +157,6 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
         onClose={() => setDetalleAbierto(false)}
         onProjectDeleted={() => setDetalleAbierto(false)}
       />
-    </div>
-  );
-}
-
-function EstadoChip({ status }: { status: string }) {
-  const CONFIG: Record<string, { label: string; color: string; icon: any }> = {
-    PENDING: { label: 'En Espera', color: 'text-[#64748B]', icon: Clock },
-    RUNNING: { label: 'Analizando', color: 'text-[#00D1FF]', icon: Activity },
-    INSPECTOR_RUNNING: { label: 'Inspector', color: 'text-[#FF8A00]', icon: Shield },
-    DETECTIVE_RUNNING: { label: 'Detective', color: 'text-[#7000FF]', icon: Eye },
-    FISCAL_RUNNING: { label: 'Fiscal', color: 'text-[#00D1FF]', icon: Activity },
-    COMPLETED: { label: 'Asegurado', color: 'text-[#00FF94]', icon: CheckCircle2 },
-    FAILED: { label: 'Fallo Crítico', color: 'text-[#FF3B3B]', icon: AlertTriangle },
-    CANCELLED: { label: 'Abortado', color: 'text-[#FFD600]', icon: AlertTriangle },
-  };
-  
-  const cfg = CONFIG[status] || { label: status, color: 'text-[#64748B]', icon: Activity };
-  const Icon = cfg.icon;
-
-  return (
-    <div className={`flex items-center gap-1.5 ${cfg.color} font-black text-[10px] tracking-tight`}>
-       <Icon className="w-3 h-3" />
-       <span className="uppercase">{cfg.label}</span>
-    </div>
+    </>
   );
 }
