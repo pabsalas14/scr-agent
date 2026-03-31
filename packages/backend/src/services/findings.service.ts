@@ -7,6 +7,17 @@ import {
   Severity,
 } from '@prisma/client';
 
+/** Transiciones de estado permitidas */
+const VALID_TRANSITIONS: Record<FindingStatus, FindingStatus[]> = {
+  DETECTED:      ['IN_REVIEW', 'FALSE_POSITIVE'],
+  IN_REVIEW:     ['IN_CORRECTION', 'DETECTED', 'FALSE_POSITIVE'],
+  IN_CORRECTION: ['CORRECTED', 'IN_REVIEW'],
+  CORRECTED:     ['VERIFIED', 'IN_CORRECTION'],
+  VERIFIED:      ['CLOSED'],
+  FALSE_POSITIVE:['DETECTED'],
+  CLOSED:        [],
+};
+
 export class FindingsService {
   async getFindings(analysisId: string) {
     try {
@@ -58,6 +69,19 @@ export class FindingsService {
     note?: string
   ) {
     try {
+      // Validate transition
+      const current = await prisma.findingStatusChange.findFirst({
+        where: { findingId },
+        orderBy: { createdAt: 'desc' },
+      });
+      const currentStatus: FindingStatus = current?.status ?? 'DETECTED';
+      const allowed = VALID_TRANSITIONS[currentStatus] ?? [];
+      if (!allowed.includes(newStatus)) {
+        throw new Error(
+          `Transición inválida: ${currentStatus} → ${newStatus}. Permitidas: [${allowed.join(', ')}]`
+        );
+      }
+
       // Create status change entry
       await prisma.findingStatusChange.create({
         data: {

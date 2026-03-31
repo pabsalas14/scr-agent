@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Folder, AlertOctagon, Search } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useNavigate } from 'react-router-dom';
-import type { CrearProyectoDTO } from '../../types/api';
+import type { CrearProyectoDTO, Proyecto } from '../../types/api';
 import Button from '../ui/Button';
 import NuevoProyectoModerno from '../Dashboard/NuevoProyectoModerno';
 import ProyectoCard from '../Dashboard/ProyectoCard';
@@ -51,7 +51,7 @@ export default function ProjectsPage() {
   }
 
   const proyectos = proyectosData?.data || [];
-  const filtrados = proyectos.filter((p: any) =>
+  const filtrados = proyectos.filter((p: Proyecto) =>
     p.name.toLowerCase().includes(filtro.toLowerCase()) ||
     p.repositoryUrl.toLowerCase().includes(filtro.toLowerCase())
   );
@@ -96,7 +96,7 @@ export default function ProjectsPage() {
         <EmptyProjects onNuevo={() => setModalAbierto(true)} tieneFiltro={!!filtro} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtrados.map((proyecto: any, i: number) => (
+          {filtrados.map((proyecto: Proyecto, i: number) => (
             <motion.div
               key={proyecto.id}
               initial={{ opacity: 0, y: 8 }}

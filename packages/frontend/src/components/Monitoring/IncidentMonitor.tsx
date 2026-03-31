@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { ShieldAlert, AlertOctagon, Terminal, Radio, Clock, ShieldX } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import Card from '../ui/Card';
+import type { Proyecto, Analisis, Hallazgo } from '../../types/api';
 
 export default function IncidentMonitor() {
   const { data: projectsData, isLoading } = useQuery({
@@ -13,16 +14,18 @@ export default function IncidentMonitor() {
 
   const proyectos = projectsData?.data || [];
 
-  const allAnalyses = proyectos.flatMap((p: any) =>
-    (p.analyses || []).map((a: any) => ({
+  const allAnalyses = proyectos.flatMap((p: Proyecto) =>
+    (p.analyses || []).map((a: Analisis) => ({
       ...a,
       projectName: p.name,
       projectId: p.id,
-      highSeverityFindings: (a.findings || []).filter((f: any) => f.severity === 'HIGH' || f.severity === 'CRITICAL').length
+      highSeverityFindings: (a.findings || []).filter((f: Hallazgo) => f.severity === 'HIGH' || f.severity === 'CRITICAL').length
     }))
   );
 
-  const incidentes = allAnalyses.filter((a: any) =>
+  type EnrichedAnalysis = Analisis & { projectName: string; projectId: string; highSeverityFindings: number; error?: string };
+
+  const incidentes = allAnalyses.filter((a: EnrichedAnalysis) =>
     a.status === 'ERROR' ||
     a.status === 'FAILED' ||
     (a.report?.riskScore != null && a.report.riskScore > 70) ||
@@ -63,7 +66,7 @@ export default function IncidentMonitor() {
       {/* Incidents */}
       {incidentes.length > 0 ? (
         <div className="space-y-3">
-          {incidentes.map((inc: any, idx: number) => (
+          {incidentes.map((inc: EnrichedAnalysis, idx: number) => (
             <motion.div
               key={inc.id}
               initial={{ opacity: 0, x: -10 }}
@@ -110,7 +113,7 @@ export default function IncidentMonitor() {
                 {inc.status !== 'ERROR' && (
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-[#6B7280]">Puntuación</p>
-                    <p className="text-xl font-semibold text-[#FB923C]">{inc.riskScore}</p>
+                    <p className="text-xl font-semibold text-[#FB923C]">{inc.report?.riskScore ?? '—'}</p>
                   </div>
                 )}
               </div>

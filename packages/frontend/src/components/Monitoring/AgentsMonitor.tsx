@@ -8,7 +8,8 @@ import {
   Terminal,
   Cpu,
   BrainCircuit,
-  Binary
+  Binary,
+  type LucideIcon,
 } from 'lucide-react';
 import { monitoringService } from '../../services/monitoring.service';
 import Card from '../ui/Card';
@@ -17,7 +18,16 @@ interface AgentsMonitorProps {
   onSelectAgent: (agentId: string) => void;
 }
 
-const AGENT_TYPE_CONFIG: Record<string, { icon: any; color: string }> = {
+interface Agent {
+  id: string;
+  name: string;
+  type: string;
+  status: string;
+  executionCount: number;
+  lastExecution?: string | null;
+}
+
+const AGENT_TYPE_CONFIG: Record<string, { icon: LucideIcon; color: string }> = {
   inspector: { icon: Terminal,    color: '#F97316' },
   detective: { icon: BrainCircuit,color: '#6366F1' },
   fiscal:    { icon: ShieldCheck, color: '#22C55E' },
@@ -58,7 +68,7 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
 
       {/* Agent Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {agents.map((agent: any, idx: number) => {
+        {agents.map((agent: Agent, idx: number) => {
           const cfg = AGENT_TYPE_CONFIG[agent.type] || AGENT_TYPE_CONFIG['custom']!;
           const Icon = cfg.icon;
 

@@ -30,13 +30,13 @@ class SocketClientService {
           clearTimeout(timeoutHandle);
           this.connected = true;
 
-          // Authenticate user if available
+          // Authenticate user — send userId + JWT so backend can verify identity
           const token = localStorage.getItem('auth_token');
           const user = localStorage.getItem('auth_user');
           if (token && user) {
             try {
               const userData = JSON.parse(user);
-              this.authenticateUser(userData.id);
+              this.authenticateUser(userData.id, token);
             } catch (_e) {
               // ignore malformed user data
             }
@@ -69,10 +69,10 @@ class SocketClientService {
   /**
    * Authenticate user on websocket
    */
-  private authenticateUser(userId: string): void {
+  private authenticateUser(userId: string, token: string): void {
     this.userId = userId;
     if (this.socket) {
-      this.socket.emit('auth:user', userId);
+      this.socket.emit('auth:user', { userId, token });
     }
   }
 

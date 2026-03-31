@@ -22,6 +22,14 @@ import {
 import { monitoringService } from '../../services/monitoring.service';
 import Card from '../ui/Card';
 
+interface CostEntry {
+  model: string;
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUSD: number;
+}
+
 const PERIODS = [
   { id: 'today', label: 'Hoy' },
   { id: 'week',  label: 'Semana' },
@@ -29,10 +37,15 @@ const PERIODS = [
 ];
 
 const MODEL_COLORS: Record<string, string> = {
-  'gpt-4-turbo':   '#F97316',
-  'gpt-3.5-turbo': '#6366F1',
-  'claude-3-opus':  '#FB923C',
-  'claude-3-sonnet':'#22C55E',
+  'claude-opus-4-6':           '#F97316',
+  'claude-sonnet-4-6':         '#6366F1',
+  'claude-haiku-4-5-20251001': '#22C55E',
+  'claude-3-7-sonnet-20250219':'#FB923C',
+  'claude-3-5-sonnet-20241022':'#A78BFA',
+  'claude-3-5-haiku-20241022': '#34D399',
+  'claude-3-opus-20240229':    '#F59E0B',
+  'claude-3-opus':             '#F97316',
+  'claude-3-sonnet':           '#6366F1',
 };
 
 export default function CostsMonitor() {
@@ -74,7 +87,7 @@ export default function CostsMonitor() {
           {PERIODS.map((p) => (
             <button
               key={p.id}
-              onClick={() => setPeriod(p.id as any)}
+              onClick={() => setPeriod(p.id as 'today' | 'week' | 'month')}
               className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all duration-200 ${
                 period === p.id
                   ? 'bg-[#F97316] text-white shadow-sm'
@@ -113,13 +126,13 @@ export default function CostsMonitor() {
               },
               {
                 label: 'Tokens procesados',
-                value: costs.entries.reduce((acc: number, curr: any) => acc + curr.inputTokens + curr.outputTokens, 0).toLocaleString(),
+                value: costs.entries.reduce((acc: number, curr: CostEntry) => acc + curr.inputTokens + curr.outputTokens, 0).toLocaleString(),
                 icon: Zap,
                 color: '#6366F1',
               },
               {
                 label: 'Llamadas API',
-                value: costs.entries.reduce((acc: number, curr: any) => acc + curr.calls, 0).toString(),
+                value: costs.entries.reduce((acc: number, curr: CostEntry) => acc + curr.calls, 0).toString(),
                 icon: Target,
                 color: '#22C55E',
               },
@@ -169,7 +182,7 @@ export default function CostsMonitor() {
                       itemStyle={{ fontSize: '12px' }}
                     />
                     <Bar dataKey="costUSD" radius={[4, 4, 0, 0]} barSize={36}>
-                      {costs.entries.map((entry: any, index: number) => (
+                      {costs.entries.map((entry: CostEntry, index: number) => (
                         <Cell key={`cell-${index}`} fill={MODEL_COLORS[entry.model] || '#F97316'} />
                       ))}
                     </Bar>
@@ -180,7 +193,7 @@ export default function CostsMonitor() {
 
             {/* Model List */}
             <div className="space-y-3">
-              {costs.entries.map((entry: any, i: number) => (
+              {costs.entries.map((entry: CostEntry, i: number) => (
                 <motion.div
                   key={entry.model}
                   initial={{ opacity: 0, x: 10 }}
@@ -213,7 +226,7 @@ export default function CostsMonitor() {
 
               <div className="p-3 rounded-xl bg-[#1E1E20] border border-[#2D2D2D]">
                 <p className="text-xs text-[#6B7280]">
-                  Tarifas oficiales (OpenAI / Anthropic). No incluye impuestos.
+                  Tarifas oficiales Anthropic. No incluye impuestos.
                 </p>
               </div>
             </div>

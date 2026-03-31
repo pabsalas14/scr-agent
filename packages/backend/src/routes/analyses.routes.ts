@@ -53,7 +53,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     });
 
     if (!analysis) {
-      res.status(404).json({ error: 'Análisis no encontrado' });
+      res.status(404).json({ success: false, error: 'Análisis no encontrado' });
       return;
     }
 
@@ -66,7 +66,7 @@ router.get('/:id', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error(`Error obteniendo análisis: ${error}`);
-    res.status(500).json({ error: 'Error al obtener análisis' });
+    res.status(500).json({ success: false, error: 'Error al obtener análisis' });
   }
 });
 
@@ -111,7 +111,7 @@ router.get('/:id/findings', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error(`Error obteniendo hallazgos: ${error}`);
-    res.status(500).json({ error: 'Error al obtener hallazgos' });
+    res.status(500).json({ success: false, error: 'Error al obtener hallazgos' });
   }
 });
 
@@ -126,10 +126,10 @@ router.get('/:id/forensics', async (req: Request, res: Response) => {
       orderBy: { timestamp: 'asc' },
     });
 
-    res.json({ data: events });
+    res.json({ success: true, data: events });
   } catch (error) {
     logger.error(`Error obteniendo eventos forenses: ${error}`);
-    res.status(500).json({ error: 'Error al obtener eventos forenses' });
+    res.status(500).json({ success: false, error: 'Error al obtener eventos forenses' });
   }
 });
 
@@ -144,7 +144,7 @@ router.get('/:id/report', async (req: Request, res: Response) => {
     });
 
     if (!report) {
-      res.status(404).json({ error: 'Reporte no disponible aún' });
+      res.status(404).json({ success: false, error: 'Reporte no disponible aún' });
       return;
     }
 
@@ -157,7 +157,7 @@ router.get('/:id/report', async (req: Request, res: Response) => {
       severityBreakdown: report.severityBreakdown,
     };
 
-    res.json({ data: reportData });
+    res.json({ success: true, data: reportData });
   } catch (error) {
     logger.error(`Error obteniendo reporte: ${error}`);
     res.status(500).json({ error: 'Error al obtener reporte' });

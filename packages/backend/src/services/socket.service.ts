@@ -1,6 +1,9 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server as HTTPServer } from 'http';
+import jwt from 'jsonwebtoken';
 import { logger } from './logger.service';
+
+const JWT_SECRET = process.env['JWT_SECRET'] || '';
 
 /**
  * WebSocket Service
@@ -40,11 +43,42 @@ class SocketService {
     this.io.on('connection', (socket: Socket) => {
       logger.info(`User connected: ${socket.id}`);
 
-      // Listen for user authentication
-      socket.on('auth:user', (userId: string) => {
-        this.registerUserSocket(userId, socket.id);
-        socket.join(`user:${userId}`);
-        logger.info(`User ${userId} authenticated on socket ${socket.id}`);
+      // Listen for user authentication — validate JWT token to prevent spoofing
+      socket.on('auth:user', (payload: { userId: string; token: string } | string) => {
+        try {
+          // Support both legacy string format and new { userId, token } format
+          if (typeof payload === 'string') {
+            // Legacy: no token provided — only register if JWT_SECRET is not configured
+            if (!JWT_SECRET) {
+              this.registerUserSocket(payload, socket.id);
+              socket.join(`user:${payload}`);
+              logger.warn(`User ${payload} authenticated without JWT verification`);
+            } else {
+              logger.warn(`Socket auth:user rejected — token required (socketId: ${socket.id})`);
+            }
+            return;
+          }
+
+          const { userId, token } = payload;
+          if (!userId || !token) {
+            logger.warn(`Socket auth:user rejected — missing fields (socketId: ${socket.id})`);
+            return;
+          }
+
+          const decoded = jwt.verify(token, JWT_SECRET) as { id?: string; sub?: string };
+          const tokenUserId = decoded.id || decoded.sub;
+
+          if (tokenUserId !== userId) {
+            logger.warn(`Socket auth:user rejected — userId mismatch (claimed: ${userId}, token: ${tokenUserId})`);
+            return;
+          }
+
+          this.registerUserSocket(userId, socket.id);
+          socket.join(`user:${userId}`);
+          logger.info(`User ${userId} authenticated on socket ${socket.id}`);
+        } catch (err) {
+          logger.warn(`Socket auth:user rejected — invalid token (socketId: ${socket.id}): ${err}`);
+        }
       });
 
       // Handle disconnection
