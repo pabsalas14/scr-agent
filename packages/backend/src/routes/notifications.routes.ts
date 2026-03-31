@@ -17,7 +17,7 @@ router.get('/', async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const { limit = 20 } = req.query;
 
-    const notifications = notificationsService.getUserNotifications(
+    const notifications = await notificationsService.getUserNotifications(
       userId!,
       parseInt(limit as string)
     );
@@ -42,7 +42,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/unread-count', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const count = notificationsService.getUnreadCount(userId);
+    const count = await notificationsService.getUnreadCount(userId);
 
     res.json({
       success: true,
@@ -66,7 +66,7 @@ router.put('/:notificationId/read', async (req: Request, res: Response) => {
     const userId = (req as any).user?.id;
     const { notificationId } = req.params;
 
-    const success = notificationsService.markAsRead(userId!, notificationId!);
+    const success = await notificationsService.markAsRead(userId!, notificationId!);
 
     if (!success) {
       return res.status(404).json({
@@ -95,7 +95,7 @@ router.put('/:notificationId/read', async (req: Request, res: Response) => {
 router.put('/mark-all-read', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    const count = notificationsService.markAllAsRead(userId);
+    const count = await notificationsService.markAllAsRead(userId);
 
     res.json({
       success: true,
@@ -117,7 +117,7 @@ router.put('/mark-all-read', async (req: Request, res: Response) => {
 router.delete('/', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
-    notificationsService.clearUserNotifications(userId);
+    await notificationsService.clearUserNotifications(userId);
 
     res.json({
       success: true,

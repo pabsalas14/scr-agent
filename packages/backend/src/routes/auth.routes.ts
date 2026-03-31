@@ -113,7 +113,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const token = generateToken(user.id, user.email);
     logger.info({ message: 'Login exitoso', userId: user.id });
 
-    res.json({ token, user: { id: user.id, email: user.email, createdAt: user.createdAt } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt } });
   } catch (err) {
     logger.error({ message: 'Error en login', error: err });
     res.status(500).json({ error: 'Error interno del servidor' });

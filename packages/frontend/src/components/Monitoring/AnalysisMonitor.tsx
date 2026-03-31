@@ -1,16 +1,19 @@
+import type React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Clock, Zap, FileText, ArrowRight, Activity, ShieldAlert } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   PENDING:           { label: 'Pendiente',    icon: Clock,        color: '#6B7280' },
   RUNNING:           { label: 'En progreso',  icon: Zap,          color: '#F97316' },
   INSPECTOR_RUNNING: { label: 'Inspector...',  icon: Zap,          color: '#EAB308' },
   DETECTIVE_RUNNING: { label: 'Detective...',  icon: Zap,          color: '#6366F1' },
   FISCAL_RUNNING:    { label: 'Fiscal...',     icon: Zap,          color: '#F97316' },
-  COMPLETADO:        { label: 'Completado',   icon: CheckCircle,  color: '#22C55E' },
+  COMPLETED:         { label: 'Completado',   icon: CheckCircle,  color: '#22C55E' },
   ERROR:             { label: 'Fallido',      icon: AlertCircle,  color: '#EF4444' },
+  FAILED:            { label: 'Fallido',      icon: AlertCircle,  color: '#EF4444' },
+  CANCELLED:         { label: 'Cancelado',    icon: AlertCircle,  color: '#6B7280' },
 };
 
 export default function AnalysisMonitor() {
@@ -31,7 +34,7 @@ export default function AnalysisMonitor() {
   ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   const enProgreso = allAnalyses.filter((a: any) => a.status === 'RUNNING' || a.status.includes('RUNNING'));
-  const completados = allAnalyses.filter((a: any) => a.status === 'COMPLETADO').slice(0, 10);
+  const completados = allAnalyses.filter((a: any) => a.status === 'COMPLETED').slice(0, 10);
   const fallidos = allAnalyses.filter((a: any) => a.status === 'ERROR');
 
   if (isLoading) {

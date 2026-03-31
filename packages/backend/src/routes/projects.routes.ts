@@ -17,7 +17,9 @@ const router: ExpressRouter = Router();
  */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const userId = (req as any).user?.id;
     const projects = await prisma.project.findMany({
+      where: userId ? { userId } : {},
       include: {
         analyses: {
           select: {
@@ -61,6 +63,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id;
 
     const project = await prisma.project.findUnique({
       where: { id },
@@ -86,6 +89,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
         success: false,
         error: 'Proyecto no encontrado',
       });
+    }
+
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
     }
 
     // Convertir a JSON plain
@@ -203,6 +210,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         repositoryUrl,
         branch: branch || 'main',
         scope,
+        ...(userId ? { userId } : {}),
       },
     });
 

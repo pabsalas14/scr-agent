@@ -150,11 +150,20 @@ async function getDiskUsage(): Promise<{ used: number; total: number; usage: num
  */
 async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostSummary> {
   // Precios REALES por token en USD (actualizados periódicamente)
-  const modelPrices = {
-    'gpt-4-turbo': { input: 0.00001, output: 0.00003 },
-    'gpt-3.5-turbo': { input: 0.0000005, output: 0.0000015 },
-    'claude-3-opus': { input: 0.000015, output: 0.000075 },
-    'claude-3-sonnet': { input: 0.000003, output: 0.000015 },
+  // Precios Claude (USD por token) — fuente: anthropic.com/pricing
+  const modelPrices: Record<string, { input: number; output: number }> = {
+    'claude-opus-4-6':              { input: 0.000015,   output: 0.000075  },
+    'claude-sonnet-4-6':            { input: 0.000003,   output: 0.000015  },
+    'claude-haiku-4-5-20251001':    { input: 0.0000008,  output: 0.000004  },
+    'claude-3-7-sonnet-20250219':   { input: 0.000003,   output: 0.000015  },
+    'claude-3-5-sonnet-20241022':   { input: 0.000003,   output: 0.000015  },
+    'claude-3-5-haiku-20241022':    { input: 0.0000008,  output: 0.000004  },
+    'claude-3-opus-20240229':       { input: 0.000015,   output: 0.000075  },
+    'claude-3-sonnet-20240229':     { input: 0.000003,   output: 0.000015  },
+    'claude-3-haiku-20240307':      { input: 0.00000025, output: 0.00000125 },
+    // Alias cortos (fallback)
+    'claude-3-opus':   { input: 0.000015,  output: 0.000075  },
+    'claude-3-sonnet': { input: 0.000003,  output: 0.000015  },
   };
 
   // Calcular fecha de corte según el período
@@ -211,7 +220,7 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
 
     // Calcular costos por modelo
     const entries: CostEntry[] = Object.entries(costsByModel).map(([model, data]) => {
-      const prices = modelPrices[model as keyof typeof modelPrices] || modelPrices['claude-3-opus'];
+      const prices = modelPrices[model] || modelPrices['claude-3-sonnet-20240229'] || { input: 0.000003, output: 0.000015 };
       const inputCost = data.inputTokens * prices.input;
       const outputCost = data.outputTokens * prices.output;
       const totalCost = inputCost + outputCost;

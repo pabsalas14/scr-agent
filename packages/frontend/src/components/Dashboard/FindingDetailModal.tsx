@@ -45,7 +45,7 @@ const STATUS_COLORS: Record<
   { color: string; icon: string; label: string }
 > = {
   DETECTED: { color: '#EC4899', icon: '🔴', label: 'Detectado' },
-  IN_REVIEW: { color: '#0EA5E9', icon: '🔵', label: 'En Revisión' },
+  IN_REVIEW: { color: '#6366F1', icon: '🔵', label: 'En Revisión' },
   IN_CORRECTION: { color: '#F59E0B', icon: '🟡', label: 'En Corrección' },
   CORRECTED: { color: '#8B5CF6', icon: '🟣', label: 'Corregido' },
   VERIFIED: { color: '#10B981', icon: '✓', label: 'Verificado' },
@@ -143,19 +143,19 @@ export default function FindingDetailModal({
     id,
   }: {
     title: string;
-    icon: any;
+    icon: React.ElementType;
     children: React.ReactNode;
     id: string;
   }) => (
-    <motion.div className="border border-gray-700/50 rounded-lg overflow-hidden" initial={false}>
+    <motion.div className="border border-[#2D2D2D] rounded-lg overflow-hidden" initial={false}>
       <button
         onClick={() => setExpandedSection(expandedSection === id ? null : id)}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-gray-800/50 transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#242424] transition-colors"
       >
-        <Icon className="w-5 h-5 text-orange-400" />
+        <Icon className="w-5 h-5 text-[#F97316]" />
         <span className="flex-1 text-left font-semibold text-white text-sm">{title}</span>
         <motion.div animate={{ rotate: expandedSection === id ? 180 : 0 }} transition={{ duration: 0.2 }}>
-          <ChevronDown className="w-4 h-4 text-gray-400" />
+          <ChevronDown className="w-4 h-4 text-[#6B7280]" />
         </motion.div>
       </button>
 
@@ -168,7 +168,7 @@ export default function FindingDetailModal({
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="px-4 py-4 border-t border-gray-700/30 bg-gray-900/50 space-y-3">{children}</div>
+            <div className="px-4 py-4 border-t border-[#2D2D2D] bg-[#1C1C1E] space-y-3">{children}</div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -182,7 +182,7 @@ export default function FindingDetailModal({
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-lg border border-gray-700/50 bg-gray-800/30"
+          className="p-4 rounded-lg border border-[#2D2D2D] bg-[#1E1E20]"
           style={{ borderLeftColor: STATUS_COLORS[currentStatus].color, borderLeftWidth: '4px' }}
         >
           <div className="flex items-center justify-between">
@@ -209,7 +209,7 @@ export default function FindingDetailModal({
             <div>
               <p className="text-xs font-medium text-gray-400 mb-1">Archivo</p>
               <div className="flex items-center justify-between">
-                <p className="text-sm font-mono text-cyan-400 break-all">{finding.file}</p>
+                <p className="text-sm font-mono text-[#F97316] break-all">{finding.file}</p>
                 <button
                   onClick={() => copyToClipboard(finding.file)}
                   className="p-1 rounded hover:bg-gray-700/50"
@@ -226,7 +226,7 @@ export default function FindingDetailModal({
             {finding.function && (
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-1">Función</p>
-                <p className="text-sm font-mono text-purple-400">{finding.function}</p>
+                <p className="text-sm font-mono text-[#6366F1]">{finding.function}</p>
               </div>
             )}
 
@@ -265,13 +265,13 @@ export default function FindingDetailModal({
             {finding.codeSnippet && (
               <div>
                 <p className="text-xs font-medium text-gray-400 mb-2">Fragmento de Código</p>
-                <div className="bg-gray-900 p-3 rounded border border-gray-700 relative">
+                <div className="bg-[#1C1C1E] p-3 rounded border border-[#2D2D2D] relative">
                   <pre className="text-xs text-gray-300 font-mono overflow-x-auto">
                     <code>{finding.codeSnippet}</code>
                   </pre>
                   <button
                     onClick={() => copyToClipboard(finding.codeSnippet || '')}
-                    className="absolute top-2 right-2 p-1.5 rounded bg-gray-800 hover:bg-gray-700"
+                    className="absolute top-2 right-2 p-1.5 rounded bg-[#242424] hover:bg-[#2D2D2D]"
                   >
                     <Copy className="w-3 h-3 text-gray-400" />
                   </button>
@@ -336,7 +336,7 @@ export default function FindingDetailModal({
             <select
               value={selectedAnalyst || ''}
               onChange={(e) => setSelectedAnalyst(e.target.value || null)}
-              className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-500"
+              className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50"
             >
               <option value="">Sin asignar</option>
               {analysts.map((analyst) => (
@@ -389,7 +389,7 @@ export default function FindingDetailModal({
                     placeholder="Nota del cambio (opcional)..."
                     value={statusNote}
                     onChange={(e) => setStatusNote(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-white placeholder-[#4B5563] focus:outline-none focus:border-[#F97316]/50 text-sm"
                     rows={2}
                   />
                   <Button

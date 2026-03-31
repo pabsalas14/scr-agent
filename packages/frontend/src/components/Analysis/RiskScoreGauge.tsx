@@ -13,14 +13,13 @@ export default function RiskScoreGauge({
 }: RiskScoreGaugeProps) {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
-  // Invert score if necessary: assuming 0 is safe, 100 is critical risk
   const offset = circumference - (score / 100) * circumference;
 
   const getColor = (s: number) => {
-    if (s < 30) return '#00FF94'; // CODA Safe Green
-    if (s < 60) return '#00D1FF'; // CODA Cyan
-    if (s < 85) return '#7000FF'; // CODA Purple
-    return '#FF3B3B'; // CODA Critical Red
+    if (s < 30) return '#22C55E';
+    if (s < 60) return '#F97316';
+    if (s < 85) return '#EAB308';
+    return '#EF4444';
   };
 
   const getLabel = (s: number) => {
@@ -34,24 +33,20 @@ export default function RiskScoreGauge({
 
   return (
     <div className="relative flex flex-col items-center justify-center p-4 group" style={{ width: size, height: size }}>
-      {/* Background Glow */}
-      <div 
-        className="absolute inset-0 blur-3xl opacity-10 transition-colors duration-1000" 
-        style={{ backgroundColor: color }} 
+      <div
+        className="absolute inset-0 blur-3xl opacity-10 transition-colors duration-1000"
+        style={{ backgroundColor: color }}
       />
 
       <svg width={size} height={size} className="transform -rotate-90 relative z-10">
-        {/* Track */}
         <circle
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke="#111218"
+          stroke="#2D2D2D"
           strokeWidth={strokeWidth}
           fill="transparent"
         />
-        
-        {/* Progress Fill */}
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -64,12 +59,8 @@ export default function RiskScoreGauge({
           animate={{ strokeDashoffset: offset }}
           transition={{ duration: 2, ease: [0.16, 1, 0.3, 1] }}
           strokeLinecap="round"
-          style={{ 
-            filter: `drop-shadow(0 0 8px ${color}80)` 
-          }}
+          style={{ filter: `drop-shadow(0 0 6px ${color}60)` }}
         />
-
-        {/* Marker Dot */}
         <motion.circle
           cx={size / 2 + radius * Math.cos(0)}
           cy={size / 2 + radius * Math.sin(0)}
@@ -84,38 +75,36 @@ export default function RiskScoreGauge({
         />
       </svg>
 
-      {/* Centered Indicators */}
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20">
         <div className="flex flex-col items-center">
-            <motion.span 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-              className="text-5xl font-black text-white tracking-tighter leading-none"
+          <motion.span
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.8 }}
+            className="text-5xl font-semibold text-white leading-none"
+          >
+            {Math.round(score)}
+          </motion.span>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 }}
+            className="mt-2 flex flex-col items-center"
+          >
+            <div className="h-px w-8 bg-[#2D2D2D] mb-2" />
+            <span className="text-[10px] text-[#64748B] uppercase tracking-widest">Índice de Riesgo</span>
+            <span
+              className="text-[9px] uppercase tracking-widest mt-1 px-2 py-0.5 rounded border border-current"
+              style={{ color, borderColor: `${color}40` }}
             >
-              {Math.round(score)}
-            </motion.span>
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1 }}
-              className="mt-2 flex flex-col items-center"
-            >
-                <div className="h-[1px] w-8 bg-[#1F2937] mb-2" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[#64748B]">Índice de Riesgo</span>
-                <span 
-                  className="text-[9px] font-black uppercase tracking-widest mt-1 px-2 py-0.5 rounded border border-current shadow-sm"
-                  style={{ color, borderColor: `${color}40` }}
-                >
-                  {getLabel(score)}
-                </span>
-            </motion.div>
+              {getLabel(score)}
+            </span>
+          </motion.div>
         </div>
       </div>
 
-      {/* Hexagon Pattern Grid (Subtle Overlay) */}
-      <div className="absolute inset-4 border border-[#1F2937] rounded-full opacity-20 pointer-events-none" />
-      <div className="absolute inset-8 border border-[#1F2937] rounded-full opacity-10 pointer-events-none" />
+      <div className="absolute inset-4 border border-[#2D2D2D] rounded-full opacity-20 pointer-events-none" />
+      <div className="absolute inset-8 border border-[#2D2D2D] rounded-full opacity-10 pointer-events-none" />
     </div>
   );
 }

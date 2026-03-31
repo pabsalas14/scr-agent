@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, ChevronLeft, Check, Zap, GitBranch, Building2, X, Shield, Terminal } from 'lucide-react';
@@ -12,18 +12,18 @@ interface NuevoProyectoModernoProps {
   cargando: boolean;
 }
 
-type ScopeType = 'REPOSITORIO' | 'PULL_REQUEST' | 'ORGANIZACION';
+type ScopeType = 'REPOSITORY' | 'PULL_REQUEST' | 'ORGANIZATION';
 type Step = 1 | 2 | 3 | 4;
 
 const SCOPE_OPTIONS: Array<{
   id: ScopeType;
   label: string;
   desc: string;
-  icon: any;
+  icon: ComponentType<{ className?: string }>;
 }> = [
-  { id: 'REPOSITORIO',  label: 'Repositorio completo', desc: 'Análisis profundo de toda la base de código.',    icon: Terminal },
+  { id: 'REPOSITORY',   label: 'Repositorio completo', desc: 'Análisis profundo de toda la base de código.',    icon: Terminal },
   { id: 'PULL_REQUEST', label: 'Pull Request',          desc: 'Auditoría de cambios específicos entrantes.',     icon: GitBranch },
-  { id: 'ORGANIZACION', label: 'Organización',          desc: 'Escaneo masivo de activos institucionales.',      icon: Building2 },
+  { id: 'ORGANIZATION', label: 'Organización',          desc: 'Escaneo masivo de activos institucionales.',      icon: Building2 },
 ];
 
 export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: NuevoProyectoModernoProps) {
@@ -36,7 +36,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CrearProyectoDTO>({
-    defaultValues: { scope: 'REPOSITORIO' },
+    defaultValues: { scope: 'REPOSITORY' },
   });
 
   const repositoryUrl = watch('repositoryUrl');
@@ -51,7 +51,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
   const prevStep = () => { if (step > 1) setStep((step - 1) as Step); };
 
   const onSubmit = (data: CrearProyectoDTO) => {
-    data.scope = selectedScope || 'REPOSITORIO';
+    data.scope = selectedScope || 'REPOSITORY';
     if (!data.repositoryUrl) return;
     if (!isRepoValid && repoValidationError) return;
     setIsSubmitting(true);

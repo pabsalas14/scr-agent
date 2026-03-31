@@ -30,6 +30,7 @@ model User {
   // Relaciones
   settings     UserSettings?
   roles        UserRole[]
+  projects     Project[]
   assignments  FindingAssignment[]
   statusChanges FindingStatusChange[]
   notifications Notification[]
@@ -96,6 +97,10 @@ model Project {
   // Token para repositorios privados (encriptado en BD)
   githubToken String? @db.VarChar(500)
 
+  // Propietario del proyecto
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +109,7 @@ model Project {
   analyses Analysis[]
 
   @@index([repositoryUrl])
+  @@index([userId])
   @@map("projects")
 }
 

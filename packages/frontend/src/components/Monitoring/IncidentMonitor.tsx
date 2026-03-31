@@ -18,13 +18,14 @@ export default function IncidentMonitor() {
       ...a,
       projectName: p.name,
       projectId: p.id,
-      highSeverityFindings: (a.findings || []).filter((f: any) => f.severity === 'ALTO' || f.severity === 'CRÍTICO').length
+      highSeverityFindings: (a.findings || []).filter((f: any) => f.severity === 'HIGH' || f.severity === 'CRITICAL').length
     }))
   );
 
   const incidentes = allAnalyses.filter((a: any) =>
     a.status === 'ERROR' ||
-    a.riskScore > 70 ||
+    a.status === 'FAILED' ||
+    (a.report?.riskScore != null && a.report.riskScore > 70) ||
     a.highSeverityFindings > 0
   );
 

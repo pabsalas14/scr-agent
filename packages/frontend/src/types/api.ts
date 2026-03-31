@@ -2,7 +2,7 @@
  * Tipos para comunicación con el API REST backend
  */
 
-export type AlcanceAnalisis = 'REPOSITORIO' | 'ORGANIZACION' | 'PULL_REQUEST';
+export type AlcanceAnalisis = 'REPOSITORY' | 'ORGANIZATION' | 'PULL_REQUEST';
 export type EstadoAnalisis =
   | 'PENDING'
   | 'RUNNING'
@@ -12,6 +12,7 @@ export type EstadoAnalisis =
   | 'COMPLETED'
   | 'FAILED'
   | 'CANCELLED'
+  | 'PARTIAL'
   | 'ERROR';
 
 export interface Proyecto {
@@ -52,7 +53,7 @@ export interface Hallazgo {
   file: string;
   function?: string;
   lineRange: string;
-  severity: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO';
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   riskType: string;
   confidence: number;
   codeSnippet?: string;
@@ -68,11 +69,11 @@ export interface EventoForense {
   commitHash: string;
   commitMessage: string;
   author: string;
-  action: 'AGREGADO' | 'MODIFICADO' | 'ELIMINADO';
+  action: 'ADDED' | 'MODIFIED' | 'DELETED';
   file: string;
   function?: string;
   changesSummary?: string;
-  riskLevel: 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO';
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
   suspicionIndicators: string[];
   timestamp: string;
 }
@@ -86,7 +87,7 @@ export interface Reporte {
   severityBreakdown: Record<string, number>;
   compromisedFunctions: string[];
   affectedAuthors: string[];
-  remediationSteps: any[];
+  remediationSteps: string[];
   generalRecommendation: string;
   createdAt: string;
 }

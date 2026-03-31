@@ -116,7 +116,7 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
 
     // Get finding's assigned user for notification
     if ((updated as any).assignment?.assignedTo) {
-      notificationsService.notifyFindingStatusChange(
+      await notificationsService.notifyFindingStatusChange(
         (updated as any).assignment.assignedTo,
         findingId!,
         status as any,
@@ -167,7 +167,7 @@ router.post('/:findingId/assign', async (req: Request, res: Response) => {
     const assigner = userId ? await usersService.getUserDetail(userId) : null;
 
     // Notify assigned user
-    notificationsService.notifyFindingAssignment(
+    await notificationsService.notifyFindingAssignment(
       assignedTo,
       findingId!,
       (assigner as any)?.name || (assigner as any)?.email || 'Sistema'
@@ -270,7 +270,7 @@ router.post('/:findingId/remediation', async (req: Request, res: Response) => {
     // Get finding's assigned user for notification
     const finding = await findingsService.getFindingDetail(findingId!);
     if ((finding as any)?.assignment?.assignedTo && user) {
-      notificationsService.notifyRemediationUpdate(
+      await notificationsService.notifyRemediationUpdate(
         (finding as any).assignment.assignedTo,
         findingId!,
         'IN_PROGRESS' as any,
@@ -335,7 +335,7 @@ router.put('/:findingId/remediation/verify', async (req: Request, res: Response)
     // Notify assigned user
     const finding = await findingsService.getFindingDetail(findingId!);
     if ((finding as any)?.assignment?.assignedTo) {
-      notificationsService.notifyRemediationVerified(
+      await notificationsService.notifyRemediationVerified(
         (finding as any).assignment.assignedTo,
         findingId!,
         (user as any)?.name || (user as any)?.email || 'Sistema'

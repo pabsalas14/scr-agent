@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import LoginPage from '../pages/LoginPage';
 import AppLayout from '../components/layouts/AppLayout';
+import ErrorBoundary from '../components/ui/ErrorBoundary';
 
 // Lazy load heavy components
 const MainDashboard = lazy(() => import('../components/Monitoring/MainDashboard'));
@@ -14,7 +15,7 @@ const SettingsModule = lazy(() => import('../components/Settings/SettingsModule'
 const LoadingFallback = () => (
   <div className="flex flex-col items-center justify-center py-24 space-y-4 animate-in fade-in duration-500">
     <div className="w-10 h-10 border-4 border-white/10 border-t-white rounded-full animate-spin" />
-    <span className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.3em]">Sincronizando...</span>
+    <span className="text-sm text-[#64748B]">Cargando...</span>
   </div>
 );
 
@@ -34,41 +35,51 @@ export const router = createBrowserRouter([
       {
         path: 'dashboard',
         element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <MainDashboard />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <MainDashboard />
+            </Suspense>
+          </ErrorBoundary>
         ),
       },
       {
         path: 'projects',
         element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <ProjectsPage />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <ProjectsPage />
+            </Suspense>
+          </ErrorBoundary>
         ),
       },
       {
         path: 'projects/:projectId/analyses/:analysisId',
         element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <ReportViewer />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <ReportViewer />
+            </Suspense>
+          </ErrorBoundary>
         ),
       },
       {
         path: 'analytics',
         element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <AnalyticsDashboard />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AnalyticsDashboard />
+            </Suspense>
+          </ErrorBoundary>
         ),
       },
       {
         path: 'settings',
         element: (
-          <Suspense fallback={<LoadingFallback />}>
-            <SettingsModule />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <SettingsModule />
+            </Suspense>
+          </ErrorBoundary>
         ),
       },
       {

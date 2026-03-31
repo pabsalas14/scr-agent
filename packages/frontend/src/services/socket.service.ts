@@ -149,6 +149,50 @@ class SocketClientService {
   }
 
   /**
+   * Listen for analysis status changes (progress updates)
+   */
+  onAnalysisStatusChanged(
+    callback: (data: { analysisId: string; status: string; progress: number; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:statusChanged', callback);
+    }
+  }
+
+  /**
+   * Listen for new findings discovered during analysis
+   */
+  onFindingsDiscovered(
+    callback: (data: { analysisId: string; findings: unknown[]; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:findingsDiscovered', callback);
+    }
+  }
+
+  /**
+   * Listen for analysis completion
+   */
+  onAnalysisCompleted(
+    callback: (data: { analysisId: string; projectId: string; reportId: string; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:completed', callback);
+    }
+  }
+
+  /**
+   * Listen for analysis errors
+   */
+  onAnalysisError(
+    callback: (data: { analysisId: string; error: string; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:error', callback);
+    }
+  }
+
+  /**
    * Disconnect socket
    */
   disconnect(): void {
