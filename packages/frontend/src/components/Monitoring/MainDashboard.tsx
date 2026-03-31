@@ -10,6 +10,7 @@ import {
   Shield,
   TrendingUp,
   Radio,
+  type LucideIcon,
 } from 'lucide-react';
 import Dashboard from '../Dashboard/Dashboard';
 import AnalysisMonitor from './AnalysisMonitor';
@@ -24,7 +25,7 @@ import SettingsModule from '../Settings/SettingsModule';
 type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'settings' | 'incidents';
 type AgentView = 'list' | 'detail';
 
-const TABS: Array<{ id: Tab; label: string; icon: any; description: string }> = [
+const TABS: Array<{ id: Tab; label: string; icon: LucideIcon; description: string }> = [
   { id: 'projects',   label: 'Monitor Central', icon: Shield,    description: 'Vista general' },
   { id: 'incidents',  label: 'Incidentes',      icon: Radio,     description: 'Alertas críticas' },
   { id: 'analyses',   label: 'Reportes',        icon: FileText,  description: 'Histórico' },

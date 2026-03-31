@@ -16,6 +16,7 @@ import { InspectorAgentService } from '../agents/inspector.agent';
 import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
 import { socketService } from './socket.service';
+import { decrypt } from './crypto.service';
 
 // Instanciar agentes
 const inspectorAgent = new InspectorAgentService();
@@ -35,6 +36,7 @@ async function processAnalysisQueue() {
   isProcessing = true;
   let analysisId: string | null = null;
   let currentProjectId: string | null = null;
+  let ownerId = '';
   try {
     const job = analysisQueue.shift();
     if (!job) return;
@@ -54,6 +56,20 @@ async function processAnalysisQueue() {
       throw new Error(`Proyecto ${projectId} no encontrado`);
     }
 
+    ownerId = project.userId ?? '';
+
+    // Obtener GitHub token del usuario (descifrado) como fallback al env var
+    let userGithubToken: string | undefined = process.env['GITHUB_TOKEN'];
+    if (project.userId) {
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId: project.userId },
+        select: { githubToken: true },
+      });
+      if (userSettings?.githubToken) {
+        userGithubToken = decrypt(userSettings.githubToken);
+      }
+    }
+
     // ========== FASE 1: INSPECTOR AGENT ==========
     logger.info(`[1/3] 🔍 Ejecutando Inspector Agent...`);
     await prisma.analysis.update({
@@ -70,7 +86,7 @@ async function processAnalysisQueue() {
     logger.info(`Descargando repositorio: ${project.repositoryUrl}`);
     const localPath = await gitService.cloneOrPullRepository(
       project.repositoryUrl,
-      process.env['GITHUB_TOKEN'],
+      userGithubToken,
       project.branch || undefined
     );
 
@@ -319,7 +335,7 @@ async function processAnalysisQueue() {
         },
       }).then(() => {
         if (currentProjectId) {
-          socketService.emitAnalysisError(analysisId!, currentProjectId, errorMsg, '');
+          socketService.emitAnalysisError(analysisId!, currentProjectId, errorMsg, ownerId);
           socketService.emitAnalysisStatusChanged(analysisId!, currentProjectId, 'FAILED', 0);
         }
       }).catch((err) => logger.error('Error al guardar fallo:', err));
@@ -373,9 +389,38 @@ export function enqueueAnalysis(analysisId: string, projectId: string) {
 }
 
 /**
- * Inicia el procesador de la cola (llamar desde index.ts)
+ * Inicia el procesador de la cola (llamar desde index.ts).
+ * Recupera automáticamente análisis interrumpidos en un restart anterior.
  */
-export function startAnalysisProcessor() {
+export async function startAnalysisProcessor(): Promise<void> {
+  // Recuperar análisis atascados (quedaron PENDING/RUNNING al reiniciar el servidor)
+  try {
+    const stuck = await prisma.analysis.findMany({
+      where: {
+        status: {
+          in: ['PENDING', 'RUNNING', 'INSPECTOR_RUNNING', 'DETECTIVE_RUNNING', 'FISCAL_RUNNING'],
+        },
+      },
+      select: { id: true, projectId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    for (const a of stuck) {
+      await prisma.analysis.update({
+        where: { id: a.id },
+        data: { status: 'PENDING', progress: 0 },
+      });
+      analysisQueue.push({ id: a.id, projectId: a.projectId });
+      logger.info(`♻️  Análisis ${a.id} recuperado tras reinicio del servidor`);
+    }
+
+    if (stuck.length > 0) {
+      logger.info(`♻️  ${stuck.length} análisis recuperados y reencolarlos`);
+    }
+  } catch (err) {
+    logger.error(`Error recuperando análisis al iniciar: ${err}`);
+  }
+
   // Procesar cola cada segundo
   setInterval(() => {
     if (analysisQueue.length > 0 && !isProcessing) {

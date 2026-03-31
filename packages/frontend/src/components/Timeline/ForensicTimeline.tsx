@@ -48,17 +48,17 @@ const NODE_TYPES = { forensicNode: ForensicNode };
 const SEVERITY_ORDER: NivelRiesgo[] = ['CRÍTICO', 'ALTO', 'MEDIO', 'BAJO'];
 
 const CHIP_COLORS: Record<NivelRiesgo, { bg: string; border: string; text: string }> = {
-  CRÍTICO: { bg: 'rgba(255,59,59,0.15)', border: '#FF3B3B', text: '#FF6B6B' },
-  ALTO:    { bg: 'rgba(255,138,0,0.15)', border: '#FF8A00', text: '#FFA033' },
-  MEDIO:   { bg: 'rgba(255,214,0,0.12)', border: '#FFD600', text: '#FFE066' },
-  BAJO:    { bg: 'rgba(0,255,148,0.12)', border: '#00FF94', text: '#33FFA8' },
+  CRÍTICO: { bg: 'rgba(239,68,68,0.15)',  border: '#EF4444', text: '#EF4444' },
+  ALTO:    { bg: 'rgba(251,146,60,0.15)', border: '#FB923C', text: '#FB923C' },
+  MEDIO:   { bg: 'rgba(234,179,8,0.12)',  border: '#EAB308', text: '#EAB308' },
+  BAJO:    { bg: 'rgba(34,197,94,0.12)',  border: '#22C55E', text: '#22C55E' },
 };
 
 const MINIMAP_COLORS: Record<NivelRiesgo, string> = {
-  CRÍTICO: '#FF3B3B',
-  ALTO:    '#FF8A00',
-  MEDIO:   '#FFD600',
-  BAJO:    '#00FF94',
+  CRÍTICO: '#EF4444',
+  ALTO:    '#FB923C',
+  MEDIO:   '#EAB308',
+  BAJO:    '#22C55E',
 };
 
 // ── Layout ────────────────────────────────────────────────────────────────
@@ -155,11 +155,11 @@ function DetailPanel({
         top: 16,
         right: 16,
         width: 320,
-        background: '#0A0B10',
+        background: '#1E1E20',
         border: `1px solid ${config.border}40`,
-        borderRadius: 20,
-        boxShadow: `0 0 40px ${config.bg}, 0 8px 40px rgba(0,0,0,0.6)`,
-        backdropFilter: 'blur(24px)',
+        borderRadius: 12,
+        boxShadow: `0 0 24px ${config.bg}, 0 8px 24px rgba(0,0,0,0.5)`,
+        backdropFilter: 'blur(8px)',
         padding: '20px 22px',
         zIndex: 100,
       }}
@@ -324,7 +324,7 @@ export default function ForensicTimeline({ eventos }: ForensicTimelineProps) {
         fitViewOptions={{ padding: 0.15 }}
         minZoom={0.2}
         maxZoom={3}
-        style={{ background: '#050608' }}
+        style={{ background: '#111111' }}
         onPaneClick={() => setEventoSeleccionado(null)}
       >
         {/* Filtros de severidad */}
@@ -334,10 +334,10 @@ export default function ForensicTimeline({ eventos }: ForensicTimelineProps) {
               display: 'flex',
               gap: 8,
               padding: '10px 14px',
-              background: 'rgba(10,11,16,0.85)',
-              border: '1px solid #1F2937',
-              borderRadius: 14,
-              backdropFilter: 'blur(16px)',
+              background: 'rgba(30,30,32,0.92)',
+              border: '1px solid #2D2D2D',
+              borderRadius: 12,
+              backdropFilter: 'blur(8px)',
               flexWrap: 'wrap',
             }}
           >

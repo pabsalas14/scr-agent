@@ -41,7 +41,7 @@ export default function ToastContainer() {
             <span className="text-sm flex-1">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-1 p-0.5 hover:bg-white/10 rounded transition-colors text-[#6B7280] hover:text-white"
+              className="ml-1 p-0.5 hover:bg-[#404040] rounded transition-colors text-[#6B7280] hover:text-white"
             >
               <X className="w-3.5 h-3.5" />
             </button>

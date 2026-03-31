@@ -75,7 +75,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
           animate={{ scale: 1, opacity: 1, y: 0 }}
           exit={{ scale: 0.97, opacity: 0, y: 12 }}
           onClick={(e) => e.stopPropagation()}
-          className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-2xl max-w-xl w-full shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col"
+          className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl max-w-xl w-full shadow-[0_20px_60px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col"
         >
           {/* Modal Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-[#2D2D2D]">

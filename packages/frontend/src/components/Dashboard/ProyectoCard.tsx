@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import {
   Eye, Play, Settings as SettingsIcon, Server, Box, GitPullRequest, Laptop,
-  Activity, AlertTriangle, CheckCircle2, Clock, GitBranch, ExternalLink
+  Activity, AlertTriangle, CheckCircle2, Clock, GitBranch, ExternalLink,
+  type LucideIcon,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
@@ -13,13 +14,13 @@ interface ProyectoCardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
 }
 
-const SCOPE_CONFIG: Record<string, { label: string; icon: any }> = {
+const SCOPE_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
   REPOSITORY:   { label: 'Repositorio',   icon: Server },
   ORGANIZATION: { label: 'Organización',  icon: Box },
   PULL_REQUEST: { label: 'Pull Request',  icon: GitPullRequest },
 };
 
-const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string; icon: any }> = {
+const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string; icon: LucideIcon }> = {
   PENDING:           { label: 'En espera',    color: 'text-[#6B7280]',  dot: 'bg-[#6B7280]',  icon: Clock },
   RUNNING:           { label: 'Analizando',   color: 'text-[#F97316]',  dot: 'bg-[#F97316]',  icon: Activity },
   INSPECTOR_RUNNING: { label: 'Inspector',    color: 'text-[#EAB308]',  dot: 'bg-[#EAB308]',  icon: Activity },

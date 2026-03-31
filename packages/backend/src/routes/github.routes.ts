@@ -14,6 +14,7 @@ import { AuthenticatedRequest, authMiddleware } from '../middleware/auth.middlew
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { gitService } from '../services/git.service';
+import { decrypt } from '../services/crypto.service';
 import axios from 'axios';
 
 const router: ExpressRouter = Router();
@@ -47,7 +48,7 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    const githubToken = userSettings.githubToken;
+    const githubToken = decrypt(userSettings.githubToken);
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const perPageNum = Math.min(100, Math.max(1, parseInt(per_page as string) || 20));
 
@@ -160,7 +161,7 @@ router.get(
         return;
       }
 
-      const githubToken = userSettings.githubToken;
+      const githubToken = decrypt(userSettings.githubToken);
 
       try {
         /**
@@ -254,7 +255,7 @@ router.post(
         where: { userId },
       });
 
-      const githubToken = userSettings?.githubToken;
+      const githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
 
       try {
         /**

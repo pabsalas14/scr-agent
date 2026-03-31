@@ -29,10 +29,10 @@ const LABELS: Record<NivelRiesgo, string> = {
 };
 
 const CLASES: Record<NivelRiesgo, string> = {
-  CRÍTICO: 'bg-[#FF3B3B]/10 text-[#FF3B3B] border-[#FF3B3B]/40 shadow-[0_0_10px_rgba(255,59,59,0.15)]',
-  ALTO: 'bg-[#FF8A00]/10 text-[#FF8A00] border-[#FF8A00]/40',
-  MEDIO: 'bg-[#FFD600]/10 text-[#FFD600] border-[#FFD600]/40',
-  BAJO: 'bg-[#00FF94]/10 text-[#00FF94] border-[#00FF94]/40',
+  CRÍTICO: 'bg-[#EF4444]/10 text-[#EF4444] border-[#EF4444]/40',
+  ALTO: 'bg-[#FB923C]/10 text-[#FB923C] border-[#FB923C]/40',
+  MEDIO: 'bg-[#EAB308]/10 text-[#EAB308] border-[#EAB308]/40',
+  BAJO: 'bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/40',
 };
 
 export default function BadgeRiesgo({ nivel, size = 'md' }: BadgeRiesgoProps) {

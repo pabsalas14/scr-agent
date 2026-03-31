@@ -39,8 +39,9 @@ class SettingsService {
     try {
       const { data } = await client.post('/settings/github-token', { token });
       return data;
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.error || 'Error guardando GitHub token';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      const errorMsg = err.response?.data?.error || 'Error guardando GitHub token';
       throw new Error(errorMsg);
     }
   }
@@ -65,8 +66,9 @@ class SettingsService {
     try {
       const { data } = await client.delete('/settings/github-token');
       return data;
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.error || 'Error eliminando GitHub token';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { error?: string } } };
+      const errorMsg = err.response?.data?.error || 'Error eliminando GitHub token';
       throw new Error(errorMsg);
     }
   }

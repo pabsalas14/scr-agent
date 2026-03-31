@@ -275,10 +275,10 @@ router.get('/agents', async (_req: Request, res: Response) => {
       };
     });
 
-    res.json({ data: agentsWithCounts });
+    res.json({ success: true, data: agentsWithCounts });
   } catch (error) {
     logger.error(`Error obteniendo agentes: ${error}`);
-    res.status(500).json({ error: 'Error al obtener agentes' });
+    res.status(500).json({ success: false, error: 'Error al obtener agentes' });
   }
 });
 
@@ -291,7 +291,7 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
     const agent = AGENTS.find((a) => a.id === req.params['id']);
 
     if (!agent) {
-      res.status(404).json({ error: 'Agente no encontrado' });
+      res.status(404).json({ success: false, error: 'Agente no encontrado' });
       return;
     }
 
@@ -300,6 +300,7 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
     const executionCount = analyses.filter((a) => a.status === 'COMPLETED').length;
 
     res.json({
+      success: true,
       data: {
         ...agent,
         executionCount,
@@ -308,7 +309,7 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error(`Error obteniendo agente: ${error}`);
-    res.status(500).json({ error: 'Error al obtener agente' });
+    res.status(500).json({ success: false, error: 'Error al obtener agente' });
   }
 });
 
@@ -338,10 +339,10 @@ router.get('/agents/:id/executions', async (req: Request, res: Response) => {
       result: analysis.status === 'COMPLETED' ? 'Completado exitosamente' : 'En progreso',
     }));
 
-    res.json({ data: executions });
+    res.json({ success: true, data: executions });
   } catch (error) {
     logger.error(`Error obteniendo ejecuciones: ${error}`);
-    res.status(500).json({ error: 'Error al obtener ejecuciones' });
+    res.status(500).json({ success: false, error: 'Error al obtener ejecuciones' });
   }
 });
 
@@ -377,10 +378,10 @@ router.get('/system-metrics', async (_req: Request, res: Response) => {
       uptime: process.uptime(),
     };
 
-    res.json({ data: metrics });
+    res.json({ success: true, data: metrics });
   } catch (error) {
     logger.error(`Error obteniendo métricas del sistema: ${error}`);
-    res.status(500).json({ error: 'Error al obtener métricas del sistema' });
+    res.status(500).json({ success: false, error: 'Error al obtener métricas del sistema' });
   }
 });
 
@@ -393,15 +394,15 @@ router.get('/costs', async (req: Request, res: Response) => {
     const period = (req.query['period'] as 'today' | 'week' | 'month') || 'month';
 
     if (!['today', 'week', 'month'].includes(period)) {
-      res.status(400).json({ error: 'período inválido. Use: today, week, month' });
+      res.status(400).json({ success: false, error: 'período inválido. Use: today, week, month' });
       return;
     }
 
     const costs = await calculateCosts(period);
-    res.json({ data: costs });
+    res.json({ success: true, data: costs });
   } catch (error) {
     logger.error(`Error obteniendo costos: ${error}`);
-    res.status(500).json({ error: 'Error al obtener costos' });
+    res.status(500).json({ success: false, error: 'Error al obtener costos' });
   }
 });
 
@@ -428,6 +429,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
     ]);
 
     res.json({
+      success: true,
       data: {
         agents,
         systemMetrics,
@@ -437,7 +439,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error(`Error obteniendo dashboard: ${error}`);
-    res.status(500).json({ error: 'Error al obtener dashboard' });
+    res.status(500).json({ success: false, error: 'Error al obtener dashboard' });
   }
 });
 

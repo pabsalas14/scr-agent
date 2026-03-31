@@ -236,7 +236,7 @@ export default function AnalyticsDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={typeData} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={6} dataKey="value">
-                  {typeData.map((_: any, index: number) => (
+                  {typeData.map((_: unknown, index: number) => (
                     <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="none" />
                   ))}
                 </Pie>

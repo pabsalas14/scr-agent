@@ -13,8 +13,11 @@
 import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import { logger } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
+import { authMiddleware } from '../middleware/auth.middleware';
+import { enqueueAnalysis } from '../services/analysis-queue';
 
 const router: ExpressRouter = Router();
+router.use(authMiddleware);
 
 /**
  * GET /api/v1/analyses/:id
@@ -188,6 +191,53 @@ router.get('/:id/report/pdf', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(`Error descargando PDF: ${error}`);
     res.status(500).json({ error: 'Error al descargar PDF' });
+  }
+});
+
+/**
+ * POST /api/v1/analyses/:analysisId/retry
+ * Reintentar un análisis fallido
+ */
+router.post('/:analysisId/retry', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: { project: { select: { userId: true, id: true } } },
+    });
+
+    if (!analysis) {
+      res.status(404).json({ success: false, error: 'Análisis no encontrado' });
+      return;
+    }
+
+    if (userId && analysis.project?.userId && analysis.project.userId !== userId) {
+      res.status(403).json({ success: false, error: 'Acceso denegado' });
+      return;
+    }
+
+    if (analysis.status !== 'FAILED' && analysis.status !== 'ERROR') {
+      res.status(400).json({
+        success: false,
+        error: 'Solo se pueden reintentar análisis fallidos',
+      });
+      return;
+    }
+
+    const updated = await prisma.analysis.update({
+      where: { id: analysisId },
+      data: { status: 'PENDING', progress: 0, errorMessage: null, completedAt: null },
+    });
+
+    enqueueAnalysis(analysisId, analysis.projectId);
+    logger.info(`Analysis ${analysisId} re-enqueued for retry`);
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error(`Error reintentando análisis: ${error}`);
+    res.status(500).json({ success: false, error: 'Error al reintentar análisis' });
   }
 });
 

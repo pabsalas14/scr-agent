@@ -8,6 +8,7 @@ import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
+import { decrypt } from '../services/crypto.service';
 
 const router: ExpressRouter = Router();
 
@@ -114,6 +115,13 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
+    if (!project) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
 
     const analyses = await prisma.analysis.findMany({
       where: { projectId },
@@ -159,7 +167,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         const userSettings = await prisma.userSettings.findUnique({
           where: { userId },
         });
-        githubToken = userSettings?.githubToken || undefined;
+        githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
       }
 
       // Validar acceso al repositorio
@@ -231,6 +239,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
+    const userId = (req as any).user?.id;
 
     // Verificar que el proyecto existe
     const project = await prisma.project.findUnique({
@@ -242,6 +251,10 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
         success: false,
         error: 'Proyecto no encontrado',
       });
+    }
+
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
     }
 
     // Crear análisis
@@ -275,6 +288,12 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
 router.post('/:projectId/analyses/:analysisId/cancel', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
+    if (project && userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
 
     const analysis = await prisma.analysis.findFirst({
       where: { id: analysisId, projectId },

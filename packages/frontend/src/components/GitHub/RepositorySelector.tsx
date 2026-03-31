@@ -178,11 +178,11 @@ export default function RepositorySelector({
         {isLoadingRepos ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-3">
              <div className="w-5 h-5 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />
-             <span className="text-[9px] font-black text-[#64748B] uppercase tracking-widest">Consultando API...</span>
+             <span className="text-[9px] font-semibold text-[#64748B] uppercase tracking-widest">Consultando API...</span>
           </div>
         ) : repos.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-[10px] font-black text-[#475569] uppercase tracking-widest">
+            <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest">
               {search ? 'Sin Coincidencias' : 'Inicie Búsqueda'}
             </p>
           </div>
@@ -200,7 +200,7 @@ export default function RepositorySelector({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-black text-xs truncate tracking-tight">{repo.name}</span>
+                    <span className="font-semibold text-xs truncate tracking-tight">{repo.name}</span>
                     {repo.isPrivate && <Lock className="w-3 h-3 text-[#F59E0B] flex-shrink-0" />}
                   </div>
                   {repo.description && (
@@ -210,7 +210,7 @@ export default function RepositorySelector({
                 {repo.stars > 0 && (
                   <div className="flex items-center gap-1 text-[#EAB308] flex-shrink-0">
                     <Star className="w-2.5 h-2.5" />
-                    <span className="text-[10px] font-black">{repo.stars}</span>
+                    <span className="text-[10px] font-semibold">{repo.stars}</span>
                   </div>
                 )}
               </div>
@@ -250,13 +250,13 @@ export default function RepositorySelector({
                 }`} />
               </div>
               <div className="min-w-0 flex flex-col justify-center h-10">
-                <p className={`text-xs font-black tracking-tight uppercase truncate ${
+                <p className={`text-xs font-semibold tracking-tight uppercase truncate ${
                   validationState === 'valid' ? 'text-white' : 'text-[#94A3B8]'
                 }`}>
                   {selectedRepo.fullName}
                 </p>
                 {validationState === 'valid' && (
-                  <span className="text-[9px] font-black text-[#22C55E] uppercase tracking-widest animate-pulse">Asset Validado</span>
+                  <span className="text-[9px] font-semibold text-[#22C55E] uppercase tracking-widest animate-pulse">Asset Validado</span>
                 )}
               </div>
             </div>

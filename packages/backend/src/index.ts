@@ -217,9 +217,11 @@ socketService.init(httpServer, allowedOrigins);
 
 // ==================== QUEUE PROCESSOR ====================
 
-// Importar y iniciar el procesador de análisis
+// Importar y iniciar el procesador de análisis (async — recupera atascados en DB)
 import { startAnalysisProcessor } from './services/analysis-queue';
-startAnalysisProcessor();
+startAnalysisProcessor().catch((err) => {
+  logger.error(`Error iniciando analysis processor: ${err}`);
+});
 
 // Iniciar servidor
 const server = httpServer.listen(PORT, () => {

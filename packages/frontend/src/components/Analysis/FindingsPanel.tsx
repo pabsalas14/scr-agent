@@ -119,7 +119,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
               <div className="relative z-10 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                    <config.icon className={`${config.color} w-5 h-5 opacity-80`} />
-                   <span className="text-[10px] font-black text-[#64748B] tracking-widest">{config.label}</span>
+                   <span className="text-[10px] font-semibold text-[#64748B] tracking-widest">{config.label}</span>
                 </div>
                 <p className="text-3xl font-semibold text-white">
                   {items.length}
@@ -170,7 +170,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                      </div>
                                      <h4 className="text-base font-semibold text-white">{finding.riskType}</h4>
                                      <div className="ml-auto flex items-center gap-2">
-                                        <span className="text-[10px] font-black text-[#64748B] uppercase tracking-widest bg-[#111218] px-2 py-0.5 rounded border border-[#1F2937]">
+                                        <span className="text-[10px] font-semibold text-[#64748B] uppercase tracking-widest bg-[#111218] px-2 py-0.5 rounded border border-[#1F2937]">
                                            Confidencia {Math.round(finding.confidence * 100)}%
                                         </span>
                                      </div>
@@ -184,7 +184,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
 
                                {/* Analysis */}
                                <div className="space-y-2">
-                                  <p className="text-[10px] font-black text-[#64748B] uppercase tracking-[0.15em] flex items-center gap-2">
+                                  <p className="text-[10px] font-semibold text-[#64748B] uppercase tracking-wide flex items-center gap-2">
                                      <Terminal className="w-3 h-3" /> Diagnóstico
                                   </p>
                                   <p className="text-sm text-[#94A3B8] leading-relaxed font-medium">

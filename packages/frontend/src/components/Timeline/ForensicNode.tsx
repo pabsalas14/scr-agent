@@ -13,31 +13,31 @@ import type { EventoTimeline } from '../../types/timeline';
 
 const SEVERITY_CONFIG = {
   CRÍTICO: {
-    border: '#FF3B3B',
-    glow: 'rgba(255,59,59,0.3)',
-    bg: 'rgba(255,59,59,0.08)',
-    text: '#FF6B6B',
+    border: '#EF4444',
+    glow: 'rgba(239,68,68,0.25)',
+    bg: 'rgba(239,68,68,0.08)',
+    text: '#EF4444',
     icon: AlertCircle,
   },
   ALTO: {
-    border: '#FF8A00',
-    glow: 'rgba(255,138,0,0.3)',
-    bg: 'rgba(255,138,0,0.08)',
-    text: '#FFA033',
+    border: '#FB923C',
+    glow: 'rgba(251,146,60,0.25)',
+    bg: 'rgba(251,146,60,0.08)',
+    text: '#FB923C',
     icon: AlertTriangle,
   },
   MEDIO: {
-    border: '#FFD600',
-    glow: 'rgba(255,214,0,0.2)',
-    bg: 'rgba(255,214,0,0.06)',
-    text: '#FFE066',
+    border: '#EAB308',
+    glow: 'rgba(234,179,8,0.2)',
+    bg: 'rgba(234,179,8,0.06)',
+    text: '#EAB308',
     icon: Info,
   },
   BAJO: {
-    border: '#00FF94',
-    glow: 'rgba(0,255,148,0.2)',
-    bg: 'rgba(0,255,148,0.06)',
-    text: '#33FFA8',
+    border: '#22C55E',
+    glow: 'rgba(34,197,94,0.2)',
+    bg: 'rgba(34,197,94,0.06)',
+    text: '#22C55E',
     icon: CheckCircle,
   },
 };
@@ -92,7 +92,7 @@ function ForensicNode({ data, selected }: NodeProps) {
           background: config.border,
           width: 8,
           height: 8,
-          border: '2px solid #0A0B10',
+          border: '2px solid #111111',
         }}
       />
 
@@ -193,7 +193,7 @@ function ForensicNode({ data, selected }: NodeProps) {
           background: config.border,
           width: 8,
           height: 8,
-          border: '2px solid #0A0B10',
+          border: '2px solid #111111',
         }}
       />
     </div>

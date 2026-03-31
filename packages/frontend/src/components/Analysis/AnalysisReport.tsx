@@ -1,24 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Clock, AlertTriangle, Download, AlertOctagon, Activity, Shield, Terminal, FileSearch, AlertCircle } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import Button from '../ui/Button';
 import FindingsPanel from './FindingsPanel';
 import RiskScoreGauge from './RiskScoreGauge';
+import { useSocketEvents } from '../../hooks/useSocketEvents';
 
 interface AnalysisReportProps {
   analysisId: string;
 }
 
+const TERMINAL_STATUSES = ['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'];
+
 export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
+  const queryClient = useQueryClient();
+
   const { data: analysis, isLoading, error: queryError } = useQuery({
     queryKey: ['analysis', analysisId],
     queryFn: () => apiService.obtenerAnalisis(analysisId),
     refetchInterval: (query) => {
       const status = query.state.data?.status;
       if (!status) return 3000;
-      const terminal = ['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'];
-      return terminal.includes(status) ? false : 30_000;
+      return TERMINAL_STATUSES.includes(status) ? false : 5_000;
     },
   });
 
@@ -26,6 +30,25 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
     queryKey: ['report', analysisId],
     queryFn: () => apiService.obtenerReporte(analysisId),
     enabled: analysis?.status === 'COMPLETED',
+  });
+
+  useSocketEvents({
+    onAnalysisStatusChanged: (data) => {
+      if (data.analysisId === analysisId) {
+        queryClient.invalidateQueries({ queryKey: ['analysis', analysisId] });
+      }
+    },
+    onAnalysisCompleted: (data) => {
+      if (data.analysisId === analysisId) {
+        queryClient.invalidateQueries({ queryKey: ['analysis', analysisId] });
+        queryClient.invalidateQueries({ queryKey: ['report', analysisId] });
+      }
+    },
+    onAnalysisError: (data) => {
+      if (data.analysisId === analysisId) {
+        queryClient.invalidateQueries({ queryKey: ['analysis', analysisId] });
+      }
+    },
   });
 
   const error = queryError ? (queryError instanceof Error ? queryError.message : 'Error loading analysis') : null;
@@ -150,15 +173,27 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
 
             <FindingsPanel analysisId={analysisId} />
           </motion.div>
-        ) : (analysis as { errorMessage?: string }).errorMessage ? (
+        ) : (analysis.status === 'FAILED' || analysis.status === 'ERROR') ? (
           <div className="rounded-xl bg-[#1E1E20] border border-[#EF4444]/30 p-16 text-center space-y-6">
             <AlertOctagon className="w-16 h-16 text-[#EF4444]/40 mx-auto" />
             <div className="space-y-2">
                <h3 className="text-2xl font-semibold text-white">Interrupción Crítica</h3>
                <p className="text-[#64748B] max-w-md mx-auto font-medium">
-                 El motor de análisis ha encontrado una excepción no controlada: {(analysis as { errorMessage?: string }).errorMessage}
+                 {(analysis as { errorMessage?: string }).errorMessage
+                   ? `El motor de análisis ha encontrado una excepción no controlada: ${(analysis as { errorMessage?: string }).errorMessage}`
+                   : 'El análisis ha fallado. Puedes reintentarlo para volver a procesarlo.'}
                </p>
             </div>
+            <button
+              onClick={() =>
+                apiService.reintentarAnalisis(analysisId).then(() =>
+                  queryClient.invalidateQueries({ queryKey: ['analysis', analysisId] })
+                )
+              }
+              className="px-4 py-2 bg-[#F97316]/10 border border-[#F97316]/30 text-[#F97316] rounded-xl text-sm font-semibold hover:bg-[#F97316]/20 transition-all"
+            >
+              Reintentar análisis
+            </button>
           </div>
         ) : (
           <div className="rounded-xl bg-[#1E1E20] border border-[#2D2D2D] p-24 text-center space-y-10 relative overflow-hidden">

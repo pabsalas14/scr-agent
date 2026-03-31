@@ -157,6 +157,16 @@ class ApiService {
     return data.data;
   }
 
+  /**
+   * Reintentar un análisis fallido
+   */
+  async reintentarAnalisis(analysisId: string): Promise<Analisis> {
+    const { data } = await this.client.post<ApiResponse<Analisis>>(
+      `/analyses/${analysisId}/retry`
+    );
+    return data.data;
+  }
+
   // ==================== HALLAZGOS ====================
 
   /**

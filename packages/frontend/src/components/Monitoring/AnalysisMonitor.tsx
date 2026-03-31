@@ -3,6 +3,9 @@ import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { CheckCircle, AlertCircle, Clock, Zap, FileText, ArrowRight, Activity, ShieldAlert } from 'lucide-react';
 import { apiService } from '../../services/api.service';
+import type { Proyecto, Analisis } from '../../types/api';
+
+type EnrichedAnalysis = Analisis & { projectName: string; projectId: string; error?: string };
 
 const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   PENDING:           { label: 'Pendiente',    icon: Clock,        color: '#6B7280' },
@@ -25,17 +28,17 @@ export default function AnalysisMonitor() {
 
   const proyectos = projectsData?.data || [];
 
-  const allAnalyses = proyectos.flatMap((proyecto: any) =>
-    (proyecto.analyses || []).map((analysis: any) => ({
+  const allAnalyses: EnrichedAnalysis[] = proyectos.flatMap((proyecto: Proyecto) =>
+    (proyecto.analyses || []).map((analysis: Analisis) => ({
       ...analysis,
       projectName: proyecto.name,
       projectId: proyecto.id,
     }))
-  ).sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  ).sort((a: EnrichedAnalysis, b: EnrichedAnalysis) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-  const enProgreso = allAnalyses.filter((a: any) => a.status === 'RUNNING' || a.status.includes('RUNNING'));
-  const completados = allAnalyses.filter((a: any) => a.status === 'COMPLETED').slice(0, 10);
-  const fallidos = allAnalyses.filter((a: any) => a.status === 'ERROR');
+  const enProgreso = allAnalyses.filter((a: EnrichedAnalysis) => a.status === 'RUNNING' || a.status.includes('RUNNING'));
+  const completados = allAnalyses.filter((a: EnrichedAnalysis) => a.status === 'COMPLETED').slice(0, 10);
+  const fallidos = allAnalyses.filter((a: EnrichedAnalysis) => a.status === 'ERROR' || a.status === 'FAILED');
 
   if (isLoading) {
     return (
@@ -93,7 +96,7 @@ export default function AnalysisMonitor() {
               <h2 className="text-sm font-medium text-[#A0A0A0] flex items-center gap-2">
                 <span className="w-2 h-2 rounded-full bg-[#F97316]" /> Ejecuciones en proceso
               </h2>
-              {enProgreso.map((analysis: any) => {
+              {enProgreso.map((analysis: EnrichedAnalysis) => {
                 const cfg = STATUS_CONFIG[analysis.status] || STATUS_CONFIG['RUNNING']!;
                 return (
                   <div key={analysis.id} className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 space-y-3">
@@ -127,7 +130,7 @@ export default function AnalysisMonitor() {
             <h2 className="text-sm font-medium text-[#A0A0A0] flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-[#22C55E]" /> Historial de éxitos
             </h2>
-            {completados.length > 0 ? completados.map((analysis: any, idx: number) => (
+            {completados.length > 0 ? completados.map((analysis: EnrichedAnalysis, idx: number) => (
               <motion.div
                 key={analysis.id}
                 initial={{ opacity: 0, x: -8 }}
@@ -166,7 +169,7 @@ export default function AnalysisMonitor() {
               </h3>
               <span className="text-sm font-semibold text-white">{fallidos.length}</span>
             </div>
-            {fallidos.length > 0 ? fallidos.map((analysis: any) => (
+            {fallidos.length > 0 ? fallidos.map((analysis: EnrichedAnalysis) => (
               <div key={analysis.id} className="p-3 rounded-lg bg-[#EF4444]/5 border border-[#EF4444]/10 space-y-1">
                 <p className="text-sm font-medium text-white">{analysis.projectName}</p>
                 <p className="text-xs text-[#EF4444]/70 font-mono line-clamp-2">
