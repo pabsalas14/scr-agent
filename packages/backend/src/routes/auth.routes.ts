@@ -17,7 +17,10 @@ import { logger } from '../services/logger.service';
 
 const router: IRouter = Router();
 
-const JWT_SECRET = process.env['JWT_SECRET'] || 'scr-agent-dev-secret-change-in-production';
+const JWT_SECRET = process.env['JWT_SECRET'];
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 const JWT_EXPIRES_IN = process.env['JWT_EXPIRES_IN'] || '24h';
 const BCRYPT_ROUNDS = 12;
 
