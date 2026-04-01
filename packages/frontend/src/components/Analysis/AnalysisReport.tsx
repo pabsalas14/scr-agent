@@ -204,6 +204,25 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
                </Button>
             </div>
 
+            {/* Coverage warning banner */}
+            {(analysis as any).coverageSummary && (analysis as any).coverageSummary.filesExcluded > 0 && (
+              <div className="rounded-xl bg-[#F97316]/5 border border-[#F97316]/30 p-5 flex items-start gap-4">
+                <AlertTriangle className="w-5 h-5 text-[#F97316] shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-sm font-semibold text-[#F97316]">Cobertura parcial del repositorio</p>
+                  <p className="text-xs text-[#94A3B8] font-medium">
+                    {(analysis as any).coverageSummary.filesScanned} archivos analizados —{' '}
+                    {(analysis as any).coverageSummary.filesExcluded} excluidos (
+                    {Math.round((analysis as any).coverageSummary.bytesExcluded / 1024 / 1024 * 10) / 10} MB omitidos).
+                    {(analysis as any).coverageSummary.excludedBySize?.length > 0 && (
+                      <> Por tamaño: {(analysis as any).coverageSummary.excludedBySize.slice(0, 3).join(', ')}{(analysis as any).coverageSummary.excludedBySize.length > 3 ? ` y ${(analysis as any).coverageSummary.excludedBySize.length - 3} más` : ''}.</>
+                    )}
+                    {' '}Configura límites mayores en los ajustes del proyecto para ampliar la cobertura.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <FindingsPanel analysisId={analysisId} />
           </motion.div>
         ) : (analysis.status === 'FAILED' || analysis.status === 'ERROR') ? (

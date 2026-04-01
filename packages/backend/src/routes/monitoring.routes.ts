@@ -13,6 +13,7 @@
 import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import { logger } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
+import { MODEL_PRICES, DEFAULT_PRICE } from '../config/model-prices';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -118,7 +119,7 @@ async function getCPUUsage(): Promise<number> {
 /**
  * Obtener uso de disco
  */
-async function getDiskUsage(): Promise<{ used: number; total: number; usage: number }> {
+async function getDiskUsage(): Promise<{ used: number; total: number; usage: number } | null> {
   try {
     // En macOS y Linux
     const { stdout } = await execAsync('df -B1 / | tail -1');
@@ -137,34 +138,14 @@ async function getDiskUsage(): Promise<{ used: number; total: number; usage: num
     logger.error(`Error obteniendo uso de disco: ${error}`);
   }
 
-  // Fallback: valores por defecto
-  return {
-    used: 250 * 1024 * 1024 * 1024, // 250 GB
-    total: 1024 * 1024 * 1024 * 1024, // 1 TB
-    usage: 24,
-  };
+  // No hay datos de disco disponibles — devolver null en lugar de valores inventados
+  return null;
 }
 
 /**
  * Calcular costos basado en tokens REALES de la base de datos
  */
 async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostSummary> {
-  // Precios REALES por token en USD (actualizados periódicamente)
-  // Precios Claude (USD por token) — fuente: anthropic.com/pricing
-  const modelPrices: Record<string, { input: number; output: number }> = {
-    'claude-opus-4-6':              { input: 0.000015,   output: 0.000075  },
-    'claude-sonnet-4-6':            { input: 0.000003,   output: 0.000015  },
-    'claude-haiku-4-5-20251001':    { input: 0.0000008,  output: 0.000004  },
-    'claude-3-7-sonnet-20250219':   { input: 0.000003,   output: 0.000015  },
-    'claude-3-5-sonnet-20241022':   { input: 0.000003,   output: 0.000015  },
-    'claude-3-5-haiku-20241022':    { input: 0.0000008,  output: 0.000004  },
-    'claude-3-opus-20240229':       { input: 0.000015,   output: 0.000075  },
-    'claude-3-sonnet-20240229':     { input: 0.000003,   output: 0.000015  },
-    'claude-3-haiku-20240307':      { input: 0.00000025, output: 0.00000125 },
-    // Alias cortos (fallback)
-    'claude-3-opus':   { input: 0.000015,  output: 0.000075  },
-    'claude-3-sonnet': { input: 0.000003,  output: 0.000015  },
-  };
 
   // Calcular fecha de corte según el período
   const now = new Date();
@@ -220,7 +201,7 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
 
     // Calcular costos por modelo
     const entries: CostEntry[] = Object.entries(costsByModel).map(([model, data]) => {
-      const prices = modelPrices[model] || modelPrices['claude-3-sonnet-20240229'] || { input: 0.000003, output: 0.000015 };
+      const prices = MODEL_PRICES[model] ?? DEFAULT_PRICE;
       const inputCost = data.inputTokens * prices.input;
       const outputCost = data.outputTokens * prices.output;
       const totalCost = inputCost + outputCost;
@@ -327,8 +308,8 @@ router.get('/agents/:id/executions', async (req: Request, res: Response) => {
       select: { id: true, createdAt: true, completedAt: true, status: true },
     });
 
-    const executions: AgentExecution[] = analyses.map((analysis, idx) => ({
-      id: `exec-${idx}`,
+    const executions: AgentExecution[] = analyses.map((analysis) => ({
+      id: analysis.id,
       agentId: req.params['id']!,
       timestamp: analysis.createdAt,
       duration: analysis.completedAt

@@ -90,21 +90,22 @@ async function processAnalysisQueue() {
       project.branch || undefined
     );
 
-    // Leer código fuente
+    // Leer código fuente con límites configurados por proyecto
     logger.info(`Leyendo código fuente...`);
-    const repoFiles = gitService.readRepositoryFiles(localPath);
-    const codigoFuente = repoFiles.files
-      .map((f) => `// === ${f.path} ===\n${f.content}`)
-      .join('\n\n');
+    const repoFiles = gitService.readRepositoryFiles(localPath, undefined, {
+      maxFileSizeKb: (project as any).maxFileSizeKb ?? 150,
+      maxTotalSizeMb: (project as any).maxTotalSizeMb ?? 2,
+      maxDirectoryDepth: (project as any).maxDirectoryDepth ?? 6,
+    });
 
     logger.info(`Analizando código (${repoFiles.fileCount} archivos, ${repoFiles.totalSize} bytes)...`);
 
-    // Ejecutar Inspector Agent con timeout de 5 minutos
+    // Ejecutar Inspector Agent con chunking automático y timeout de 5 minutos
     const maliciaOutput: any = await Promise.race([
-      inspectorAgent.analizarCodigo({
-        codigo: codigoFuente,
-        contexto: `Análisis de repositorio: ${project.repositoryUrl}`,
-      }),
+      inspectorAgent.analizarArchivos(
+        repoFiles.files,
+        `Repositorio: ${project.repositoryUrl}`
+      ),
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error('Inspector Agent timeout (5 minutos)')),
@@ -112,6 +113,13 @@ async function processAnalysisQueue() {
         )
       ),
     ]);
+
+    // Persistir resumen de cobertura y emitir por socket
+    await prisma.analysis.update({
+      where: { id: analysisId },
+      data: { coverageSummary: repoFiles.coverage as any },
+    });
+    socketService.emitCoverageReport(analysisId, projectId, repoFiles.coverage);
 
     logger.info(`✅ Inspector encontró ${maliciaOutput.cantidad_hallazgos} hallazgos`);
 
@@ -189,7 +197,7 @@ async function processAnalysisQueue() {
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'DETECTIVE_RUNNING', 40);
 
     logger.info(`Obteniendo historial de Git...`);
-    const historialGit = await gitService.getCommitHistory(project.repositoryUrl, 50);
+    const historialGit = await gitService.getCommitHistory(project.repositoryUrl, (project as any).maxCommits ?? 50);
 
     logger.info(`Investigando ${maliciaOutput.hallazgos.length} hallazgos en historial...`);
 
@@ -421,12 +429,17 @@ export async function startAnalysisProcessor(): Promise<void> {
     logger.error(`Error recuperando análisis al iniciar: ${err}`);
   }
 
-  // Procesar cola cada segundo
+  // Fallback: revisar cada 30s por si algún item quedó huérfano (evento-driven es la vía normal)
   setInterval(() => {
     if (analysisQueue.length > 0 && !isProcessing) {
       processAnalysisQueue();
     }
-  }, 1000);
+  }, 30_000);
+
+  // Procesar inmediatamente cualquier item recuperado tras reinicio
+  if (analysisQueue.length > 0) {
+    setImmediate(processAnalysisQueue);
+  }
 
   logger.info('✓ Analysis queue processor iniciado');
 }

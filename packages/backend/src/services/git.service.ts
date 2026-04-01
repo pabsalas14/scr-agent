@@ -320,19 +320,30 @@ export class GitService {
   }
 
   /**
-   * Leer archivos de código de un repositorio clonado localmente
-   * Retorna contenido de todos los archivos con extensiones relevantes
+   * Leer archivos de código de un repositorio clonado localmente.
+   * Retorna contenido de archivos relevantes + metadata de cobertura (cuánto quedó fuera).
    */
   readRepositoryFiles(
     localPath: string,
-    extensions: string[] = ['.ts', '.js', '.py', '.java', '.go', '.rb', '.php', '.cs', '.json', '.yaml', '.yml', '.sh', '.env']
-  ): { files: Array<{ path: string; content: string; size: number }>; totalSize: number; fileCount: number } {
-    // LARGE REPOSITORY STRATEGY:
-    // - Reduced limits to handle large repos without token overflow
-    // - Aggressive directory exclusion to focus on source code only
-    // - Prioritizes main source over tests/examples
-    const MAX_FILE_SIZE = 150 * 1024; // 150 KB per file (was 500 KB)
-    const MAX_TOTAL_SIZE = 2 * 1024 * 1024; // 2 MB total (was 5 MB)
+    extensions: string[] = ['.ts', '.js', '.py', '.java', '.go', '.rb', '.php', '.cs', '.json', '.yaml', '.yml', '.sh', '.env'],
+    limits: { maxFileSizeKb?: number; maxTotalSizeMb?: number; maxDirectoryDepth?: number } = {}
+  ): {
+    files: Array<{ path: string; content: string; size: number }>;
+    totalSize: number;
+    fileCount: number;
+    coverage: {
+      filesScanned: number;
+      filesExcluded: number;
+      bytesExcluded: number;
+      excludedBySize: string[];
+      excludedByLimit: string[];
+      excludedDirs: string[];
+    };
+  } {
+    const MAX_FILE_SIZE = (limits.maxFileSizeKb ?? 150) * 1024;
+    const MAX_TOTAL_SIZE = (limits.maxTotalSizeMb ?? 2) * 1024 * 1024;
+    const MAX_DEPTH = limits.maxDirectoryDepth ?? 6;
+
     const EXCLUDED_DIRS = new Set([
       'node_modules', '.git', 'dist', 'build', '.next', '__pycache__', 'venv', '.venv',
       'test', 'tests', 'spec', 'specs', 'coverage', '.coverage',
@@ -346,12 +357,15 @@ export class GitService {
 
     const files: Array<{ path: string; content: string; size: number }> = [];
     let totalSize = 0;
-    let skippedLargeFiles = 0;
-    let skippedBySize = 0;
+
+    // Coverage tracking
+    const excludedBySize: string[] = [];
+    const excludedByLimit: string[] = [];
+    const excludedDirsFound: string[] = [];
+    let bytesExcluded = 0;
 
     const walk = (dir: string, depth: number = 0): void => {
-      // Skip deep nested directories (often generated code)
-      if (depth > 6 || totalSize >= MAX_TOTAL_SIZE) return;
+      if (depth > MAX_DEPTH || totalSize >= MAX_TOTAL_SIZE) return;
 
       let entries: fs.Dirent[];
       try {
@@ -364,7 +378,9 @@ export class GitService {
         if (totalSize >= MAX_TOTAL_SIZE) break;
 
         if (entry.isDirectory()) {
-          if (!EXCLUDED_DIRS.has(entry.name)) {
+          if (EXCLUDED_DIRS.has(entry.name)) {
+            if (!excludedDirsFound.includes(entry.name)) excludedDirsFound.push(entry.name);
+          } else {
             walk(path.join(dir, entry.name), depth + 1);
           }
         } else if (entry.isFile()) {
@@ -373,12 +389,18 @@ export class GitService {
             const filePath = path.join(dir, entry.name);
             try {
               const stat = fs.statSync(filePath);
+              const relativePath = path.relative(localPath, filePath);
               if (stat.size > MAX_FILE_SIZE) {
-                skippedLargeFiles++;
+                excludedBySize.push(relativePath);
+                bytesExcluded += stat.size;
+                continue;
+              }
+              if (totalSize + stat.size > MAX_TOTAL_SIZE) {
+                excludedByLimit.push(relativePath);
+                bytesExcluded += stat.size;
                 continue;
               }
               const content = fs.readFileSync(filePath, 'utf-8');
-              const relativePath = path.relative(localPath, filePath);
               files.push({ path: relativePath, content, size: stat.size });
               totalSize += stat.size;
             } catch {
@@ -391,14 +413,31 @@ export class GitService {
 
     walk(localPath);
 
-    // Log strategy info for large repos
-    if (totalSize >= MAX_TOTAL_SIZE * 0.8) {
-      logger.warn(`⚠️ LARGE REPOSITORY: Using aggressive file filtering. Analyzed: ${files.length} files (${totalSize} bytes), Skipped: ${skippedLargeFiles} large files, Max total size: ${MAX_TOTAL_SIZE}`);
+    const filesExcluded = excludedBySize.length + excludedByLimit.length;
+
+    if (filesExcluded > 0 || totalSize >= MAX_TOTAL_SIZE * 0.8) {
+      logger.warn(
+        `⚠️ Cobertura parcial: ${files.length} archivos analizados, ${filesExcluded} excluidos ` +
+        `(${Math.round(bytesExcluded / 1024)} KB omitidos). ` +
+        `Por tamaño: ${excludedBySize.length}, por límite total: ${excludedByLimit.length}`
+      );
     } else {
       logger.debug(`Archivos leídos: ${files.length}, tamaño total: ${totalSize} bytes`);
     }
 
-    return { files, totalSize, fileCount: files.length };
+    return {
+      files,
+      totalSize,
+      fileCount: files.length,
+      coverage: {
+        filesScanned: files.length,
+        filesExcluded,
+        bytesExcluded,
+        excludedBySize: excludedBySize.slice(0, 20), // limitar para no inflar el payload
+        excludedByLimit: excludedByLimit.slice(0, 20),
+        excludedDirs: excludedDirsFound,
+      },
+    };
   }
 
   /**

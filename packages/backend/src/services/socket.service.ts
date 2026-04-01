@@ -337,6 +337,25 @@ class SocketService {
   }
 
   /**
+   * Emit coverage report after Inspector phase — informs frontend of excluded content
+   */
+  emitCoverageReport(
+    analysisId: string,
+    projectId: string,
+    coverage: {
+      filesScanned: number;
+      filesExcluded: number;
+      bytesExcluded: number;
+      excludedBySize: string[];
+      excludedByLimit: string[];
+      excludedDirs: string[];
+    }
+  ): void {
+    if (!this.io) return;
+    this.broadcast('analysis:coverageReport', { analysisId, projectId, coverage, timestamp: new Date() });
+  }
+
+  /**
    * Emit when analysis is completed
    */
   emitAnalysisCompleted(

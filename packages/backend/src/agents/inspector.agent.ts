@@ -18,6 +18,9 @@ import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
+/** Tamaño máximo de código por llamada a Claude (500 KB) */
+const MAX_CHUNK_BYTES = 500 * 1024;
+
 /**
  * Patrones conocidos de malicia
  * Se usan para enfocar el análisis del LLM
@@ -87,7 +90,51 @@ export class InspectorAgentService {
   }
 
   /**
-   * Analizar código en busca de funciones maliciosas
+   * Analizar lista de archivos con chunking automático para repos grandes.
+   * Divide en batches de MAX_CHUNK_BYTES, hace N llamadas y consolida resultados.
+   */
+  async analizarArchivos(
+    archivos: Array<{ path: string; content: string }>,
+    contexto?: string
+  ): Promise<MaliciaOutput> {
+    const startTime = Date.now();
+    const chunks = this.splitEnChunks(archivos);
+    logger.info(`Inspector: ${archivos.length} archivos → ${chunks.length} chunk(s) de análisis`);
+
+    const resultados = await Promise.all(
+      chunks.map((chunk, i) =>
+        this.analizarCodigo({
+          codigo: chunk.map((f) => `// === ${f.path} ===\n${f.content}`).join('\n\n'),
+          contexto: chunks.length > 1 ? `${contexto ?? ''} [Parte ${i + 1}/${chunks.length}]` : contexto,
+        })
+      )
+    );
+
+    // Consolidar hallazgos de todos los chunks
+    const todosHallazgos = resultados.flatMap((r) => r.hallazgos);
+    const totalInputTokens = resultados.reduce((s, r) => s + ((r as any).usage?.input_tokens ?? 0), 0);
+    const totalOutputTokens = resultados.reduce((s, r) => s + ((r as any).usage?.output_tokens ?? 0), 0);
+
+    const output: MaliciaOutput & { usage: any } = {
+      hallazgos: todosHallazgos,
+      resumen: `Se encontraron ${todosHallazgos.length} hallazgos en ${chunks.length} parte(s)`,
+      cantidad_hallazgos: todosHallazgos.length,
+      tiempo_ejecucion_ms: Date.now() - startTime,
+      usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens, model: this.model },
+    };
+
+    auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
+      chunks: chunks.length,
+      cantidad_hallazgos: todosHallazgos.length,
+      tiempo_ms: output.tiempo_ejecucion_ms,
+      usage: output.usage,
+    });
+
+    return output;
+  }
+
+  /**
+   * Analizar código en busca de funciones maliciosas (un solo chunk).
    */
   async analizarCodigo(input: MaliciaInput): Promise<MaliciaOutput> {
     const startTime = Date.now();
@@ -95,73 +142,37 @@ export class InspectorAgentService {
     try {
       logger.info('Iniciando análisis Malicia');
 
-      /**
-       * Verificar caché primero
-       * Usar hash del código como parte de la clave
-       */
       const codigoHash = this.hashCode(input.codigo);
-      const cached = cacheService.get<MaliciaOutput>(
-        CacheType.MALICIA_FINDING,
-        'analisis',
-        codigoHash
-      );
-
+      const cached = cacheService.get<MaliciaOutput>(CacheType.MALICIA_FINDING, 'analisis', codigoHash);
       if (cached) {
         logger.info('Resultado encontrado en caché');
         return cached;
       }
 
-      /**
-       * Construir prompt para Claude
-       */
       const prompt = this.construirPrompt(input);
-
-      /**
-       * Llamar a Claude
-       */
       logger.info(`Llamando a Claude ${this.model}`);
       const response = await this.getAnthropicClient().messages.create({
         model: this.model,
         max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
+        messages: [{ role: 'user', content: prompt }],
       });
 
-      /**
-       * Procesar respuesta
-       */
       const textoRespuesta = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
+        .filter((block: { type: string }) => block.type === 'text')
+        .map((block: { text: string }) => block.text)
         .join('\n')
         .trim();
 
-      if (!textoRespuesta) {
-        throw new Error('Respuesta inesperada de Claude');
-      }
+      if (!textoRespuesta) throw new Error('Respuesta inesperada de Claude');
 
-      /**
-       * Parsear JSON de la respuesta
-       */
       const hallazgos = this.parseRespuesta(textoRespuesta);
-
-      /**
-       * Extraer usage de la respuesta de Anthropic
-       */
       const usage = {
         input_tokens: response.usage.input_tokens,
         output_tokens: response.usage.output_tokens,
         model: response.model,
       };
 
-      /**
-       * Construir salida
-       */
-      const output: MaliciaOutput & { usage: any } = {
+      const output: MaliciaOutput & { usage: typeof usage } = {
         hallazgos,
         resumen: `Se encontraron ${hallazgos.length} hallazgos potenciales de código malicioso`,
         cantidad_hallazgos: hallazgos.length,
@@ -169,20 +180,7 @@ export class InspectorAgentService {
         usage,
       };
 
-      /**
-       * Guardar en caché
-       */
       cacheService.set(CacheType.MALICIA_FINDING, 'analisis', output, codigoHash);
-
-      /**
-       * Auditoría
-       */
-      auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
-        cantidad_hallazgos: hallazgos.length,
-        tiempo_ms: output.tiempo_ejecucion_ms,
-        usage,
-      });
-
       return output;
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : String(error);
@@ -192,63 +190,40 @@ export class InspectorAgentService {
   }
 
   /**
+   * Dividir archivos en chunks que no superen MAX_CHUNK_BYTES.
+   * Nunca corta un archivo a la mitad.
+   */
+  private splitEnChunks(archivos: Array<{ path: string; content: string }>): Array<typeof archivos> {
+    const chunks: Array<typeof archivos> = [];
+    let chunk: typeof archivos = [];
+    let chunkSize = 0;
+
+    for (const archivo of archivos) {
+      const fileSize = Buffer.byteLength(archivo.content, 'utf-8');
+      if (chunk.length > 0 && chunkSize + fileSize > MAX_CHUNK_BYTES) {
+        chunks.push(chunk);
+        chunk = [];
+        chunkSize = 0;
+      }
+      chunk.push(archivo);
+      chunkSize += fileSize;
+    }
+    if (chunk.length > 0) chunks.push(chunk);
+    return chunks.length > 0 ? chunks : [[]];
+  }
+
+  /**
    * Construir prompt para Claude
    */
   private construirPrompt(input: MaliciaInput): string {
-    return `
-# Análisis de Seguridad de Código - Detector de Malicia
+    return `Analiza el siguiente código fuente en busca de funcionalidades maliciosas: backdoors, inyecciones, bombas lógicas, ofuscación, bypass de autenticación, errores silenciados, credenciales hardcodeadas y ejecución dinámica (eval/exec).${input.contexto ? ` Contexto: ${input.contexto}` : ''}
 
-Analiza el siguiente código en busca de funcionalidades maliciosas, backdoors, lógica oculta, y comportamientos sospechosos.
-
-## Código a Analizar
-\`\`\`${input.lenguaje || 'javascript'}
+\`\`\`
 ${input.codigo}
 \`\`\`
 
-## Instrucciones
-1. Identifica TODAS las funciones que podrían ser maliciosas
-2. Para cada hallazgo, proporciona:
-   - Ubicación exacta (archivo, función, líneas)
-   - Severidad: BAJO, MEDIO, ALTO, CRÍTICO
-   - Tipo de riesgo: PUERTA_TRASERA, INYECCION, BOMBA_LOGICA, OFUSCACION, SOSPECHOSO, etc.
-   - Por qué es sospechoso (explicación técnica clara)
-   - Confianza (0-1)
-   - Pasos de remediación
-
-3. Busca especialmente:
-   - Lógica de bypass de autenticación
-   - Código ofuscado o codificado
-   - Errores swallowed sin logging
-   - Valores hardcodeados inusuales
-   - Inyección de SQL/Comandos
-   - Eval o ejecución dinámica
-
-## Formato de Respuesta
-Responde SOLO con JSON válido, sin markdown ni explicación adicional:
-\`\`\`json
-{
-  "hallazgos": [
-    {
-      "archivo": "src/api.js",
-      "funcion": "autenticarUsuario",
-      "rango_lineas": [45, 52],
-      "fragmento_codigo": "if(user === 'admin' && pwd === hardcodedBypass) ...",
-      "severidad": "CRÍTICO",
-      "tipo_riesgo": "PUERTA_TRASERA",
-      "por_que_sospechoso": "Lógica de bypass hardcodeada que evita validación de contraseña",
-      "confianza": 0.95,
-      "pasos_remediacion": [
-        "Remover la condición de bypass",
-        "Implementar autenticación adecuada",
-        "Auditar git history para encontrar cuándo se agregó"
-      ]
-    }
-  ]
-}
-\`\`\`
-
-${input.contexto ? `\n## Contexto Adicional\n${input.contexto}` : ''}
-`;
+Responde ÚNICAMENTE con JSON válido con esta estructura (sin texto adicional):
+{"hallazgos":[{"archivo":"ruta","funcion":"nombre","rango_lineas":[inicio,fin],"fragmento_codigo":"...","severidad":"CRÍTICO|ALTO|MEDIO|BAJO","tipo_riesgo":"PUERTA_TRASERA|INYECCION|BOMBA_LOGICA|OFUSCACION|SOSPECHOSO|HARDCODED_VALUES|ERROR_HANDLING","por_que_sospechoso":"explicación técnica","confianza":0.0,"pasos_remediacion":["paso1"]}]}`;
   }
 
   /**
