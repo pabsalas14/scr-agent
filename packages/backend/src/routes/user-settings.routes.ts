@@ -169,7 +169,9 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
       select: {
         id: true,
         email: true,
-        name: true
+        name: true,
+        avatar: true,
+        bio: true,
       }
     });
 
@@ -196,15 +198,17 @@ router.patch('/settings', authMiddleware, async (req: Request, res: Response) =>
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { name, email } = req.body as { name?: string; email?: string };
+    const { name, email, avatar, bio } = req.body as { name?: string; email?: string; avatar?: string; bio?: string };
 
-    if (!name && !email) {
-      return res.status(400).json({ error: 'At least one field (name or email) is required' });
+    if (!name && !email && avatar === undefined && bio === undefined) {
+      return res.status(400).json({ error: 'At least one field (name, email, avatar or bio) is required' });
     }
 
-    const updateData: { name?: string; email?: string } = {};
+    const updateData: { name?: string; email?: string; avatar?: string | null; bio?: string | null } = {};
     if (name !== undefined) updateData.name = String(name).trim();
     if (email !== undefined) updateData.email = String(email).trim().toLowerCase();
+    if (avatar !== undefined) updateData.avatar = avatar ? String(avatar).trim() : null;
+    if (bio !== undefined) updateData.bio = bio ? String(bio).trim() : null;
 
     // Check email uniqueness if changing email
     if (updateData.email) {
@@ -220,7 +224,7 @@ router.patch('/settings', authMiddleware, async (req: Request, res: Response) =>
     const updated = await prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, avatar: true, bio: true },
     });
 
     res.json({ success: true, data: updated });

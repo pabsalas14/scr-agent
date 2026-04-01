@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle, CheckCircle2, Eye, Edit2, Zap,
   Shield, Search, SlidersHorizontal, ChevronDown,
-  GitCommit, User, Clock,
+  GitCommit, User, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { findingsService } from '../../services/findings.service';
 import { usersService } from '../../services/users.service';
@@ -50,6 +50,8 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
   const [filterSeverity, setFilterSev]    = useState<Severity | 'ALL'>('ALL');
   const [selectedFinding, setSelected]    = useState<Finding | null>(null);
   const [remediationFinding, setRemediation] = useState<Finding | null>(null);
+  const [page, setPage]                   = useState(1);
+  const PAGE_SIZE = 15;
 
   const { data: findings = [], isLoading, refetch } = useQuery({
     queryKey: ['findings', analysisId],
@@ -78,6 +80,14 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
       (filterSeverity === 'ALL' || f.severity === filterSeverity)
     );
   });
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleFilterChange = (setter: (v: any) => void) => (v: any) => {
+    setter(v);
+    setPage(1);
+  };
 
   // Stats
   const total    = filtered.length;
@@ -166,7 +176,7 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
             type="text"
             placeholder="Buscar archivo o descripción..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             style={{
               width: '100%', boxSizing: 'border-box',
               paddingLeft: 34, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
@@ -182,7 +192,7 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
           <SlidersHorizontal size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as FindingStatus | 'ALL')}
+            onChange={(e) => { setFilterStatus(e.target.value as FindingStatus | 'ALL'); setPage(1); }}
             style={{
               width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
               background: '#242424', border: '1px solid #2D2D2D',
@@ -203,7 +213,7 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
           <AlertCircle size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterSeverity}
-            onChange={(e) => setFilterSev(e.target.value as Severity | 'ALL')}
+            onChange={(e) => { setFilterSev(e.target.value as Severity | 'ALL'); setPage(1); }}
             style={{
               width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
               background: '#242424', border: '1px solid #2D2D2D',
@@ -234,7 +244,7 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Object.entries(STATUS_CONFIG).map(([statusKey, cfg]) => {
-            const group = filtered.filter(
+            const group = paginatedFiltered.filter(
               (f) => (f.statusHistory?.[0]?.status || 'DETECTED') === (statusKey as FindingStatus)
             );
             if (group.length === 0) return null;
@@ -339,6 +349,31 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
               </motion.div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2 border-t border-[#2D2D2D]">
+          <span className="text-xs text-[#6B7280]">
+            Página {page} de {totalPages} — {filtered.length} hallazgos
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguiente <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

@@ -244,7 +244,7 @@ class ApiService {
   /**
    * Actualizar perfil del usuario autenticado
    */
-  async actualizarPerfil(updates: { name?: string; email?: string }): Promise<UserProfile> {
+  async actualizarPerfil(updates: { name?: string; email?: string; avatar?: string | null; bio?: string | null }): Promise<UserProfile> {
     const { data } = await this.client.patch<{ success: boolean; data: UserProfile }>('/users/settings', updates);
     return data.data;
   }

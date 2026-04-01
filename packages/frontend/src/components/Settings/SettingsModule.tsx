@@ -27,7 +27,7 @@ export default function SettingsModule() {
   const [showToken, setShowToken] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: '', email: '' });
+  const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
 
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
@@ -50,7 +50,7 @@ export default function SettingsModule() {
 
   useEffect(() => {
     if (perfil) {
-      setProfileForm({ name: perfil.name || '', email: perfil.email });
+      setProfileForm({ name: perfil.name || '', email: perfil.email, avatar: perfil.avatar || '', bio: perfil.bio || '' });
     }
   }, [perfil]);
 
@@ -82,9 +82,11 @@ export default function SettingsModule() {
   });
 
   const handleGuardarPerfil = () => {
-    const updates: { name?: string; email?: string } = {};
+    const updates: { name?: string; email?: string; avatar?: string | null; bio?: string | null } = {};
     if (profileForm.name.trim()) updates.name = profileForm.name.trim();
     if (profileForm.email.trim()) updates.email = profileForm.email.trim();
+    updates.avatar = profileForm.avatar.trim() || null;
+    updates.bio = profileForm.bio.trim() || null;
     actualizarPerfilMutation.mutate(updates);
   };
 
@@ -151,6 +153,26 @@ export default function SettingsModule() {
                     className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:outline-none transition-all"
                   />
                 </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs text-[#6B7280]">URL de avatar (opcional)</label>
+                  <input
+                    type="url"
+                    value={profileForm.avatar}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, avatar: e.target.value }))}
+                    placeholder="https://..."
+                    className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:outline-none transition-all font-mono"
+                  />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <label className="text-xs text-[#6B7280]">Bio (opcional)</label>
+                  <input
+                    type="text"
+                    value={profileForm.bio}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
+                    placeholder="Analista de seguridad..."
+                    className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-3 py-2 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:outline-none transition-all"
+                  />
+                </div>
               </div>
               <div className="flex gap-2 justify-end">
                 <button
@@ -177,12 +199,16 @@ export default function SettingsModule() {
           ) : (
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-5">
-                <div className="w-14 h-14 rounded-xl bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center text-xl font-semibold text-[#F97316]">
-                  {avatarInitial}
+                <div className="w-14 h-14 rounded-xl bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center text-xl font-semibold text-[#F97316] overflow-hidden flex-shrink-0">
+                  {perfil?.avatar
+                    ? <img src={perfil.avatar} alt="avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                    : avatarInitial
+                  }
                 </div>
                 <div>
                   <h2 className="text-base font-semibold text-white">{perfil?.name || perfil?.email || 'Usuario'}</h2>
                   <p className="text-sm text-[#6B7280]">{perfil?.email}</p>
+                  {perfil?.bio && <p className="text-xs text-[#4B5563] mt-0.5 italic">{perfil.bio}</p>}
                   <div className="flex gap-2 mt-2">
                     <span className="px-2 py-0.5 rounded-md bg-[#22C55E]/10 border border-[#22C55E]/20 text-xs text-[#22C55E]">Verificado</span>
                   </div>

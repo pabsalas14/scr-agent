@@ -23,6 +23,8 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique @db.VarChar(255)
   name         String?  @db.VarChar(255)
+  avatar       String?  @db.VarChar(500)
+  bio          String?  @db.VarChar(500)
   passwordHash String   @db.VarChar(255)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
