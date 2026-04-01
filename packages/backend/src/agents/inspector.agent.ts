@@ -11,11 +11,6 @@
  * Modelo: Claude 3.5 Sonnet
  * Entrada: Código fuente (por archivo o repositorio)
  * Salida: MaliciaOutput con hallazgos detallados
- *
- * OWASP Coverage:
- * - A03: Injection - Detectar patrones de inyección
- * - A04: Insecure Design - Lógica de seguridad rota
- * - A06: Vulnerable Components - Código desconocido/ofuscado
  */
 
 import Anthropic from '@anthropic-ai/sdk';
