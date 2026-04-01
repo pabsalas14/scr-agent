@@ -17,6 +17,19 @@ import { gitService } from '../services/git.service';
 import { decrypt } from '../services/crypto.service';
 import axios from 'axios';
 
+/** Obtiene y descifra el GitHub token del usuario, o lanza respuesta 400 si no está configurado */
+async function resolveGithubToken(userId: string, res: Response): Promise<string | null> {
+  const userSettings = await prisma.userSettings.findUnique({ where: { userId } });
+  if (!userSettings?.githubToken) {
+    res.status(400).json({
+      error: 'GitHub token no configurado',
+      message: 'Configura tu GitHub token en las preferencias primero',
+    });
+    return null;
+  }
+  return decrypt(userSettings.githubToken);
+}
+
 const router: ExpressRouter = Router();
 
 /**
@@ -33,22 +46,9 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    /**
-     * Obtener GitHub token del usuario
-     */
-    const userSettings = await prisma.userSettings.findUnique({
-      where: { userId },
-    });
+    const githubToken = await resolveGithubToken(userId, res);
+    if (!githubToken) return;
 
-    if (!userSettings?.githubToken) {
-      res.status(400).json({
-        error: 'GitHub token no configurado',
-        message: 'Configura tu GitHub token en las preferencias primero',
-      });
-      return;
-    }
-
-    const githubToken = decrypt(userSettings.githubToken);
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const perPageNum = Math.min(100, Math.max(1, parseInt(per_page as string) || 20));
 
@@ -147,22 +147,8 @@ router.get(
         return;
       }
 
-      /**
-       * Obtener GitHub token del usuario
-       */
-      const userSettings = await prisma.userSettings.findUnique({
-        where: { userId },
-      });
-
-      if (!userSettings?.githubToken) {
-        res.status(400).json({
-          error: 'GitHub token no configurado',
-          message: 'Configura tu GitHub token en las preferencias primero',
-        });
-        return;
-      }
-
-      const githubToken = decrypt(userSettings.githubToken);
+      const githubToken = await resolveGithubToken(userId, res);
+      if (!githubToken) return;
 
       try {
         /**

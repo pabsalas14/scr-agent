@@ -22,41 +22,6 @@ import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 const MAX_CHUNK_BYTES = 500 * 1024;
 
 /**
- * Patrones conocidos de malicia
- * Se usan para enfocar el análisis del LLM
- */
-const MALICIOUS_PATTERNS = {
-  backdoors: [
-    'hardcoded.*bypass',
-    'credential.*check.*===.*false',
-    'admin.*===.*user',
-    'if.*eval',
-    'exec\\(',
-    'system\\(',
-  ],
-  injection: [
-    'sql.*concat',
-    'query.*\\+',
-    'eval',
-    'innerHTML.*=',
-    'exec\\(.*process\\.env',
-  ],
-  obfuscation: [
-    'atob\\(',
-    'btoa\\(',
-    'String\\.fromCharCode',
-    'charCodeAt',
-    '_0x[0-9a-f]{4}',
-  ],
-  suspiciousErrors: [
-    'try.*catch.*\\{\\}',
-    'catch.*\\{\\}',
-    'error.*swallow',
-    'ignore.*error',
-  ],
-};
-
-/**
  * Servicio del Agente Inspector
  */
 export class InspectorAgentService {

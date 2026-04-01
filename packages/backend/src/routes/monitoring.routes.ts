@@ -64,6 +64,21 @@ interface CostSummary {
   entries: CostEntry[];
 }
 
+// ==================== HELPERS ====================
+
+/** Obtiene stats de análisis completados (usado en múltiples endpoints de agentes) */
+async function getCompletedAnalysisStats() {
+  const [count, last] = await Promise.all([
+    prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+    prisma.analysis.findFirst({
+      where: { status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      select: { completedAt: true },
+    }),
+  ]);
+  return { count, lastExecution: last?.completedAt ?? null };
+}
+
 // ==================== AGENTES DEFINIDOS ====================
 
 const AGENTS: Agent[] = [
@@ -235,21 +250,12 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
  */
 router.get('/agents', async (_req: Request, res: Response) => {
   try {
-    const [completedCount, lastCompleted] = await Promise.all([
-      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
-      prisma.analysis.findFirst({
-        where: { status: 'COMPLETED' },
-        orderBy: { completedAt: 'desc' },
-        select: { completedAt: true },
-      }),
-    ]);
-
+    const { count, lastExecution } = await getCompletedAnalysisStats();
     const agentsWithCounts = AGENTS.map((agent) => ({
       ...agent,
-      executionCount: completedCount,
-      lastExecution: lastCompleted?.completedAt ?? null,
+      executionCount: count,
+      lastExecution,
     }));
-
     res.json({ success: true, data: agentsWithCounts });
   } catch (error) {
     logger.error(`Error obteniendo agentes: ${error}`);
@@ -270,22 +276,10 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    const [executionCount, lastCompleted] = await Promise.all([
-      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
-      prisma.analysis.findFirst({
-        where: { status: 'COMPLETED' },
-        orderBy: { completedAt: 'desc' },
-        select: { completedAt: true },
-      }),
-    ]);
-
+    const { count, lastExecution } = await getCompletedAnalysisStats();
     res.json({
       success: true,
-      data: {
-        ...agent,
-        executionCount,
-        lastExecution: lastCompleted?.completedAt ?? null,
-      },
+      data: { ...agent, executionCount: count, lastExecution },
     });
   } catch (error) {
     logger.error(`Error obteniendo agente: ${error}`);
