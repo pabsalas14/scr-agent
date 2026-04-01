@@ -144,7 +144,7 @@ export default function Header({
                     </button>
 
                     <button
-                      onClick={() => setShowUserMenu(false)}
+                      onClick={() => { setShowUserMenu(false); onSettingsClick(); }}
                       className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#A0A0A0] hover:bg-[#242424] hover:text-white transition-colors"
                     >
                       <User className="w-4 h-4 flex-shrink-0" />

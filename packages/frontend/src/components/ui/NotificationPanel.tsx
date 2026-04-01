@@ -9,7 +9,7 @@ interface Notification {
   type: string;
   title: string;
   message: string;
-  isRead: boolean;
+  read: boolean;
   createdAt: string;
 }
 
@@ -80,7 +80,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [onClose]);
 
-  const unread = (notifications as Notification[]).filter((n) => !n.isRead).length;
+  const unread = (notifications as Notification[]).filter((n) => !n.read).length;
 
   return (
     <div
@@ -136,20 +136,20 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
             return (
               <button
                 key={n.id}
-                onClick={() => { if (!n.isRead) markReadMutation.mutate(n.id); }}
-                className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-[#242424] transition-colors text-left border-b border-[#2D2D2D] last:border-0 ${!n.isRead ? 'bg-[#242424]/50' : ''}`}
+                onClick={() => { if (!n.read) markReadMutation.mutate(n.id); }}
+                className={`w-full flex items-start gap-3 px-4 py-3 hover:bg-[#242424] transition-colors text-left border-b border-[#2D2D2D] last:border-0 ${!n.read ? 'bg-[#242424]/50' : ''}`}
               >
                 <div className={`mt-0.5 p-1.5 rounded-lg flex-shrink-0 ${cfg.bg}`}>
                   <Icon className={`w-3 h-3 ${cfg.color}`} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-xs font-semibold truncate ${n.isRead ? 'text-[#6B7280]' : 'text-white'}`}>
+                  <p className={`text-xs font-semibold truncate ${n.read ? 'text-[#6B7280]' : 'text-white'}`}>
                     {n.title}
                   </p>
                   <p className="text-[11px] text-[#6B7280] mt-0.5 line-clamp-2">{n.message}</p>
                   <p className="text-[10px] text-[#475569] mt-1">{timeAgo(n.createdAt)}</p>
                 </div>
-                {!n.isRead && (
+                {!n.read && (
                   <div className="w-1.5 h-1.5 rounded-full bg-[#F97316] flex-shrink-0 mt-1.5" />
                 )}
               </button>

@@ -5,6 +5,7 @@
 
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
+import { logger } from '../services/logger.service';
 
 const router: ExpressRouter = Router();
 
@@ -113,7 +114,7 @@ router.get('/summary', async (req: Request, res: Response) => {
       data: summary
     });
   } catch (error) {
-    console.error('Error fetching analytics summary:', error);
+    logger.error(`Error fetching analytics summary: ${error}`);
     res.status(500).json({
       error: 'Failed to fetch analytics summary'
     });
@@ -193,7 +194,7 @@ router.get('/timeline', async (req: Request, res: Response) => {
       data: timeline
     });
   } catch (error) {
-    console.error('Error fetching analytics timeline:', error);
+    logger.error(`Error fetching analytics timeline: ${error}`);
     res.status(500).json({
       error: 'Failed to fetch analytics timeline'
     });
@@ -234,7 +235,7 @@ router.get('/by-type', async (req: Request, res: Response) => {
       data
     });
   } catch (error) {
-    console.error('Error fetching analytics by type:', error);
+    logger.error(`Error fetching analytics by type: ${error}`);
     res.status(500).json({
       error: 'Failed to fetch analytics by type'
     });
