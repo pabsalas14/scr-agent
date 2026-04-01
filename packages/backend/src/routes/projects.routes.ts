@@ -19,30 +19,50 @@ const router: ExpressRouter = Router();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user?.id;
-    const projects = await prisma.project.findMany({
-      where: userId ? { userId } : {},
-      include: {
-        analyses: {
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-            report: {
-              select: {
-                riskScore: true,
+    const page = Math.max(1, parseInt(req.query['page'] as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 20));
+    const search = (req.query['search'] as string)?.trim() || '';
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      ...(userId ? { userId } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { repositoryUrl: { contains: search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+
+    const [projects, total] = await Promise.all([
+      prisma.project.findMany({
+        where,
+        include: {
+          analyses: {
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+              report: {
+                select: {
+                  riskScore: true,
+                },
               },
             },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 1,
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.project.count({ where }),
+    ]);
 
     // Convertir a JSON plain
     const plainProjects = JSON.parse(JSON.stringify(projects));
@@ -50,7 +70,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     res.json({
       success: true,
       data: plainProjects,
-      count: plainProjects.length,
+      total,
+      page,
+      limit,
+      hasMore: skip + plainProjects.length < total,
     });
   } catch (error) {
     next(error);

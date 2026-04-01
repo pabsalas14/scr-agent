@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Folder, AlertOctagon, Search } from 'lucide-react';
+import { Plus, Folder, AlertOctagon, Search, ChevronLeft, ChevronRight } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useNavigate } from 'react-router-dom';
 import type { CrearProyectoDTO, Proyecto } from '../../types/api';
@@ -9,16 +9,20 @@ import Button from '../ui/Button';
 import NuevoProyectoModerno from '../Dashboard/NuevoProyectoModerno';
 import ProyectoCard from '../Dashboard/ProyectoCard';
 
+const PAGE_SIZE = 20;
+
 export default function ProjectsPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const [modalAbierto, setModalAbierto] = useState(false);
-  const [filtro, setFiltro] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
 
   const { data: proyectosData, isLoading, error } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => apiService.obtenerProyectos(),
+    queryKey: ['projects', page, search],
+    queryFn: () => apiService.obtenerProyectos({ page, limit: PAGE_SIZE, search: search || undefined }),
     refetchInterval: 15_000,
+    placeholderData: (prev) => prev,
   });
 
   const crearProyecto = useMutation({
@@ -26,10 +30,16 @@ export default function ProjectsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setModalAbierto(false);
+      setPage(1);
     },
   });
 
-  if (isLoading) {
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    setPage(1);
+  };
+
+  if (isLoading && !proyectosData) {
     return (
       <div className="flex flex-col justify-center items-center py-32 space-y-3">
         <div className="w-8 h-8 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />
@@ -51,10 +61,8 @@ export default function ProjectsPage() {
   }
 
   const proyectos = proyectosData?.data || [];
-  const filtrados = proyectos.filter((p: Proyecto) =>
-    p.name.toLowerCase().includes(filtro.toLowerCase()) ||
-    p.repositoryUrl.toLowerCase().includes(filtro.toLowerCase())
-  );
+  const total = proyectosData?.total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -64,7 +72,7 @@ export default function ProjectsPage() {
           <div>
             <h1 className="text-2xl font-semibold text-white">Proyectos</h1>
             <p className="text-sm text-[#6B7280] mt-1">
-              {proyectos.length} {proyectos.length === 1 ? 'repositorio registrado' : 'repositorios registrados'} bajo vigilancia
+              {total} {total === 1 ? 'repositorio registrado' : 'repositorios registrados'} bajo vigilancia
             </p>
           </div>
 
@@ -74,8 +82,8 @@ export default function ProjectsPage() {
               <input
                 type="text"
                 placeholder="Buscar proyecto..."
-                value={filtro}
-                onChange={(e) => setFiltro(e.target.value)}
+                value={search}
+                onChange={(e) => handleSearch(e.target.value)}
                 className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg pl-9 pr-4 py-2 text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/40 focus:outline-none transition-all"
               />
             </div>
@@ -92,24 +100,53 @@ export default function ProjectsPage() {
       </div>
 
       {/* Project Grid */}
-      {filtrados.length === 0 ? (
-        <EmptyProjects onNuevo={() => setModalAbierto(true)} tieneFiltro={!!filtro} />
+      {proyectos.length === 0 ? (
+        <EmptyProjects onNuevo={() => setModalAbierto(true)} tieneFiltro={!!search} />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtrados.map((proyecto: Proyecto, i: number) => (
-            <motion.div
-              key={proyecto.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.04 }}
-            >
-              <ProyectoCard
-                proyecto={proyecto}
-                onVerAnalisis={(projectId, analysisId) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
-              />
-            </motion.div>
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {proyectos.map((proyecto: Proyecto, i: number) => (
+              <motion.div
+                key={proyecto.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04 }}
+              >
+                <ProyectoCard
+                  proyecto={proyecto}
+                  onVerAnalisis={(projectId, analysisId) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
+                />
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-2 border-t border-[#2D2D2D]">
+              <span className="text-xs text-[#6B7280]">
+                Página {page} de {totalPages} — {total} proyectos
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page <= 1}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                  Anterior
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page >= totalPages}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  Siguiente
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal */}

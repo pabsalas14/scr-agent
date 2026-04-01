@@ -184,4 +184,50 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * PATCH /api/v1/users/settings
+ * Update user profile (name and/or email)
+ */
+router.patch('/settings', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name, email } = req.body as { name?: string; email?: string };
+
+    if (!name && !email) {
+      return res.status(400).json({ error: 'At least one field (name or email) is required' });
+    }
+
+    const updateData: { name?: string; email?: string } = {};
+    if (name !== undefined) updateData.name = String(name).trim();
+    if (email !== undefined) updateData.email = String(email).trim().toLowerCase();
+
+    // Check email uniqueness if changing email
+    if (updateData.email) {
+      const existing = await prisma.user.findFirst({
+        where: { email: updateData.email, NOT: { id: userId } },
+        select: { id: true },
+      });
+      if (existing) {
+        return res.status(409).json({ error: 'Email already in use' });
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: { id: true, email: true, name: true },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error(`Error updating user settings: ${error}`);
+    res.status(500).json({ error: 'Failed to update user settings' });
+  }
+});
+
 export default router;

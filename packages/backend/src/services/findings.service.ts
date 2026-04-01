@@ -19,9 +19,9 @@ const VALID_TRANSITIONS: Record<FindingStatus, FindingStatus[]> = {
 };
 
 export class FindingsService {
-  async getFindings(analysisId: string) {
+  async getFindings(analysisId: string, pagination?: { page: number; limit: number }) {
     try {
-      return await prisma.finding.findMany({
+      const queryOptions: any = {
         where: { analysisId },
         include: {
           assignment: true,
@@ -32,7 +32,24 @@ export class FindingsService {
           remediation: true,
           forensicEvents: true,
         },
-      });
+      };
+
+      if (pagination) {
+        const skip = (pagination.page - 1) * pagination.limit;
+        queryOptions.skip = skip;
+        queryOptions.take = pagination.limit;
+      }
+
+      const [findings, total] = await Promise.all([
+        prisma.finding.findMany(queryOptions),
+        pagination ? prisma.finding.count({ where: { analysisId } }) : Promise.resolve(0),
+      ]);
+
+      if (pagination) {
+        const skip = (pagination.page - 1) * pagination.limit;
+        return { data: findings, total, page: pagination.page, limit: pagination.limit, hasMore: skip + findings.length < total };
+      }
+      return findings;
     } catch (error) {
       logger.error('Error fetching findings:', error);
       throw error;

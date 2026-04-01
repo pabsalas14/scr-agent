@@ -79,8 +79,16 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.get('/:id/findings', async (req: Request, res: Response) => {
   try {
-    const findings = await prisma.finding.findMany({
-      where: { analysisId: req.params['id'] },
+    const analysisId = req.params['id'];
+    const pageParam = req.query['page'] as string | undefined;
+    const hasPagination = !!pageParam;
+    const page = Math.max(1, parseInt(pageParam || '1') || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 50));
+    const skip = (page - 1) * limit;
+
+    const where = { analysisId };
+    const queryOptions: any = {
+      where,
       include: {
         statusHistory: {
           include: {
@@ -103,15 +111,33 @@ router.get('/:id/findings', async (req: Request, res: Response) => {
         { severity: 'desc' },
         { confidence: 'desc' },
       ],
-    });
+    };
+
+    if (hasPagination) {
+      queryOptions.skip = skip;
+      queryOptions.take = limit;
+    }
+
+    const [findings, total] = await Promise.all([
+      prisma.finding.findMany(queryOptions),
+      hasPagination ? prisma.finding.count({ where }) : Promise.resolve(0),
+    ]);
 
     // Convertir a JSON plain
     const plainFindings = JSON.parse(JSON.stringify(findings));
 
-    res.json({
-      success: true,
-      data: plainFindings
-    });
+    if (hasPagination) {
+      res.json({
+        success: true,
+        data: plainFindings,
+        total,
+        page,
+        limit,
+        hasMore: skip + plainFindings.length < total,
+      });
+    } else {
+      res.json({ success: true, data: plainFindings });
+    }
   } catch (error) {
     logger.error(`Error obteniendo hallazgos: ${error}`);
     res.status(500).json({ success: false, error: 'Error al obtener hallazgos' });

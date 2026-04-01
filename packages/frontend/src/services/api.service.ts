@@ -21,6 +21,7 @@ import type {
   Reporte,
   ApiResponse,
   PaginatedResponse,
+  UserProfile,
 } from '../types/api';
 
 /**
@@ -82,17 +83,16 @@ class ApiService {
   // ==================== PROYECTOS ====================
 
   /**
-   * Listar todos los proyectos
+   * Listar proyectos con paginación y búsqueda opcionales
    */
-  async obtenerProyectos(): Promise<PaginatedResponse<Proyecto>> {
-    const { data } = await this.client.get<any>('/projects');
-    // El backend retorna { success, data, count }
-    // Convertir al formato esperado por el frontend
+  async obtenerProyectos(params?: { page?: number; limit?: number; search?: string }): Promise<PaginatedResponse<Proyecto>> {
+    const { data } = await this.client.get<any>('/projects', { params });
     return {
       data: data.data || [],
-      total: data.count || 0,
-      page: 1,
-      limit: data.count || 0,
+      total: data.total ?? data.count ?? 0,
+      page: data.page ?? 1,
+      limit: data.limit ?? (data.data?.length ?? 0),
+      hasMore: data.hasMore ?? false,
     };
   }
 
@@ -231,6 +231,22 @@ class ApiService {
   async obtenerConfiguracionUsuario(): Promise<any> {
     const { data } = await this.client.get('/settings');
     return data;
+  }
+
+  /**
+   * Obtener perfil del usuario autenticado
+   */
+  async obtenerPerfil(): Promise<UserProfile> {
+    const { data } = await this.client.get<{ success: boolean; data: UserProfile }>('/users/settings');
+    return data.data;
+  }
+
+  /**
+   * Actualizar perfil del usuario autenticado
+   */
+  async actualizarPerfil(updates: { name?: string; email?: string }): Promise<UserProfile> {
+    const { data } = await this.client.patch<{ success: boolean; data: UserProfile }>('/users/settings', updates);
+    return data.data;
   }
 
   /**

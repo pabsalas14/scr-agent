@@ -18,12 +18,17 @@ router.use(authMiddleware);
 router.get('/analysis/:analysisId', async (req: Request, res: Response) => {
   try {
     const { analysisId } = req.params;
-    const findings = await findingsService.getFindings(analysisId!);
+    const pageParam = req.query['page'] as string | undefined;
 
-    res.json({
-      success: true,
-      data: findings,
-    });
+    if (pageParam) {
+      const page = Math.max(1, parseInt(pageParam) || 1);
+      const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 50));
+      const result = await findingsService.getFindings(analysisId!, { page, limit });
+      res.json({ success: true, ...(result as object) });
+    } else {
+      const findings = await findingsService.getFindings(analysisId!);
+      res.json({ success: true, data: findings });
+    }
   } catch (error) {
     logger.error('Error fetching findings:', error);
     res.status(500).json({
