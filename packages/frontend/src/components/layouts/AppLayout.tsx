@@ -27,7 +27,6 @@ export default function AppLayout() {
         // Connect to '/' to use Vite proxy allowing ws connections to /socket.io
         socketClientService.connect('/').then(() => {
           setSocketConnected(true);
-          console.log('✅ Socket.io connected and ready');
 
           // Set up event listeners for real-time updates
           socketClientService.onFindingStatusChanged((data) => {

@@ -162,23 +162,38 @@ export default function SettingsModule() {
             </div>
 
             <div className="space-y-3">
+              {/* Toggle activo: notificaciones in-app — gestionado desde el panel de campana */}
+              <div className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D]">
+                <div className="flex items-center gap-3">
+                  <Bell className="w-4 h-4 text-[#22C55E]" />
+                  <div>
+                    <span className="text-sm text-[#A0A0A0]">Notificaciones en tiempo real</span>
+                    <p className="text-[11px] text-[#475569] mt-0.5">Via Socket.io — siempre activo</p>
+                  </div>
+                </div>
+                <div className="w-9 h-5 rounded-full bg-[#22C55E] p-0.5 relative">
+                  <div className="w-4 h-4 bg-white rounded-full shadow-sm translate-x-4" />
+                </div>
+              </div>
+
+              {/* Próximamente */}
               {[
-                { icon: Bell,     label: 'Notificaciones críticas', enabled: true },
-                { icon: Shield,   label: 'Auditoría agresiva',      enabled: false },
-                { icon: Database, label: 'Persistencia de memoria', enabled: true },
-                { icon: Key,      label: 'Protección biométrica',   enabled: false },
+                { icon: Shield,   label: 'Auditoría agresiva' },
+                { icon: Database, label: 'Persistencia de memoria' },
+                { icon: Key,      label: 'Protección biométrica' },
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#404040] transition-all"
+                  className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D] opacity-50 cursor-not-allowed"
+                  title="Próximamente"
                 >
                   <div className="flex items-center gap-3">
                     <item.icon className="w-4 h-4 text-[#6B7280]" />
-                    <span className="text-sm text-[#A0A0A0]">{item.label}</span>
+                    <span className="text-sm text-[#6B7280]">{item.label}</span>
                   </div>
-                  <div className={`w-9 h-5 rounded-full p-0.5 transition-all relative cursor-pointer ${item.enabled ? 'bg-[#F97316]' : 'bg-[#2D2D2D]'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${item.enabled ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </div>
+                  <span className="text-[10px] font-semibold text-[#475569] border border-[#2D2D2D] rounded px-1.5 py-0.5 uppercase tracking-wide">
+                    Próximamente
+                  </span>
                 </div>
               ))}
             </div>

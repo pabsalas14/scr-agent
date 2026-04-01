@@ -73,25 +73,21 @@ export default function FindingDetailModal({
   useSocketEvents({
     onFindingUpdated: (data) => {
       if (data.findingId === finding.id) {
-        console.log('📢 This finding was updated via socket');
-        onStatusChange(); // Trigger parent refetch
+        onStatusChange();
       }
     },
     onFindingAssigned: (data) => {
       if (data.findingId === finding.id) {
-        console.log('📢 This finding was assigned via socket');
         onStatusChange();
       }
     },
     onRemediationUpdated: (data) => {
       if (data.findingId === finding.id) {
-        console.log('📢 Remediation updated for this finding via socket');
         onStatusChange();
       }
     },
     onRemediationVerified: (data) => {
       if (data.findingId === finding.id) {
-        console.log('📢 Remediation verified for this finding via socket');
         onStatusChange();
       }
     },

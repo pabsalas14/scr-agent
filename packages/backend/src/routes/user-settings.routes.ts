@@ -6,6 +6,7 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { logger } from '../services/logger.service';
 
 const router: ExpressRouter = Router();
 
@@ -71,7 +72,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
         });
       }
     } catch (e) {
-      console.warn('Could not read notificationPreferences:', e);
+      logger.warn(`Could not read notificationPreferences: ${e}`);
     }
 
     // Return default preferences
@@ -84,7 +85,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
       }
     });
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
+    logger.error(`Error fetching user preferences: ${error}`);
     res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });
@@ -134,7 +135,7 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
         }
       });
     } catch (e) {
-      console.warn('Failed to upsert notification preferences:', e);
+      logger.warn(`Failed to upsert notification preferences: ${e}`);
       return res.json({
         success: true,
         data: {
@@ -146,7 +147,7 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
       });
     }
   } catch (error) {
-    console.error('Error updating user preferences:', error);
+    logger.error(`Error updating user preferences: ${error}`);
     res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
@@ -178,7 +179,7 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
 
     res.json({ success: true, data: user });
   } catch (error) {
-    console.error('Error fetching user settings:', error);
+    logger.error(`Error fetching user settings: ${error}`);
     res.status(500).json({ error: 'Failed to fetch user settings' });
   }
 });

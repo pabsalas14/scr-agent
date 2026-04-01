@@ -111,7 +111,7 @@ async function getCPUUsage(): Promise<number> {
     const total = totalTick / cpus.length;
     const usage = 100 - ~~((idle / total) * 100);
 
-    resolve(Math.min(100, Math.max(0, usage + Math.random() * 5 - 2.5))); // Pequeña variación
+    resolve(Math.min(100, Math.max(0, usage)));
   });
 }
 
@@ -254,26 +254,20 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
  */
 router.get('/agents', async (_req: Request, res: Response) => {
   try {
-    // Obtener conteos de análisis por tipo
-    const analyses = await prisma.analysis.findMany({
-      select: { id: true, status: true },
-    });
+    const [completedCount, lastCompleted] = await Promise.all([
+      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+      prisma.analysis.findFirst({
+        where: { status: 'COMPLETED' },
+        orderBy: { completedAt: 'desc' },
+        select: { completedAt: true },
+      }),
+    ]);
 
-    // Asignar ejecuciones a agentes (simulado)
-    const agentsWithCounts = AGENTS.map((agent) => {
-      const agentAnalyses = analyses.filter(
-        (a) =>
-          (agent.type === 'inspector' && a.status === 'COMPLETED') ||
-          (agent.type === 'detective' && a.status === 'COMPLETED') ||
-          (agent.type === 'fiscal' && a.status === 'COMPLETED')
-      );
-
-      return {
-        ...agent,
-        executionCount: agentAnalyses.length,
-        lastExecution: new Date(Date.now() - Math.random() * 3600000), // Última exec hace 0-1h
-      };
-    });
+    const agentsWithCounts = AGENTS.map((agent) => ({
+      ...agent,
+      executionCount: completedCount,
+      lastExecution: lastCompleted?.completedAt ?? null,
+    }));
 
     res.json({ success: true, data: agentsWithCounts });
   } catch (error) {
@@ -295,16 +289,21 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
       return;
     }
 
-    // Contar análisis para este agente
-    const analyses = await prisma.analysis.findMany();
-    const executionCount = analyses.filter((a) => a.status === 'COMPLETED').length;
+    const [executionCount, lastCompleted] = await Promise.all([
+      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+      prisma.analysis.findFirst({
+        where: { status: 'COMPLETED' },
+        orderBy: { completedAt: 'desc' },
+        select: { completedAt: true },
+      }),
+    ]);
 
     res.json({
       success: true,
       data: {
         ...agent,
         executionCount,
-        lastExecution: new Date(Date.now() - Math.random() * 3600000),
+        lastExecution: lastCompleted?.completedAt ?? null,
       },
     });
   } catch (error) {
@@ -334,7 +333,7 @@ router.get('/agents/:id/executions', async (req: Request, res: Response) => {
       timestamp: analysis.createdAt,
       duration: analysis.completedAt
         ? analysis.completedAt.getTime() - analysis.createdAt.getTime()
-        : Math.random() * 30000,
+        : Date.now() - analysis.createdAt.getTime(),
       status: analysis.status === 'COMPLETED' ? 'success' : 'pending',
       result: analysis.status === 'COMPLETED' ? 'Completado exitosamente' : 'En progreso',
     }));

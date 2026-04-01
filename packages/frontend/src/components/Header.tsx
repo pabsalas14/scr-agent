@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Moon, Sun, Settings, LogOut, User, Shield } from 'lucide-react';
+import { Moon, Sun, Settings, LogOut, User, Shield, Bell } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { notificationsService } from '../services/notifications.service';
+import NotificationPanel from './ui/NotificationPanel';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
@@ -17,6 +20,13 @@ export default function Header({
   const location = useLocation();
   const isLogin = location.pathname === '/login';
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-count'],
+    queryFn: () => notificationsService.getUnreadCount(),
+    refetchInterval: 60_000,
+  });
 
   const getNavLabel = () => {
     if (location.pathname.includes('/analyses/')) return 'Análisis';
@@ -90,6 +100,23 @@ export default function Header({
               >
                 <Settings className="w-4 h-4" />
               </button>
+
+              {/* Campana de notificaciones */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                  className="relative p-2 hover:bg-[#242424] rounded-lg text-[#6B7280] hover:text-[#A0A0A0] transition-all"
+                  title="Notificaciones"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EF4444] border border-[#1C1C1E]" />
+                  )}
+                </button>
+                {showNotifications && (
+                  <NotificationPanel onClose={() => setShowNotifications(false)} />
+                )}
+              </div>
 
               <div className="relative ml-1">
                 <button

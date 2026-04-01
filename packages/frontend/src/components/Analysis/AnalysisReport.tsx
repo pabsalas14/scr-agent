@@ -6,6 +6,7 @@ import Button from '../ui/Button';
 import FindingsPanel from './FindingsPanel';
 import RiskScoreGauge from './RiskScoreGauge';
 import { useSocketEvents } from '../../hooks/useSocketEvents';
+import { usePdfExport } from '../../hooks/usePdfExport';
 
 interface AnalysisReportProps {
   analysisId: string;
@@ -15,6 +16,7 @@ const TERMINAL_STATUSES = ['COMPLETED', 'FAILED', 'ERROR', 'CANCELLED'];
 
 export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
   const queryClient = useQueryClient();
+  const { exportToPdf, isExporting } = usePdfExport();
 
   const { data: analysis, isLoading, error: queryError } = useQuery({
     queryKey: ['analysis', analysisId],
@@ -132,6 +134,18 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
                     className="h-full bg-[#F97316]"
                   />
                 </div>
+                {['PENDING','RUNNING','INSPECTOR_RUNNING','DETECTIVE_RUNNING','FISCAL_RUNNING'].includes(analysis.status) && (
+                  <button
+                    onClick={() =>
+                      apiService.cancelarAnalisis(analysis.projectId, analysisId).then(() =>
+                        queryClient.invalidateQueries({ queryKey: ['analysis', analysisId] })
+                      )
+                    }
+                    className="mt-2 px-4 py-1.5 bg-[#EF4444]/10 border border-[#EF4444]/30 text-[#EF4444] rounded-xl text-[10px] font-semibold uppercase tracking-widest hover:bg-[#EF4444]/20 transition-all"
+                  >
+                    Cancelar análisis
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -165,9 +179,28 @@ export default function AnalysisReport({ analysisId }: AnalysisReportProps) {
             {/* Tools Area */}
             <div className="flex justify-between items-center">
                <h3 className="text-xl font-semibold text-white">Hallazgos Detectados</h3>
-               <Button className="bg-[#1E1E20] border border-[#2D2D2D] text-white hover:border-white transition-all text-[10px] font-semibold uppercase tracking-widest px-6 py-2 rounded-xl" disabled={true}>
+               <Button
+                 className="bg-[#1E1E20] border border-[#2D2D2D] text-white hover:border-white transition-all text-[10px] font-semibold uppercase tracking-widest px-6 py-2 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                 disabled={isExporting || !report}
+                 onClick={() => {
+                   if (!report || !analysis?.project) return;
+                   exportToPdf({
+                     proyecto: {
+                       id: analysis.project.id,
+                       name: analysis.project.name,
+                       repositoryUrl: analysis.project.repositoryUrl,
+                       scope: 'REPOSITORY',
+                       createdAt: analysis.createdAt,
+                       updatedAt: analysis.createdAt,
+                     },
+                     reporte: report,
+                     hallazgos: analysis.findings ?? [],
+                     analisisId: analysisId,
+                   });
+                 }}
+               >
                  <Download className="w-3 h-3 mr-2" />
-                 Extraer Reporte
+                 {isExporting ? 'Generando...' : 'Extraer Reporte'}
                </Button>
             </div>
 

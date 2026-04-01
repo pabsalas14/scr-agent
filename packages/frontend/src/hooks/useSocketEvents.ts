@@ -28,7 +28,7 @@ interface AnalysisEventData {
   newStatus?: string;
   progress?: number;
   findingCount?: number;
-  summary?: any;
+  summary?: unknown;
   errorMessage?: string;
   timestamp: Date;
 }
@@ -43,7 +43,7 @@ interface AnalysisFindingsDiscoveredData extends AnalysisEventData {
 }
 
 interface AnalysisCompletedData extends AnalysisEventData {
-  summary: any;
+  summary: unknown;
 }
 
 interface AnalysisErrorData extends AnalysisEventData {
@@ -89,7 +89,7 @@ export function useSocketEvents(callbacks: {
 
     // Conectar a Socket.io
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('auth_token');
       socket = io(window.location.origin, {
         auth: { token },
         reconnection: true,
@@ -100,7 +100,7 @@ export function useSocketEvents(callbacks: {
 
       // ── Handlers para Eventos Finding ────────────────────────────────
 
-      socket.on('finding:updated', (data: FindingEventData) => {
+      socket.on('finding:statusChanged', (data: FindingEventData) => {
         callbacks.onFindingUpdated?.(data);
       });
 

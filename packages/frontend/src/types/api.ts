@@ -43,6 +43,7 @@ export interface Analisis {
   completedAt?: string;
   createdAt: string;
   errorMessage?: string;
+  project?: { id: string; name: string; repositoryUrl: string };
   report?: Reporte;
   findings?: Hallazgo[];
   forensicEvents?: EventoForense[];

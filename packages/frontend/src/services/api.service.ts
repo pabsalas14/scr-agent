@@ -158,6 +158,16 @@ class ApiService {
   }
 
   /**
+   * Cancelar un análisis en curso
+   */
+  async cancelarAnalisis(projectId: string, analysisId: string): Promise<Analisis> {
+    const { data } = await this.client.post<ApiResponse<Analisis>>(
+      `/projects/${projectId}/analyses/${analysisId}/cancel`
+    );
+    return data.data;
+  }
+
+  /**
    * Reintentar un análisis fallido
    */
   async reintentarAnalisis(analysisId: string): Promise<Analisis> {
