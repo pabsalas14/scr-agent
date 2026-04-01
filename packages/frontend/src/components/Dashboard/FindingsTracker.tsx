@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle, CheckCircle2, Eye, Edit2, Zap,
   Shield, Search, SlidersHorizontal, ChevronDown,
-  GitCommit, User, Clock, ChevronLeft, ChevronRight,
+  User, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { findingsService } from '../../services/findings.service';
 import { usersService } from '../../services/users.service';
@@ -83,11 +83,6 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-
-  const handleFilterChange = (setter: (v: any) => void) => (v: any) => {
-    setter(v);
-    setPage(1);
-  };
 
   // Stats
   const total    = filtered.length;

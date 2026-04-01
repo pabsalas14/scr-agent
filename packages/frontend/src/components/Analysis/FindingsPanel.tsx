@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, AlertCircle, AlertOctagon, Info, ShieldAlert, FileCode, CheckCircle2, ChevronRight, Terminal, type LucideIcon } from 'lucide-react';
+import { AlertCircle, AlertOctagon, Info, ShieldAlert, FileCode, CheckCircle2, ChevronRight, ChevronLeft, Terminal, type LucideIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { apiService } from '../../services/api.service';
 import type { Hallazgo } from '../../types/api';
@@ -57,7 +58,11 @@ const normalizeSeverity = (s: string): string => {
   return 'MEDIUM';
 };
 
+const PAGE_SIZE = 20;
+
 export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
+  const [page, setPage] = useState(1);
+
   const { data: findings, isLoading, error } = useQuery({
     queryKey: ['findings', analysisId],
     queryFn: () => apiService.obtenerHallazgos(analysisId),
@@ -96,11 +101,14 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
     );
   }
 
+  const totalPages = Math.max(1, Math.ceil(findings.length / PAGE_SIZE));
+  const paginated = findings.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const findingsBySeverity = {
-    'CRITICAL': findings.filter((f) => normalizeSeverity(f.severity) === 'CRITICAL'),
-    'HIGH': findings.filter((f) => normalizeSeverity(f.severity) === 'HIGH'),
-    'MEDIUM': findings.filter((f) => normalizeSeverity(f.severity) === 'MEDIUM'),
-    'LOW': findings.filter((f) => normalizeSeverity(f.severity) === 'LOW'),
+    'CRITICAL': paginated.filter((f) => normalizeSeverity(f.severity) === 'CRITICAL'),
+    'HIGH': paginated.filter((f) => normalizeSeverity(f.severity) === 'HIGH'),
+    'MEDIUM': paginated.filter((f) => normalizeSeverity(f.severity) === 'MEDIUM'),
+    'LOW': paginated.filter((f) => normalizeSeverity(f.severity) === 'LOW'),
   };
 
   return (
@@ -235,6 +243,31 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
             )
         )}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-4 border-t border-[#2D2D2D]">
+          <span className="text-xs text-[#6B7280]">
+            Página {page} de {totalPages} — {findings.length} hallazgos
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguiente <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
