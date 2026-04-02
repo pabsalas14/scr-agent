@@ -62,7 +62,7 @@ Repositorio Git
 | Capa | Tecnología |
 |------|-----------|
 | **Frontend** | React 19, Vite, TypeScript, Tailwind CSS, TanStack Query, Socket.io-client, Framer Motion |
-| **Backend** | Node.js 20, Express, TypeScript, Socket.io, BullMQ, Winston |
+| **Backend** | Node.js 20, Express, TypeScript, Socket.io, Winston |
 | **IA** | Anthropic Claude (Sonnet 4.6, Haiku 4.5) via `@anthropic-ai/sdk` |
 | **Base de datos** | PostgreSQL 16 + Prisma ORM |
 | **Caché** | node-cache (dev) / Redis (prod) |
@@ -195,11 +195,13 @@ POST /auth/verify      Verificar token
 ### Proyectos
 
 ```
-GET    /projects               Listar proyectos (?page, ?limit, ?search)
-POST   /projects               Crear proyecto (valida acceso al repo)
-GET    /projects/:id           Detalle del proyecto
-GET    /projects/:id/analyses  Análisis del proyecto
-POST   /projects/:id/analyses  Iniciar nuevo análisis
+GET    /projects                           Listar proyectos (?page, ?limit, ?search)
+POST   /projects                           Crear proyecto (valida acceso al repo)
+GET    /projects/:id                       Detalle del proyecto
+PUT    /projects/:id                       Actualizar nombre, rama o límites
+DELETE /projects/:id                       Eliminar proyecto
+GET    /projects/:id/analyses              Análisis del proyecto
+POST   /projects/:id/analyses              Iniciar nuevo análisis
 POST   /projects/:pid/analyses/:id/cancel  Cancelar análisis en curso
 ```
 
@@ -422,9 +424,6 @@ cd packages/frontend && pnpm test
 
 # Con reporte de cobertura
 pnpm test:coverage
-
-# Tests E2E (Playwright)
-pnpm test:e2e
 ```
 
 ---
@@ -437,8 +436,10 @@ scr-agent/
 │   ├── backend/
 │   │   ├── src/
 │   │   │   ├── agents/          # Inspector, Detective, Fiscal
-│   │   │   ├── middleware/      # Auth JWT, rate limiting
+│   │   │   ├── middleware/      # Auth JWT, rate limiting, async-handler
+│   │   │   ├── config/          # Precios de modelos IA
 │   │   │   ├── routes/          # Endpoints REST
+│   │   │   ├── types/           # Extensiones de tipos Express
 │   │   │   └── services/        # Prisma, Git, Cache, Socket, Logger
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma    # Modelos de base de datos
