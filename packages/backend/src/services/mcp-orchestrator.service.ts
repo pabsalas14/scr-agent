@@ -25,7 +25,7 @@ import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
 import { prisma } from './prisma.service';
-// import { queueService } from './queue.service';
+import { cancelAnalysis } from './analysis-queue';
 import {
   ResultadoAnalisisCompleto,
   AnalisisCompleto,
@@ -318,7 +318,7 @@ export class MCPOrchestratorService {
     });
 
     // Señalar al queue para detener la ejecución entre pasos
-    // queueService.cancelar(analisisId);  // TODO: Implement cancel in analysis-queue
+    cancelAnalysis(analisisId);
 
     auditLog(AuditEventType.ANALYSIS_FAILED, 'Análisis cancelado por el usuario', {
       analisisId,

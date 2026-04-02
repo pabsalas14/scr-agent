@@ -16,22 +16,22 @@ export default function Input({
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
+        <label className="block text-sm font-medium text-[#A0A0A0] mb-1.5">
           {label}
         </label>
       )}
       <input
-        className={`w-full px-4 py-2 border rounded-md text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-gray-900 ${
+        className={`w-full px-3.5 py-2 border rounded-lg text-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-offset-[#111111] ${
           error
-            ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-600 text-red-900 dark:text-red-200 placeholder-red-400 dark:placeholder-red-500 focus:ring-red-500'
-            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500 dark:focus:border-blue-500'
+            ? 'bg-[#EF4444]/5 border-[#EF4444]/50 text-white placeholder-[#6B7280] focus:ring-[#EF4444]/40'
+            : 'bg-[#1C1C1E] border-[#2D2D2D] text-white placeholder-[#4B5563] focus:ring-[#F97316]/40 focus:border-[#F97316]/50'
         } ${className}`}
         {...props}
       />
       {error ? (
-        <p className="text-sm text-red-600 dark:text-red-400 mt-1.5">{error}</p>
+        <p className="text-xs text-[#EF4444] mt-1.5">{error}</p>
       ) : helperText ? (
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1.5">{helperText}</p>
+        <p className="text-xs text-[#6B7280] mt-1.5">{helperText}</p>
       ) : null}
     </div>
   );

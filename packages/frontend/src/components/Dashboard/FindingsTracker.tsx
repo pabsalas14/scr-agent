@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle, CheckCircle2, Eye, Edit2, Zap,
   Shield, Search, SlidersHorizontal, ChevronDown,
-  GitCommit, User, Clock,
+  User, Clock, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { findingsService } from '../../services/findings.service';
 import { usersService } from '../../services/users.service';
@@ -27,20 +27,20 @@ const STATUS_CONFIG: Record<FindingStatus, {
   label: string; color: string; bg: string; dot: string;
   icon: React.ElementType;
 }> = {
-  DETECTED:      { label: 'Detectado',      color: '#FF3B3B', bg: 'rgba(255,59,59,0.08)',    dot: '#FF3B3B', icon: AlertCircle },
-  IN_REVIEW:     { label: 'En Revisión',    color: '#00D1FF', bg: 'rgba(0,209,255,0.08)',    dot: '#00D1FF', icon: Eye },
-  IN_CORRECTION: { label: 'En Corrección',  color: '#FFD600', bg: 'rgba(255,214,0,0.08)',    dot: '#FFD600', icon: Edit2 },
-  CORRECTED:     { label: 'Corregido',      color: '#7000FF', bg: 'rgba(112,0,255,0.08)',    dot: '#7000FF', icon: CheckCircle2 },
-  VERIFIED:      { label: 'Verificado',     color: '#00FF94', bg: 'rgba(0,255,148,0.08)',    dot: '#00FF94', icon: CheckCircle2 },
+  DETECTED:      { label: 'Detectado',      color: '#EF4444', bg: 'rgba(239,68,68,0.08)',    dot: '#EF4444', icon: AlertCircle },
+  IN_REVIEW:     { label: 'En Revisión',    color: '#6366F1', bg: 'rgba(99,102,241,0.08)',   dot: '#6366F1', icon: Eye },
+  IN_CORRECTION: { label: 'En Corrección',  color: '#EAB308', bg: 'rgba(234,179,8,0.08)',    dot: '#EAB308', icon: Edit2 },
+  CORRECTED:     { label: 'Corregido',      color: '#F97316', bg: 'rgba(249,115,22,0.08)',   dot: '#F97316', icon: CheckCircle2 },
+  VERIFIED:      { label: 'Verificado',     color: '#22C55E', bg: 'rgba(34,197,94,0.08)',    dot: '#22C55E', icon: CheckCircle2 },
   FALSE_POSITIVE:{ label: 'Falso Positivo', color: '#475569', bg: 'rgba(71,85,105,0.08)',    dot: '#475569', icon: AlertCircle },
   CLOSED:        { label: 'Cerrado',        color: '#334155', bg: 'rgba(51,65,85,0.08)',     dot: '#334155', icon: CheckCircle2 },
 };
 
 const SEV_CONFIG: Record<Severity, { label: string; color: string; border: string; bg: string }> = {
-  CRITICAL: { label: 'CRÍTICO', color: '#FF3B3B', border: '#FF3B3B60', bg: 'rgba(255,59,59,0.12)' },
-  HIGH:     { label: 'ALTO',    color: '#FF8A00', border: '#FF8A0060', bg: 'rgba(255,138,0,0.12)' },
-  MEDIUM:   { label: 'MEDIO',   color: '#FFD600', border: '#FFD60060', bg: 'rgba(255,214,0,0.10)' },
-  LOW:      { label: 'BAJO',    color: '#00FF94', border: '#00FF9460', bg: 'rgba(0,255,148,0.08)' },
+  CRITICAL: { label: 'CRÍTICO', color: '#EF4444', border: '#EF444460', bg: 'rgba(239,68,68,0.10)' },
+  HIGH:     { label: 'ALTO',    color: '#FB923C', border: '#FB923C60', bg: 'rgba(251,146,60,0.10)' },
+  MEDIUM:   { label: 'MEDIO',   color: '#EAB308', border: '#EAB30860', bg: 'rgba(234,179,8,0.08)' },
+  LOW:      { label: 'BAJO',    color: '#22C55E', border: '#22C55E60', bg: 'rgba(34,197,94,0.08)' },
 };
 
 // ── Componente principal ──────────────────────────────────────────────────
@@ -50,6 +50,8 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
   const [filterSeverity, setFilterSev]    = useState<Severity | 'ALL'>('ALL');
   const [selectedFinding, setSelected]    = useState<Finding | null>(null);
   const [remediationFinding, setRemediation] = useState<Finding | null>(null);
+  const [page, setPage]                   = useState(1);
+  const PAGE_SIZE = 15;
 
   const { data: findings = [], isLoading, refetch } = useQuery({
     queryKey: ['findings', analysisId],
@@ -79,6 +81,9 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
     );
   });
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const paginatedFiltered = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   // Stats
   const total    = filtered.length;
   const critical = filtered.filter((f) => f.severity === 'CRITICAL').length;
@@ -86,10 +91,10 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
   const remedied = filtered.filter((f) => ['VERIFIED','CLOSED'].includes(f.statusHistory?.[0]?.status || '')).length;
 
   const STATS = [
-    { label: 'Total',       value: total,    color: '#00D1FF', Icon: Shield },
-    { label: 'Críticos',    value: critical, color: '#FF3B3B', Icon: AlertCircle },
-    { label: 'En Progreso', value: inProg,   color: '#FFD600', Icon: Clock },
-    { label: 'Remediados',  value: remedied, color: '#00FF94', Icon: CheckCircle2 },
+    { label: 'Total',       value: total,    color: '#F97316', Icon: Shield },
+    { label: 'Críticos',    value: critical, color: '#EF4444', Icon: AlertCircle },
+    { label: 'En Progreso', value: inProg,   color: '#EAB308', Icon: Clock },
+    { label: 'Remediados',  value: remedied, color: '#22C55E', Icon: CheckCircle2 },
   ];
 
   return (
@@ -100,12 +105,12 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
         <div
           style={{
             width: 44, height: 44, borderRadius: 14, flexShrink: 0,
-            background: 'linear-gradient(135deg, rgba(255,214,0,0.2), rgba(255,138,0,0.1))',
-            border: '1px solid rgba(255,214,0,0.3)',
+            background: 'rgba(249,115,22,0.1)',
+            border: '1px solid rgba(249,115,22,0.25)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}
         >
-          <Zap size={20} color="#FFD600" />
+          <Zap size={20} color="#F97316" />
         </div>
         <div>
           <h2 style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.03em', margin: 0 }}>
@@ -155,8 +160,8 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
       <div
         style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10,
-          background: 'rgba(10,11,16,0.6)', border: '1px solid #1A1F2E',
-          borderRadius: 16, padding: '12px 14px', backdropFilter: 'blur(12px)',
+          background: '#1E1E20', border: '1px solid #2D2D2D',
+          borderRadius: 16, padding: '12px 14px',
         }}
       >
         {/* Search */}
@@ -166,11 +171,11 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
             type="text"
             placeholder="Buscar archivo o descripción..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => { setSearchTerm(e.target.value); setPage(1); }}
             style={{
               width: '100%', boxSizing: 'border-box',
               paddingLeft: 34, paddingRight: 12, paddingTop: 9, paddingBottom: 9,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              background: '#242424', border: '1px solid #2D2D2D',
               borderRadius: 10, fontSize: 11, color: '#CBD5E1',
               outline: 'none', fontFamily: 'inherit',
             }}
@@ -182,17 +187,17 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
           <SlidersHorizontal size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as FindingStatus | 'ALL')}
+            onChange={(e) => { setFilterStatus(e.target.value as FindingStatus | 'ALL'); setPage(1); }}
             style={{
               width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              background: '#242424', border: '1px solid #2D2D2D',
               borderRadius: 10, fontSize: 11, color: '#CBD5E1',
               outline: 'none', appearance: 'none', fontFamily: 'inherit', cursor: 'pointer',
             }}
           >
-            <option value="ALL" style={{ background: '#0A0B10' }}>Todos los estados</option>
+            <option value="ALL" style={{ background: '#1C1C1E' }}>Todos los estados</option>
             {Object.entries(STATUS_CONFIG).map(([k, c]) => (
-              <option key={k} value={k} style={{ background: '#0A0B10' }}>{c.label}</option>
+              <option key={k} value={k} style={{ background: '#1C1C1E' }}>{c.label}</option>
             ))}
           </select>
           <ChevronDown size={12} color="#3D4A5C" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -203,17 +208,17 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
           <AlertCircle size={13} color="#3D4A5C" style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
           <select
             value={filterSeverity}
-            onChange={(e) => setFilterSev(e.target.value as Severity | 'ALL')}
+            onChange={(e) => { setFilterSev(e.target.value as Severity | 'ALL'); setPage(1); }}
             style={{
               width: '100%', paddingLeft: 34, paddingRight: 30, paddingTop: 9, paddingBottom: 9,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid #1F2937',
+              background: '#242424', border: '1px solid #2D2D2D',
               borderRadius: 10, fontSize: 11, color: '#CBD5E1',
               outline: 'none', appearance: 'none', fontFamily: 'inherit', cursor: 'pointer',
             }}
           >
-            <option value="ALL" style={{ background: '#0A0B10' }}>Todas las severidades</option>
+            <option value="ALL" style={{ background: '#1C1C1E' }}>Todas las severidades</option>
             {Object.entries(SEV_CONFIG).map(([k, c]) => (
-              <option key={k} value={k} style={{ background: '#0A0B10' }}>{c.label}</option>
+              <option key={k} value={k} style={{ background: '#1C1C1E' }}>{c.label}</option>
             ))}
           </select>
           <ChevronDown size={12} color="#3D4A5C" style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -234,7 +239,7 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {Object.entries(STATUS_CONFIG).map(([statusKey, cfg]) => {
-            const group = filtered.filter(
+            const group = paginatedFiltered.filter(
               (f) => (f.statusHistory?.[0]?.status || 'DETECTED') === (statusKey as FindingStatus)
             );
             if (group.length === 0) return null;
@@ -274,15 +279,15 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
                         style={{
                           display: 'flex', alignItems: 'center', gap: 12,
                           padding: '10px 14px',
-                          background: 'rgba(10,11,16,0.7)',
-                          border: '1px solid #1A1F2E',
+                          background: '#1E1E20',
+                          border: '1px solid #2D2D2D',
                           borderLeft: `3px solid ${sev.color}`,
                           borderRadius: 12,
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                         }}
                         whileHover={{
-                          background: 'rgba(16,18,26,0.9)',
+                          background: '#242424',
                           borderColor: `${sev.color}50`,
                           x: 2,
                         }}
@@ -339,6 +344,31 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
               </motion.div>
             );
           })}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between pt-2 border-t border-[#2D2D2D]">
+          <span className="text-xs text-[#6B7280]">
+            Página {page} de {totalPages} — {filtered.length} hallazgos
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" /> Anterior
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#1C1C1E] border border-[#2D2D2D] text-xs text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguiente <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       )}
 

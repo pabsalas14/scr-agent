@@ -23,6 +23,8 @@ model User {
   id           String   @id @default(cuid())
   email        String   @unique @db.VarChar(255)
   name         String?  @db.VarChar(255)
+  avatar       String?  @db.VarChar(500)
+  bio          String?  @db.VarChar(500)
   passwordHash String   @db.VarChar(255)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -30,6 +32,7 @@ model User {
   // Relaciones
   settings     UserSettings?
   roles        UserRole[]
+  projects     Project[]
   assignments  FindingAssignment[]
   statusChanges FindingStatusChange[]
   notifications Notification[]
@@ -96,6 +99,16 @@ model Project {
   // Token para repositorios privados (encriptado en BD)
   githubToken String? @db.VarChar(500)
 
+  // Límites de análisis configurables por proyecto
+  maxFileSizeKb     Int @default(150)
+  maxTotalSizeMb    Int @default(2)
+  maxDirectoryDepth Int @default(6)
+  maxCommits        Int @default(50)
+
+  // Propietario del proyecto
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
   // Metadata
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -104,6 +117,7 @@ model Project {
   analyses Analysis[]
 
   @@index([repositoryUrl])
+  @@index([userId])
   @@map("projects")
 }
 
@@ -124,13 +138,16 @@ model Analysis {
   forensicEvents ForensicEvent[]
   report         Report?
 
+  // Resumen de cobertura: cuánto código quedó fuera del análisis
+  coverageSummary Json?
+
   // Timing
   startedAt   DateTime?
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  @@index([projectId])
+  @@index([projectId, status])
   @@index([status])
   @@map("analyses")
 }
@@ -171,6 +188,7 @@ model Finding {
   comments Comment[]
   notifications Notification[]
 
+  @@index([analysisId, severity])
   @@index([analysisId])
   @@index([severity])
   @@index([riskType])

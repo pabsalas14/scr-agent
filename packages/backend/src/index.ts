@@ -46,13 +46,12 @@ const app: Express = express();
 
 /**
  * Middleware de Seguridad
- * OWASP Top 10 Protections
  */
 
-// Helmet - Headers de seguridad HTTP (OWASP A06)
+// Helmet - Headers de seguridad HTTP
 app.use(helmet());
 
-// CORS - Control de origen (OWASP API2)
+// CORS - Control de origen
 const allowedOrigins = [
   process.env['FRONTEND_URL'] || 'http://localhost:5173',
   'http://localhost:5173',
@@ -81,7 +80,7 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
-// Rate Limiting - Prevenir DDoS (OWASP API4)
+// Rate Limiting - Prevenir DDoS
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
   max: 10000, // máximo 10000 requests por ventana (development)
@@ -189,7 +188,7 @@ app.use((_req, res) => {
 
 /**
  * Middleware de Error Global
- * Captura todos los errores y los maneja de forma segura (OWASP A04)
+ * Captura todos los errores y los maneja de forma segura
  */
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   const statusCode = err.statusCode || 500;
@@ -217,9 +216,11 @@ socketService.init(httpServer, allowedOrigins);
 
 // ==================== QUEUE PROCESSOR ====================
 
-// Importar y iniciar el procesador de análisis
+// Importar y iniciar el procesador de análisis (async — recupera atascados en DB)
 import { startAnalysisProcessor } from './services/analysis-queue';
-startAnalysisProcessor();
+startAnalysisProcessor().catch((err) => {
+  logger.error(`Error iniciando analysis processor: ${err}`);
+});
 
 // Iniciar servidor
 const server = httpServer.listen(PORT, () => {

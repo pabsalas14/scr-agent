@@ -5,7 +5,6 @@
  *
  * Servicio centralizado de logging usando Winston
  * Proporciona métodos para registrar eventos en diferentes niveles
- * Requerimiento OWASP A09: Logging y Monitoreo completo
  *
  * Uso:
  * - logger.info('Mensaje informativo')

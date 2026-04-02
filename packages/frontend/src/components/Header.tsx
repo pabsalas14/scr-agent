@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Moon, Sun, Settings, LogOut, User, Shield, Menu, X } from 'lucide-react';
+import { Moon, Sun, Settings, LogOut, User, Shield, Bell } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { notificationsService } from '../services/notifications.service';
+import NotificationPanel from './ui/NotificationPanel';
 
 interface HeaderProps {
   theme: 'light' | 'dark';
@@ -17,26 +20,24 @@ export default function Header({
   const location = useLocation();
   const isLogin = location.pathname === '/login';
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const { data: unreadCount = 0 } = useQuery({
+    queryKey: ['notifications-count'],
+    queryFn: () => notificationsService.getUnreadCount(),
+    refetchInterval: 60_000,
+  });
 
   const getNavLabel = () => {
-    if (location.pathname.includes('/analyses/')) {
-      return 'Análisis';
-    }
-    if (location.pathname.includes('/dashboard')) {
-      return 'Proyectos';
-    }
+    if (location.pathname.includes('/analyses/')) return 'Análisis';
+    if (location.pathname.includes('/dashboard')) return 'Proyectos';
     return '';
   };
 
   const getInitials = () => {
     const email = localStorage.getItem('userEmail') || 'user@example.com';
     const parts = email.split('@')[0]?.split('.') || [];
-    return parts
-      .map((part: string) => part[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || 'U';
+    return parts.map((part: string) => part[0]).join('').toUpperCase().slice(0, 2) || 'U';
   };
 
   const handleLogout = () => {
@@ -46,124 +47,118 @@ export default function Header({
   };
 
   return (
-    <header className="border-b border-gray-200/20 dark:border-gray-700/50 bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-slate-900 dark:to-slate-800 sticky top-0 z-40 shadow-lg dark:shadow-xl backdrop-blur-sm dark:backdrop-blur-md transition-all duration-300">
+    <header className="border-b border-[#2D2D2D] bg-[#1C1C1E] sticky top-0 z-40 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo - Responsive */}
+        <div className="flex items-center justify-between h-14">
+          {/* Logo */}
           <button
             onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 sm:gap-3 hover:opacity-85 transition-opacity duration-300 group flex-shrink-0"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity group flex-shrink-0"
             aria-label="Go to dashboard"
           >
-            <div className="p-2 sm:p-2.5 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-lg sm:rounded-xl group-hover:shadow-lg group-hover:shadow-blue-500/40 transition-all duration-300">
-              <Shield className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <div className="p-1.5 bg-[#F97316] rounded-lg">
+              <Shield className="h-4 w-4 text-white" />
             </div>
-            <div className="hidden xs:hidden sm:block">
-              <p className="font-black text-gray-900 dark:text-white text-sm sm:text-base tracking-tight">CodeShield</p>
-              <p className="text-xs text-cyan-600 dark:text-cyan-400 font-semibold">Security Analysis</p>
+            <div className="hidden sm:block">
+              <p className="font-semibold text-white text-sm">SCR Agent</p>
             </div>
           </button>
 
-          {/* Breadcrumb / Navigation - Center (Hidden on mobile) */}
+          {/* Breadcrumb */}
           {!isLogin && (
-            <div className="hidden md:flex items-center gap-2 flex-1 ml-8 lg:ml-12">
+            <div className="hidden md:flex items-center gap-2 flex-1 ml-8">
               <button
                 onClick={() => navigate('/dashboard')}
-                className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+                className="text-sm text-[#6B7280] hover:text-[#A0A0A0] transition-colors"
               >
                 Proyectos
               </button>
               {location.pathname.includes('/analyses/') && (
                 <>
-                  <span className="text-gray-400 dark:text-gray-600 text-sm">/</span>
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {getNavLabel()}
-                  </span>
+                  <span className="text-[#4B5563] text-sm">/</span>
+                  <span className="text-sm font-medium text-[#A0A0A0]">{getNavLabel()}</span>
                 </>
               )}
             </div>
           )}
 
-          {/* Right Controls - Responsive */}
+          {/* Right Controls */}
           {!isLogin && (
-            <div className="flex items-center gap-1 sm:gap-2">
-              {/* Theme Toggle */}
+            <div className="flex items-center gap-1">
               <button
                 onClick={onThemeToggle}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
+                className="p-2 hover:bg-[#242424] rounded-lg text-[#6B7280] hover:text-[#A0A0A0] transition-all"
                 title="Toggle theme"
-                aria-label="Toggle theme"
               >
-                {theme === 'light' ? (
-                  <Moon className="w-4 h-4" />
-                ) : (
-                  <Sun className="w-4 h-4" />
-                )}
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
               </button>
 
-              {/* Settings - Hidden on small screens */}
               <button
                 onClick={onSettingsClick}
-                className="hidden sm:block p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-all duration-200"
+                className="hidden sm:block p-2 hover:bg-[#242424] rounded-lg text-[#6B7280] hover:text-[#A0A0A0] transition-all"
                 title="Settings"
-                aria-label="Settings"
               >
                 <Settings className="w-4 h-4" />
               </button>
 
-              {/* User Avatar / Dropdown */}
-              <div className="relative ml-1 sm:ml-2">
+              {/* Campana de notificaciones */}
+              <div className="relative">
+                <button
+                  onClick={() => { setShowNotifications(!showNotifications); setShowUserMenu(false); }}
+                  className="relative p-2 hover:bg-[#242424] rounded-lg text-[#6B7280] hover:text-[#A0A0A0] transition-all"
+                  title="Notificaciones"
+                >
+                  <Bell className="w-4 h-4" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#EF4444] border border-[#1C1C1E]" />
+                  )}
+                </button>
+                {showNotifications && (
+                  <NotificationPanel onClose={() => setShowNotifications(false)} />
+                )}
+              </div>
+
+              <div className="relative ml-1">
                 <button
                   onClick={() => setShowUserMenu(!showUserMenu)}
-                  className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-700 hover:from-blue-700 hover:to-blue-800 dark:hover:from-blue-500 dark:hover:to-blue-600 text-white font-medium text-xs transition-all duration-200 shadow-md hover:shadow-lg"
+                  className="flex items-center justify-center w-8 h-8 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 text-[#F97316] font-semibold text-xs hover:bg-[#F97316]/20 transition-all"
                   title="User menu"
-                  aria-label="User menu"
                 >
                   {getInitials()}
                 </button>
 
-                {/* Dropdown Menu - Better mobile positioning */}
                 {showUserMenu && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
-                    {/* User Info */}
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                  <div className="absolute right-0 mt-2 w-48 bg-[#1C1C1E] rounded-xl shadow-xl border border-[#2D2D2D] py-1 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                    <div className="px-4 py-2 border-b border-[#2D2D2D]">
+                      <p className="text-sm font-medium text-white truncate">
                         {localStorage.getItem('userEmail') || 'User'}
                       </p>
                     </div>
 
-                    {/* Menu Items */}
                     <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        onSettingsClick();
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                      onClick={() => { setShowUserMenu(false); onSettingsClick(); }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#A0A0A0] hover:bg-[#242424] hover:text-white transition-colors"
                     >
                       <Settings className="w-4 h-4 flex-shrink-0" />
-                      <span>Settings</span>
+                      <span>Configuración</span>
                     </button>
 
                     <button
-                      onClick={() => {
-                        setShowUserMenu(false);
-                        // Navigate to profile
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors duration-150"
+                      onClick={() => { setShowUserMenu(false); onSettingsClick(); }}
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#A0A0A0] hover:bg-[#242424] hover:text-white transition-colors"
                     >
                       <User className="w-4 h-4 flex-shrink-0" />
-                      <span>Profile</span>
+                      <span>Perfil</span>
                     </button>
 
-                    <div className="border-t border-gray-200 dark:border-gray-700" />
+                    <div className="border-t border-[#2D2D2D]" />
 
-                    {/* Logout */}
                     <button
                       onClick={handleLogout}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors duration-150"
+                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-[#EF4444] hover:bg-[#EF4444]/10 transition-colors"
                     >
                       <LogOut className="w-4 h-4 flex-shrink-0" />
-                      <span>Logout</span>
+                      <span>Cerrar sesión</span>
                     </button>
                   </div>
                 )}

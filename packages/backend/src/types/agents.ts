@@ -65,7 +65,6 @@ export interface MaliciaOutput {
  * Evento Forense - Punto en la línea de tiempo
  */
 export interface EventoForense {
-  // Temporal
   timestamp: string; // ISO 8601
   commit: string;
   autor: string;

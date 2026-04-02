@@ -7,53 +7,43 @@ export default function ToastContainer() {
 
   const getIcon = (type: string) => {
     switch (type) {
-      case 'success':
-        return <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />;
-      case 'error':
-        return <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400" />;
-      case 'warning':
-        return <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />;
-      case 'info':
-        return <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />;
-      default:
-        return null;
+      case 'success': return <CheckCircle className="w-4 h-4 text-[#22C55E]" />;
+      case 'error':   return <AlertCircle className="w-4 h-4 text-[#EF4444]" />;
+      case 'warning': return <AlertTriangle className="w-4 h-4 text-[#EAB308]" />;
+      case 'info':    return <Info className="w-4 h-4 text-[#6366F1]" />;
+      default: return null;
     }
   };
 
   const getColors = (type: string) => {
     switch (type) {
-      case 'success':
-        return 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200';
-      case 'error':
-        return 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200';
-      case 'warning':
-        return 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800 text-yellow-900 dark:text-yellow-200';
-      case 'info':
-        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-200';
-      default:
-        return 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100';
+      case 'success': return 'bg-[#1E1E20] border-[#22C55E]/30 text-white';
+      case 'error':   return 'bg-[#1E1E20] border-[#EF4444]/30 text-white';
+      case 'warning': return 'bg-[#1E1E20] border-[#EAB308]/30 text-white';
+      case 'info':    return 'bg-[#1E1E20] border-[#6366F1]/30 text-white';
+      default:        return 'bg-[#1E1E20] border-[#2D2D2D] text-white';
     }
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm">
+    <div className="fixed bottom-6 right-6 z-50 flex flex-col gap-2 max-w-sm">
       <AnimatePresence>
         {toasts.map((toast) => (
           <motion.div
             key={toast.id}
-            initial={{ opacity: 0, y: 20, x: 20 }}
+            initial={{ opacity: 0, y: 16, x: 8 }}
             animate={{ opacity: 1, y: 0, x: 0 }}
-            exit={{ opacity: 0, y: -20, x: 20 }}
+            exit={{ opacity: 0, y: -8, x: 8 }}
             transition={{ duration: 0.2 }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-md border shadow-md ${getColors(toast.type)}`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${getColors(toast.type)}`}
           >
             {getIcon(toast.type)}
-            <span className="text-sm font-medium flex-1">{toast.message}</span>
+            <span className="text-sm flex-1">{toast.message}</span>
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-2 p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded transition-colors"
+              className="ml-1 p-0.5 hover:bg-[#404040] rounded transition-colors text-[#6B7280] hover:text-white"
             >
-              <X className="w-4 h-4" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </motion.div>
         ))}

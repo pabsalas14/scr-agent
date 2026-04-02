@@ -6,6 +6,7 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { logger } from '../services/logger.service';
 
 const router: ExpressRouter = Router();
 
@@ -55,6 +56,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
 
       if (dbPrefs) {
         return res.json({
+          success: true,
           data: {
             id: dbPrefs.id,
             userId: dbPrefs.userId,
@@ -70,11 +72,12 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
         });
       }
     } catch (e) {
-      console.warn('Could not read notificationPreferences:', e);
+      logger.warn(`Could not read notificationPreferences: ${e}`);
     }
 
     // Return default preferences
     res.json({
+      success: true,
       data: {
         id: `pref-${userId}`,
         userId: String(userId),
@@ -82,7 +85,7 @@ router.get('/preferences', authMiddleware, async (req: Request, res: Response) =
       }
     });
   } catch (error) {
-    console.error('Error fetching user preferences:', error);
+    logger.error(`Error fetching user preferences: ${error}`);
     res.status(500).json({ error: 'Failed to fetch preferences' });
   }
 });
@@ -132,8 +135,9 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
         }
       });
     } catch (e) {
-      console.warn('Failed to upsert notification preferences:', e);
+      logger.warn(`Failed to upsert notification preferences: ${e}`);
       return res.json({
+        success: true,
         data: {
           id: `pref-${userId}`,
           userId: String(userId),
@@ -143,7 +147,7 @@ router.post('/preferences', authMiddleware, async (req: Request, res: Response) 
       });
     }
   } catch (error) {
-    console.error('Error updating user preferences:', error);
+    logger.error(`Error updating user preferences: ${error}`);
     res.status(500).json({ error: 'Failed to update preferences' });
   }
 });
@@ -160,12 +164,14 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const user = await (prisma as any).user?.findUnique({
+    const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         email: true,
-        name: true
+        name: true,
+        avatar: true,
+        bio: true,
       }
     });
 
@@ -173,10 +179,58 @@ router.get('/settings', authMiddleware, async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ data: user });
+    res.json({ success: true, data: user });
   } catch (error) {
-    console.error('Error fetching user settings:', error);
+    logger.error(`Error fetching user settings: ${error}`);
     res.status(500).json({ error: 'Failed to fetch user settings' });
+  }
+});
+
+/**
+ * PATCH /api/v1/users/settings
+ * Update user profile (name and/or email)
+ */
+router.patch('/settings', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { name, email, avatar, bio } = req.body as { name?: string; email?: string; avatar?: string; bio?: string };
+
+    if (!name && !email && avatar === undefined && bio === undefined) {
+      return res.status(400).json({ error: 'At least one field (name, email, avatar or bio) is required' });
+    }
+
+    const updateData: { name?: string; email?: string; avatar?: string | null; bio?: string | null } = {};
+    if (name !== undefined) updateData.name = String(name).trim();
+    if (email !== undefined) updateData.email = String(email).trim().toLowerCase();
+    if (avatar !== undefined) updateData.avatar = avatar ? String(avatar).trim() : null;
+    if (bio !== undefined) updateData.bio = bio ? String(bio).trim() : null;
+
+    // Check email uniqueness if changing email
+    if (updateData.email) {
+      const existing = await prisma.user.findFirst({
+        where: { email: updateData.email, NOT: { id: userId } },
+        select: { id: true },
+      });
+      if (existing) {
+        return res.status(409).json({ error: 'Email already in use' });
+      }
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: updateData,
+      select: { id: true, email: true, name: true, avatar: true, bio: true },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error(`Error updating user settings: ${error}`);
+    res.status(500).json({ error: 'Failed to update user settings' });
   }
 });
 

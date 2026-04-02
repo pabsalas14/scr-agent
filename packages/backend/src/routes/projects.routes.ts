@@ -8,6 +8,7 @@ import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
+import { decrypt } from '../services/crypto.service';
 
 const router: ExpressRouter = Router();
 
@@ -17,29 +18,51 @@ const router: ExpressRouter = Router();
  */
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const projects = await prisma.project.findMany({
-      include: {
-        analyses: {
-          select: {
-            id: true,
-            status: true,
-            createdAt: true,
-            report: {
-              select: {
-                riskScore: true,
+    const userId = (req as any).user?.id;
+    const page = Math.max(1, parseInt(req.query['page'] as string) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 20));
+    const search = (req.query['search'] as string)?.trim() || '';
+    const skip = (page - 1) * limit;
+
+    const where: any = {
+      ...(userId ? { userId } : {}),
+      ...(search ? {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { repositoryUrl: { contains: search, mode: 'insensitive' } },
+        ],
+      } : {}),
+    };
+
+    const [projects, total] = await Promise.all([
+      prisma.project.findMany({
+        where,
+        include: {
+          analyses: {
+            select: {
+              id: true,
+              status: true,
+              createdAt: true,
+              report: {
+                select: {
+                  riskScore: true,
+                },
               },
             },
+            orderBy: {
+              createdAt: 'desc',
+            },
+            take: 1,
           },
-          orderBy: {
-            createdAt: 'desc',
-          },
-          take: 1,
         },
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+        orderBy: {
+          createdAt: 'desc',
+        },
+        skip,
+        take: limit,
+      }),
+      prisma.project.count({ where }),
+    ]);
 
     // Convertir a JSON plain
     const plainProjects = JSON.parse(JSON.stringify(projects));
@@ -47,7 +70,10 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     res.json({
       success: true,
       data: plainProjects,
-      count: plainProjects.length,
+      total,
+      page,
+      limit,
+      hasMore: skip + plainProjects.length < total,
     });
   } catch (error) {
     next(error);
@@ -61,6 +87,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const userId = (req as any).user?.id;
 
     const project = await prisma.project.findUnique({
       where: { id },
@@ -88,6 +115,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
     // Convertir a JSON plain
     const plainProject = JSON.parse(JSON.stringify(project));
 
@@ -107,6 +138,13 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
 router.get('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
+    if (!project) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
 
     const analyses = await prisma.analysis.findMany({
       where: { projectId },
@@ -133,7 +171,7 @@ router.get('/:projectId/analyses', async (req: Request, res: Response, next: Nex
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, description, repositoryUrl, branch, scope } = req.body;
+    const { name, description, repositoryUrl, branch, scope, maxFileSizeKb, maxTotalSizeMb, maxDirectoryDepth, maxCommits } = req.body;
     const userId = (req as any).user?.id; // Obtenido del middleware de auth
 
     // Validar datos básicos
@@ -152,7 +190,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         const userSettings = await prisma.userSettings.findUnique({
           where: { userId },
         });
-        githubToken = userSettings?.githubToken || undefined;
+        githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
       }
 
       // Validar acceso al repositorio
@@ -203,6 +241,11 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         repositoryUrl,
         branch: branch || 'main',
         scope,
+        ...(maxFileSizeKb   ? { maxFileSizeKb:     Math.min(500, Math.max(10, Number(maxFileSizeKb)))   } : {}),
+        ...(maxTotalSizeMb  ? { maxTotalSizeMb:    Math.min(20,  Math.max(1,  Number(maxTotalSizeMb)))  } : {}),
+        ...(maxDirectoryDepth ? { maxDirectoryDepth: Math.min(10,  Math.max(2,  Number(maxDirectoryDepth))) } : {}),
+        ...(maxCommits      ? { maxCommits:         Math.min(200, Math.max(10, Number(maxCommits)))      } : {}),
+        ...(userId ? { userId } : {}),
       },
     });
 
@@ -223,6 +266,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 router.post('/:projectId/analyses', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId } = req.params;
+    const userId = (req as any).user?.id;
 
     // Verificar que el proyecto existe
     const project = await prisma.project.findUnique({
@@ -234,6 +278,10 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
         success: false,
         error: 'Proyecto no encontrado',
       });
+    }
+
+    if (userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
     }
 
     // Crear análisis
@@ -267,6 +315,12 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
 router.post('/:projectId/analyses/:analysisId/cancel', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { projectId, analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
+    if (project && userId && project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
 
     const analysis = await prisma.analysis.findFirst({
       where: { id: analysisId, projectId },

@@ -17,7 +17,10 @@ import { logger } from '../services/logger.service';
 
 const router: IRouter = Router();
 
-const JWT_SECRET = process.env['JWT_SECRET'] || 'scr-agent-dev-secret-change-in-production';
+const JWT_SECRET = process.env['JWT_SECRET'];
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 const JWT_EXPIRES_IN = process.env['JWT_EXPIRES_IN'] || '24h';
 const BCRYPT_ROUNDS = 12;
 
@@ -110,7 +113,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const token = generateToken(user.id, user.email);
     logger.info({ message: 'Login exitoso', userId: user.id });
 
-    res.json({ token, user: { id: user.id, email: user.email, createdAt: user.createdAt } });
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt } });
   } catch (err) {
     logger.error({ message: 'Error en login', error: err });
     res.status(500).json({ error: 'Error interno del servidor' });

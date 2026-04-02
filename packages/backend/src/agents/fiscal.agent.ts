@@ -12,11 +12,6 @@
  * Modelo: Claude 3.5 Sonnet (análisis complejo)
  * Entrada: Hallazgos de Malicia + Timeline de Forenses
  * Salida: SintesisOutput con reporte ejecutivo
- *
- * OWASP Coverage:
- * - A01: Broken Access Control - Recomendaciones de seguridad
- * - A04: Insecure Design - Análisis de arquitectura
- * - A09: Logging & Monitoring - Recomendaciones de auditoría
  */
 
 import Anthropic from '@anthropic-ai/sdk';

@@ -16,6 +16,7 @@ import { InspectorAgentService } from '../agents/inspector.agent';
 import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
 import { socketService } from './socket.service';
+import { decrypt } from './crypto.service';
 
 // Instanciar agentes
 const inspectorAgent = new InspectorAgentService();
@@ -35,6 +36,7 @@ async function processAnalysisQueue() {
   isProcessing = true;
   let analysisId: string | null = null;
   let currentProjectId: string | null = null;
+  let ownerId = '';
   try {
     const job = analysisQueue.shift();
     if (!job) return;
@@ -54,6 +56,20 @@ async function processAnalysisQueue() {
       throw new Error(`Proyecto ${projectId} no encontrado`);
     }
 
+    ownerId = project.userId ?? '';
+
+    // Obtener GitHub token del usuario (descifrado) como fallback al env var
+    let userGithubToken: string | undefined = process.env['GITHUB_TOKEN'];
+    if (project.userId) {
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId: project.userId },
+        select: { githubToken: true },
+      });
+      if (userSettings?.githubToken) {
+        userGithubToken = decrypt(userSettings.githubToken);
+      }
+    }
+
     // ========== FASE 1: INSPECTOR AGENT ==========
     logger.info(`[1/3] 🔍 Ejecutando Inspector Agent...`);
     await prisma.analysis.update({
@@ -70,25 +86,26 @@ async function processAnalysisQueue() {
     logger.info(`Descargando repositorio: ${project.repositoryUrl}`);
     const localPath = await gitService.cloneOrPullRepository(
       project.repositoryUrl,
-      process.env['GITHUB_TOKEN'],
+      userGithubToken,
       project.branch || undefined
     );
 
-    // Leer código fuente
+    // Leer código fuente con límites configurados por proyecto
     logger.info(`Leyendo código fuente...`);
-    const repoFiles = gitService.readRepositoryFiles(localPath);
-    const codigoFuente = repoFiles.files
-      .map((f) => `// === ${f.path} ===\n${f.content}`)
-      .join('\n\n');
+    const repoFiles = gitService.readRepositoryFiles(localPath, undefined, {
+      maxFileSizeKb: (project as any).maxFileSizeKb ?? 150,
+      maxTotalSizeMb: (project as any).maxTotalSizeMb ?? 2,
+      maxDirectoryDepth: (project as any).maxDirectoryDepth ?? 6,
+    });
 
     logger.info(`Analizando código (${repoFiles.fileCount} archivos, ${repoFiles.totalSize} bytes)...`);
 
-    // Ejecutar Inspector Agent con timeout de 5 minutos
+    // Ejecutar Inspector Agent con chunking automático y timeout de 5 minutos
     const maliciaOutput: any = await Promise.race([
-      inspectorAgent.analizarCodigo({
-        codigo: codigoFuente,
-        contexto: `Análisis de repositorio: ${project.repositoryUrl}`,
-      }),
+      inspectorAgent.analizarArchivos(
+        repoFiles.files,
+        `Repositorio: ${project.repositoryUrl}`
+      ),
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error('Inspector Agent timeout (5 minutos)')),
@@ -96,6 +113,13 @@ async function processAnalysisQueue() {
         )
       ),
     ]);
+
+    // Persistir resumen de cobertura y emitir por socket
+    await prisma.analysis.update({
+      where: { id: analysisId },
+      data: { coverageSummary: repoFiles.coverage as any },
+    });
+    socketService.emitCoverageReport(analysisId, projectId, repoFiles.coverage);
 
     logger.info(`✅ Inspector encontró ${maliciaOutput.cantidad_hallazgos} hallazgos`);
 
@@ -173,7 +197,7 @@ async function processAnalysisQueue() {
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'DETECTIVE_RUNNING', 40);
 
     logger.info(`Obteniendo historial de Git...`);
-    const historialGit = await gitService.getCommitHistory(project.repositoryUrl, 50);
+    const historialGit = await gitService.getCommitHistory(project.repositoryUrl, (project as any).maxCommits ?? 50);
 
     logger.info(`Investigando ${maliciaOutput.hallazgos.length} hallazgos en historial...`);
 
@@ -319,7 +343,7 @@ async function processAnalysisQueue() {
         },
       }).then(() => {
         if (currentProjectId) {
-          socketService.emitAnalysisError(analysisId!, currentProjectId, errorMsg, '');
+          socketService.emitAnalysisError(analysisId!, currentProjectId, errorMsg, ownerId);
           socketService.emitAnalysisStatusChanged(analysisId!, currentProjectId, 'FAILED', 0);
         }
       }).catch((err) => logger.error('Error al guardar fallo:', err));
@@ -373,15 +397,49 @@ export function enqueueAnalysis(analysisId: string, projectId: string) {
 }
 
 /**
- * Inicia el procesador de la cola (llamar desde index.ts)
+ * Inicia el procesador de la cola (llamar desde index.ts).
+ * Recupera automáticamente análisis interrumpidos en un restart anterior.
  */
-export function startAnalysisProcessor() {
-  // Procesar cola cada segundo
+export async function startAnalysisProcessor(): Promise<void> {
+  // Recuperar análisis atascados (quedaron PENDING/RUNNING al reiniciar el servidor)
+  try {
+    const stuck = await prisma.analysis.findMany({
+      where: {
+        status: {
+          in: ['PENDING', 'RUNNING', 'INSPECTOR_RUNNING', 'DETECTIVE_RUNNING', 'FISCAL_RUNNING'],
+        },
+      },
+      select: { id: true, projectId: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    for (const a of stuck) {
+      await prisma.analysis.update({
+        where: { id: a.id },
+        data: { status: 'PENDING', progress: 0 },
+      });
+      analysisQueue.push({ id: a.id, projectId: a.projectId });
+      logger.info(`♻️  Análisis ${a.id} recuperado tras reinicio del servidor`);
+    }
+
+    if (stuck.length > 0) {
+      logger.info(`♻️  ${stuck.length} análisis recuperados y reencolarlos`);
+    }
+  } catch (err) {
+    logger.error(`Error recuperando análisis al iniciar: ${err}`);
+  }
+
+  // Fallback: revisar cada 30s por si algún item quedó huérfano (evento-driven es la vía normal)
   setInterval(() => {
     if (analysisQueue.length > 0 && !isProcessing) {
       processAnalysisQueue();
     }
-  }, 1000);
+  }, 30_000);
+
+  // Procesar inmediatamente cualquier item recuperado tras reinicio
+  if (analysisQueue.length > 0) {
+    setImmediate(processAnalysisQueue);
+  }
 
   logger.info('✓ Analysis queue processor iniciado');
 }

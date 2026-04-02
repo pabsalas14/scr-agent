@@ -1,8 +1,3 @@
-/**
- * Tarjeta de métrica reutilizable
- * Muestra valor, porcentaje de cambio y pequeño gráfico
- */
-
 interface MetricCardProps {
   title: string;
   value: number | string;
@@ -21,29 +16,38 @@ export default function MetricCard({
   icon,
 }: MetricCardProps) {
   const statusColors = {
-    good: 'bg-green-500/20 dark:bg-green-500/20 border-green-400/50 dark:border-green-500/50 text-green-700 dark:text-green-200',
-    warning: 'bg-yellow-500/20 dark:bg-yellow-500/20 border-yellow-400/50 dark:border-yellow-500/50 text-yellow-700 dark:text-yellow-200',
-    critical: 'bg-red-500/20 dark:bg-red-500/20 border-red-400/50 dark:border-red-500/50 text-red-700 dark:text-red-200',
+    good:     'bg-[#1E1E20] border-[#22C55E]/20',
+    warning:  'bg-[#1E1E20] border-[#EAB308]/20',
+    critical: 'bg-[#1E1E20] border-[#EF4444]/20',
   };
 
-  const percentageColor = (percentage || 0) >= 0 ? 'text-green-600' : 'text-red-600';
+  const statusDot = {
+    good:     'bg-[#22C55E]',
+    warning:  'bg-[#EAB308]',
+    critical: 'bg-[#EF4444]',
+  };
+
+  const percentageColor = (percentage || 0) >= 0 ? 'text-[#22C55E]' : 'text-[#EF4444]';
 
   return (
-    <div className={`glass-sm rounded-xl p-5 ${statusColors[status]}`}>
+    <div className={`border rounded-xl p-4 ${statusColors[status]}`}>
       <div className="flex items-start justify-between mb-3">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h3>
-        {icon && <span className="text-xl">{icon}</span>}
+        <div className="flex items-center gap-2">
+          <div className={`w-1.5 h-1.5 rounded-full ${statusDot[status]}`} />
+          <h3 className="text-xs font-medium text-[#6B7280] uppercase tracking-wide">{title}</h3>
+        </div>
+        {icon && <span className="text-[#6B7280]">{icon}</span>}
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-          {unit && <span className="text-sm text-gray-600 dark:text-gray-400">{unit}</span>}
+      <div className="space-y-1">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-2xl font-semibold text-white">{value}</span>
+          {unit && <span className="text-sm text-[#6B7280]">{unit}</span>}
         </div>
 
         {percentage !== undefined && (
           <div className={`text-xs font-medium ${percentageColor}`}>
-            {percentage >= 0 ? '+' : ''}{percentage}% vs. anteriormente
+            {percentage >= 0 ? '+' : ''}{percentage}% vs. anterior
           </div>
         )}
       </div>

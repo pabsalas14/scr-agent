@@ -19,6 +19,7 @@ import { validarBody } from '../middleware/validation.middleware';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { encrypt } from '../services/crypto.service';
 import axios from 'axios';
 
 const router: ExpressRouter = Router();
@@ -75,15 +76,16 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Authent
      * Guardar token en BD (tabla UserSettings)
      * Usar upsert para crear o actualizar
      */
+    const encryptedToken = encrypt(token);
     await prisma.userSettings.upsert({
       where: { userId },
       create: {
         userId,
-        githubToken: token,
+        githubToken: encryptedToken,
         githubValidatedAt: new Date(),
       },
       update: {
-        githubToken: token,
+        githubToken: encryptedToken,
         githubValidatedAt: new Date(),
       },
     });
@@ -94,6 +96,7 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Authent
     });
 
     res.status(200).json({
+      success: true,
       message: 'GitHub token validado y guardado',
       valid: true,
       scopes: ['repo', 'read:org'], // Scopes esperados
@@ -126,6 +129,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
     });
 
     res.json({
+      success: true,
       data: {
         has_github_token: !!settings?.githubToken,
         github_validated_at: settings?.githubValidatedAt || null,
@@ -173,6 +177,7 @@ router.delete('/github-token', async (req: AuthenticatedRequest, res: Response) 
     });
 
     res.json({
+      success: true,
       message: 'GitHub token eliminado exitosamente',
     });
   } catch (error) {

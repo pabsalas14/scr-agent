@@ -13,6 +13,7 @@
 import { Router, type Router as ExpressRouter, Request, Response } from 'express';
 import { logger } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
+import { MODEL_PRICES, DEFAULT_PRICE } from '../config/model-prices';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
@@ -63,6 +64,21 @@ interface CostSummary {
   entries: CostEntry[];
 }
 
+// ==================== HELPERS ====================
+
+/** Obtiene stats de análisis completados (usado en múltiples endpoints de agentes) */
+async function getCompletedAnalysisStats() {
+  const [count, last] = await Promise.all([
+    prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+    prisma.analysis.findFirst({
+      where: { status: 'COMPLETED' },
+      orderBy: { completedAt: 'desc' },
+      select: { completedAt: true },
+    }),
+  ]);
+  return { count, lastExecution: last?.completedAt ?? null };
+}
+
 // ==================== AGENTES DEFINIDOS ====================
 
 const AGENTS: Agent[] = [
@@ -111,14 +127,14 @@ async function getCPUUsage(): Promise<number> {
     const total = totalTick / cpus.length;
     const usage = 100 - ~~((idle / total) * 100);
 
-    resolve(Math.min(100, Math.max(0, usage + Math.random() * 5 - 2.5))); // Pequeña variación
+    resolve(Math.min(100, Math.max(0, usage)));
   });
 }
 
 /**
  * Obtener uso de disco
  */
-async function getDiskUsage(): Promise<{ used: number; total: number; usage: number }> {
+async function getDiskUsage(): Promise<{ used: number; total: number; usage: number } | null> {
   try {
     // En macOS y Linux
     const { stdout } = await execAsync('df -B1 / | tail -1');
@@ -137,25 +153,14 @@ async function getDiskUsage(): Promise<{ used: number; total: number; usage: num
     logger.error(`Error obteniendo uso de disco: ${error}`);
   }
 
-  // Fallback: valores por defecto
-  return {
-    used: 250 * 1024 * 1024 * 1024, // 250 GB
-    total: 1024 * 1024 * 1024 * 1024, // 1 TB
-    usage: 24,
-  };
+  // No hay datos de disco disponibles — devolver null en lugar de valores inventados
+  return null;
 }
 
 /**
  * Calcular costos basado en tokens REALES de la base de datos
  */
 async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostSummary> {
-  // Precios REALES por token en USD (actualizados periódicamente)
-  const modelPrices = {
-    'gpt-4-turbo': { input: 0.00001, output: 0.00003 },
-    'gpt-3.5-turbo': { input: 0.0000005, output: 0.0000015 },
-    'claude-3-opus': { input: 0.000015, output: 0.000075 },
-    'claude-3-sonnet': { input: 0.000003, output: 0.000015 },
-  };
 
   // Calcular fecha de corte según el período
   const now = new Date();
@@ -211,7 +216,7 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
 
     // Calcular costos por modelo
     const entries: CostEntry[] = Object.entries(costsByModel).map(([model, data]) => {
-      const prices = modelPrices[model as keyof typeof modelPrices] || modelPrices['claude-3-opus'];
+      const prices = MODEL_PRICES[model] ?? DEFAULT_PRICE;
       const inputCost = data.inputTokens * prices.input;
       const outputCost = data.outputTokens * prices.output;
       const totalCost = inputCost + outputCost;
@@ -245,31 +250,16 @@ async function calculateCosts(period: 'today' | 'week' | 'month'): Promise<CostS
  */
 router.get('/agents', async (_req: Request, res: Response) => {
   try {
-    // Obtener conteos de análisis por tipo
-    const analyses = await prisma.analysis.findMany({
-      select: { id: true, status: true },
-    });
-
-    // Asignar ejecuciones a agentes (simulado)
-    const agentsWithCounts = AGENTS.map((agent) => {
-      const agentAnalyses = analyses.filter(
-        (a) =>
-          (agent.type === 'inspector' && a.status === 'COMPLETED') ||
-          (agent.type === 'detective' && a.status === 'COMPLETED') ||
-          (agent.type === 'fiscal' && a.status === 'COMPLETED')
-      );
-
-      return {
-        ...agent,
-        executionCount: agentAnalyses.length,
-        lastExecution: new Date(Date.now() - Math.random() * 3600000), // Última exec hace 0-1h
-      };
-    });
-
-    res.json({ data: agentsWithCounts });
+    const { count, lastExecution } = await getCompletedAnalysisStats();
+    const agentsWithCounts = AGENTS.map((agent) => ({
+      ...agent,
+      executionCount: count,
+      lastExecution,
+    }));
+    res.json({ success: true, data: agentsWithCounts });
   } catch (error) {
     logger.error(`Error obteniendo agentes: ${error}`);
-    res.status(500).json({ error: 'Error al obtener agentes' });
+    res.status(500).json({ success: false, error: 'Error al obtener agentes' });
   }
 });
 
@@ -282,24 +272,18 @@ router.get('/agents/:id', async (req: Request, res: Response) => {
     const agent = AGENTS.find((a) => a.id === req.params['id']);
 
     if (!agent) {
-      res.status(404).json({ error: 'Agente no encontrado' });
+      res.status(404).json({ success: false, error: 'Agente no encontrado' });
       return;
     }
 
-    // Contar análisis para este agente
-    const analyses = await prisma.analysis.findMany();
-    const executionCount = analyses.filter((a) => a.status === 'COMPLETED').length;
-
+    const { count, lastExecution } = await getCompletedAnalysisStats();
     res.json({
-      data: {
-        ...agent,
-        executionCount,
-        lastExecution: new Date(Date.now() - Math.random() * 3600000),
-      },
+      success: true,
+      data: { ...agent, executionCount: count, lastExecution },
     });
   } catch (error) {
     logger.error(`Error obteniendo agente: ${error}`);
-    res.status(500).json({ error: 'Error al obtener agente' });
+    res.status(500).json({ success: false, error: 'Error al obtener agente' });
   }
 });
 
@@ -318,21 +302,21 @@ router.get('/agents/:id/executions', async (req: Request, res: Response) => {
       select: { id: true, createdAt: true, completedAt: true, status: true },
     });
 
-    const executions: AgentExecution[] = analyses.map((analysis, idx) => ({
-      id: `exec-${idx}`,
+    const executions: AgentExecution[] = analyses.map((analysis) => ({
+      id: analysis.id,
       agentId: req.params['id']!,
       timestamp: analysis.createdAt,
       duration: analysis.completedAt
         ? analysis.completedAt.getTime() - analysis.createdAt.getTime()
-        : Math.random() * 30000,
+        : Date.now() - analysis.createdAt.getTime(),
       status: analysis.status === 'COMPLETED' ? 'success' : 'pending',
       result: analysis.status === 'COMPLETED' ? 'Completado exitosamente' : 'En progreso',
     }));
 
-    res.json({ data: executions });
+    res.json({ success: true, data: executions });
   } catch (error) {
     logger.error(`Error obteniendo ejecuciones: ${error}`);
-    res.status(500).json({ error: 'Error al obtener ejecuciones' });
+    res.status(500).json({ success: false, error: 'Error al obtener ejecuciones' });
   }
 });
 
@@ -368,10 +352,10 @@ router.get('/system-metrics', async (_req: Request, res: Response) => {
       uptime: process.uptime(),
     };
 
-    res.json({ data: metrics });
+    res.json({ success: true, data: metrics });
   } catch (error) {
     logger.error(`Error obteniendo métricas del sistema: ${error}`);
-    res.status(500).json({ error: 'Error al obtener métricas del sistema' });
+    res.status(500).json({ success: false, error: 'Error al obtener métricas del sistema' });
   }
 });
 
@@ -384,15 +368,15 @@ router.get('/costs', async (req: Request, res: Response) => {
     const period = (req.query['period'] as 'today' | 'week' | 'month') || 'month';
 
     if (!['today', 'week', 'month'].includes(period)) {
-      res.status(400).json({ error: 'período inválido. Use: today, week, month' });
+      res.status(400).json({ success: false, error: 'período inválido. Use: today, week, month' });
       return;
     }
 
     const costs = await calculateCosts(period);
-    res.json({ data: costs });
+    res.json({ success: true, data: costs });
   } catch (error) {
     logger.error(`Error obteniendo costos: ${error}`);
-    res.status(500).json({ error: 'Error al obtener costos' });
+    res.status(500).json({ success: false, error: 'Error al obtener costos' });
   }
 });
 
@@ -419,6 +403,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
     ]);
 
     res.json({
+      success: true,
       data: {
         agents,
         systemMetrics,
@@ -428,7 +413,7 @@ router.get('/dashboard', async (_req: Request, res: Response) => {
     });
   } catch (error) {
     logger.error(`Error obteniendo dashboard: ${error}`);
-    res.status(500).json({ error: 'Error al obtener dashboard' });
+    res.status(500).json({ success: false, error: 'Error al obtener dashboard' });
   }
 });
 

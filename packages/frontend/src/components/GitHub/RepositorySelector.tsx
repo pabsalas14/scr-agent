@@ -118,8 +118,9 @@ export default function RepositorySelector({
         setValidationError(message);
         onValidationChange?.(false, message);
       }
-    } catch (error: any) {
-      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Failed to validate repository';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Failed to validate repository';
       setValidationState('error');
       setValidationError(errorMsg);
       onValidationChange?.(false, errorMsg);
@@ -161,27 +162,27 @@ export default function RepositorySelector({
     <div className="space-y-3">
       {/* Buscador de Repositorios */}
       <div className="relative group/search">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#475569] group-focus-within/search:text-[#00D1FF] transition-colors" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#475569] group-focus-within/search:text-[#F97316] transition-colors" />
         <input
           type="text"
           placeholder="BUSCAR EN GITHUB..."
           value={search}
           onChange={handleSearchChange}
           disabled={isLoadingRepos || isLoading}
-          className="w-full pl-12 pr-4 py-3.5 bg-[#050505] border border-white/5 rounded-2xl text-white text-[10px] font-black tracking-widest uppercase focus:border-[#00D1FF]/30 focus:outline-none transition-all placeholder:text-[#3D4A5C] disabled:opacity-50"
+          className="w-full pl-12 pr-4 py-3 bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl text-white text-sm focus:border-[#F97316]/40 focus:outline-none transition-all placeholder:text-[#4B5563] disabled:opacity-50"
         />
       </div>
 
       {/* Lista de Repositorios */}
-      <div className="max-h-52 overflow-y-auto space-y-2 rounded-2xl border border-white/5 bg-[#0A0B10]/40 p-3 custom-scrollbar">
+      <div className="max-h-52 overflow-y-auto space-y-2 rounded-xl border border-[#2D2D2D] bg-[#1E1E20] p-3 custom-scrollbar">
         {isLoadingRepos ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-3">
-             <div className="w-5 h-5 border-2 border-[#00D1FF]/20 border-t-[#00D1FF] rounded-full animate-spin" />
-             <span className="text-[9px] font-black text-[#64748B] uppercase tracking-widest">Consultando API...</span>
+             <div className="w-5 h-5 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />
+             <span className="text-[9px] font-semibold text-[#64748B] uppercase tracking-widest">Consultando API...</span>
           </div>
         ) : repos.length === 0 ? (
           <div className="text-center py-10">
-            <p className="text-[10px] font-black text-[#475569] uppercase tracking-widest">
+            <p className="text-[10px] font-semibold text-[#475569] uppercase tracking-widest">
               {search ? 'Sin Coincidencias' : 'Inicie Búsqueda'}
             </p>
           </div>
@@ -192,14 +193,14 @@ export default function RepositorySelector({
               onClick={() => handleSelect(repo)}
               className={`w-full text-left px-4 py-3 rounded-xl transition-all border ${
                 selectedIndex === index
-                  ? 'bg-gradient-to-r from-[#00D1FF]/10 to-transparent border-[#00D1FF]/30 text-white'
-                  : 'bg-white/[0.01] border-white/5 text-[#94A3B8] hover:bg-white/[0.03] hover:border-white/10'
+                  ? 'bg-[#F97316]/10 border-[#F97316]/30 text-white'
+                  : 'bg-[#242424] border-[#2D2D2D] text-[#94A3B8] hover:border-[#404040]'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap mb-1">
-                    <span className="font-black text-xs truncate tracking-tight">{repo.name}</span>
+                    <span className="font-semibold text-xs truncate tracking-tight">{repo.name}</span>
                     {repo.isPrivate && <Lock className="w-3 h-3 text-[#F59E0B] flex-shrink-0" />}
                   </div>
                   {repo.description && (
@@ -207,9 +208,9 @@ export default function RepositorySelector({
                   )}
                 </div>
                 {repo.stars > 0 && (
-                  <div className="flex items-center gap-1 text-[#FFD600] flex-shrink-0">
+                  <div className="flex items-center gap-1 text-[#EAB308] flex-shrink-0">
                     <Star className="w-2.5 h-2.5" />
-                    <span className="text-[10px] font-black">{repo.stars}</span>
+                    <span className="text-[10px] font-semibold">{repo.stars}</span>
                   </div>
                 )}
               </div>
@@ -223,7 +224,7 @@ export default function RepositorySelector({
         <button
           onClick={() => setPage((p) => p + 1)}
           disabled={isLoadingRepos || isLoading}
-          className="w-full py-1.5 text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50 transition-colors"
+          className="w-full py-1.5 text-xs text-[#F97316] hover:text-[#EA6D00] disabled:opacity-50 transition-colors"
         >
           Cargar más repositorios
         </button>
@@ -231,45 +232,45 @@ export default function RepositorySelector({
 
       {/* Repositorio Seleccionado & Validador */}
       {selectedRepo && (
-        <div className={`rounded-2xl border p-5 transition-all ${
-          validationState === 'valid' ? 'bg-[#00FF94]/5 border-[#00FF94]/20' :
-          validationState === 'validating' ? 'bg-[#00D1FF]/5 border-[#00D1FF]/20' :
-          validationState === 'error' ? 'bg-[#FF3B3B]/5 border-[#FF3B3B]/20' :
-          'bg-white/5 border-white/10'
+        <div className={`rounded-xl border p-5 transition-all ${
+          validationState === 'valid' ? 'bg-[#22C55E]/5 border-[#22C55E]/20' :
+          validationState === 'validating' ? 'bg-[#F97316]/5 border-[#F97316]/20' :
+          validationState === 'error' ? 'bg-[#EF4444]/5 border-[#EF4444]/20' :
+          'bg-[#1E1E20] border-[#2D2D2D]'
         }`}>
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-colors ${
-                validationState === 'valid' ? 'bg-[#00FF94]/10 border-[#00FF94]/30' : 'bg-black/40 border-white/5'
+                validationState === 'valid' ? 'bg-[#22C55E]/10 border-[#22C55E]/30' : 'bg-[#242424] border-[#2D2D2D]'
               }`}>
                 <GitBranch className={`w-5 h-5 flex-shrink-0 ${
-                  validationState === 'valid' ? 'text-[#00FF94]' :
-                  validationState === 'validating' ? 'text-[#00D1FF]' :
-                  validationState === 'error' ? 'text-[#FF3B3B]' : 'text-[#64748B]'
+                  validationState === 'valid' ? 'text-[#22C55E]' :
+                  validationState === 'validating' ? 'text-[#F97316]' :
+                  validationState === 'error' ? 'text-[#EF4444]' : 'text-[#64748B]'
                 }`} />
               </div>
               <div className="min-w-0 flex flex-col justify-center h-10">
-                <p className={`text-xs font-black tracking-tight uppercase truncate ${
+                <p className={`text-xs font-semibold tracking-tight uppercase truncate ${
                   validationState === 'valid' ? 'text-white' : 'text-[#94A3B8]'
                 }`}>
                   {selectedRepo.fullName}
                 </p>
                 {validationState === 'valid' && (
-                  <span className="text-[9px] font-black text-[#00FF94] uppercase tracking-widest animate-pulse">Asset Validado</span>
+                  <span className="text-[9px] font-semibold text-[#22C55E] uppercase tracking-widest animate-pulse">Asset Validado</span>
                 )}
               </div>
             </div>
             <div className="pt-2">
-               {validationState === 'validating' && <div className="w-4 h-4 border-2 border-[#00D1FF]/20 border-t-[#00D1FF] rounded-full animate-spin" />}
-               {validationState === 'valid' && <CheckCircle className="w-5 h-5 text-[#00FF94]" />}
-               {validationState === 'error' && <AlertCircle className="w-5 h-5 text-[#FF3B3B]" />}
+               {validationState === 'validating' && <div className="w-4 h-4 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />}
+               {validationState === 'valid' && <CheckCircle className="w-5 h-5 text-[#22C55E]" />}
+               {validationState === 'error' && <AlertCircle className="w-5 h-5 text-[#EF4444]" />}
             </div>
           </div>
 
           {validationState === 'error' && validationError && (
-            <div className="mt-4 p-3 bg-[#FF3B3B]/10 border border-[#FF3B3B]/20 rounded-xl flex items-center gap-3">
-               <AlertCircle className="w-4 h-4 text-[#FF3B3B]" />
-               <p className="text-[10px] font-bold text-[#FF3B3B] uppercase tracking-tight">{validationError}</p>
+            <div className="mt-4 p-3 bg-[#EF4444]/10 border border-[#EF4444]/20 rounded-xl flex items-center gap-3">
+               <AlertCircle className="w-4 h-4 text-[#EF4444]" />
+               <p className="text-[10px] font-bold text-[#EF4444] uppercase tracking-tight">{validationError}</p>
             </div>
           )}
 
@@ -287,24 +288,24 @@ export default function RepositorySelector({
                   <button
                     type="button"
                     onClick={() => setShowBranches(!showBranches)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-sm text-white hover:border-blue-500 transition-colors"
+                    className="w-full flex items-center justify-between px-3 py-2 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg text-sm text-white hover:border-[#F97316]/50 transition-colors"
                   >
                     <div className="flex items-center gap-2">
-                      <GitBranch className="w-3.5 h-3.5 text-cyan-400" />
+                      <GitBranch className="w-3.5 h-3.5 text-[#F97316]" />
                       <span>{selectedBranch || branches[0]?.name || 'Seleccionar rama'}</span>
                     </div>
                     <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showBranches ? 'rotate-180' : ''}`} />
                   </button>
 
                   {showBranches && (
-                    <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto bg-slate-800 border border-slate-600 rounded-lg shadow-xl">
+                    <div className="absolute z-10 mt-1 w-full max-h-40 overflow-y-auto bg-[#1E1E20] border border-[#2D2D2D] rounded-lg shadow-xl">
                       {branches.map((branch) => (
                         <button
                           key={branch.name}
                           type="button"
                           onClick={() => handleBranchSelect(branch.name)}
-                          className={`w-full text-left px-3 py-2 text-sm hover:bg-slate-700 transition-colors flex items-center gap-2 ${
-                            selectedBranch === branch.name ? 'bg-blue-600/20 text-blue-300' : 'text-gray-300'
+                          className={`w-full text-left px-3 py-2 text-sm hover:bg-[#242424] transition-colors flex items-center gap-2 ${
+                            selectedBranch === branch.name ? 'bg-[#F97316]/10 text-[#F97316]' : 'text-[#94A3B8]'
                           }`}
                         >
                           <GitBranch className="w-3 h-3 flex-shrink-0" />

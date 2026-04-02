@@ -14,7 +14,21 @@ import { AuthenticatedRequest, authMiddleware } from '../middleware/auth.middlew
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { gitService } from '../services/git.service';
+import { decrypt } from '../services/crypto.service';
 import axios from 'axios';
+
+/** Obtiene y descifra el GitHub token del usuario, o lanza respuesta 400 si no está configurado */
+async function resolveGithubToken(userId: string, res: Response): Promise<string | null> {
+  const userSettings = await prisma.userSettings.findUnique({ where: { userId } });
+  if (!userSettings?.githubToken) {
+    res.status(400).json({
+      error: 'GitHub token no configurado',
+      message: 'Configura tu GitHub token en las preferencias primero',
+    });
+    return null;
+  }
+  return decrypt(userSettings.githubToken);
+}
 
 const router: ExpressRouter = Router();
 
@@ -32,22 +46,9 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    /**
-     * Obtener GitHub token del usuario
-     */
-    const userSettings = await prisma.userSettings.findUnique({
-      where: { userId },
-    });
+    const githubToken = await resolveGithubToken(userId, res);
+    if (!githubToken) return;
 
-    if (!userSettings?.githubToken) {
-      res.status(400).json({
-        error: 'GitHub token no configurado',
-        message: 'Configura tu GitHub token en las preferencias primero',
-      });
-      return;
-    }
-
-    const githubToken = userSettings.githubToken;
     const pageNum = Math.max(1, parseInt(page as string) || 1);
     const perPageNum = Math.min(100, Math.max(1, parseInt(per_page as string) || 20));
 
@@ -101,6 +102,7 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       }));
 
       res.json({
+        success: true,
         data: {
           repos,
           total: searchResp.data.total_count,
@@ -145,22 +147,8 @@ router.get(
         return;
       }
 
-      /**
-       * Obtener GitHub token del usuario
-       */
-      const userSettings = await prisma.userSettings.findUnique({
-        where: { userId },
-      });
-
-      if (!userSettings?.githubToken) {
-        res.status(400).json({
-          error: 'GitHub token no configurado',
-          message: 'Configura tu GitHub token en las preferencias primero',
-        });
-        return;
-      }
-
-      const githubToken = userSettings.githubToken;
+      const githubToken = await resolveGithubToken(userId, res);
+      if (!githubToken) return;
 
       try {
         /**
@@ -198,6 +186,7 @@ router.get(
         });
 
         res.json({
+          success: true,
           data: {
             owner,
             repo,
@@ -254,7 +243,7 @@ router.post(
         where: { userId },
       });
 
-      const githubToken = userSettings?.githubToken;
+      const githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
 
       try {
         /**
@@ -264,6 +253,7 @@ router.post(
         await gitService.testRepositoryAccess(repoUrl, githubToken || undefined);
 
         res.json({
+          success: true,
           accessible: true,
           owner,
           repo,

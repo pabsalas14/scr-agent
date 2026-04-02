@@ -1,6 +1,5 @@
 /**
  * Configuración de Prettier para consistencia de código
- * Alineado con OWASP - código consistente facilita auditoría
  */
 
 module.exports = {

@@ -12,10 +12,6 @@
  * Modelo: Claude 3.5 Haiku (rápido y económico)
  * Entrada: Hallazgos de Malicia + Historial de Git
  * Salida: ForensesOutput con timeline de eventos
- *
- * OWASP Coverage:
- * - A09: Logging and Monitoring - Auditoría completa de cambios
- * - A08: Data Integrity - Verificación de integridad de commits
  */
 
 import Anthropic from '@anthropic-ai/sdk';

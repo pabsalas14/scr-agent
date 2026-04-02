@@ -102,7 +102,7 @@ class CommentsService {
    * Obtener menciones no leídas del usuario actual
    */
   async getUnreadMentions(): Promise<CommentMention[]> {
-    const response = await this.client.get('/comments/mentions/unread');
+    const response = await this.client.get('/findings/mentions/unread');
     return response.data.data || [];
   }
 
@@ -110,7 +110,7 @@ class CommentsService {
    * Marcar menciones como leídas
    */
   async markMentionsAsRead(mentionIds: string[]): Promise<void> {
-    await this.client.put('/comments/mentions/read', {
+    await this.client.put('/findings/mentions/read', {
       mentionIds,
     });
   }

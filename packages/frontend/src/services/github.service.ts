@@ -69,11 +69,9 @@ class GitHubService {
         params: { search, page, per_page },
       });
       return data.data;
-    } catch (error: any) {
-      const errorMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Error buscando repositorios';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Error buscando repositorios';
       throw new Error(errorMsg);
     }
   }
@@ -87,11 +85,9 @@ class GitHubService {
         `/github/repos/${owner}/${repo}/branches`
       );
       return data.data;
-    } catch (error: any) {
-      const errorMsg =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        'Error obteniendo ramas';
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string; error?: string } } };
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Error obteniendo ramas';
       throw new Error(errorMsg);
     }
   }

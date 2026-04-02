@@ -12,38 +12,33 @@ class SocketClientService {
   /**
    * Initialize socket connection
    */
-  connect(serverUrl: string = 'http://localhost:3001'): Promise<void> {
+  connect(serverUrl: string = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
-        console.log(`🔌 Attempting to connect to Socket.io at: ${serverUrl}`);
-
         this.socket = io(serverUrl, {
-          transports: ['polling', 'websocket'],  // Try polling first (more stable in browsers)
+          transports: ['polling', 'websocket'],
           reconnection: true,
           reconnectionDelay: 500,
           reconnectionDelayMax: 3000,
           reconnectionAttempts: 10,
           path: '/socket.io/',
-          secure: false,
-          rejectUnauthorized: false,
         });
 
         let timeoutHandle: NodeJS.Timeout;
 
         this.socket.on('connect', () => {
           clearTimeout(timeoutHandle);
-          console.log('✅ WebSocket connected');
           this.connected = true;
 
-          // Authenticate user if available
+          // Authenticate user — send userId + JWT so backend can verify identity
           const token = localStorage.getItem('auth_token');
           const user = localStorage.getItem('auth_user');
           if (token && user) {
             try {
               const userData = JSON.parse(user);
-              this.authenticateUser(userData.id);
-            } catch (e) {
-              console.warn('Failed to parse user data:', e);
+              this.authenticateUser(userData.id, token);
+            } catch (_e) {
+              // ignore malformed user data
             }
           }
 
@@ -51,29 +46,21 @@ class SocketClientService {
         });
 
         this.socket.on('disconnect', () => {
-          console.log('❌ WebSocket disconnected');
           this.connected = false;
         });
 
-        this.socket.on('connect_error', (error) => {
-          console.error('🔴 Socket connection error:', error);
+        this.socket.on('connect_error', (_error) => {
+          // connection errors handled by socket.io reconnection
         });
 
-        this.socket.on('error', (error) => {
-          console.error('🔴 Socket error:', error);
-        });
-
-        // Set timeout for connection (increased to 10s)
+        // Set timeout for connection (10s)
         timeoutHandle = setTimeout(() => {
           if (!this.connected && this.socket) {
-            console.warn('⚠️ Socket connection timeout - attempting reconnection');
-            // Try to reconnect with fallback transports
             this.socket?.disconnect();
             this.socket?.connect();
           }
         }, 10000);
       } catch (error) {
-        console.error('🔴 Socket initialization error:', error);
         reject(error);
       }
     });
@@ -82,11 +69,10 @@ class SocketClientService {
   /**
    * Authenticate user on websocket
    */
-  private authenticateUser(userId: string): void {
+  private authenticateUser(userId: string, token: string): void {
     this.userId = userId;
     if (this.socket) {
-      this.socket.emit('auth:user', userId);
-      console.log(`🔐 User ${userId} authenticated on WebSocket`);
+      this.socket.emit('auth:user', { userId, token });
     }
   }
 
@@ -98,7 +84,6 @@ class SocketClientService {
   ): void {
     if (this.socket) {
       this.socket.on('finding:statusChanged', (data) => {
-        console.log('📢 Finding status changed:', data);
         callback(data);
       });
     }
@@ -112,7 +97,6 @@ class SocketClientService {
   ): void {
     if (this.socket) {
       this.socket.on('finding:assigned', (data) => {
-        console.log('📢 Finding assigned:', data);
         callback(data);
       });
     }
@@ -126,7 +110,6 @@ class SocketClientService {
   ): void {
     if (this.socket) {
       this.socket.on('remediation:updated', (data) => {
-        console.log('📢 Remediation updated:', data);
         callback(data);
       });
     }
@@ -140,7 +123,6 @@ class SocketClientService {
   ): void {
     if (this.socket) {
       this.socket.on('remediation:verified', (data) => {
-        console.log('📢 Remediation verified:', data);
         callback(data);
       });
     }
@@ -161,9 +143,52 @@ class SocketClientService {
   ): void {
     if (this.socket) {
       this.socket.on('comment:added', (data) => {
-        console.log('📢 Comment added:', data);
         callback(data);
       });
+    }
+  }
+
+  /**
+   * Listen for analysis status changes (progress updates)
+   */
+  onAnalysisStatusChanged(
+    callback: (data: { analysisId: string; status: string; progress: number; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:statusChanged', callback);
+    }
+  }
+
+  /**
+   * Listen for new findings discovered during analysis
+   */
+  onFindingsDiscovered(
+    callback: (data: { analysisId: string; findings: unknown[]; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:findingsDiscovered', callback);
+    }
+  }
+
+  /**
+   * Listen for analysis completion
+   */
+  onAnalysisCompleted(
+    callback: (data: { analysisId: string; projectId: string; reportId: string; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:completed', callback);
+    }
+  }
+
+  /**
+   * Listen for analysis errors
+   */
+  onAnalysisError(
+    callback: (data: { analysisId: string; error: string; timestamp: Date }) => void
+  ): void {
+    if (this.socket) {
+      this.socket.on('analysis:error', callback);
     }
   }
 
@@ -174,7 +199,6 @@ class SocketClientService {
     if (this.socket) {
       this.socket.disconnect();
       this.connected = false;
-      console.log('🔌 Socket disconnected');
     }
   }
 
