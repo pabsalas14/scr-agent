@@ -257,6 +257,17 @@ class ApiService {
     return data;
   }
 
+  // ==================== EQUIPO ====================
+
+  async listarUsuarios(): Promise<any[]> {
+    const { data } = await this.client.get<{ data: any[] }>('/users');
+    return data.data;
+  }
+
+  async cambiarRolUsuario(userId: string, role: string): Promise<void> {
+    await this.client.patch(`/users/${userId}/role`, { role });
+  }
+
   // ==================== HEALTH ====================
 
   /**

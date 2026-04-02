@@ -240,6 +240,13 @@ GET    /github/repos            Repositorios del usuario en GitHub
 GET    /github/repos/:o/:r/branches  Ramas de un repositorio
 ```
 
+### Equipo (solo Admin)
+
+```
+GET    /users                   Listar todos los usuarios con sus roles
+PATCH  /users/:userId/role      Cambiar rol de un usuario
+```
+
 ### Notificaciones
 
 ```
