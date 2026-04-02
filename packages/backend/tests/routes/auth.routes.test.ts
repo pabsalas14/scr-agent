@@ -159,21 +159,21 @@ describe('POST /api/v1/auth/verify', () => {
     mockPrisma.user.findUnique.mockResolvedValueOnce(TEST_USER);
     const res = await request(app)
       .post('/api/v1/auth/verify')
-      .set('Authorization', `Bearer ${token}`);
+      .send({ token });
 
     expect(res.status).toBe(200);
     expect(res.body.user.email).toBe(TEST_USER.email);
   });
 
-  it('retorna 401 sin token', async () => {
-    const res = await request(app).post('/api/v1/auth/verify');
-    expect(res.status).toBe(401);
+  it('retorna 400 sin token', async () => {
+    const res = await request(app).post('/api/v1/auth/verify').send({});
+    expect(res.status).toBe(400);
   });
 
   it('retorna 401 con token inválido', async () => {
     const res = await request(app)
       .post('/api/v1/auth/verify')
-      .set('Authorization', 'Bearer token.invalido.xxx');
+      .send({ token: 'token.invalido.xxx' });
 
     expect(res.status).toBe(401);
   });
