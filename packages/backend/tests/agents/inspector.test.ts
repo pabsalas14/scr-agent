@@ -73,6 +73,8 @@ describe('InspectorAgentService', () => {
           }),
         },
       ],
+      usage: { input_tokens: 10, output_tokens: 20 },
+      model: 'claude-sonnet-4-6',
     });
 
     const resultado = await agente.analizarCodigo({
@@ -98,6 +100,8 @@ describe('InspectorAgentService', () => {
           text: JSON.stringify({ hallazgos: [] }),
         },
       ],
+      usage: { input_tokens: 5, output_tokens: 5 },
+      model: 'claude-sonnet-4-6',
     });
 
     const resultado = await agente.analizarCodigo({
@@ -123,6 +127,8 @@ describe('InspectorAgentService', () => {
           text: 'No encontré ningún problema en el código analizado.',
         },
       ],
+      usage: { input_tokens: 5, output_tokens: 5 },
+      model: 'claude-sonnet-4-6',
     });
 
     const resultado = await agente.analizarCodigo({
@@ -164,6 +170,8 @@ describe('InspectorAgentService', () => {
           }),
         },
       ],
+      usage: { input_tokens: 15, output_tokens: 25 },
+      model: 'claude-sonnet-4-6',
     });
 
     const resultado = await agente.analizarCodigo({
@@ -181,6 +189,8 @@ describe('InspectorAgentService', () => {
   it('incluye tiempo de ejecución en la respuesta', async () => {
     createMock.mockResolvedValueOnce({
       content: [{ type: 'text', text: JSON.stringify({ hallazgos: [] }) }],
+      usage: { input_tokens: 5, output_tokens: 5 },
+      model: 'claude-sonnet-4-6',
     });
 
     const resultado = await agente.analizarCodigo({ codigo: 'const x = 1;' });

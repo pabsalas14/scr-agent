@@ -171,7 +171,7 @@ router.get('/:projectId/analyses', async (req: Request, res: Response, next: Nex
  */
 router.post('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { name, description, repositoryUrl, branch, scope } = req.body;
+    const { name, description, repositoryUrl, branch, scope, maxFileSizeKb, maxTotalSizeMb, maxDirectoryDepth, maxCommits } = req.body;
     const userId = (req as any).user?.id; // Obtenido del middleware de auth
 
     // Validar datos básicos
@@ -241,6 +241,10 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         repositoryUrl,
         branch: branch || 'main',
         scope,
+        ...(maxFileSizeKb   ? { maxFileSizeKb:     Math.min(500, Math.max(10, Number(maxFileSizeKb)))   } : {}),
+        ...(maxTotalSizeMb  ? { maxTotalSizeMb:    Math.min(20,  Math.max(1,  Number(maxTotalSizeMb)))  } : {}),
+        ...(maxDirectoryDepth ? { maxDirectoryDepth: Math.min(10,  Math.max(2,  Number(maxDirectoryDepth))) } : {}),
+        ...(maxCommits      ? { maxCommits:         Math.min(200, Math.max(10, Number(maxCommits)))      } : {}),
         ...(userId ? { userId } : {}),
       },
     });

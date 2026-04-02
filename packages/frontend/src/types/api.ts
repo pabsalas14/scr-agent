@@ -32,6 +32,10 @@ export interface CrearProyectoDTO {
   repositoryUrl: string;
   branch?: string;
   scope?: AlcanceAnalisis;
+  maxFileSizeKb?: number;
+  maxTotalSizeMb?: number;
+  maxDirectoryDepth?: number;
+  maxCommits?: number;
 }
 
 export interface Analisis {

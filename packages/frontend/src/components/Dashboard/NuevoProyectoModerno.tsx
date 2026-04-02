@@ -1,7 +1,7 @@
 import { useState, type ComponentType } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Check, Zap, GitBranch, Building2, X, Shield, Terminal } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, GitBranch, Building2, X, Shield, Terminal, Settings2 } from 'lucide-react';
 import type { CrearProyectoDTO } from '../../types/api';
 import Button from '../ui/Button';
 import RepositorySelector from '../GitHub/RepositorySelector';
@@ -34,6 +34,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
   const [repoValidationError, setRepoValidationError] = useState<string>('');
   const [isRepoValid, setIsRepoValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CrearProyectoDTO>({
     defaultValues: { scope: 'REPOSITORY' },
@@ -195,20 +196,53 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
               )}
 
               {step === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center flex-1 space-y-4 text-center py-8"
-                >
-                  <div className="w-14 h-14 rounded-full bg-[#F97316]/10 flex items-center justify-center border border-[#F97316]/20">
-                    <Shield className="w-7 h-7 text-[#F97316]" />
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
+                  <div className="flex flex-col items-center space-y-3 text-center pt-4">
+                    <div className="w-14 h-14 rounded-full bg-[#F97316]/10 flex items-center justify-center border border-[#F97316]/20">
+                      <Shield className="w-7 h-7 text-[#F97316]" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-white">Todo listo</h2>
+                      <p className="text-sm text-[#6B7280] mt-1 max-w-xs">
+                        La configuración ha sido validada. Inicia la auditoría cuando estés listo.
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-white">Todo listo</h2>
-                    <p className="text-sm text-[#6B7280] mt-1 max-w-xs">
-                      La configuración ha sido validada. Inicia la auditoría cuando estés listo.
-                    </p>
+
+                  {/* Configuración avanzada */}
+                  <div className="border border-[#2D2D2D] rounded-xl overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setShowAdvanced(!showAdvanced)}
+                      className="w-full flex items-center justify-between px-4 py-3 text-xs text-[#6B7280] hover:text-white transition-colors hover:bg-[#242424]"
+                    >
+                      <span className="flex items-center gap-2 font-medium uppercase tracking-widest">
+                        <Settings2 className="w-3.5 h-3.5" /> Límites de análisis
+                      </span>
+                      <ChevronRight className={`w-3.5 h-3.5 transition-transform ${showAdvanced ? 'rotate-90' : ''}`} />
+                    </button>
+                    {showAdvanced && (
+                      <div className="px-4 pb-4 grid grid-cols-2 gap-3 bg-[#111111]/50">
+                        {[
+                          { label: 'Tamaño máx. por archivo (KB)', field: 'maxFileSizeKb' as const, min: 10, max: 500, def: 150 },
+                          { label: 'Código total máximo (MB)',      field: 'maxTotalSizeMb' as const, min: 1,  max: 20,  def: 2   },
+                          { label: 'Profundidad de directorios',    field: 'maxDirectoryDepth' as const, min: 2, max: 10, def: 6  },
+                          { label: 'Commits a analizar',            field: 'maxCommits' as const, min: 10, max: 200, def: 50     },
+                        ].map(({ label, field, min, max, def }) => (
+                          <div key={field} className="space-y-1">
+                            <label className="text-[10px] font-medium text-[#6B7280] uppercase tracking-widest">{label}</label>
+                            <input
+                              type="number"
+                              min={min}
+                              max={max}
+                              defaultValue={def}
+                              {...register(field, { min, max, valueAsNumber: true })}
+                              className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-3 py-2 text-sm text-white focus:border-[#F97316]/50 focus:outline-none transition-all"
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

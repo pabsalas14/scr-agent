@@ -34,22 +34,18 @@ interface TimelineData {
  */
 router.get('/summary', async (req: Request, res: Response) => {
   try {
-    // Get all findings with their analysis and remediation status
-    const findings = await prisma.finding.findMany({
-      where: {
-        analysis: {
-          status: 'COMPLETED'
-        }
-      },
-      include: {
-        analysis: true,
-        remediation: true,
-        statusHistory: {
-          orderBy: { createdAt: 'desc' },
-          take: 1
-        }
-      }
-    });
+    // Run both queries in parallel
+    const [findings, totalAnalyses] = await Promise.all([
+      prisma.finding.findMany({
+        where: { analysis: { status: 'COMPLETED' } },
+        include: {
+          analysis: true,
+          remediation: true,
+          statusHistory: { orderBy: { createdAt: 'desc' }, take: 1 },
+        },
+      }),
+      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+    ]);
 
     let totalFindings = 0;
     let criticalFindings = 0;
@@ -58,13 +54,6 @@ router.get('/summary', async (req: Request, res: Response) => {
     let lowFindings = 0;
     let totalResolutionTime = 0;
     let remediatedFindings = 0;
-
-    // Get total number of completed analyses
-    const totalAnalyses = await prisma.analysis.count({
-      where: {
-        status: 'COMPLETED'
-      }
-    });
 
     // Process each finding
     for (const finding of findings) {

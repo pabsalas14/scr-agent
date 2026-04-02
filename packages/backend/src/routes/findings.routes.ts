@@ -75,20 +75,18 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
     const { status, note } = req.body;
-    const userId = (req as any).user?.id;
+    const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({
-        success: false,
-        error: 'User not authenticated',
-      });
+      return res.status(401).json({ success: false, error: 'User not authenticated' });
     }
 
-    if (!status) {
-      return res.status(400).json({
-        success: false,
-        error: 'Status is required',
-      });
+    if (!status || typeof status !== 'string') {
+      return res.status(400).json({ success: false, error: 'status (string) es requerido' });
+    }
+
+    if (note !== undefined && typeof note !== 'string') {
+      return res.status(400).json({ success: false, error: 'note debe ser string' });
     }
 
     // Validate status
