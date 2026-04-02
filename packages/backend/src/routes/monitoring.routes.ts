@@ -345,9 +345,9 @@ router.get('/system-metrics', async (_req: Request, res: Response) => {
         usage: (usedMemory / totalMemory) * 100,
       },
       disk: {
-        used: diskUsage.used,
-        total: diskUsage.total,
-        usage: diskUsage.usage,
+        used: diskUsage?.used ?? 0,
+        total: diskUsage?.total ?? 0,
+        usage: diskUsage?.usage ?? 0,
       },
       uptime: process.uptime(),
     };

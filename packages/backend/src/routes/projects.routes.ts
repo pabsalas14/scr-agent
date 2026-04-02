@@ -260,6 +260,67 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 });
 
 /**
+ * PUT /api/v1/projects/:id
+ * Actualizar nombre, descripción, rama o límites de un proyecto
+ */
+router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+    const { name, description, branch, maxFileSizeKb, maxTotalSizeMb, maxDirectoryDepth, maxCommits } = req.body;
+
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+    }
+    if (project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    const updated = await prisma.project.update({
+      where: { id },
+      data: {
+        ...(name        !== undefined ? { name }        : {}),
+        ...(description !== undefined ? { description } : {}),
+        ...(branch      !== undefined ? { branch }      : {}),
+        ...(maxFileSizeKb     ? { maxFileSizeKb:     Math.min(500, Math.max(10,  Number(maxFileSizeKb)))   } : {}),
+        ...(maxTotalSizeMb    ? { maxTotalSizeMb:    Math.min(20,  Math.max(1,   Number(maxTotalSizeMb)))  } : {}),
+        ...(maxDirectoryDepth ? { maxDirectoryDepth: Math.min(10,  Math.max(2,   Number(maxDirectoryDepth))) } : {}),
+        ...(maxCommits        ? { maxCommits:         Math.min(200, Math.max(10, Number(maxCommits)))      } : {}),
+      },
+    });
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * DELETE /api/v1/projects/:id
+ * Eliminar un proyecto y todos sus análisis asociados
+ */
+router.delete('/:id', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) {
+      return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+    }
+    if (project.userId && project.userId !== userId) {
+      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    }
+
+    await prisma.project.delete({ where: { id } });
+    res.json({ success: true, message: 'Proyecto eliminado' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * POST /api/v1/projects/:projectId/analyses
  * Iniciar un nuevo análisis
  */

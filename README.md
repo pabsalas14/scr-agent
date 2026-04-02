@@ -62,7 +62,7 @@ Repositorio Git
 | Capa | Tecnología |
 |------|-----------|
 | **Frontend** | React 19, Vite, TypeScript, Tailwind CSS, TanStack Query, Socket.io-client, Framer Motion |
-| **Backend** | Node.js 20, Express, TypeScript, Socket.io, BullMQ, Winston |
+| **Backend** | Node.js 20, Express, TypeScript, Socket.io, Winston |
 | **IA** | Anthropic Claude (Sonnet 4.6, Haiku 4.5) via `@anthropic-ai/sdk` |
 | **Base de datos** | PostgreSQL 16 + Prisma ORM |
 | **Caché** | node-cache (dev) / Redis (prod) |
@@ -195,11 +195,13 @@ POST /auth/verify      Verificar token
 ### Proyectos
 
 ```
-GET    /projects               Listar proyectos (?page, ?limit, ?search)
-POST   /projects               Crear proyecto (valida acceso al repo)
-GET    /projects/:id           Detalle del proyecto
-GET    /projects/:id/analyses  Análisis del proyecto
-POST   /projects/:id/analyses  Iniciar nuevo análisis
+GET    /projects                           Listar proyectos (?page, ?limit, ?search)
+POST   /projects                           Crear proyecto (valida acceso al repo)
+GET    /projects/:id                       Detalle del proyecto
+PUT    /projects/:id                       Actualizar nombre, rama o límites
+DELETE /projects/:id                       Eliminar proyecto
+GET    /projects/:id/analyses              Análisis del proyecto
+POST   /projects/:id/analyses              Iniciar nuevo análisis
 POST   /projects/:pid/analyses/:id/cancel  Cancelar análisis en curso
 ```
 
@@ -236,6 +238,13 @@ POST   /settings/github-token   Guardar token GitHub cifrado
 DELETE /settings/github-token   Eliminar token GitHub
 GET    /github/repos            Repositorios del usuario en GitHub
 GET    /github/repos/:o/:r/branches  Ramas de un repositorio
+```
+
+### Equipo (solo Admin)
+
+```
+GET    /users                   Listar todos los usuarios con sus roles
+PATCH  /users/:userId/role      Cambiar rol de un usuario
 ```
 
 ### Notificaciones
@@ -380,14 +389,18 @@ PENDING → INSPECTOR_RUNNING → DETECTIVE_RUNNING → FISCAL_RUNNING → COMPL
 
 ### Límites del análisis
 
-| Parámetro | Valor | Descripción |
-|-----------|-------|-------------|
-| Código total por análisis | **2 MB** | Archivos pre-filtrados antes de enviar a la IA |
-| Tamaño máximo por archivo | **150 KB** | Archivos más grandes se omiten automáticamente |
-| Profundidad de directorios | **6 niveles** | Previene análisis de repos muy anidados |
-| Historial de commits | **Últimos 50** | El Detective analiza los commits más recientes |
-| Timeout total | **10 min** | Inspector: 5 min · Detective: 3 min · Fiscal: 2 min |
-| Análisis simultáneos | **1** | Cola FIFO — los análisis se procesan en orden |
+Los límites son **configurables por proyecto** al momento de crearlo (sección "Límites de análisis"). Los valores predeterminados son:
+
+| Parámetro | Default | Rango | Descripción |
+|-----------|---------|-------|-------------|
+| Código total | **2 MB** | 1–50 MB | Total de código enviado a la IA por análisis |
+| Tamaño por archivo | **150 KB** | 10–500 KB | Archivos más grandes se excluyen automáticamente |
+| Profundidad de directorios | **6 niveles** | 1–20 | Directorios más profundos se ignoran |
+| Historial de commits | **50** | 1–500 | Commits analizados por el Agente Detective |
+| Timeout total | **10 min** | — | Inspector: 5 min · Detective: 3 min · Fiscal: 2 min |
+| Análisis simultáneos | **1** | — | Cola FIFO — los análisis se procesan en orden |
+
+Cuando el repositorio supera los límites configurados, el reporte muestra un **aviso de cobertura parcial** indicando cuántos archivos fueron analizados y cuántos excluidos.
 
 Directorios excluidos automáticamente: `node_modules`, `dist`, `build`, `vendor`, `test`, `coverage`, `assets`, `.git`, `.github`.
 
@@ -418,9 +431,6 @@ cd packages/frontend && pnpm test
 
 # Con reporte de cobertura
 pnpm test:coverage
-
-# Tests E2E (Playwright)
-pnpm test:e2e
 ```
 
 ---
@@ -433,8 +443,10 @@ scr-agent/
 │   ├── backend/
 │   │   ├── src/
 │   │   │   ├── agents/          # Inspector, Detective, Fiscal
-│   │   │   ├── middleware/      # Auth JWT, rate limiting
+│   │   │   ├── middleware/      # Auth JWT, rate limiting, async-handler
+│   │   │   ├── config/          # Precios de modelos IA
 │   │   │   ├── routes/          # Endpoints REST
+│   │   │   ├── types/           # Extensiones de tipos Express
 │   │   │   └── services/        # Prisma, Git, Cache, Socket, Logger
 │   │   ├── prisma/
 │   │   │   ├── schema.prisma    # Modelos de base de datos

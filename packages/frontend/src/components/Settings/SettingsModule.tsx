@@ -13,12 +13,30 @@ import {
   Loader2,
   Pencil,
   X,
+  Users,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
+import { useAuth } from '../../hooks/useAuth';
 import type { UserProfile } from '../../types/api';
+
+const ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  ANALYST: 'Analista',
+  DEVELOPER: 'Desarrollador',
+  VIEWER: 'Viewer',
+};
+const ROLE_COLORS: Record<string, string> = {
+  ADMIN:     'text-[#EF4444] bg-[#EF4444]/10 border-[#EF4444]/20',
+  ANALYST:   'text-[#F97316] bg-[#F97316]/10 border-[#F97316]/20',
+  DEVELOPER: 'text-[#6366F1] bg-[#6366F1]/10 border-[#6366F1]/20',
+  VIEWER:    'text-[#6B7280] bg-[#6B7280]/10 border-[#6B7280]/20',
+};
 
 export default function SettingsModule() {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'ADMIN';
   const [githubToken, setGithubToken] = useState('');
   const [showToken, setShowToken] = useState(false);
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -75,6 +93,19 @@ export default function SettingsModule() {
       setStatus({ type: 'error', message: 'Error al actualizar el perfil.' });
       setTimeout(() => setStatus(null), 5000);
     },
+  });
+
+  // ── Equipo (solo admin) ──────────────────────────────────────────────────
+  const { data: teamUsers = [] } = useQuery({
+    queryKey: ['team-users'],
+    queryFn: () => apiService.listarUsuarios(),
+    enabled: isAdmin,
+  });
+
+  const cambiarRolMutation = useMutation({
+    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
+      apiService.cambiarRolUsuario(userId, role),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-users'] }),
   });
 
   const handleGuardarPerfil = () => {
@@ -297,6 +328,65 @@ export default function SettingsModule() {
             </p>
           </div>
         </div>
+
+        {/* Gestión de equipo — solo admin */}
+        {isAdmin && (
+          <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b border-[#2D2D2D]">
+              <div className="w-8 h-8 rounded-lg bg-[#6366F1]/10 border border-[#6366F1]/20 flex items-center justify-center">
+                <Users className="w-4 h-4 text-[#6366F1]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-white">Equipo</h3>
+                <p className="text-[11px] text-[#6B7280]">Gestión de usuarios y roles</p>
+              </div>
+            </div>
+
+            {teamUsers.length === 0 ? (
+              <p className="text-xs text-[#6B7280] text-center py-4">No hay otros usuarios registrados.</p>
+            ) : (
+              <div className="space-y-2">
+                {teamUsers.map((u: any) => {
+                  const role = u.roles?.[0]?.role ?? 'VIEWER';
+                  const isCurrentUser = u.id === currentUser?.id;
+                  return (
+                    <div
+                      key={u.id}
+                      className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D]"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-8 h-8 rounded-full bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center flex-shrink-0 text-xs font-semibold text-[#F97316]">
+                          {(u.name || u.email).charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-sm text-white truncate">{u.name || '—'}</p>
+                          <p className="text-[11px] text-[#6B7280] truncate">{u.email}</p>
+                        </div>
+                      </div>
+
+                      {isCurrentUser ? (
+                        <span className={`text-[10px] font-semibold px-2 py-1 rounded border ${ROLE_COLORS[role]}`}>
+                          {ROLE_LABELS[role] ?? role} (tú)
+                        </span>
+                      ) : (
+                        <select
+                          value={role}
+                          onChange={(e) => cambiarRolMutation.mutate({ userId: u.id, role: e.target.value })}
+                          disabled={cambiarRolMutation.isPending}
+                          className="text-[11px] font-medium bg-[#1C1C1E] border border-[#2D2D2D] text-[#A0A0A0] rounded-lg px-2 py-1.5 focus:outline-none focus:border-[#6366F1]/50 cursor-pointer"
+                        >
+                          {ROLES.map((r) => (
+                            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                          ))}
+                        </select>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

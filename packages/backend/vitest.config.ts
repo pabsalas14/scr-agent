@@ -9,6 +9,9 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['tests/**/*.test.ts'],
+    env: {
+      JWT_SECRET: 'test-secret-key',
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],

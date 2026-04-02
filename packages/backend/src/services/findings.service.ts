@@ -151,10 +151,10 @@ export class FindingsService {
 
   async unassignFinding(findingId: string) {
     try {
-      await prisma.findingAssignment.delete({
-        where: { findingId },
-      });
+      const existing = await prisma.findingAssignment.findUnique({ where: { findingId } });
+      if (!existing) return false;
 
+      await prisma.findingAssignment.delete({ where: { findingId } });
       logger.info(`Finding ${findingId} unassigned`);
       return true;
     } catch (error) {

@@ -7,7 +7,6 @@
  * GET /api/v1/analyses/:id/findings   → Hallazgos
  * GET /api/v1/analyses/:id/forensics  → Eventos forenses (timeline)
  * GET /api/v1/analyses/:id/report     → Reporte final
- * GET /api/v1/analyses/:id/report/pdf → Descargar PDF
  */
 
 import { Router, type Router as ExpressRouter, Request, Response } from 'express';
@@ -190,33 +189,6 @@ router.get('/:id/report', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(`Error obteniendo reporte: ${error}`);
     res.status(500).json({ error: 'Error al obtener reporte' });
-  }
-});
-
-/**
- * GET /api/v1/analyses/:id/report/pdf
- * Descargar reporte como PDF
- */
-router.get('/:id/report/pdf', async (req: Request, res: Response) => {
-  try {
-    const report = await prisma.report.findUnique({
-      where: { analysisId: req.params['id'] },
-    });
-
-    if (!report || !report.pdfContent) {
-      res.status(404).json({ error: 'PDF no disponible' });
-      return;
-    }
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename="reporte-scr-${req.params['id']}.pdf"`
-    );
-    res.send(report.pdfContent);
-  } catch (error) {
-    logger.error(`Error descargando PDF: ${error}`);
-    res.status(500).json({ error: 'Error al descargar PDF' });
   }
 });
 

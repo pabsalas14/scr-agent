@@ -326,7 +326,6 @@ model Report {
   generalRecommendation String @db.Text
 
   // Exportación
-  pdfContent  Bytes?
   jsonContent String? @db.Text
 
   // Metadata
