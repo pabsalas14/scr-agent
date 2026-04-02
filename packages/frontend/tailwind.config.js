@@ -25,7 +25,7 @@ export default {
         'border-subtle': '#2D2D2D',
         'border-bright': '#404040',
 
-        // Severidad (alineados con OWASP)
+        // Severidad
         crítico: '#EF4444',
         alto: '#FB923C',
         medio: '#EAB308',

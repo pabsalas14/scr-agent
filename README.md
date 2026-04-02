@@ -230,12 +230,21 @@ GET    /findings/analysis/:id/stats        Estadísticas por severidad
 ### Usuario
 
 ```
-GET    /users/settings       Perfil (nombre, email, avatar, bio)
-PATCH  /users/settings       Actualizar perfil
-GET    /users/preferences    Preferencias de notificaciones
-POST   /users/preferences    Actualizar preferencias
-POST   /settings/github-token  Guardar token GitHub cifrado
-DELETE /settings/github-token  Eliminar token GitHub
+GET    /users/settings          Perfil (nombre, email, avatar, bio)
+PATCH  /users/settings          Actualizar perfil
+POST   /settings/github-token   Guardar token GitHub cifrado
+DELETE /settings/github-token   Eliminar token GitHub
+GET    /github/repos            Repositorios del usuario en GitHub
+GET    /github/repos/:o/:r/branches  Ramas de un repositorio
+```
+
+### Notificaciones
+
+```
+GET    /notifications           Lista de notificaciones (?limit)
+PUT    /notifications/:id/read  Marcar como leída
+PUT    /notifications/mark-all-read  Marcar todas como leídas
+DELETE /notifications           Limpiar todas las notificaciones
 ```
 
 ### Sistema
@@ -251,28 +260,17 @@ GET  /monitoring/costs           Costos por modelo IA
 
 ## Detección de funcionalidades maliciosas
 
-El **Agente Inspector** analiza el código con Claude para identificar patrones de riesgo en tres capas:
+El **Agente Inspector** lee todos los archivos del repositorio y los envía a Claude para análisis semántico profundo. A diferencia de herramientas basadas en regex, evalúa el **contexto completo** de cada función, lo que permite detectar:
 
-### 1. Pre-filtrado por patrones de regex
-
-Antes de enviar código a la IA, el sistema aplica regex para priorizar archivos sospechosos:
-
-| Categoría | Patrones buscados |
-|-----------|------------------|
-| **Puertas traseras** | `hardcoded.*bypass`, `credential.*check.*===.*false`, `if.*eval` |
-| **Inyección** | `sql.*concat`, `query.*\+`, `eval`, `innerHTML.*=`, `exec\(.*process\.env` |
-| **Ofuscación** | `atob\(`, `btoa\(`, `String\.fromCharCode`, `_0x[0-9a-f]{4}` (vars hex) |
-| **Errores silenciados** | `try.*catch.*\{\}`, `catch.*\{\}`, `ignore.*error` |
-
-### 2. Análisis semántico con IA
-
-Claude evalúa el **contexto completo** de cada función, no solo el texto. Esto permite detectar:
-
-- Lógica condicional sospechosa que no activa alarmas con regex simple
-- Backdoors disfrazados como código legítimo
+- Backdoors disfrazados como código legítimo de validación
+- Lógica condicional sospechosa que no dispara alertas con patrones simples
 - Bombas lógicas activadas por fecha, usuario o condición de entorno
+- Ofuscación de payloads mediante codificación en tiempo de ejecución
+- Exfiltración de datos encubierta en flujos normales
 
-### 3. Clasificación de hallazgos
+Para repositorios grandes, el código se divide en fragmentos de 500 KB que se analizan en paralelo. Los hallazgos de todos los fragmentos se consolidan en un único resultado.
+
+### Clasificación de hallazgos
 
 Cada hallazgo incluye:
 

@@ -78,11 +78,11 @@ describe('GitService', () => {
       expect(service.validateRepositoryUrl('https://bitbucket.org/org/repo')).toBe(true);
     });
 
-    it('rechaza URLs de hosts no soportados (OWASP SSRF)', () => {
+    it('rechaza URLs de hosts no soportados', () => {
       expect(service.validateRepositoryUrl('https://malicioso.com/repo')).toBe(false);
     });
 
-    it('rechaza URLs de IPs internas (OWASP SSRF)', () => {
+    it('rechaza URLs de IPs internas', () => {
       expect(service.validateRepositoryUrl('http://192.168.1.1/repo')).toBe(false);
     });
 

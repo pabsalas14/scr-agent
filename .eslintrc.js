@@ -1,6 +1,5 @@
 /**
  * Configuración de ESLint para el proyecto SCR Agent
- * Incluye reglas de seguridad OWASP y best practices
  */
 
 module.exports = {
@@ -25,8 +24,7 @@ module.exports = {
   plugins: ['@typescript-eslint', 'security'],
   rules: {
     /**
-     * Seguridad OWASP
-     * Prevenir patrones comunes de vulnerabilidades
+     * Seguridad
      */
     'no-eval': 'error',
     'no-implied-eval': 'error',

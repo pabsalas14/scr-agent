@@ -5,7 +5,7 @@
  *
  * Maneja todas las llamadas HTTP al backend MCP Server
  * Incluye:
- * - Autenticación con JWT (OWASP A07)
+ * - Autenticación con JWT
  * - Interceptores de request/response
  * - Manejo centralizado de errores
  * - Timeout de requests
@@ -50,7 +50,7 @@ class ApiService {
 
     /**
      * Interceptor de request
-     * Agrega token JWT si existe (OWASP A07)
+     * Agrega token JWT si existe
      */
     this.client.interceptors.request.use(
       (config) => {

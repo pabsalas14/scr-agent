@@ -441,8 +441,7 @@ export class GitService {
   }
 
   /**
-   * Validar que la URL es un repositorio válido
-   * OWASP A10 - Prevenir SSRF
+   * Validar que la URL es un repositorio válido (previene SSRF)
    */
   validateRepositoryUrl(url: string): boolean {
     try {

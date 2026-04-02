@@ -4,7 +4,6 @@
  * ============================================================================
  *
  * Valida el body de las requests usando esquemas Zod
- * Previene inyección de datos malformados (OWASP A03)
  */
 
 import { Request, Response, NextFunction } from 'express';
