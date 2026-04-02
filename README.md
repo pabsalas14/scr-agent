@@ -380,14 +380,18 @@ PENDING → INSPECTOR_RUNNING → DETECTIVE_RUNNING → FISCAL_RUNNING → COMPL
 
 ### Límites del análisis
 
-| Parámetro | Valor | Descripción |
-|-----------|-------|-------------|
-| Código total por análisis | **2 MB** | Archivos pre-filtrados antes de enviar a la IA |
-| Tamaño máximo por archivo | **150 KB** | Archivos más grandes se omiten automáticamente |
-| Profundidad de directorios | **6 niveles** | Previene análisis de repos muy anidados |
-| Historial de commits | **Últimos 50** | El Detective analiza los commits más recientes |
-| Timeout total | **10 min** | Inspector: 5 min · Detective: 3 min · Fiscal: 2 min |
-| Análisis simultáneos | **1** | Cola FIFO — los análisis se procesan en orden |
+Los límites son **configurables por proyecto** al momento de crearlo (sección "Límites de análisis"). Los valores predeterminados son:
+
+| Parámetro | Default | Rango | Descripción |
+|-----------|---------|-------|-------------|
+| Código total | **2 MB** | 1–50 MB | Total de código enviado a la IA por análisis |
+| Tamaño por archivo | **150 KB** | 10–500 KB | Archivos más grandes se excluyen automáticamente |
+| Profundidad de directorios | **6 niveles** | 1–20 | Directorios más profundos se ignoran |
+| Historial de commits | **50** | 1–500 | Commits analizados por el Agente Detective |
+| Timeout total | **10 min** | — | Inspector: 5 min · Detective: 3 min · Fiscal: 2 min |
+| Análisis simultáneos | **1** | — | Cola FIFO — los análisis se procesan en orden |
+
+Cuando el repositorio supera los límites configurados, el reporte muestra un **aviso de cobertura parcial** indicando cuántos archivos fueron analizados y cuántos excluidos.
 
 Directorios excluidos automáticamente: `node_modules`, `dist`, `build`, `vendor`, `test`, `coverage`, `assets`, `.git`, `.github`.
 
