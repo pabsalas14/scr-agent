@@ -7,10 +7,6 @@ import {
   Eye,
   EyeOff,
   Save,
-  Database,
-  Key,
-  Bell,
-  Monitor,
   CheckCircle,
   AlertCircle,
   Terminal,
@@ -287,52 +283,6 @@ export default function SettingsModule() {
             </AnimatePresence>
           </div>
 
-          {/* System Preferences */}
-          <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-5">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#2D2D2D]">
-              <div className="w-8 h-8 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center">
-                <Monitor className="w-4 h-4 text-[#F97316]" />
-              </div>
-              <h3 className="text-sm font-medium text-white">Interfaz y sistema</h3>
-            </div>
-
-            <div className="space-y-3">
-              {/* Toggle activo: notificaciones in-app — gestionado desde el panel de campana */}
-              <div className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D]">
-                <div className="flex items-center gap-3">
-                  <Bell className="w-4 h-4 text-[#22C55E]" />
-                  <div>
-                    <span className="text-sm text-[#A0A0A0]">Notificaciones en tiempo real</span>
-                    <p className="text-[11px] text-[#475569] mt-0.5">Via Socket.io — siempre activo</p>
-                  </div>
-                </div>
-                <div className="w-9 h-5 rounded-full bg-[#22C55E] p-0.5 relative">
-                  <div className="w-4 h-4 bg-white rounded-full shadow-sm translate-x-4" />
-                </div>
-              </div>
-
-              {/* Próximamente */}
-              {[
-                { icon: Shield,   label: 'Auditoría agresiva' },
-                { icon: Database, label: 'Persistencia de memoria' },
-                { icon: Key,      label: 'Protección biométrica' },
-              ].map((item, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-3 rounded-lg bg-[#242424] border border-[#2D2D2D] opacity-50 cursor-not-allowed"
-                  title="Próximamente"
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4 text-[#6B7280]" />
-                    <span className="text-sm text-[#6B7280]">{item.label}</span>
-                  </div>
-                  <span className="text-[10px] font-semibold text-[#475569] border border-[#2D2D2D] rounded px-1.5 py-0.5 uppercase tracking-wide">
-                    Próximamente
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
 
         {/* Security Note */}

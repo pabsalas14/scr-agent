@@ -6,9 +6,8 @@ import Button from '../ui/Button';
 import { useToast } from '../../hooks/useToast';
 import { setApiKey, clearApiKey, getMaskedApiKey } from '../../services/config.service';
 import { settingsService } from '../../services/settings.service';
-import NotificationPreferences from './NotificationPreferences';
 
-type Tab = 'api' | 'github' | 'notifications';
+type Tab = 'api' | 'github';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -147,9 +146,8 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
       <div className="bg-[#1E1E20] rounded-lg border border-[#2D2D2D] p-1 mb-4 sm:mb-6 overflow-x-auto">
         <div className="flex gap-1 min-w-min sm:min-w-full">
           {[
-            { id: 'api',           label: 'API Key' },
-            { id: 'github',        label: 'GitHub' },
-            { id: 'notifications', label: 'Notificaciones' },
+            { id: 'api',    label: 'API Key' },
+            { id: 'github', label: 'GitHub' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -368,16 +366,6 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           </>
         )}
 
-        {/* NOTIFICATIONS TAB */}
-        {activeTab === 'notifications' && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="space-y-4"
-          >
-            <NotificationPreferences />
-          </motion.div>
-        )}
       </motion.div>
     </Modal>
   );
