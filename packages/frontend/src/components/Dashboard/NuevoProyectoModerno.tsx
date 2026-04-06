@@ -10,6 +10,7 @@ interface NuevoProyectoModernoProps {
   onCrear: (dto: CrearProyectoDTO) => void;
   onCerrar: () => void;
   cargando: boolean;
+  error?: string;
 }
 
 type ScopeType = 'REPOSITORY' | 'PULL_REQUEST' | 'ORGANIZATION';
@@ -26,14 +27,13 @@ const SCOPE_OPTIONS: Array<{
   { id: 'ORGANIZATION', label: 'Organización',          desc: 'Escaneo masivo de activos institucionales.',      icon: Building2 },
 ];
 
-export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: NuevoProyectoModernoProps) {
+export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, error }: NuevoProyectoModernoProps) {
   const [step, setStep] = useState<Step>(1);
   const [selectedScope, setSelectedScope] = useState<ScopeType | null>(null);
   const [selectedRepo, setSelectedRepo] = useState<any>(null);
   const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
   const [repoValidationError, setRepoValidationError] = useState<string>('');
   const [isRepoValid, setIsRepoValid] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CrearProyectoDTO>({
@@ -55,7 +55,6 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
     data.scope = selectedScope || 'REPOSITORY';
     if (!data.repositoryUrl) return;
     if (!isRepoValid && repoValidationError) return;
-    setIsSubmitting(true);
     onCrear(data);
   };
 
@@ -186,7 +185,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
                       selectedRepo={selectedRepo}
                       selectedBranch={selectedBranch}
                       isLoading={cargando}
-                      hideBranchSelector={selectedScope === 'REPOSITORIO'}
+                      hideBranchSelector={selectedScope === 'REPOSITORY'}
                     />
                     {repoValidationError && (
                       <p className="mt-3 text-xs text-[#EF4444]">Error: {repoValidationError}</p>
@@ -244,6 +243,11 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
                       </div>
                     )}
                   </div>
+                  {error && (
+                    <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-lg p-3 text-sm text-[#EF4444] text-center">
+                      Error: {error}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -277,7 +281,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando }: Nu
               <Button
                 type="submit"
                 variant="primary"
-                isLoading={cargando || isSubmitting}
+                isLoading={cargando}
                 className="flex items-center gap-1.5"
               >
                 <Zap className="w-3.5 h-3.5" /> Iniciar diagnóstico
