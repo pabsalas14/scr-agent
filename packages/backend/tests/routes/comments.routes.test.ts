@@ -16,6 +16,7 @@ vi.mock('../../src/services/comments.service', () => ({
     createComment:         vi.fn(),
     getCommentsByFinding:  vi.fn(),
     getCommentById:        vi.fn(),
+    getComment:            vi.fn(),
     updateComment:         vi.fn(),
     deleteComment:         vi.fn(),
     getUnreadMentions:     vi.fn(),
@@ -23,7 +24,13 @@ vi.mock('../../src/services/comments.service', () => ({
   },
 }));
 vi.mock('../../src/services/socket.service', () => ({
-  socketService: { emitNewComment: vi.fn(), emitCommentUpdated: vi.fn(), emitCommentDeleted: vi.fn() },
+  socketService: {
+    emitNewComment:      vi.fn(),
+    emitCommentAdded:    vi.fn(),
+    emitCommentUpdated:  vi.fn(),
+    emitCommentDeleted:  vi.fn(),
+    emitCommentMentioned: vi.fn(),
+  },
 }));
 vi.mock('../../src/services/notifications.service', () => ({
   notificationsService: { notifyMention: vi.fn() },
@@ -47,7 +54,9 @@ const COMMENT = {
   user: { id: 'user-1', name: 'Tester', email: 'test@test.com' },
 };
 
-beforeEach(() => vi.clearAllMocks());
+// resetAllMocks limpia las colas mockResolvedValueOnce entre tests,
+// previniendo que valores no consumidos (ej. por timeout) envenenen tests posteriores.
+beforeEach(() => vi.resetAllMocks());
 
 describe('POST /api/v1/findings/:findingId/comments', () => {
   it('crea comentario correctamente', async () => {
