@@ -296,6 +296,26 @@ function showComponentTab(tabName) {
   event.target.classList.add('active');
 }
 
+// Report Tabs Navigation
+document.addEventListener('DOMContentLoaded', () => {
+  const reportTabs = document.querySelectorAll('.report-tab');
+  const reportContents = document.querySelectorAll('.report-section-content');
+
+  reportTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+      // Remove active from all
+      reportTabs.forEach(t => t.classList.remove('active'));
+      reportContents.forEach(c => c.classList.remove('active'));
+
+      // Add active to clicked
+      tab.classList.add('active');
+      if (reportContents[index]) {
+        reportContents[index].classList.add('active');
+      }
+    });
+  });
+});
+
 // Console message
 console.log('%cSCR Agent - Auditoría Inteligente de Código', 'color: #F97316; font-size: 24px; font-weight: bold;');
 console.log('%cTecnología avanzada en análisis de seguridad', 'color: #6B7280; font-size: 14px;');

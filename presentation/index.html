@@ -1951,7 +1951,7 @@
                 <!-- Report Header -->
                 <div class="report-header">
                     <div class="report-title-section">
-                        <h3>Análisis de Seguridad - Banco XYZ</h3>
+                        <h3>Análisis de Seguridad - FinTech Solutions</h3>
                         <p class="report-date">📅 04 de abril de 2024 | 🕐 14:32:10</p>
                     </div>
                     <div class="report-score">
@@ -1974,7 +1974,7 @@
                 <div class="report-content">
                     <!-- Findings Section -->
                     <div class="report-section-content active">
-                        <h4>Vulnerabilidades Detectadas</h4>
+                        <h4>Vulnerabilidades Detectadas (12 Críticas)</h4>
                         <div class="findings-list">
                             <div class="finding-card critical">
                                 <div class="finding-header">
@@ -1992,6 +1992,18 @@
                                 </div>
                             </div>
 
+                            <div class="finding-card critical">
+                                <div class="finding-header">
+                                    <span class="finding-icon">⚠️</span>
+                                    <h5>Backdoor Administrativo</h5>
+                                    <span class="severity-badge critical">CRÍTICO 9.9</span>
+                                </div>
+                                <div class="finding-details">
+                                    <p><strong>Archivo:</strong> auth/login.js:234</p>
+                                    <p><strong>Confianza:</strong> 100% | <strong>Clase:</strong> Intentional Compromise</p>
+                                </div>
+                            </div>
+
                             <div class="finding-card high">
                                 <div class="finding-header">
                                     <span class="finding-icon">⚠️</span>
@@ -2003,17 +2015,89 @@
                                     <p><strong>Confianza:</strong> 85% | <strong>Clase:</strong> OWASP A03:2021 – Injection</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
 
-                            <div class="finding-card medium">
-                                <div class="finding-header">
-                                    <span class="finding-icon">⚠️</span>
-                                    <h5>Credenciales Hardcoded en Configuración</h5>
-                                    <span class="severity-badge medium">MEDIO 6.2</span>
+                    <!-- Remediation Section -->
+                    <div class="report-section-content">
+                        <h4>Plan de Remediación</h4>
+                        <div class="remediation-plan">
+                            <div class="remediation-step">
+                                <div class="step-number critical">1</div>
+                                <div class="step-content">
+                                    <h5>SQL Injection - Prepared Statements</h5>
+                                    <p>Implementar prepared statements con parámetros vinculados</p>
+                                    <p><strong>Plazo:</strong> 4 horas | <strong>Complejidad:</strong> Alta</p>
                                 </div>
-                                <div class="finding-details">
-                                    <p><strong>Archivo:</strong> config/database.js:12</p>
-                                    <p><strong>Confianza:</strong> 100% | <strong>Clase:</strong> OWASP A02:2021 – Cryptographic Failures</p>
+                            </div>
+
+                            <div class="remediation-step">
+                                <div class="step-number critical">2</div>
+                                <div class="step-content">
+                                    <h5>Remover Backdoor</h5>
+                                    <p>Eliminar contraseña maestra y revertir cambios maliciosos</p>
+                                    <p><strong>Plazo:</strong> 1 hora | <strong>Complejidad:</strong> Media</p>
                                 </div>
+                            </div>
+
+                            <div class="remediation-step">
+                                <div class="step-number high">3</div>
+                                <div class="step-content">
+                                    <h5>Sanitización de XSS</h5>
+                                    <p>Usar text nodes en lugar de dangerouslySetInnerHTML</p>
+                                    <p><strong>Plazo:</strong> 2 horas | <strong>Complejidad:</strong> Media</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Forensic Section -->
+                    <div class="report-section-content">
+                        <h4>Análisis Forense</h4>
+                        <div class="forensic-findings">
+                            <div class="forensic-item">
+                                <h5>📅 Timeline de Descubrimiento</h5>
+                                <ul>
+                                    <li><strong>2024-04-07 02:15:00</strong> - Scan automático detectó SQL Injection</li>
+                                    <li><strong>2024-04-07 02:32:00</strong> - Analysis Engine identificó Backdoor</li>
+                                    <li><strong>2024-04-07 03:45:00</strong> - Forensic module encontró correlación: mismo autor</li>
+                                    <li><strong>2024-04-07 04:20:00</strong> - Reporte generado y enviado a equipo</li>
+                                </ul>
+                            </div>
+
+                            <div class="forensic-item">
+                                <h5>👤 Usuario Sospechoso</h5>
+                                <p><strong>Cuenta:</strong> contractor@external.com</p>
+                                <p><strong>Últimos commits:</strong> 47 en 3 horas (fuera de horas laborales)</p>
+                                <p><strong>Archivos modificados:</strong> auth/, banking/, config/</p>
+                                <p><strong>Riesgo:</strong> ALTO - Patrón anómalo identificado</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Section -->
+                    <div class="report-section-content">
+                        <h4>Timeline de Remediación</h4>
+                        <div class="timeline-progress">
+                            <div class="timeline-milestone completed">
+                                <span class="milestone-date">04/07 02:15</span>
+                                <span class="milestone-status">✓ Detectado</span>
+                            </div>
+                            <div class="timeline-milestone completed">
+                                <span class="milestone-date">04/07 04:20</span>
+                                <span class="milestone-status">✓ Reportado</span>
+                            </div>
+                            <div class="timeline-milestone in-progress">
+                                <span class="milestone-date">04/07 06:00</span>
+                                <span class="milestone-status">⏳ En Curso</span>
+                            </div>
+                            <div class="timeline-milestone pending">
+                                <span class="milestone-date">04/07 10:20</span>
+                                <span class="milestone-status">⧗ Validación</span>
+                            </div>
+                            <div class="timeline-milestone pending">
+                                <span class="milestone-date">04/07 12:00</span>
+                                <span class="milestone-status">⧗ Cierre</span>
                             </div>
                         </div>
                     </div>

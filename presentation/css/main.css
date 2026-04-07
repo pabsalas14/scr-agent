@@ -2258,6 +2258,203 @@ section:nth-child(even) {
     font-size: 0.9rem;
 }
 
+/* Remediation Plan */
+.remediation-plan {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.remediation-step {
+    display: flex;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-left: 4px solid var(--border);
+    border-radius: 8px;
+}
+
+.remediation-step:has(.step-number.critical) {
+    border-left-color: var(--critical);
+    background: rgba(239, 68, 68, 0.05);
+}
+
+.remediation-step:has(.step-number.high) {
+    border-left-color: var(--warning);
+    background: rgba(249, 115, 22, 0.05);
+}
+
+.step-number {
+    min-width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: white;
+    flex-shrink: 0;
+}
+
+.step-number.critical {
+    background: var(--critical);
+}
+
+.step-number.high {
+    background: var(--warning);
+}
+
+.step-content h5 {
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+}
+
+.step-content p {
+    color: var(--text-secondary);
+    margin: 6px 0;
+    font-size: 0.9rem;
+}
+
+/* Forensic Findings */
+.forensic-findings {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.forensic-item {
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+
+.forensic-item h5 {
+    color: var(--text-primary);
+    margin: 0 0 15px 0;
+    font-size: 1rem;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--primary);
+}
+
+.forensic-item ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.forensic-item li {
+    color: var(--text-secondary);
+    padding: 8px 0;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border);
+}
+
+.forensic-item li:last-child {
+    border-bottom: none;
+}
+
+.forensic-item p {
+    color: var(--text-secondary);
+    margin: 8px 0;
+    font-size: 0.9rem;
+}
+
+/* Timeline Progress */
+.timeline-progress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 30px 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    position: relative;
+    min-height: 120px;
+}
+
+.timeline-progress::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--success), var(--warning), var(--border));
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.timeline-milestone {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    z-index: 2;
+    min-width: 100px;
+}
+
+.milestone-date {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+}
+
+.milestone-status {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.timeline-milestone.completed .milestone-status {
+    background: rgba(34, 197, 94, 0.2);
+    color: var(--success);
+    border: 1px solid var(--success);
+}
+
+.timeline-milestone.in-progress .milestone-status {
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--warning);
+    border: 1px solid var(--warning);
+    animation: pulse 2s infinite;
+}
+
+.timeline-milestone.pending .milestone-status {
+    background: rgba(107, 114, 128, 0.2);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.timeline-milestone::before {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: var(--border);
+    border-radius: 50%;
+    top: -60px;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 2px solid var(--card-bg);
+}
+
+.timeline-milestone.completed::before {
+    background: var(--success);
+    box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.2);
+}
+
+.timeline-milestone.in-progress::before {
+    background: var(--warning);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
+}
+
+.timeline-milestone.pending::before {
+    background: var(--border);
+}
+
 /* Ejemplos & Casos de Uso */
 .casos-uso {
     background: linear-gradient(to bottom, transparent, rgba(34, 197, 94, 0.05));
