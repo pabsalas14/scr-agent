@@ -239,6 +239,17 @@ function displayResults(findings) {
     demoResults.innerHTML = html;
 }
 
+// Pipeline Stage Info
+function showStageInfo(element, title, description) {
+    const infoBox = document.getElementById('pipelineInfo');
+    if (infoBox) {
+        infoBox.innerHTML = `
+            <h4>${title}</h4>
+            <p>${description}</p>
+        `;
+    }
+}
+
 // Dashboard Interactive Tabs
 const dashboardTabs = document.querySelectorAll('.mockup-tabs .tab');
 const dashboardContents = document.querySelectorAll('.dashboard-tab-content');

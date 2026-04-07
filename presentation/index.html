@@ -321,118 +321,68 @@
     <section id="pipeline" class="pipeline">
         <div class="container">
             <h2 class="section-title">Pipeline de Análisis</h2>
-            <p class="section-subtitle">Flujo detallado del análisis automático de código</p>
+            <p class="section-subtitle">Flujo en línea del análisis automático de código</p>
 
-            <div class="pipeline-detailed">
-                <div class="pipeline-stage">
-                    <div class="stage-number">1</div>
-                    <h3>📥 Ingesta de Código</h3>
-                    <div class="stage-details">
-                        <p><strong>Entrada:</strong> Repositorio Git o archivos fuente</p>
-                        <ul>
-                            <li>Descarga del código desde GitHub/GitLab/Bitbucket</li>
-                            <li>Análisis de estructura del proyecto</li>
-                            <li>Identificación de lenguajes de programación</li>
-                            <li>Validación de integridad de archivos</li>
-                        </ul>
-                    </div>
+            <div class="pipeline-horizontal">
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📥 Ingesta de Código', 'Descarga desde GitHub/GitLab, análisis de estructura, validación de integridad')">
+                    <div class="step-icon">📥</div>
+                    <div class="step-title">Ingesta</div>
+                    <div class="step-info">Git Clone</div>
                 </div>
 
-                <div class="pipeline-connector">→</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">2</div>
-                    <h3>🔍 Parsing & AST</h3>
-                    <div class="stage-details">
-                        <p><strong>Proceso:</strong> Análisis sintáctico profundo</p>
-                        <ul>
-                            <li>Generación de árbol sintáctico abstracto (AST)</li>
-                            <li>Análisis de dependencias entre módulos</li>
-                            <li>Mapeo de flujos de datos</li>
-                            <li>Identificación de funciones y variables</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '🔍 Parsing & AST', 'Generación de árbol sintáctico, análisis de dependencias, mapeo de flujos')">
+                    <div class="step-icon">🔍</div>
+                    <div class="step-title">Parsing</div>
+                    <div class="step-info">AST Analyze</div>
                 </div>
 
-                <div class="pipeline-connector">→</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">3</div>
-                    <h3>🎯 Detección de Patrones</h3>
-                    <div class="stage-details">
-                        <p><strong>Análisis:</strong> Búsqueda de vulnerabilidades conocidas</p>
-                        <ul>
-                            <li>Búsqueda de patrones OWASP Top 10</li>
-                            <li>Detección de anomalías con ML</li>
-                            <li>Análisis de flujo de datos inseguro</li>
-                            <li>Identificación de configuraciones peligrosas</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '🎯 Detección', 'Búsqueda de patrones OWASP, anomalías con ML, flujo de datos inseguro')">
+                    <div class="step-icon">🎯</div>
+                    <div class="step-title">Detección</div>
+                    <div class="step-info">Pattern Match</div>
                 </div>
 
-                <div class="pipeline-connector">→</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">4</div>
-                    <h3>📊 Evaluación de Riesgo</h3>
-                    <div class="stage-details">
-                        <p><strong>Cálculo:</strong> CVSS + Contexto = Criticidad</p>
-                        <ul>
-                            <li>Cálculo de CVSS Score automático</li>
-                            <li>Análisis contextual de impacto</li>
-                            <li>Asignación de severidad (CRITICAL/HIGH/MEDIUM/LOW)</li>
-                            <li>Determinación de prioridad de remediación</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📊 Evaluación', 'Cálculo de CVSS Score, análisis contextual, asignación de severidad')">
+                    <div class="step-icon">📊</div>
+                    <div class="step-title">Evaluación</div>
+                    <div class="step-info">CVSS Score</div>
                 </div>
 
-                <div class="pipeline-connector">→</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">5</div>
-                    <h3>💡 Generación de Soluciones</h3>
-                    <div class="stage-details">
-                        <p><strong>Salida:</strong> Código remediado automático</p>
-                        <ul>
-                            <li>Propuesta de código solución</li>
-                            <li>Pasos detallados de remediación</li>
-                            <li>Referencias a mejores prácticas</li>
-                            <li>Validación de la solución propuesta</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '💡 Soluciones', 'Generación automática de código, pasos de remediación, mejores prácticas')">
+                    <div class="step-icon">💡</div>
+                    <div class="step-title">Soluciones</div>
+                    <div class="step-info">Auto Code</div>
                 </div>
 
-                <div class="pipeline-connector">→</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">6</div>
-                    <h3>📄 Generación de Reporte</h3>
-                    <div class="stage-details">
-                        <p><strong>Documentación:</strong> Reporte ejecutivo</p>
-                        <ul>
-                            <li>Reporte PDF/JSON con hallazgos</li>
-                            <li>Dashboard interactivo en web</li>
-                            <li>Evidencia visual de vulnerabilidades</li>
-                            <li>Estimaciones de tiempo de fix</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📄 Reporte', 'Generación de PDF/JSON, dashboard interactivo, evidencia visual')">
+                    <div class="step-icon">📄</div>
+                    <div class="step-title">Reporte</div>
+                    <div class="step-info">Export</div>
                 </div>
 
-                <div class="pipeline-connector">↺</div>
+                <div class="arrow-connector">→</div>
 
-                <div class="pipeline-stage">
-                    <div class="stage-number">7</div>
-                    <h3>✅ Trazabilidad & Cierre</h3>
-                    <div class="stage-details">
-                        <p><strong>Seguimiento:</strong> Resolución completa</p>
-                        <ul>
-                            <li>Tracking de estado de cada hallazgo</li>
-                            <li>Historial de cambios automático</li>
-                            <li>Validación de remediación</li>
-                            <li>Retest automático post-fix</li>
-                        </ul>
-                    </div>
+                <div class="pipeline-step-h interactive-stage final" onmouseenter="showStageInfo(this, '✅ Cierre', 'Tracking de estado, historial automático, validación y retest post-fix')">
+                    <div class="step-icon">✅</div>
+                    <div class="step-title">Cierre</div>
+                    <div class="step-info">Verified</div>
                 </div>
+            </div>
+
+            <div class="pipeline-info-box" id="pipelineInfo">
+                <p style="text-align: center; color: var(--text-muted); padding: 20px;">
+                    Pasa el mouse sobre cada paso para ver más detalles →
+                </p>
             </div>
         </div>
     </section>
