@@ -20,10 +20,13 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; co
 };
 
 export default function AnalysisMonitor() {
-  const { data: analysesData, isLoading } = useQuery({
+  const { data: analysesData, isLoading, refetch } = useQuery({
     queryKey: ['global-analyses'],
     queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     refetchInterval: 5000,
+    staleTime: 0, // Considerar datos siempre obsoletos para refetch inmediato
+    refetchOnMount: 'stale', // Refetch cuando el componente monta si los datos están obsoletos
+    refetchOnWindowFocus: true, // Refetch cuando vuelve el foco a la ventana
   });
 
   const allAnalyses: EnrichedAnalysis[] = (analysesData?.data || []).map((a: any) => ({

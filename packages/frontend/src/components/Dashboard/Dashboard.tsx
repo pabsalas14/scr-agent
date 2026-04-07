@@ -31,18 +31,27 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     queryKey: ['analytics-summary'],
     queryFn: () => apiService.obtenerAnalyticsSummary(),
     refetchInterval: 15_000,
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const { data: proyectosData, isLoading: isLoadingProyectos } = useQuery({
     queryKey: ['projects'],
     queryFn: () => apiService.obtenerProyectos(),
     refetchInterval: 10_000,
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const { data: alertsData, isLoading: isLoadingAlerts } = useQuery({
     queryKey: ['recent-alerts'],
     queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 5, isIncident: true }),
     refetchInterval: 15_000,
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const proyectos: Proyecto[] = proyectosData?.data || [];
