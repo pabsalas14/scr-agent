@@ -1069,6 +1069,110 @@
                     <text x="420" y="460" class="timeline-info-text">• Validación de fix | • Retest de vulnerabilidad | • Firma de aceptación</text>
                 </svg>
             </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">Historial Completo de Auditoría</h3>
+
+            <div class="audit-timeline">
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:22</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Detección Completada</div>
+                    <div class="audit-details">Hallazgo #HR-2024-001 identificado: SQL Injection en auth/login.js:45</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:28</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Análisis Profundo</div>
+                    <div class="audit-details">CVSS Score: 9.8 | Contexto: App crítica | Impacto: CRÍTICO</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:45</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Solución Generada</div>
+                    <div class="audit-details">Código solución propuesto: Prepared statements con parametrización</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:36:00</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Reporte Generado</div>
+                    <div class="audit-details">PDF exportado | JSON enviado a webhook | Notificación enviada</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 15:12:33</div>
+                    <div class="audit-user">john.dev@company.com</div>
+                    <div class="audit-action">Estado Actualizado</div>
+                    <div class="audit-details">ABIERTO → EN CURSO | Asignado a: john.dev@company.com</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 16:45:10</div>
+                    <div class="audit-user">john.dev@company.com</div>
+                    <div class="audit-action">Nota Agregada</div>
+                    <div class="audit-details">Implementando fix. Cambio propuesto en rama: fix/sql-injection-auth</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 18:22:50</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Re-test Automático</div>
+                    <div class="audit-details">Vulnerabilidad reconfirmada en rama develop. Fix válido en feature branch.</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 18:23:05</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">PR Detectado</div>
+                    <div class="audit-details">Pull Request #542 abierto: "Fix: SQL injection in login" | Diff validado</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-08 09:15:30</div>
+                    <div class="audit-user">sarah.review@company.com</div>
+                    <div class="audit-action">Revisión Aprobada</div>
+                    <div class="audit-details">Code review completado | Cambios aceptados | PR merged to main</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-08 09:16:02</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Validación Final</div>
+                    <div class="audit-details">Re-test en rama main: PASS ✓ | Vulnerabilidad resuelta | SLA: 18h 40m</div>
+                </div>
+
+                <div class="audit-entry success">
+                    <div class="audit-time">2024-04-08 09:16:20</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">🎉 CIERRE COMPLETADO</div>
+                    <div class="audit-details">Hallazgo resuelto | Historial archivado | Notificación enviada a stakeholders</div>
+                </div>
+            </div>
+
+            <div class="traceability-stats">
+                <div class="stat-box">
+                    <h4>Tiempo Total</h4>
+                    <p class="stat-value">18h 41m</p>
+                    <p class="stat-desc">Desde detección hasta cierre</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Eventos Registrados</h4>
+                    <p class="stat-value">11</p>
+                    <p class="stat-desc">Cada acción es auditable</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Usuarios Involucrados</h4>
+                    <p class="stat-value">3</p>
+                    <p class="stat-desc">Sistema + 2 desarrolladores</p>
+                </div>
+                <div class="stat-box">
+                    <h4>SLA Cumplido</h4>
+                    <p class="stat-value">✓ 24h</p>
+                    <p class="stat-desc">Resuelto en tiempo</p>
+                </div>
+            </div>
         </div>
     </section>
 
