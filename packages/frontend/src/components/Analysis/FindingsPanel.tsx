@@ -355,7 +355,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                               className="overflow-hidden"
                                            >
                                               <div className="bg-[#242424] p-4 rounded-lg border border-[#2D2D2D] text-sm text-[#94A3B8] leading-relaxed space-y-3">
-                                                 {finding.recommendation.split('\n').map((line, idx) => (
+                                                 {(finding.recommendation || '').split('\n').map((line, idx) => (
                                                     <p key={idx}>{line}</p>
                                                  ))}
                                               </div>

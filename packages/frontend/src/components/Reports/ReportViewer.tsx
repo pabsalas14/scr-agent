@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { EventoTimeline } from '../../types/timeline';
+import type { Reporte, Proyecto, Hallazgo, EventoForense } from '../../types/api';
 import Button from '../ui/Button';
 import ForensicTimeline from '../Timeline/ForensicTimeline';
 import FindingsTracker from '../Dashboard/FindingsTracker';
@@ -78,36 +79,36 @@ export default function ReportViewer() {
     );
   }
 
-  const { data: reporte } = useQuery({
+  const { data: reporte } = useQuery<Reporte, Error>({
     queryKey: ['report', analysisId],
     queryFn: () => apiService.obtenerReporte(analysisId),
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
-  const { data: proyecto } = useQuery({
+  const { data: proyecto } = useQuery<Proyecto, Error>({
     queryKey: ['project', projectId],
     queryFn: () => apiService.obtenerProyecto(projectId!),
     enabled: !!projectId,
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
-  const { data: hallazgos } = useQuery({
+  const { data: hallazgos } = useQuery<Hallazgo[], Error>({
     queryKey: ['findings', analysisId],
     queryFn: () => apiService.obtenerHallazgos(analysisId),
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
-  const { data: eventosForenses } = useQuery({
+  const { data: eventosForenses } = useQuery<EventoForense[], Error>({
     queryKey: ['forensics', analysisId],
     queryFn: () => apiService.obtenerEventosForenses(analysisId),
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 

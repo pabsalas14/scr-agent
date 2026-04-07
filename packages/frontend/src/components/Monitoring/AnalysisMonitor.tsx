@@ -25,7 +25,7 @@ export default function AnalysisMonitor() {
     queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     refetchInterval: 5000,
     staleTime: 0, // Considerar datos siempre obsoletos para refetch inmediato
-    refetchOnMount: 'stale', // Refetch cuando el componente monta si los datos están obsoletos
+    refetchOnMount: true, // Refetch cuando el componente monta si los datos están obsoletos
     refetchOnWindowFocus: true, // Refetch cuando vuelve el foco a la ventana
   });
 

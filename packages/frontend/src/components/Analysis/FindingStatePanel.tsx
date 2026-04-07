@@ -3,7 +3,7 @@ import { X, Save, AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useToast } from '../../hooks/useToast';
 
-type FindingState = 'FP' | 'ATENDIDO' | 'EN_CURSO' | 'EN_ANALISIS';
+type FindingState = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 
 interface FindingStatePanelProps {
   hallazgoId: string;
@@ -14,38 +14,38 @@ interface FindingStatePanelProps {
 }
 
 const STATE_CONFIG: Record<FindingState, { label: string; icon: React.ElementType; color: string; bgColor: string; description: string }> = {
-  'FP': {
-    label: 'Falso Positivo',
+  'OPEN': {
+    label: 'Abierto',
     icon: AlertCircle,
-    color: 'text-[#6B7280]',
-    bgColor: 'bg-[#6B7280]/10',
-    description: 'Este hallazgo fue identificado incorrectamente y no representa una vulnerabilidad real.',
+    color: 'text-[#EF4444]',
+    bgColor: 'bg-[#EF4444]/10',
+    description: 'Hallazgo identificado que requiere atención.',
   },
-  'ATENDIDO': {
-    label: 'Atendido',
+  'IN_PROGRESS': {
+    label: 'En Progreso',
+    icon: Zap,
+    color: 'text-[#F97316]',
+    bgColor: 'bg-[#F97316]/10',
+    description: 'Se está remediando esta vulnerabilidad.',
+  },
+  'RESOLVED': {
+    label: 'Resuelto',
     icon: CheckCircle2,
     color: 'text-[#22C55E]',
     bgColor: 'bg-[#22C55E]/10',
     description: 'La vulnerabilidad ha sido corregida o mitigada con éxito.',
   },
-  'EN_CURSO': {
-    label: 'En Curso',
-    icon: Zap,
-    color: 'text-[#F97316]',
-    bgColor: 'bg-[#F97316]/10',
-    description: 'Se están implementando cambios para remediar esta vulnerabilidad.',
-  },
-  'EN_ANALISIS': {
-    label: 'En Análisis',
+  'CLOSED': {
+    label: 'Cerrado',
     icon: Clock,
-    color: 'text-[#EAB308]',
-    bgColor: 'bg-[#EAB308]/10',
-    description: 'Se está evaluando el impacto y la mejor forma de remediar.',
+    color: 'text-[#6B7280]',
+    bgColor: 'bg-[#6B7280]/10',
+    description: 'Este hallazgo fue rechazado o identificado como un falso positivo.',
   },
 };
 
 export default function FindingStatePanel({ hallazgoId, currentState, riskType, onClose, onStateChange }: FindingStatePanelProps) {
-  const [selectedState, setSelectedState] = useState<FindingState>(currentState || 'EN_ANALISIS');
+  const [selectedState, setSelectedState] = useState<FindingState>(currentState || 'OPEN');
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();

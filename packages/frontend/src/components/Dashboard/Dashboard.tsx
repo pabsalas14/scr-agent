@@ -32,7 +32,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     queryFn: () => apiService.obtenerAnalyticsSummary(),
     refetchInterval: 15_000,
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
@@ -41,7 +41,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     queryFn: () => apiService.obtenerProyectos(),
     refetchInterval: 10_000,
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 
@@ -50,7 +50,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 5, isIncident: true }),
     refetchInterval: 15_000,
     staleTime: 0,
-    refetchOnMount: 'stale',
+    refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
 

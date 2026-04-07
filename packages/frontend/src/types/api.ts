@@ -65,6 +65,10 @@ export interface Hallazgo {
   codeSnippet?: string;
   whySuspicious: string;
   remediationSteps: string[];
+  vulnerableCode?: string;
+  solutionCode?: string;
+  recommendation?: string;
+  status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
   createdAt: string;
 }
 
