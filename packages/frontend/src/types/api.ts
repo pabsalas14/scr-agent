@@ -70,6 +70,14 @@ export interface Hallazgo {
   recommendation?: string;
   status?: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
   createdAt: string;
+  updatedAt?: string;
+  notes?: string;
+  assignedTo?: string;
+  analysis?: {
+    project?: {
+      name: string;
+    };
+  };
 }
 
 export interface EventoForense {

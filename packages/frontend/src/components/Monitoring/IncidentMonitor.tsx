@@ -1,18 +1,33 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { ShieldAlert, AlertOctagon, Terminal, Radio, Clock, ShieldX } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import Card from '../ui/Card';
+import IncidentDetailPanel from './IncidentDetailPanel';
 import type { Proyecto, Analisis, Hallazgo } from '../../types/api';
 
 export default function IncidentMonitor() {
-  const { data: findingsData, isLoading } = useQuery({
+  const [selectedIncident, setSelectedIncident] = useState<Hallazgo | null>(null);
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+
+  const { data: findingsData, isLoading, refetch } = useQuery({
     queryKey: ['global-incidents'],
     queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 100, isIncident: true }),
     refetchInterval: 10000,
   });
 
   const incidentes = findingsData?.data || [];
+
+  const handleOpenIncident = (incident: Hallazgo) => {
+    setSelectedIncident(incident);
+    setIsPanelOpen(true);
+  };
+
+  const handleClosePanel = () => {
+    setIsPanelOpen(false);
+    setTimeout(() => setSelectedIncident(null), 300);
+  };
 
   if (isLoading) {
     return (
@@ -58,8 +73,9 @@ export default function IncidentMonitor() {
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.08 }}
             >
-              <div
-                className={`bg-[#1E1E20] border rounded-xl p-4 flex gap-4 items-start ${
+              <button
+                onClick={() => handleOpenIncident(inc)}
+                className={`w-full bg-[#1E1E20] border rounded-xl p-4 flex gap-4 items-start hover:bg-[#242424] hover:border-[#404040] transition-all cursor-pointer text-left ${
                   isCritical ? 'border-l-2 border-l-[#EF4444] border-[#2D2D2D]' : 'border-l-2 border-l-[#FB923C] border-[#2D2D2D]'
                 }`}
               >
@@ -94,7 +110,7 @@ export default function IncidentMonitor() {
                   <p className="text-xs text-[#6B7280]">Severidad</p>
                   <p className={`text-sm font-semibold ${isCritical ? 'text-[#EF4444]' : 'text-[#FB923C]'}`}>{inc.severity}</p>
                 </div>
-              </div>
+              </button>
             </motion.div>
           )})}
         </div>
@@ -109,6 +125,14 @@ export default function IncidentMonitor() {
           </div>
         </Card>
       )}
+
+      {/* Detail Panel */}
+      <IncidentDetailPanel
+        incident={selectedIncident}
+        isOpen={isPanelOpen}
+        onClose={handleClosePanel}
+        onStatusChange={() => refetch()}
+      />
     </div>
   );
 }

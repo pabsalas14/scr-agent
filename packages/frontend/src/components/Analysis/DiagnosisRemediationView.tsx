@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import {
   AlertCircle,
   CheckCircle2,
-  TrendingDown,
   Zap,
   BookOpen,
   Code2,
@@ -11,185 +10,211 @@ import {
   Activity,
   ArrowRight,
   ChevronRight,
+  Shield,
+  BarChart3,
+  Eye,
 } from 'lucide-react';
 import type { Reporte } from '../../types/api';
 
 interface DiagnosisRemediationViewProps {
   reporte: Reporte;
+  onNavigateTo?: (tab: string) => void;
 }
 
-export default function DiagnosisRemediationView({ reporte }: DiagnosisRemediationViewProps) {
+export default function DiagnosisRemediationView({ reporte, onNavigateTo }: DiagnosisRemediationViewProps) {
   const [activeStep, setActiveStep] = useState<number | null>(null);
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
   const getRiskColor = (score: number) => {
-    if (score < 30) return { bg: 'bg-[#22C55E]', text: 'text-[#22C55E]', label: 'Bajo' };
-    if (score < 60) return { bg: 'bg-[#F97316]', text: 'text-[#F97316]', label: 'Medio' };
-    if (score < 85) return { bg: 'bg-[#EAB308]', text: 'text-[#EAB308]', label: 'Alto' };
-    return { bg: 'bg-[#EF4444]', text: 'text-[#EF4444]', label: 'Crítico' };
+    if (score < 30) return { bg: 'bg-[#22C55E]', text: 'text-[#22C55E]', label: 'Bajo', bgLight: 'bg-[#22C55E]/10', border: 'border-[#22C55E]/30' };
+    if (score < 60) return { bg: 'bg-[#F97316]', text: 'text-[#F97316]', label: 'Medio', bgLight: 'bg-[#F97316]/10', border: 'border-[#F97316]/30' };
+    if (score < 85) return { bg: 'bg-[#EAB308]', text: 'text-[#EAB308]', label: 'Alto', bgLight: 'bg-[#EAB308]/10', border: 'border-[#EAB308]/30' };
+    return { bg: 'bg-[#EF4444]', text: 'text-[#EF4444]', label: 'Crítico', bgLight: 'bg-[#EF4444]/10', border: 'border-[#EF4444]/30' };
   };
 
   const riskColor = getRiskColor(reporte.riskScore);
 
+  const handleNavigate = (tab: string) => {
+    if (onNavigateTo) {
+      onNavigateTo(tab);
+    }
+  };
+
   return (
-    <div className="space-y-8">
-      {/* DIAGNÓSTICO */}
+    <div className="space-y-12">
+      {/* === DIAGNÓSTICO === */}
       <section className="space-y-6">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center">
-            <AlertCircle className="w-5 h-5 text-[#F97316]" />
+            <Shield className="w-5 h-5 text-[#F97316]" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Diagnóstico</h2>
-            <p className="text-sm text-[#6B7280]">Estado de seguridad del proyecto</p>
+            <h2 className="text-3xl font-bold text-white">Diagnóstico de Seguridad</h2>
+            <p className="text-sm text-[#6B7280]">Evaluación completa del estado de seguridad</p>
           </div>
         </div>
 
-        {/* Risk Score Hero */}
+        {/* Risk Score - HERO */}
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`rounded-2xl border-2 p-8 relative overflow-hidden ${riskColor.bg}/10 border-[${riskColor.bg.match(/\[([^\]]+)\]/)?.[1]}]`}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className={`rounded-2xl border-2 p-10 relative overflow-hidden ${riskColor.bgLight} ${riskColor.border}`}
         >
-          {/* Background glow */}
           <div className={`absolute inset-0 ${riskColor.bg} opacity-5 blur-3xl`} />
 
-          <div className="relative z-10 flex items-end justify-between gap-8">
-            <div>
-              <p className="text-sm font-semibold text-[#6B7280] uppercase mb-2">Score de amenaza</p>
-              <div className="flex items-baseline gap-2">
-                <span className="text-6xl font-black text-white">{Math.round(reporte.riskScore)}</span>
-                <span className="text-2xl text-[#6B7280]">/100</span>
-              </div>
-              <p className={`text-lg font-bold mt-2 ${riskColor.text}`}>{riskColor.label}</p>
-            </div>
-
-            {/* Progress indicator */}
-            <div className="flex-1 max-w-xs">
-              <div className="space-y-2">
-                <div className="w-full h-3 bg-[#2D2D2D] rounded-full overflow-hidden">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${reporte.riskScore}%` }}
-                    transition={{ duration: 2, ease: 'easeOut' }}
-                    className={`h-full ${riskColor.bg}`}
-                  />
+          <div className="relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              {/* Score Circle */}
+              <div className="flex items-center justify-center">
+                <div className="relative w-48 h-48">
+                  <svg className="w-full h-full transform -rotate-90">
+                    <circle cx="96" cy="96" r="88" fill="none" stroke="#2D2D2D" strokeWidth="12" />
+                    <motion.circle
+                      cx="96"
+                      cy="96"
+                      r="88"
+                      fill="none"
+                      stroke={riskColor.bg.replace('bg-', '')}
+                      strokeWidth="12"
+                      strokeDasharray={2 * Math.PI * 88}
+                      initial={{ strokeDashoffset: 2 * Math.PI * 88 }}
+                      animate={{ strokeDashoffset: (2 * Math.PI * 88 * (100 - reporte.riskScore)) / 100 }}
+                      transition={{ duration: 2, ease: 'easeOut' }}
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-5xl font-black text-white">{Math.round(reporte.riskScore)}</span>
+                    <span className="text-sm text-[#6B7280]">/100</span>
+                    <span className={`text-xs font-bold mt-2 px-3 py-1 rounded ${riskColor.bg}/20 ${riskColor.text} border border-current border-opacity-30`}>
+                      {riskColor.label}
+                    </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-4 gap-2 text-xs text-[#6B7280]">
-                  <span>Bajo</span>
-                  <span>Medio</span>
-                  <span>Alto</span>
-                  <span className="text-right">Crítico</span>
+              </div>
+
+              {/* Score Breakdown */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-bold text-white mb-4">Desglose de Score</h3>
+
+                <div className="space-y-3">
+                  {[
+                    { icon: AlertCircle, label: 'Hallazgos críticos', value: reporte.severityBreakdown?.['CRITICAL'] || 0, color: 'text-[#EF4444]' },
+                    { icon: Zap, label: 'Hallazgos altos', value: reporte.severityBreakdown?.['HIGH'] || 0, color: 'text-[#F97316]' },
+                    { icon: Activity, label: 'Funciones comprometidas', value: reporte.compromisedFunctions?.length || 0, color: 'text-[#EAB308]' },
+                    { icon: Eye, label: 'Entidades afectadas', value: reporte.affectedAuthors?.length || 0, color: 'text-[#6B7280]' },
+                  ].map(({ icon: Icon, label, value, color }) => (
+                    <div key={label} className="flex items-center justify-between p-3 bg-[#1C1C1E] rounded-lg border border-[#2D2D2D]">
+                      <div className="flex items-center gap-2">
+                        <Icon className={`w-4 h-4 ${color}`} />
+                        <span className="text-sm text-[#94A3B8]">{label}</span>
+                      </div>
+                      <span className={`text-lg font-bold ${color}`}>{value}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Severity Breakdown */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {reporte.severityBreakdown &&
-            Object.entries(reporte.severityBreakdown).map(([severity, count]) => {
-              const severityColors: Record<string, { bg: string; text: string }> = {
-                CRITICAL: { bg: 'bg-[#EF4444]/10', text: 'text-[#EF4444]' },
-                HIGH: { bg: 'bg-[#F97316]/10', text: 'text-[#F97316]' },
-                MEDIUM: { bg: 'bg-[#EAB308]/10', text: 'text-[#EAB308]' },
-                LOW: { bg: 'bg-[#22C55E]/10', text: 'text-[#22C55E]' },
-              };
-
-              const defaultColor = { bg: 'bg-[#22C55E]/10', text: 'text-[#22C55E]' };
-              const colors = severityColors[severity] || defaultColor;
-
-              return (
-                <motion.div
-                  key={severity}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`p-4 rounded-xl border border-[#2D2D2D] ${colors.bg}`}
-                >
-                  <p className="text-xs font-semibold text-[#6B7280] uppercase mb-2">{severity}</p>
-                  <p className={`text-3xl font-bold ${colors.text}`}>{count}</p>
-                  <p className="text-xs text-[#6B7280] mt-1">hallazgos</p>
-                </motion.div>
-              );
-            })}
-        </div>
-
         {/* Executive Summary */}
-        <div className="rounded-xl bg-[#1E1E20] border border-[#2D2D2D] p-6 space-y-4">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="rounded-xl bg-gradient-to-br from-[#1E1E20] to-[#1C1C1E] border border-[#2D2D2D] p-8 space-y-4"
+        >
           <h3 className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
             <BookOpen className="w-4 h-4" />
-            Resumen Ejecutivo
+            Síntesis Ejecutiva
           </h3>
-          <p className="text-sm text-[#94A3B8] leading-relaxed">
+          <p className="text-sm leading-relaxed text-[#94A3B8]">
             {reporte.executiveSummary || 'No hay resumen disponible'}
           </p>
-        </div>
+        </motion.div>
 
-        {/* Impact Metrics */}
+        {/* 3 Metric Cards - Clickable */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
-          >
-            <div className="flex items-center gap-2 text-[#EF4444]">
-              <Zap className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase">Funciones afectadas</span>
-            </div>
-            <p className="text-3xl font-bold text-white">{reporte.compromisedFunctions?.length || 0}</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
-          >
-            <div className="flex items-center gap-2 text-[#F97316]">
-              <Activity className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase">Total hallazgos</span>
-            </div>
-            <p className="text-3xl font-bold text-white">{reporte.findingsCount}</p>
-          </motion.div>
-
-          <motion.div
+          <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
+            onClick={() => handleNavigate('hallazgos')}
+            className="p-6 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] hover:border-[#EF4444]/40 hover:bg-[#EF4444]/5 transition-all group text-left"
           >
-            <div className="flex items-center gap-2 text-[#EAB308]">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase">Entidades afectadas</span>
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <AlertCircle className="w-5 h-5 text-[#EF4444]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#EF4444] transition-colors" />
             </div>
-            <p className="text-3xl font-bold text-white">{reporte.affectedAuthors?.length || 0}</p>
-          </motion.div>
+            <p className="text-xs font-semibold text-[#6B7280] uppercase mb-1">Total Hallazgos</p>
+            <p className="text-3xl font-bold text-white">{reporte.findingsCount}</p>
+            <p className="text-xs text-[#6B7280] mt-2">Haz clic para ver amenazas</p>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            onClick={() => handleNavigate('gestor')}
+            className="p-6 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] hover:border-[#F97316]/40 hover:bg-[#F97316]/5 transition-all group text-left"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Code2 className="w-5 h-5 text-[#F97316]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#F97316] transition-colors" />
+            </div>
+            <p className="text-xs font-semibold text-[#6B7280] uppercase mb-1">Archivos Escaneados</p>
+            <p className="text-3xl font-bold text-white">1</p>
+            <p className="text-xs text-[#6B7280] mt-2">Haz clic para ver IR</p>
+          </motion.button>
+
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            onClick={() => handleNavigate('timeline')}
+            className="p-6 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] hover:border-[#EAB308]/40 hover:bg-[#EAB308]/5 transition-all group text-left"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="w-10 h-10 rounded-lg bg-[#EAB308]/10 border border-[#EAB308]/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Activity className="w-5 h-5 text-[#EAB308]" />
+              </div>
+              <ArrowRight className="w-4 h-4 text-[#6B7280] group-hover:text-[#EAB308] transition-colors" />
+            </div>
+            <p className="text-xs font-semibold text-[#6B7280] uppercase mb-1">Eventos Forenses</p>
+            <p className="text-3xl font-bold text-white">0</p>
+            <p className="text-xs text-[#6B7280] mt-2">Haz clic para ver timeline</p>
+          </motion.button>
         </div>
       </section>
 
-      {/* REMEDIACIÓN */}
-      <section className="space-y-6">
-        <div className="flex items-center gap-3">
+      {/* === REMEDIACIÓN === */}
+      <section className="space-y-8">
+        <div className="flex items-center gap-3 mb-8">
           <div className="w-10 h-10 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center">
             <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Plan de Remediación</h2>
-            <p className="text-sm text-[#6B7280]">Acciones recomendadas para remediar</p>
+            <h2 className="text-3xl font-bold text-white">Plan de Remediación</h2>
+            <p className="text-sm text-[#6B7280]">Acciones prioritarias para mejorar la seguridad</p>
           </div>
         </div>
 
-        {/* General Recommendation */}
+        {/* General Recommendation - Large Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl bg-gradient-to-br from-[#22C55E]/10 to-[#16A34A]/5 border border-[#22C55E]/30 p-6 space-y-4"
+          transition={{ delay: 0.2 }}
+          className="rounded-2xl bg-gradient-to-br from-[#22C55E]/10 via-[#16A34A]/5 to-[#15803D]/5 border-2 border-[#22C55E]/30 p-8 space-y-4"
         >
           <div className="flex items-start gap-3">
-            <Target className="w-5 h-5 text-[#22C55E] flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="text-sm font-bold text-[#22C55E] uppercase mb-2">Estrategia general</h3>
+            <Target className="w-6 h-6 text-[#22C55E] flex-shrink-0 mt-1" />
+            <div className="flex-1">
+              <h3 className="text-lg font-bold text-white mb-3">Estrategia General de Remediación</h3>
               <p className="text-sm text-[#94A3B8] leading-relaxed">
                 {reporte.generalRecommendation || 'No hay recomendación general disponible'}
               </p>
@@ -197,157 +222,93 @@ export default function DiagnosisRemediationView({ reporte }: DiagnosisRemediati
           </div>
         </motion.div>
 
-        {/* Remediation Steps */}
+        {/* Remediation Steps - Enhanced Cards */}
         {reporte.remediationSteps && Array.isArray(reporte.remediationSteps) && reporte.remediationSteps.length > 0 ? (
-          <div className="space-y-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wide">Pasos de remediación</h3>
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-white uppercase tracking-wide">Pasos de Acción</h3>
 
-            <div className="relative">
-              {/* Vertical connector line */}
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#22C55E] via-[#F97316] to-transparent" />
+            <div className="space-y-4">
+              {reporte.remediationSteps.slice(0, 10).map((step: any, idx: number) => {
+                const urgency = (step.urgency || step.urgencia || 'MEDIUM').toUpperCase();
+                const isUrgent = urgency.includes('CRITICAL') || urgency.includes('URGENTE');
+                const isHigh = urgency.includes('HIGH') || urgency.includes('ALTO');
 
-              <div className="space-y-4">
-                {reporte.remediationSteps.slice(0, 10).map((step: any, idx: number) => {
-                  const urgency = (step.urgency || step.urgencia || 'MEDIUM').toUpperCase();
-                  const isUrgent = urgency.includes('CRITICAL') || urgency.includes('URGENTE');
-                  const isHigh = urgency.includes('HIGH') || urgency.includes('ALTO');
+                const urgencyColor = isUrgent
+                  ? { bg: 'bg-[#EF4444]/10', border: 'border-[#EF4444]/30', text: 'text-[#EF4444]', accent: 'bg-[#EF4444]' }
+                  : isHigh
+                  ? { bg: 'bg-[#F97316]/10', border: 'border-[#F97316]/30', text: 'text-[#F97316]', accent: 'bg-[#F97316]' }
+                  : { bg: 'bg-[#22C55E]/10', border: 'border-[#22C55E]/30', text: 'text-[#22C55E]', accent: 'bg-[#22C55E]' };
 
-                  const urgencyColor = isUrgent
-                    ? { bg: 'bg-[#EF4444]/10', border: 'border-[#EF4444]/30', text: 'text-[#EF4444]' }
-                    : isHigh
-                    ? { bg: 'bg-[#F97316]/10', border: 'border-[#F97316]/30', text: 'text-[#F97316]' }
-                    : { bg: 'bg-[#22C55E]/10', border: 'border-[#22C55E]/30', text: 'text-[#22C55E]' };
-
-                  return (
-                    <motion.button
-                      key={idx}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.05 }}
-                      onClick={() => setActiveStep(activeStep === idx ? null : idx)}
-                      className={`w-full pl-16 pr-4 py-4 rounded-xl border transition-all text-left ${
-                        activeStep === idx
-                          ? `${urgencyColor.border} ${urgencyColor.bg}`
-                          : 'border-[#2D2D2D] hover:border-[#404040] bg-[#1E1E20]'
-                      }`}
-                    >
-                      {/* Timeline dot */}
-                      <div className={`absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 bg-[#111111] ${urgencyColor.text.replace('text-', 'border-')} transition-all ${activeStep === idx ? 'scale-125' : ''}`} />
-
-                      <div className="flex items-start justify-between gap-3">
+                return (
+                  <motion.button
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    onClick={() => setActiveStep(activeStep === idx ? null : idx)}
+                    className={`w-full rounded-xl border-2 transition-all p-6 text-left group ${
+                      activeStep === idx
+                        ? `${urgencyColor.border} ${urgencyColor.bg}`
+                        : `border-[#2D2D2D] hover:${urgencyColor.border} hover:${urgencyColor.bg} bg-[#1E1E20]`
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Step Number + Accent */}
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className={`w-8 h-8 rounded-lg ${urgencyColor.accent} text-white font-bold flex items-center justify-center flex-shrink-0 ${activeStep === idx ? 'scale-110' : ''} transition-transform`}>
+                          {idx + 1}
+                        </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-bold text-white">{idx + 1}.</span>
-                            <h4 className="text-sm font-semibold text-white truncate">{step.action || step.accion || 'Sin título'}</h4>
-                          </div>
+                          <h4 className="text-base font-bold text-white mb-2 break-words">{step.action || step.accion || 'Sin título'}</h4>
                           {activeStep === idx && (
-                            <motion.p
+                            <motion.div
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
-                              className="text-xs text-[#94A3B8] mb-2"
+                              className="space-y-3 mt-3 pt-3 border-t border-[#2D2D2D]"
                             >
-                              {step.justification || step.justificacion || step.description || 'Sin descripción'}
-                            </motion.p>
+                              <p className="text-sm text-[#94A3B8]">
+                                {step.justification || step.justificacion || step.description || 'Sin descripción'}
+                              </p>
+                            </motion.div>
                           )}
                         </div>
-
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <span className={`text-xs font-bold px-2 py-1 rounded uppercase ${urgencyColor.text} ${urgencyColor.bg} border border-current border-opacity-30`}>
-                            {urgency.substring(0, 4)}
-                          </span>
-                          <ChevronRight className={`w-4 h-4 transition-transform ${activeStep === idx ? 'rotate-90' : ''}`} />
-                        </div>
                       </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
+
+                      {/* Urgency Badge */}
+                      <div className={`text-xs font-bold px-3 py-1.5 rounded-lg ${urgencyColor.text} ${urgencyColor.bg} border border-current border-opacity-30 whitespace-nowrap flex-shrink-0`}>
+                        {urgency.substring(0, 5)}
+                      </div>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
         ) : (
-          <div className="p-6 rounded-xl bg-[#22C55E]/5 border border-[#22C55E]/30 text-center">
-            <CheckCircle2 className="w-8 h-8 text-[#22C55E] mx-auto mb-2" />
+          <div className="p-8 rounded-xl bg-[#22C55E]/5 border-2 border-[#22C55E]/30 text-center space-y-3">
+            <CheckCircle2 className="w-12 h-12 text-[#22C55E] mx-auto" />
             <p className="text-sm text-[#22C55E] font-semibold">No hay pasos adicionales de remediación</p>
           </div>
         )}
 
-        {/* Soluciones sugeridas */}
-        <div className="space-y-3">
-          <h3 className="text-sm font-bold text-white uppercase tracking-wide">Sugerencias de solución</h3>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* By Severity */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
-            >
-              <p className="text-xs font-bold text-[#F97316] uppercase">🔍 Enfoque por severidad</p>
-              <ul className="space-y-2 text-sm text-[#94A3B8]">
-                <li className="flex gap-2">
-                  <span className="text-[#EF4444] flex-shrink-0">→</span>
-                  <span><strong>Crítico:</strong> Remediar inmediatamente, posiblemente requiere rollback</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-[#F97316] flex-shrink-0">→</span>
-                  <span><strong>Alto:</strong> Priorizar en el sprint actual</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-[#EAB308] flex-shrink-0">→</span>
-                  <span><strong>Medio:</strong> Planificar para próximas iteraciones</span>
-                </li>
-              </ul>
-            </motion.div>
-
-            {/* By Type */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
-            >
-              <p className="text-xs font-bold text-[#F97316] uppercase">🛠️ Tipos de solución</p>
-              <ul className="space-y-2 text-sm text-[#94A3B8]">
-                <li className="flex gap-2">
-                  <span className="text-[#22C55E] flex-shrink-0">→</span>
-                  <span>Actualizar dependencias/librerías</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-[#22C55E] flex-shrink-0">→</span>
-                  <span>Refactorizar código sospechoso</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="text-[#22C55E] flex-shrink-0">→</span>
-                  <span>Agregar validaciones/sanitización</span>
-                </li>
-              </ul>
-            </motion.div>
-          </div>
-
-          <div className="p-4 rounded-xl bg-[#F97316]/5 border border-[#F97316]/20">
-            <p className="text-xs text-[#94A3B8]">
-              💡 <strong>Tip:</strong> Revisa la sección "Amenazas" para ver código vulnerable específico y "Visor IR" para análisis de patrones.
-            </p>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <div className="flex gap-3">
+        {/* CTA Buttons */}
+        <div className="flex gap-3 pt-4">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex-1 px-6 py-3 bg-[#22C55E] text-white font-semibold rounded-lg hover:bg-[#16A34A] transition-all flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-3 bg-gradient-to-r from-[#22C55E] to-[#16A34A] text-white font-bold rounded-lg hover:from-[#16A34A] hover:to-[#15803D] transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#22C55E]/20"
           >
             <CheckCircle2 className="w-4 h-4" />
-            Iniciar remediación
+            Comenzar Remediación
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
-            className="flex-1 px-6 py-3 bg-[#1E1E20] text-white font-semibold rounded-lg border border-[#2D2D2D] hover:border-[#404040] transition-all flex items-center justify-center gap-2"
+            onClick={() => handleNavigate('hallazgos')}
+            className="flex-1 px-6 py-3 bg-[#1E1E20] text-white font-bold rounded-lg border-2 border-[#2D2D2D] hover:border-[#F97316]/40 transition-all flex items-center justify-center gap-2"
           >
-            <ArrowRight className="w-4 h-4" />
-            Ver amenazas
+            <Eye className="w-4 h-4" />
+            Ver Amenazas
           </motion.button>
         </div>
       </section>

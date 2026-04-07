@@ -222,7 +222,7 @@ class ApiService {
    */
   async cambiarEstadoHallazgo(
     findingId: string,
-    payload: { status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; notes?: string }
+    payload: { status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'; notes?: string; assignedTo?: string }
   ): Promise<Hallazgo> {
     const { data } = await this.client.put<ApiResponse<Hallazgo>>(
       `/findings/${findingId}/status`,
