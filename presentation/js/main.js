@@ -276,6 +276,26 @@ dashboardTabs.forEach((tab, index) => {
     });
 });
 
+// Component Tabs Navigation
+function showComponentTab(tabName) {
+  // Hide all panels
+  const panels = document.querySelectorAll('.component-panel');
+  panels.forEach(panel => panel.classList.remove('active'));
+
+  // Remove active class from all buttons
+  const buttons = document.querySelectorAll('.component-tab-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  // Show selected panel
+  const selectedPanel = document.getElementById(tabName + '-panel');
+  if (selectedPanel) {
+    selectedPanel.classList.add('active');
+  }
+
+  // Add active class to clicked button
+  event.target.classList.add('active');
+}
+
 // Console message
 console.log('%cSCR Agent - Auditoría Inteligente de Código', 'color: #F97316; font-size: 24px; font-weight: bold;');
 console.log('%cTecnología avanzada en análisis de seguridad', 'color: #6B7280; font-size: 14px;');
