@@ -18,6 +18,7 @@ import {
 import { apiService } from '../../services/api.service';
 import { useAuth } from '../../hooks/useAuth';
 import type { UserProfile } from '../../types/api';
+import NotificationPreferences from './NotificationPreferences';
 
 const ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -327,6 +328,11 @@ export default function SettingsModule() {
               Los tokens de acceso se almacenan cifrados en el backend. Los agentes utilizan estos tokens para acceder a tus recursos a través de canales protegidos.
             </p>
           </div>
+        </div>
+
+        {/* Notificaciones */}
+        <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6">
+           <NotificationPreferences />
         </div>
 
         {/* Gestión de equipo — solo admin */}

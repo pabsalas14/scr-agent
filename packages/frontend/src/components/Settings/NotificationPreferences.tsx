@@ -125,7 +125,7 @@ export default function NotificationPreferences() {
       <Card>
         <div className="p-8 text-center">
           <div className="inline-block animate-spin text-4xl mb-3">⚙️</div>
-          <p className="text-gray-600 dark:text-gray-400">Loading preferences...</p>
+          <p className="text-[#6B7280]">Loading preferences...</p>
         </div>
       </Card>
     );
@@ -143,11 +143,11 @@ export default function NotificationPreferences() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
           <Bell className="w-6 h-6 text-blue-600" />
           Notification Preferences
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-[#6B7280] mt-1">
           Manage how and when you receive notifications
         </p>
       </div>
@@ -160,7 +160,7 @@ export default function NotificationPreferences() {
         return (
           <Card key={categoryKey}>
             <div className="mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+              <h3 className="font-semibold text-white flex items-center gap-2">
                 <categoryInfo.icon className="w-5 h-5 text-orange-500" />
                 {categoryInfo.label}
               </h3>
@@ -179,10 +179,10 @@ export default function NotificationPreferences() {
                     <div className="flex items-start gap-3 flex-1">
                       <Icon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-white">
+                        <p className="font-medium text-white">
                           {item.title}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-[#6B7280]">
                           {item.description}
                         </p>
                       </div>
@@ -219,7 +219,7 @@ export default function NotificationPreferences() {
         <Card className="border-l-4" style={{ borderLeftColor: '#3b82f6' }}>
           <div className="space-y-3">
             <label className="block">
-              <span className="font-medium text-gray-900 dark:text-white mb-2 block">
+              <span className="font-medium text-white mb-2 block">
                 Digest Delivery Time
               </span>
               <input
@@ -227,7 +227,7 @@ export default function NotificationPreferences() {
                 value={localPreferences.digestTime}
                 onChange={(e) => handleDigestTimeChange(e.target.value)}
                 disabled={updateMutation.isPending}
-                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Daily digest will be sent at this time

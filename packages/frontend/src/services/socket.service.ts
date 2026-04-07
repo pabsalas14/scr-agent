@@ -12,7 +12,7 @@ class SocketClientService {
   /**
    * Initialize socket connection
    */
-  connect(serverUrl: string = import.meta.env['VITE_SOCKET_URL'] || 'http://localhost:3000'): Promise<void> {
+  connect(serverUrl: string = import.meta.env['VITE_SOCKET_URL'] || ''): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.socket = io(serverUrl, {
@@ -21,7 +21,7 @@ class SocketClientService {
           reconnectionDelay: 500,
           reconnectionDelayMax: 3000,
           reconnectionAttempts: 10,
-          path: '/socket.io/',
+          path: '/socket.io',
         });
 
         let timeoutHandle: NodeJS.Timeout;

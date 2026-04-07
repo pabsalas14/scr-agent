@@ -19,6 +19,63 @@ const router: ExpressRouter = Router();
 router.use(authMiddleware);
 
 /**
+ * GET /api/v1/analyses
+ * Obtener todos los análisis (Historial global)
+ */
+router.get('/', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const pageParam = req.query['page'] as string | undefined;
+    const page = Math.max(1, parseInt(pageParam || '1') || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 20));
+    const skip = (page - 1) * limit;
+
+    const where = userId ? { project: { userId } } : {};
+
+    const [analyses, total] = await Promise.all([
+      prisma.analysis.findMany({
+        where,
+        include: {
+          project: { select: { id: true, name: true } },
+          report: { select: { riskScore: true } },
+          findings: { select: { severity: true } } // needed for stats if any
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+      }),
+      prisma.analysis.count({ where }),
+    ]);
+
+    // Calcular stats rápidos por análisis
+    const plainAnalyses = analyses.map((a: any) => ({
+      id: a.id,
+      projectId: a.projectId,
+      projectName: a.project?.name,
+      status: a.status,
+      progress: a.progress,
+      createdAt: a.createdAt,
+      completedAt: a.completedAt,
+      riskScore: a.report?.riskScore || 0,
+      criticalFindings: a.findings?.filter((f: any) => f.severity === 'CRITICAL').length || 0,
+      highFindings: a.findings?.filter((f: any) => f.severity === 'HIGH').length || 0
+    }));
+
+    res.json({
+      success: true,
+      data: plainAnalyses,
+      total,
+      page,
+      limit,
+      hasMore: skip + plainAnalyses.length < total,
+    });
+  } catch (error) {
+    logger.error(`Error obteniendo análisis globales: ${error}`);
+    res.status(500).json({ success: false, error: 'Error al obtener historial' });
+  }
+});
+
+/**
  * GET /api/v1/analyses/:id
  * Obtener estado de análisis con todos sus hallazgos
  */

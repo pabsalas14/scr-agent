@@ -5,11 +5,83 @@ import { usersService } from '../services/users.service';
 import { notificationsService } from '../services/notifications.service';
 import { socketService } from '../services/socket.service';
 import { logger } from '../services/logger.service';
+import { prisma } from '../services/prisma.service';
 
 const router: ExpressRouter = Router();
 
 // Apply auth middleware to all routes
 router.use(authMiddleware);
+
+/**
+ * GET /api/v1/findings/global
+ * Get all findings across all analyses/projects for the current user
+ */
+router.get('/global', async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const pageParam = req.query['page'] as string | undefined;
+    const page = Math.max(1, parseInt(pageParam || '1') || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 50));
+    const skip = (page - 1) * limit;
+
+    // Optional filters
+    const severityParam = req.query['severity'] as string | undefined;
+    const isIncidentParam = req.query['isIncident'] === 'true'; // True for High/Critical OR tracking
+
+    const where: any = {
+      analysis: {
+        project: userId ? { userId } : {},
+      }
+    };
+
+    if (severityParam) {
+      where.severity = severityParam;
+    }
+
+    if (isIncidentParam) {
+        where.OR = [
+            { severity: { in: ['CRITICAL', 'HIGH'] } },
+            { assignment: { isNot: null } },
+            { remediation: { isNot: null } }
+        ];
+    }
+
+    const [findings, total] = await Promise.all([
+      prisma.finding.findMany({
+        where,
+        include: {
+          analysis: {
+            select: {
+              id: true,
+              project: { select: { id: true, name: true } },
+            }
+          },
+          statusHistory: { orderBy: { createdAt: 'desc' }, take: 1 },
+          assignment: { include: { assignedUser: { select: { id: true, name: true, email: true } } } },
+          remediation: true,
+        },
+        orderBy: [
+            { createdAt: 'desc' }
+        ],
+        skip,
+        take: limit,
+      }),
+      prisma.finding.count({ where }),
+    ]);
+
+    res.json({
+      success: true,
+      data: findings,
+      total,
+      page,
+      limit,
+      hasMore: skip + findings.length < total,
+    });
+  } catch (error) {
+    logger.error('Error fetching global findings:', error);
+    res.status(500).json({ success: false, error: 'Error fetching global findings' });
+  }
+});
 
 /**
  * GET /api/v1/findings/analysis/:analysisId

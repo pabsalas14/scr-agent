@@ -19,17 +19,18 @@ import type { Proyecto, Analisis } from '../../types/api';
 interface DashboardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
   onVerLogs?: () => void;
+  onCambiarTab?: (tab: string) => void;
 }
 
 const ACTIVE_STATUSES = ['PENDING', 'RUNNING', 'INSPECTOR_RUNNING', 'DETECTIVE_RUNNING', 'FISCAL_RUNNING'];
 
-export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) {
+export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: DashboardProps) {
   const navigate = useNavigate();
 
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
-      const { data } = await apiService.get<{ data: Record<string, number> }>('/analytics/summary');
+      const { data } = await apiService.get<any>('/analytics/summary');
       return data.data;
     },
     refetchInterval: 15_000,
@@ -41,10 +42,18 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
     refetchInterval: 10_000,
   });
 
+  const { data: alertsData, isLoading: isLoadingAlerts } = useQuery({
+    queryKey: ['recent-alerts'],
+    queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 5, isIncident: true }),
+    refetchInterval: 15_000,
+  });
+
   const proyectos: Proyecto[] = proyectosData?.data || [];
   const scansActivos = proyectos.filter((p) =>
     p.analyses?.some((a) => ACTIVE_STATUSES.includes(a.status))
   );
+
+  const realAlerts = alertsData?.data || [];
 
   const stats = {
     totalProyectos: proyectos.length,
@@ -126,7 +135,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           subtitle="auditorías finalizadas"
           icon={<Activity className="w-5 h-5" />}
           accentColor="#6366F1"
-          onClick={() => navigate('/analytics')}
+          onClick={() => onCambiarTab && onCambiarTab('analyses')}
         />
         <KPICard
           title="Alerta de Riesgo"
@@ -135,7 +144,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           icon={<AlertOctagon className="w-5 h-5" />}
           accentColor="#EF4444"
           trend={{ value: 5, isPositive: false }}
-          onClick={() => navigate('/analytics')}
+          onClick={() => onCambiarTab && onCambiarTab('incidents')}
         />
         <KPICard
           title="Eficiencia"
@@ -143,7 +152,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           subtitle="optimización de tokens"
           icon={<TrendingUp className="w-5 h-5" />}
           accentColor="#22C55E"
-          onClick={() => navigate('/analytics')}
+          onClick={() => onCambiarTab && onCambiarTab('analytics')}
         />
       </div>
 
@@ -207,25 +216,40 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
 
           {/* Recent Alerts */}
           <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-white mb-5">Alertas recientes</h3>
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="text-sm font-semibold text-white">Alertas recientes</h3>
+              <button 
+                onClick={() => onCambiarTab && onCambiarTab('incidents')}
+                className="text-xs text-[#F97316] hover:text-[#FB923C] transition-colors"
+              >
+                Ver todas
+              </button>
+            </div>
             <div className="space-y-3">
-              {[
-                { msg: 'Detección de ofuscación en Core-Service', time: '2h ago', level: 'CRITICAL' },
-                { msg: 'Múltiples fallos de auth en API-Gateway', time: '5h ago', level: 'HIGH' },
-                { msg: 'Nuevo autor no identificado en Bank-Svc', time: '8h ago', level: 'MEDIUM' },
-              ].map((alert, i) => (
-                <div
-                  key={i}
-                  className="flex items-center gap-3 p-3.5 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#404040] transition-all"
-                >
-                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                    alert.level === 'CRITICAL' ? 'bg-[#EF4444]' :
-                    alert.level === 'HIGH'     ? 'bg-[#FB923C]' : 'bg-[#EAB308]'
-                  }`} />
-                  <p className="text-sm text-[#A0A0A0] flex-1 truncate">{alert.msg}</p>
-                  <span className="text-xs text-[#4B5563] whitespace-nowrap">{alert.time}</span>
-                </div>
-              ))}
+              {realAlerts.length === 0 ? (
+                <div className="text-center py-6 text-sm text-[#4B5563]">Sin alertas críticas recientes</div>
+              ) : realAlerts.map((finding: any, i: number) => {
+                const isCritical = finding.severity === 'CRITICAL';
+                const isHigh = finding.severity === 'HIGH';
+                const timeStr = new Date(finding.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div
+                    key={finding.id || i}
+                    className="flex items-center gap-3 p-3.5 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#404040] transition-all cursor-pointer"
+                    onClick={() => onCambiarTab && onCambiarTab('incidents')}
+                  >
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      isCritical ? 'bg-[#EF4444]' :
+                      isHigh     ? 'bg-[#FB923C]' : 'bg-[#EAB308]'
+                    }`} />
+                    <div className="flex flex-col flex-1 overflow-hidden">
+                      <p className="text-sm text-[#A0A0A0] truncate">{finding.riskType} en {finding.file}</p>
+                      <p className="text-[10px] text-[#4B5563] truncate">Proyecto: {finding.analysis?.project?.name || 'Desconocido'}</p>
+                    </div>
+                    <span className="text-xs text-[#4B5563] whitespace-nowrap">{timeStr}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -280,11 +304,15 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
             </div>
             <div className="space-y-3">
               {[
-                { label: 'Tasa de remediación', value: '82%' },
-                { label: 'Incidentes cerrados', value: '124' },
-                { label: 'Media de respuesta', value: '1.4h' },
+                { label: 'Tasa de remediación', value: `${((analyticsData?.remediationRate || 0) * 100).toFixed(0)}%` },
+                { label: 'Incidentes cerrados', value: analyticsData?.totalFindings 
+                  ? Math.floor(analyticsData.totalFindings * (analyticsData.remediationRate || 0)).toString() 
+                  : '0' },
+                { label: 'Media de respuesta', value: analyticsData?.averageResolutionTime 
+                  ? `${(analyticsData.averageResolutionTime / (1000 * 60 * 60)).toFixed(1)}h` 
+                  : 'N/A' },
               ].map(({ label, value }) => (
-                <div key={label} className="flex justify-between items-center">
+                <div key={label} className="flex justify-between items-center cursor-pointer hover:bg-[#2A2A2A] p-2 -mx-2 rounded-lg transition-colors" onClick={() => onCambiarTab && onCambiarTab('analytics')}>
                   <span className="text-sm text-[#6B7280]">{label}</span>
                   <span className="text-sm font-medium text-white">{value}</span>
                 </div>

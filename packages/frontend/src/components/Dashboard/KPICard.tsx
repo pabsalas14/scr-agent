@@ -24,9 +24,11 @@ export default function KPICard({
   onClick,
 }: KPICardProps) {
   return (
-    <div
+    <div 
       onClick={onClick}
-      className={`bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 hover:border-[#404040] transition-all duration-200 overflow-hidden relative group ${onClick ? 'cursor-pointer hover:scale-[1.02]' : ''}`}
+      className={`bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 transition-all duration-200 overflow-hidden relative group ${
+        onClick ? 'cursor-pointer hover:border-[#F97316]/50 hover:bg-[#242424]' : 'hover:border-[#404040]'
+      }`}
     >
       <div className="flex items-start justify-between mb-3">
         <div

@@ -22,7 +22,7 @@ import CostsMonitor from './CostsMonitor';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
 import SettingsModule from '../Settings/SettingsModule';
 
-type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'settings' | 'incidents';
+type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'incidents';
 type AgentView = 'list' | 'detail';
 
 const TABS: Array<{ id: Tab; label: string; icon: LucideIcon; description: string }> = [
@@ -33,7 +33,6 @@ const TABS: Array<{ id: Tab; label: string; icon: LucideIcon; description: strin
   { id: 'system',     label: 'Sistema',         icon: Zap,       description: 'Estado HW' },
   { id: 'costs',      label: 'Costos',          icon: DollarSign,description: 'Gasto Real' },
   { id: 'analytics',  label: 'Estadísticas',    icon: TrendingUp,description: 'Deep Analytics' },
-  { id: 'settings',   label: 'Ajustes',         icon: Cog,       description: 'Configuraciones' },
 ];
 
 export default function MainDashboard() {
@@ -72,6 +71,7 @@ export default function MainDashboard() {
           <Dashboard
             onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
             onVerLogs={() => handleTabChange('system')}
+            onCambiarTab={(tab: string) => handleTabChange(tab as Tab)}
           />
         );
       case 'incidents':  return <IncidentMonitor />;
@@ -84,7 +84,6 @@ export default function MainDashboard() {
       case 'system':     return <SystemMonitor />;
       case 'costs':      return <CostsMonitor />;
       case 'analytics':  return <AnalyticsDashboard />;
-      case 'settings':   return <SettingsModule />;
       default:           return null;
     }
   };
