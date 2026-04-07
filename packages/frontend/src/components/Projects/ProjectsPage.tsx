@@ -26,11 +26,16 @@ export default function ProjectsPage() {
   });
 
   const crearProyecto = useMutation({
-    mutationFn: (dto: CrearProyectoDTO) => apiService.crearProyecto(dto),
-    onSuccess: () => {
+    mutationFn: async (dto: CrearProyectoDTO) => {
+      const proyecto = await apiService.crearProyecto(dto);
+      const analisis = await apiService.iniciarAnalisis(proyecto.id);
+      return { proyecto, analisis };
+    },
+    onSuccess: ({ proyecto, analisis }) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setModalAbierto(false);
       setPage(1);
+      navigate(`/projects/${proyecto.id}/analyses/${analisis.id}`);
     },
   });
 
@@ -156,6 +161,7 @@ export default function ProjectsPage() {
             onCrear={(dto) => crearProyecto.mutate(dto)}
             onCerrar={() => setModalAbierto(false)}
             cargando={crearProyecto.isPending}
+            error={crearProyecto.error ? (crearProyecto.error as any).response?.data?.error || (crearProyecto.error as Error).message : undefined}
           />
         )}
       </AnimatePresence>
