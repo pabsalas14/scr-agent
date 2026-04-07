@@ -271,6 +271,66 @@ export default function DiagnosisRemediationView({ reporte }: DiagnosisRemediati
           </div>
         )}
 
+        {/* Soluciones sugeridas */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-white uppercase tracking-wide">Sugerencias de solución</h3>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* By Severity */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
+            >
+              <p className="text-xs font-bold text-[#F97316] uppercase">🔍 Enfoque por severidad</p>
+              <ul className="space-y-2 text-sm text-[#94A3B8]">
+                <li className="flex gap-2">
+                  <span className="text-[#EF4444] flex-shrink-0">→</span>
+                  <span><strong>Crítico:</strong> Remediar inmediatamente, posiblemente requiere rollback</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#F97316] flex-shrink-0">→</span>
+                  <span><strong>Alto:</strong> Priorizar en el sprint actual</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#EAB308] flex-shrink-0">→</span>
+                  <span><strong>Medio:</strong> Planificar para próximas iteraciones</span>
+                </li>
+              </ul>
+            </motion.div>
+
+            {/* By Type */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+              className="p-4 rounded-xl bg-[#1E1E20] border border-[#2D2D2D] space-y-3"
+            >
+              <p className="text-xs font-bold text-[#F97316] uppercase">🛠️ Tipos de solución</p>
+              <ul className="space-y-2 text-sm text-[#94A3B8]">
+                <li className="flex gap-2">
+                  <span className="text-[#22C55E] flex-shrink-0">→</span>
+                  <span>Actualizar dependencias/librerías</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#22C55E] flex-shrink-0">→</span>
+                  <span>Refactorizar código sospechoso</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-[#22C55E] flex-shrink-0">→</span>
+                  <span>Agregar validaciones/sanitización</span>
+                </li>
+              </ul>
+            </motion.div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#F97316]/5 border border-[#F97316]/20">
+            <p className="text-xs text-[#94A3B8]">
+              💡 <strong>Tip:</strong> Revisa la sección "Amenazas" para ver código vulnerable específico y "Visor IR" para análisis de patrones.
+            </p>
+          </div>
+        </div>
+
         {/* CTA */}
         <div className="flex gap-3">
           <motion.button
@@ -287,7 +347,7 @@ export default function DiagnosisRemediationView({ reporte }: DiagnosisRemediati
             className="flex-1 px-6 py-3 bg-[#1E1E20] text-white font-semibold rounded-lg border border-[#2D2D2D] hover:border-[#404040] transition-all flex items-center justify-center gap-2"
           >
             <ArrowRight className="w-4 h-4" />
-            Ver detalles
+            Ver amenazas
           </motion.button>
         </div>
       </section>
