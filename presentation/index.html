@@ -1422,65 +1422,51 @@
             <h2 class="section-title">Trazabilidad y Seguimiento</h2>
             <p class="section-subtitle">Sistema completo de rastreo desde detección hasta resolución</p>
 
-            <div class="trazabilidad-diagram">
-                <svg viewBox="0 0 1200 500" class="trazabilidad-svg">
-                    <!-- Timeline vertical -->
-                    <line x1="100" y1="50" x2="100" y2="450" class="timeline-line"/>
-
-                    <!-- Detección -->
-                    <circle cx="100" cy="80" r="20" class="timeline-point detection"/>
-                    <rect x="130" y="60" width="250" height="40" class="timeline-box"/>
-                    <text x="255" y="87" class="timeline-text">🔍 Detección</text>
-
-                    <!-- Información -->
-                    <rect x="400" y="60" width="700" height="80" class="timeline-info"/>
-                    <text x="420" y="80" class="timeline-info-title">Información Capturada:</text>
-                    <text x="420" y="100" class="timeline-info-text">• Tipo de vulnerabilidad | • Severidad | • Ubicación exacta</text>
-                    <text x="420" y="120" class="timeline-info-text">• Código vulnerable | • Confianza del análisis | • Timestamp</text>
-
-                    <!-- Análisis -->
-                    <circle cx="100" cy="170" r="20" class="timeline-point analysis"/>
-                    <rect x="130" y="150" width="250" height="40" class="timeline-box"/>
-                    <text x="255" y="177" class="timeline-text">📊 Análisis</text>
-
-                    <!-- Información -->
-                    <rect x="400" y="150" width="700" height="80" class="timeline-info"/>
-                    <text x="420" y="170" class="timeline-info-title">Análisis Profundo:</text>
-                    <text x="420" y="190" class="timeline-info-text">• Patrón detectado | • Impacto potencial | • Solución propuesta</text>
-                    <text x="420" y="210" class="timeline-info-text">• Recomendaciones | • Referencias de OWASP</text>
-
-                    <!-- Generación de Reporte -->
-                    <circle cx="100" cy="260" r="20" class="timeline-point report"/>
-                    <rect x="130" y="240" width="250" height="40" class="timeline-box"/>
-                    <text x="255" y="267" class="timeline-text">📄 Reporte</text>
-
-                    <!-- Información -->
-                    <rect x="400" y="240" width="700" height="80" class="timeline-info"/>
-                    <text x="420" y="260" class="timeline-info-title">Documentación Completa:</text>
-                    <text x="420" y="280" class="timeline-info-text">• Reporte completo PDF/JSON | • Código vulnerable destacado</text>
-                    <text x="420" y="300" class="timeline-info-text">• Solución paso a paso | • Evidencia visual</text>
-
-                    <!-- Remediación -->
-                    <circle cx="100" cy="350" r="20" class="timeline-point remediation"/>
-                    <rect x="130" y="330" width="250" height="40" class="timeline-box"/>
-                    <text x="255" y="357" class="timeline-text">⚙️ Remediación</text>
-
-                    <!-- Información -->
-                    <rect x="400" y="330" width="700" height="80" class="timeline-info"/>
-                    <text x="420" y="350" class="timeline-info-title">Seguimiento de Estado:</text>
-                    <text x="420" y="370" class="timeline-info-text">• Estado: Abierto → En Curso → Resuelto → Cerrado | • Responsable asignado</text>
-                    <text x="420" y="390" class="timeline-info-text">• Notas de progreso | • Fecha de resolución</text>
-
-                    <!-- Cierre -->
-                    <circle cx="100" cy="440" r="20" class="timeline-point closure"/>
-                    <rect x="130" y="420" width="250" height="40" class="timeline-box"/>
-                    <text x="255" y="447" class="timeline-text">✅ Cierre</text>
-
-                    <!-- Información -->
-                    <rect x="400" y="420" width="700" height="60" class="timeline-info"/>
-                    <text x="420" y="440" class="timeline-info-title">Verificación Final:</text>
-                    <text x="420" y="460" class="timeline-info-text">• Validación de fix | • Retest de vulnerabilidad | • Firma de aceptación</text>
-                </svg>
+            <!-- Circular Status Track -->
+            <div class="circular-track">
+                <div class="track-center">
+                    <div class="center-content">
+                        <h3>5 Etapas</h3>
+                        <p>de Seguimiento</p>
+                    </div>
+                </div>
+                <div class="track-stages">
+                    <div class="stage stage-1" style="--index: 0">
+                        <div class="stage-circle">
+                            <span class="stage-icon">🔍</span>
+                        </div>
+                        <div class="stage-label">Detección</div>
+                        <div class="stage-time">0-5 min</div>
+                    </div>
+                    <div class="stage stage-2" style="--index: 1">
+                        <div class="stage-circle">
+                            <span class="stage-icon">📊</span>
+                        </div>
+                        <div class="stage-label">Análisis</div>
+                        <div class="stage-time">5-15 min</div>
+                    </div>
+                    <div class="stage stage-3" style="--index: 2">
+                        <div class="stage-circle">
+                            <span class="stage-icon">📄</span>
+                        </div>
+                        <div class="stage-label">Reporte</div>
+                        <div class="stage-time">15-20 min</div>
+                    </div>
+                    <div class="stage stage-4" style="--index: 3">
+                        <div class="stage-circle">
+                            <span class="stage-icon">⚙️</span>
+                        </div>
+                        <div class="stage-label">Remediación</div>
+                        <div class="stage-time">20h-48h</div>
+                    </div>
+                    <div class="stage stage-5" style="--index: 4">
+                        <div class="stage-circle">
+                            <span class="stage-icon">✅</span>
+                        </div>
+                        <div class="stage-label">Cierre</div>
+                        <div class="stage-time">48h+</div>
+                    </div>
+                </div>
             </div>
 
             <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">Historial Completo de Auditoría</h3>
