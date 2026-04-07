@@ -172,7 +172,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
                       onSelect={(repo) => {
                         setSelectedRepo(repo);
                         setSelectedBranch(null);
-                        setValue('repositoryUrl', repo.cloneUrl);
+                        setValue('repositoryUrl', repo.url);
                       }}
                       onBranchSelect={(branch) => {
                         setSelectedBranch(branch);
