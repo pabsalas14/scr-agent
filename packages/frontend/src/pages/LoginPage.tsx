@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, Lock, Eye, EyeOff, CheckCircle, Loader2 } from 'lucide-react';
+import { Shield, Lock, Eye, EyeOff, CheckCircle, Loader2, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+
+type Mode = 'login' | 'register';
+type Phase = 'idle' | 'syncing' | 'valid';
 
 export default function LoginPage() {
   const { setToken } = useAuth();
   const navigate = useNavigate();
+  const [mode, setMode] = useState<Mode>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [phase, setPhase] = useState<'idle' | 'syncing' | 'valid'>('idle');
+  const [phase, setPhase] = useState<Phase>('idle');
+
+  function switchMode(next: Mode) {
+    setMode(next);
+    setError(null);
+    setName('');
+    setEmail('');
+    setPassword('');
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -21,15 +34,18 @@ export default function LoginPage() {
     setPhase('syncing');
 
     try {
-      const response = await fetch('/api/v1/auth/login', {
+      const url = mode === 'login' ? '/api/v1/auth/login' : '/api/v1/auth/register';
+      const body = mode === 'login' ? { email, password } : { name, email, password };
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || 'Credenciales incorrectas');
+        throw new Error(data.error || (mode === 'login' ? 'Credenciales incorrectas' : 'Error al crear cuenta'));
       }
 
       const data = await response.json();
@@ -72,50 +88,91 @@ export default function LoginPage() {
         </div>
 
         {/* Card */}
-        <div className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl p-7 shadow-[0_8px_32px_rgba(0,0,0,0.4)]">
-          <AnimatePresence mode="wait">
-            {phase === 'syncing' ? (
-              <motion.div
-                key="syncing"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="py-10 flex flex-col items-center justify-center space-y-4"
+        <div className="bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden">
+          {/* Tabs */}
+          <div className="flex border-b border-[#2D2D2D]">
+            {(['login', 'register'] as Mode[]).map((m) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => switchMode(m)}
+                className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                  mode === m
+                    ? 'text-white border-b-2 border-[#F97316]'
+                    : 'text-[#6B7280] hover:text-[#A0A0A0]'
+                }`}
               >
-                <Loader2 className="w-10 h-10 text-[#F97316] animate-spin" />
-                <p className="text-sm text-[#A0A0A0]">Verificando credenciales...</p>
-              </motion.div>
-            ) : phase === 'valid' ? (
-              <motion.div
-                key="valid"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="py-10 flex flex-col items-center justify-center space-y-4"
-              >
-                <div className="w-14 h-14 bg-[#22C55E]/10 rounded-full flex items-center justify-center border border-[#22C55E]/20">
-                  <CheckCircle className="w-7 h-7 text-[#22C55E]" />
-                </div>
-                <p className="text-sm font-medium text-[#22C55E]">Acceso concedido</p>
-              </motion.div>
-            ) : (
-              <motion.form
-                key="idle"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                onSubmit={handleSubmit}
-                className="space-y-5"
-              >
-                <div>
-                  <p className="text-base font-semibold text-white mb-1">Iniciar sesión</p>
-                  <p className="text-xs text-[#6B7280]">Ingresa tus credenciales de acceso</p>
-                </div>
+                {m === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+              </button>
+            ))}
+          </div>
 
-                {/* Email */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-[#A0A0A0]">Correo electrónico</label>
-                  <div className="relative">
+          <div className="p-7">
+            <AnimatePresence mode="wait">
+              {phase === 'syncing' ? (
+                <motion.div
+                  key="syncing"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="py-10 flex flex-col items-center justify-center space-y-4"
+                >
+                  <Loader2 className="w-10 h-10 text-[#F97316] animate-spin" />
+                  <p className="text-sm text-[#A0A0A0]">
+                    {mode === 'login' ? 'Verificando credenciales...' : 'Creando cuenta...'}
+                  </p>
+                </motion.div>
+              ) : phase === 'valid' ? (
+                <motion.div
+                  key="valid"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="py-10 flex flex-col items-center justify-center space-y-4"
+                >
+                  <div className="w-14 h-14 bg-[#22C55E]/10 rounded-full flex items-center justify-center border border-[#22C55E]/20">
+                    {mode === 'login'
+                      ? <CheckCircle className="w-7 h-7 text-[#22C55E]" />
+                      : <UserPlus className="w-7 h-7 text-[#22C55E]" />
+                    }
+                  </div>
+                  <p className="text-sm font-medium text-[#22C55E]">
+                    {mode === 'login' ? 'Acceso concedido' : 'Cuenta creada'}
+                  </p>
+                </motion.div>
+              ) : (
+                <motion.form
+                  key={`form-${mode}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onSubmit={handleSubmit}
+                  className="space-y-5"
+                >
+                  {/* Name (register only) */}
+                  {mode === 'register' && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-medium text-[#A0A0A0]">Nombre completo</label>
+                      <input
+                        type="text"
+                        id="name"
+                        name="name"
+                        autoComplete="name"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full bg-[#111111] border border-[#2D2D2D] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:outline-none focus:ring-1 focus:ring-[#F97316]/20 transition-all"
+                        placeholder="Juan Pérez"
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {/* Email */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#A0A0A0]">Correo electrónico</label>
                     <input
                       type="email"
+                      id="email"
+                      name="email"
+                      autoComplete="email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="w-full bg-[#111111] border border-[#2D2D2D] rounded-lg px-3.5 py-2.5 text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:outline-none focus:ring-1 focus:ring-[#F97316]/20 transition-all"
@@ -123,58 +180,60 @@ export default function LoginPage() {
                       required
                     />
                   </div>
-                </div>
 
-                {/* Password */}
-                <div className="space-y-1.5">
-                  <div className="flex justify-between">
+                  {/* Password */}
+                  <div className="space-y-1.5">
                     <label className="text-xs font-medium text-[#A0A0A0]">Contraseña</label>
-                    <button type="button" className="text-xs text-[#F97316] hover:text-[#EA6D00] transition-colors">
-                      Olvidé mi contraseña
-                    </button>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        id="password"
+                        name="password"
+                        autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        className="w-full bg-[#111111] border border-[#2D2D2D] rounded-lg px-3.5 py-2.5 pr-10 text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:outline-none focus:ring-1 focus:ring-[#F97316]/20 transition-all"
+                        placeholder="••••••••"
+                        minLength={mode === 'register' ? 8 : undefined}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
+                      >
+                        {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {mode === 'register' && (
+                      <p className="text-xs text-[#4B5563]">Mínimo 8 caracteres</p>
+                    )}
                   </div>
-                  <div className="relative">
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full bg-[#111111] border border-[#2D2D2D] rounded-lg px-3.5 py-2.5 pr-10 text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:outline-none focus:ring-1 focus:ring-[#F97316]/20 transition-all"
-                      placeholder="••••••••"
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
+
+                  {/* Error */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="bg-[#EF4444]/10 border border-[#EF4444]/25 rounded-lg px-3.5 py-2.5 flex items-center gap-2 text-[#EF4444]"
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
-                  </div>
-                </div>
+                      <Lock className="w-4 h-4 flex-shrink-0" />
+                      <span className="text-sm">{error}</span>
+                    </motion.div>
+                  )}
 
-                {/* Error */}
-                {error && (
-                  <motion.div
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="bg-[#EF4444]/10 border border-[#EF4444]/25 rounded-lg px-3.5 py-2.5 flex items-center gap-2 text-[#EF4444]"
+                  {/* Submit */}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full bg-[#F97316] hover:bg-[#EA6D00] disabled:opacity-50 text-white font-medium text-sm py-2.5 rounded-lg transition-all shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
                   >
-                    <Lock className="w-4 h-4 flex-shrink-0" />
-                    <span className="text-sm">{error}</span>
-                  </motion.div>
-                )}
-
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-[#F97316] hover:bg-[#EA6D00] disabled:opacity-50 text-white font-medium text-sm py-2.5 rounded-lg transition-all shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.3)]"
-                >
-                  Iniciar sesión
-                </button>
-              </motion.form>
-            )}
-          </AnimatePresence>
+                    {mode === 'login' ? 'Iniciar sesión' : 'Crear cuenta'}
+                  </button>
+                </motion.form>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
 
         {/* Footer */}

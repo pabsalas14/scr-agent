@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — lint, type-check, tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm --filter @scr-agent/backend type-check
+
+      - name: Lint
+        run: pnpm --filter @scr-agent/backend lint
+
+      - name: Tests
+        run: pnpm --filter @scr-agent/backend test
+        env:
+          JWT_SECRET: ci-test-secret
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+          ANTHROPIC_API_KEY: sk-ant-ci-placeholder
+
+  frontend:
+    name: Frontend — lint, type-check, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type-check
+        run: pnpm --filter @scr-agent/frontend type-check
+
+      - name: Lint
+        run: pnpm --filter @scr-agent/frontend lint
+
+      - name: Build
+        run: pnpm --filter @scr-agent/frontend build
+        env:
+          VITE_API_URL: /api/v1
+          VITE_SOCKET_URL: http://localhost:3001

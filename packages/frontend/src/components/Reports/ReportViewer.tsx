@@ -122,6 +122,19 @@ export default function ReportViewer() {
     exportToPdf({ proyecto, reporte, hallazgos, analisisId: analysisId });
   };
 
+  const [exportingCSV, setExportingCSV] = useState(false);
+  const descargarCSV = async () => {
+    if (!analysisId) return;
+    setExportingCSV(true);
+    try {
+      await apiService.exportarHallazgosCSV(analysisId);
+    } catch {
+      toast.error('Error al exportar CSV');
+    } finally {
+      setExportingCSV(false);
+    }
+  };
+
   if (!reporte) {
     return (
       <div className="max-w-7xl mx-auto px-6 space-y-8 animate-in fade-in duration-500">
@@ -175,14 +188,24 @@ export default function ReportViewer() {
           <p className="text-xs text-[#4B5563] font-mono">{analysisId}</p>
         </div>
 
-        <button
-          onClick={descargarPDF}
-          disabled={isExporting}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-[#F97316] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-          {isExporting ? 'Generando...' : 'Exportar PDF'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={descargarCSV}
+            disabled={exportingCSV}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#22C55E]/40 hover:text-[#22C55E] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {exportingCSV ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            {exportingCSV ? 'Exportando...' : 'CSV'}
+          </button>
+          <button
+            onClick={descargarPDF}
+            disabled={isExporting}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-[#F97316] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            {isExporting ? 'Generando...' : 'PDF'}
+          </button>
+        </div>
       </div>
 
       {/* KPI Grid */}
