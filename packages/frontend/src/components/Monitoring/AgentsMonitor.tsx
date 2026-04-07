@@ -114,7 +114,7 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
                     </p>
                     <p className="text-sm font-semibold text-white">
                       {agent.lastExecution
-                        ? agent.lastExecution.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        ? new Date(agent.lastExecution).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         : '---'}
                     </p>
                   </div>
