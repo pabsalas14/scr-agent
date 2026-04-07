@@ -222,10 +222,10 @@ export function usePdfExport() {
         const recommend = doc.splitTextToSize(reporte.generalRecommendation, pageWidth - (margin * 2));
         doc.text(recommend, margin, 45);
 
-        const stepsData = (reporte.remediationSteps as any[]).map(s => [
-          s.order || '—',
+        const stepsData = ((reporte.remediationSteps as any[]) || []).map((s: any, idx: number) => [
+          s.order || (idx + 1),
           s.urgency || s.urgencia || 'MEDIUM',
-          s.action || s.accion || ''
+          (s.action || s.accion || 'Sin descripción').substring(0, 100)
         ]);
 
         const cLow = getC('low');

@@ -81,22 +81,34 @@ export default function ReportViewer() {
   const { data: reporte } = useQuery({
     queryKey: ['report', analysisId],
     queryFn: () => apiService.obtenerReporte(analysisId),
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const { data: proyecto } = useQuery({
     queryKey: ['project', projectId],
     queryFn: () => apiService.obtenerProyecto(projectId!),
     enabled: !!projectId,
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const { data: hallazgos } = useQuery({
     queryKey: ['findings', analysisId],
     queryFn: () => apiService.obtenerHallazgos(analysisId),
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const { data: eventosForenses } = useQuery({
     queryKey: ['forensics', analysisId],
     queryFn: () => apiService.obtenerEventosForenses(analysisId),
+    staleTime: 0,
+    refetchOnMount: 'stale',
+    refetchOnWindowFocus: true,
   });
 
   const eventosTimeline: EventoTimeline[] = (eventosForenses || []).map((e) => ({
@@ -367,37 +379,55 @@ export default function ReportViewer() {
               </section>
 
               <div className="grid md:grid-cols-2 gap-4">
-                {reporte.remediationSteps.map((step, i) => {
-                  const s = step as unknown as Record<string, string | number>;
-                  return (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.08 }}
-                      className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-4 hover:border-[#404040] transition-all"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="w-9 h-9 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center text-[#22C55E] font-semibold text-sm">
-                          {(s['order'] as number) || i + 1}
-                        </div>
-                        {(s['urgency'] || s['urgencia']) && (
-                          <span className="text-xs text-white px-2.5 py-1 rounded-md bg-[#EF4444]/10 border border-[#EF4444]/20">
-                            {(s['urgency'] || s['urgencia']) as string}
+                {(reporte.remediationSteps || []).length > 0 ? (
+                  reporte.remediationSteps.map((step, i) => {
+                    const s = step as unknown as Record<string, string | number | undefined>;
+                    const action = (s['action'] || s['accion'] || s['title'] || s['paso']) as string;
+                    const justification = (s['justification'] || s['justificacion'] || s['description'] || s['descripcion']) as string;
+                    const urgency = (s['urgency'] || s['urgencia'] || s['prioridad'] || 'Normal') as string;
+
+                    return (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.08 }}
+                        className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-4 hover:border-[#404040] transition-all"
+                      >
+                        <div className="flex justify-between items-start gap-4">
+                          <div className="w-9 h-9 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center text-[#22C55E] font-semibold text-sm flex-shrink-0">
+                            {i + 1}
+                          </div>
+                          <span className={`text-xs font-medium px-2.5 py-1 rounded-md border flex-shrink-0 ${
+                            urgency?.toUpperCase().includes('URGENTE') || urgency?.toUpperCase().includes('CRITICAL')
+                              ? 'bg-[#EF4444]/10 border-[#EF4444]/20 text-[#EF4444]'
+                              : urgency?.toUpperCase().includes('ALTO') || urgency?.toUpperCase().includes('HIGH')
+                              ? 'bg-[#F97316]/10 border-[#F97316]/20 text-[#F97316]'
+                              : 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#A0A0A0]'
+                          }`}>
+                            {urgency || 'Normal'}
                           </span>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <h4 className="text-base font-semibold text-white">
-                          {(s['action'] || s['accion']) as string}
-                        </h4>
-                        <p className="text-sm text-[#6B7280] leading-relaxed">
-                          {(s['justification'] || s['justificacion']) as string}
-                        </p>
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                        </div>
+                        <div className="space-y-2">
+                          {action && (
+                            <h4 className="text-base font-semibold text-white leading-snug break-words">
+                              {action}
+                            </h4>
+                          )}
+                          {justification && (
+                            <p className="text-sm text-[#6B7280] leading-relaxed break-words">
+                              {justification}
+                            </p>
+                          )}
+                        </div>
+                      </motion.div>
+                    );
+                  })
+                ) : (
+                  <div className="col-span-full py-12 text-center">
+                    <p className="text-[#6B7280]">No hay pasos de remediación disponibles</p>
+                  </div>
+                )}
               </div>
             </div>
           )}
