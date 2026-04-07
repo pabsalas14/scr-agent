@@ -108,6 +108,7 @@ export interface Reporte {
   remediationSteps: string[];
   generalRecommendation: string;
   createdAt: string;
+  hallazgos?: Hallazgo[];
 }
 
 export interface ApiResponse<T> {
