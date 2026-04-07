@@ -27,6 +27,7 @@ const BCRYPT_ROUNDS = 12;
 // ==================== SCHEMAS DE VALIDACIÓN ====================
 
 const RegisterSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
   email: z.string().email('Email inválido').max(255),
   password: z.string().min(8, 'La contraseña debe tener al menos 8 caracteres').max(128),
 });
@@ -59,7 +60,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const { email, password } = parsed.data;
+  const { name, email, password } = parsed.data;
 
   try {
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -70,8 +71,8 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
     const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
     const user = await prisma.user.create({
-      data: { email, passwordHash },
-      select: { id: true, email: true, createdAt: true },
+      data: { email, passwordHash, ...(name ? { name } : {}) },
+      select: { id: true, email: true, name: true, createdAt: true },
     });
 
     const token = generateToken(user.id, user.email);
