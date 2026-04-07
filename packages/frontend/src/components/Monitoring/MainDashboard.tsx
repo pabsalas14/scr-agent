@@ -21,13 +21,15 @@ import SystemMonitor from './SystemMonitor';
 import CostsMonitor from './CostsMonitor';
 import AnalyticsDashboard from '../Analytics/AnalyticsDashboard';
 import SettingsModule from '../Settings/SettingsModule';
+import ForensicsInvestigations from '../Forensics/ForensicsInvestigations';
 
-type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'incidents';
+type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'incidents' | 'forensics';
 type AgentView = 'list' | 'detail';
 
 const TABS: Array<{ id: Tab; label: string; icon: LucideIcon; description: string }> = [
   { id: 'projects',   label: 'Monitor Central', icon: Shield,    description: 'Vista general' },
   { id: 'incidents',  label: 'Incidentes',      icon: Radio,     description: 'Alertas críticas' },
+  { id: 'forensics',  label: 'Investigaciones', icon: FileText,  description: 'Análisis forense' },
   { id: 'analyses',   label: 'Reportes',        icon: FileText,  description: 'Histórico' },
   { id: 'agents',     label: 'Agentes IA',      icon: Wand2,     description: 'Autómatas' },
   { id: 'system',     label: 'Sistema',         icon: Zap,       description: 'Estado HW' },
@@ -75,6 +77,7 @@ export default function MainDashboard() {
           />
         );
       case 'incidents':  return <IncidentMonitor />;
+      case 'forensics':  return <ForensicsInvestigations />;
       case 'analyses':   return <AnalysisMonitor />;
       case 'agents':
         if (agentView === 'detail' && selectedAgentId) {
