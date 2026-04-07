@@ -331,86 +331,213 @@ section:nth-child(even) {
 
 /* Diagrams */
 .diagram-container,
-.architecture-diagram,
-.pipeline-diagram,
-.trazabilidad-diagram {
+/* Architecture Layers */
+.arch-layers {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+    margin: 50px 0;
+}
+
+.arch-layer {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 30px;
+    transition: all 0.3s ease;
+}
+
+.arch-layer:hover {
+    border-color: var(--primary);
+    box-shadow: 0 15px 50px rgba(249, 115, 22, 0.1);
+}
+
+.layer-header {
+    color: var(--text-primary);
+    font-size: 1.3rem;
+    margin: 0 0 25px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid var(--primary);
+}
+
+.layer-components {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.component-box {
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 12px;
-    padding: 30px;
-    margin: 40px 0;
-    overflow-x: auto;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
-.architecture-svg,
-.pipeline-svg,
-.trazabilidad-svg {
-    width: 100%;
-    height: auto;
+.component-box:hover {
+    border-color: var(--primary);
+    box-shadow: 0 10px 30px rgba(249, 115, 22, 0.15);
+    transform: translateY(-5px);
 }
 
-.layer-box {
-    stroke: var(--border);
-    stroke-width: 2;
-    rx: 8;
+.comp-icon {
+    font-size: 2.5rem;
+    margin-bottom: 12px;
 }
 
-.layer-box.frontend {
-    fill: rgba(59, 130, 246, 0.1);
-    stroke: rgba(59, 130, 246, 0.5);
+.component-box h4 {
+    color: var(--text-primary);
+    font-size: 1.1rem;
+    margin: 0 0 8px 0;
 }
 
-.layer-box.api {
-    fill: rgba(249, 115, 22, 0.1);
-    stroke: rgba(249, 115, 22, 0.5);
+.component-box p {
+    color: var(--text-secondary);
+    margin: 6px 0;
+    font-size: 0.9rem;
 }
 
-.layer-box.engine {
-    fill: rgba(34, 197, 94, 0.1);
-    stroke: rgba(34, 197, 94, 0.5);
+.tech-badge {
+    display: inline-block;
+    background: rgba(249, 115, 22, 0.2);
+    color: var(--primary);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 4px 2px;
 }
 
-.layer-box.database {
-    fill: rgba(239, 68, 68, 0.1);
-    stroke: rgba(239, 68, 68, 0.5);
+/* Module Cards */
+.module-card {
+    border-left: 4px solid var(--border);
+    position: relative;
 }
 
-.layer-title {
-    font-size: 16px;
+.module-card.threat {
+    border-left-color: var(--critical);
+    background: rgba(239, 68, 68, 0.03);
+}
+
+.module-card.threat:hover {
+    border-left-color: var(--critical);
+    box-shadow: 0 10px 30px rgba(239, 68, 68, 0.2);
+}
+
+.module-card.remediation {
+    border-left-color: var(--primary);
+    background: rgba(249, 115, 22, 0.03);
+}
+
+.module-card.remediation:hover {
+    box-shadow: 0 10px 30px rgba(249, 115, 22, 0.2);
+}
+
+.module-card.forensic {
+    border-left-color: var(--success);
+    background: rgba(34, 197, 94, 0.03);
+}
+
+.module-card.forensic:hover {
+    box-shadow: 0 10px 30px rgba(34, 197, 94, 0.2);
+}
+
+.module-card.incident {
+    border-left-color: #3B82F6;
+    background: rgba(59, 130, 246, 0.03);
+}
+
+.module-card.incident:hover {
+    box-shadow: 0 10px 30px rgba(59, 130, 246, 0.2);
+}
+
+.features {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.features span {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--primary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+/* Data Flow Section */
+.data-flow-section {
+    margin-top: 60px;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.05), rgba(0, 0, 0, 0.1));
+    border: 2px solid rgba(249, 115, 22, 0.2);
+    border-radius: 16px;
+}
+
+.flow-diagram {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+.flow-stage {
+    background: var(--card-bg);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    min-width: 140px;
+    transition: all 0.3s ease;
+}
+
+.flow-stage:hover {
+    border-color: var(--primary);
+    box-shadow: 0 8px 25px rgba(249, 115, 22, 0.15);
+    transform: translateY(-3px);
+}
+
+.flow-icon {
+    font-size: 2rem;
+    margin-bottom: 10px;
+}
+
+.flow-stage h4 {
+    color: var(--text-primary);
+    margin: 0 0 6px 0;
+    font-size: 0.95rem;
+}
+
+.flow-stage p {
+    color: var(--text-secondary);
+    margin: 4px 0;
+    font-size: 0.85rem;
+}
+
+.flow-desc {
+    color: var(--text-muted);
+    font-size: 0.75rem !important;
+    font-style: italic;
+}
+
+.flow-arrow {
+    font-size: 2rem;
+    color: var(--primary);
     font-weight: bold;
-    fill: var(--text-primary);
-    text-anchor: middle;
+    animation: pulse 2s infinite;
 }
 
-.layer-subtitle {
-    font-size: 12px;
-    fill: var(--text-secondary);
-    text-anchor: middle;
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
 }
-
-.module-box {
-    stroke-width: 2;
-    rx: 8;
-}
-
-.module-box.threat {
-    fill: rgba(239, 68, 68, 0.1);
-    stroke: rgba(239, 68, 68, 0.5);
-}
-
-.module-box.remediation {
-    fill: rgba(249, 115, 22, 0.1);
-    stroke: rgba(249, 115, 22, 0.5);
-}
-
-.module-box.forensic {
-    fill: rgba(34, 197, 94, 0.1);
-    stroke: rgba(34, 197, 94, 0.5);
-}
-
-.module-box.incident {
-    fill: rgba(59, 130, 246, 0.1);
-    stroke: rgba(59, 130, 246, 0.5);
 }
 
 .module-title {
