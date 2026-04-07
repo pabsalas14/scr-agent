@@ -1,0 +1,22 @@
+{
+  "name": "scr-agent-presentation",
+  "version": "1.0.0",
+  "description": "Presentación interactiva de SCR Agent - Auditoría de Código Inteligente",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js --dev"
+  },
+  "keywords": [
+    "security",
+    "code-analysis",
+    "vulnerability-detection",
+    "scr-agent"
+  ],
+  "author": "SCR Agent Team",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5"
+  }
+}

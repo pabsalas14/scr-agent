@@ -1,0 +1,99 @@
+/* Diagram Styles */
+
+svg {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Architecture Diagram Colors */
+.layer-box {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+}
+
+.module-box {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+/* Animations for diagrams */
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes flow {
+    0% {
+        stroke-dashoffset: 10;
+    }
+    100% {
+        stroke-dashoffset: 0;
+    }
+}
+
+.timeline-point {
+    animation: pulse 2s infinite;
+}
+
+.pipeline-arrow,
+.flow-arrow {
+    animation: flow 2s linear infinite;
+    stroke-dasharray: 5, 5;
+}
+
+/* Responsive SVG */
+@media (max-width: 768px) {
+    .diagram-container,
+    .architecture-diagram,
+    .pipeline-diagram,
+    .trazabilidad-diagram {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    svg {
+        width: 100%;
+        min-width: 800px;
+    }
+}
+
+/* Diagram Text Styles */
+.diagram-text,
+.layer-title,
+.layer-subtitle,
+.module-title,
+.module-text,
+.flow-text,
+.timeline-text,
+.timeline-info-title,
+.timeline-info-text {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Hover effects */
+.layer-box:hover,
+.module-box:hover,
+.flow-process:hover {
+    filter: drop-shadow(0 8px 16px rgba(249, 115, 22, 0.3));
+    transition: filter 0.3s ease;
+}
+
+/* Connection lines */
+.connection-line,
+.data-flow {
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+/* Markers */
+marker polygon {
+    fill: #F97316;
+}
+
+/* Gradient definitions */
+defs linearGradient,
+defs radialGradient {
+    transition: all 0.3s ease;
+}

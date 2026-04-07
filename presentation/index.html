@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCR Agent - Auditoría de Código Inteligente</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/diagrams.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🔐</span>
+                <span class="logo-text">SCR Agent</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#hero" class="nav-link">Inicio</a></li>
+                <li><a href="#problema" class="nav-link">Problema</a></li>
+                <li><a href="#arquitectura" class="nav-link">Arquitectura</a></li>
+                <li><a href="#pipeline" class="nav-link">Pipeline</a></li>
+                <li><a href="#features" class="nav-link">Características</a></li>
+                <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">SCR Agent</h1>
+            <h2 class="hero-subtitle">Auditoría Inteligente de Código con IA</h2>
+            <p class="hero-description">
+                Análisis automático de vulnerabilidades, investigación forense en tiempo real,
+                y remediación inteligente de hallazgos de seguridad
+            </p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">14</div>
+                    <div class="stat-label">Incidentes Detectados</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Precisión Análisis</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Módulos Integrados</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problema & Solución -->
+    <section id="problema" class="problem-solution">
+        <div class="container">
+            <h2 class="section-title">El Desafío</h2>
+
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">❌</div>
+                    <h3>Vulnerabilidades No Detectadas</h3>
+                    <p>Análisis manual lento y propenso a errores humanos</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Falta de Trazabilidad</h3>
+                    <p>Sin seguimiento claro de cambios y remediciones</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">🔍</div>
+                    <h3>Análisis Superficial</h3>
+                    <p>Sin investigación forense de patrones de riesgo</p>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 60px;">La Solución</h2>
+
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <div class="solution-icon">✅</div>
+                    <h3>Análisis Automático</h3>
+                    <p>IA detecta vulnerabilidades en segundos con alta precisión</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">📊</div>
+                    <h3>Dashboard Integral</h3>
+                    <p>Seguimiento completo con estados y asignaciones</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">🔬</div>
+                    <h3>Investigación Forense</h3>
+                    <p>Timeline de cambios, patrones de riesgo y análisis arquitectónico</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Arquitectura Técnica -->
+    <section id="arquitectura" class="arquitectura">
+        <div class="container">
+            <h2 class="section-title">Arquitectura del Sistema</h2>
+            <p class="section-subtitle">Diseño técnico de componentes y flujo de datos</p>
+
+            <div class="architecture-diagram">
+                <div class="diagram-container">
+                    <svg viewBox="0 0 1200 600" class="architecture-svg">
+                        <!-- Frontend Layer -->
+                        <g>
+                            <rect x="50" y="30" width="250" height="80" class="layer-box frontend"/>
+                            <text x="175" y="65" class="layer-title">Frontend</text>
+                            <text x="175" y="85" class="layer-subtitle">React + TypeScript</text>
+                        </g>
+
+                        <!-- API Gateway -->
+                        <g>
+                            <rect x="350" y="30" width="250" height="80" class="layer-box api"/>
+                            <text x="475" y="65" class="layer-title">API Gateway</text>
+                            <text x="475" y="85" class="layer-subtitle">Express + Node.js</text>
+                        </g>
+
+                        <!-- Analysis Engine -->
+                        <g>
+                            <rect x="650" y="30" width="250" height="80" class="layer-box engine"/>
+                            <text x="775" y="65" class="layer-title">Engine IA</text>
+                            <text x="775" y="85" class="layer-subtitle">Análisis Estático</text>
+                        </g>
+
+                        <!-- Database -->
+                        <g>
+                            <rect x="950" y="30" width="200" height="80" class="layer-box database"/>
+                            <text x="1050" y="65" class="layer-title">Database</text>
+                            <text x="1050" y="85" class="layer-subtitle">PostgreSQL</text>
+                        </g>
+
+                        <!-- Modules Layer -->
+                        <g>
+                            <text x="50" y="160" class="layer-label">Módulos de Análisis:</text>
+
+                            <!-- Amenazas -->
+                            <rect x="50" y="180" width="170" height="100" class="module-box threat"/>
+                            <text x="135" y="205" class="module-title">🎯 Amenazas</text>
+                            <text x="60" y="230" class="module-text">• Vulnerabilidades</text>
+                            <text x="60" y="250" class="module-text">• Código Vulnerable</text>
+                            <text x="60" y="270" class="module-text">• Recomendaciones</text>
+                        </g>
+
+                        <g>
+                            <!-- Remediación -->
+                            <rect x="280" y="180" width="170" height="100" class="module-box remediation"/>
+                            <text x="365" y="205" class="module-title">⚙️ Remediación</text>
+                            <text x="290" y="230" class="module-text">• Código Solución</text>
+                            <text x="290" y="250" class="module-text">• Pasos de Fix</text>
+                            <text x="290" y="270" class="module-text">• Seguimiento Estado</text>
+                        </g>
+
+                        <g>
+                            <!-- Forense -->
+                            <rect x="510" y="180" width="170" height="100" class="module-box forensic"/>
+                            <text x="595" y="205" class="module-title">🔍 Forense</text>
+                            <text x="520" y="230" class="module-text">• Timeline Cambios</text>
+                            <text x="520" y="250" class="module-text">• Patrones Riesgo</text>
+                            <text x="520" y="270" class="module-text">• Usuarios/Repos</text>
+                        </g>
+
+                        <g>
+                            <!-- Incidentes -->
+                            <rect x="740" y="180" width="170" height="100" class="module-box incident"/>
+                            <text x="825" y="205" class="module-title">🔔 Incidentes</text>
+                            <text x="750" y="230" class="module-text">• Monitoreo Real</text>
+                            <text x="750" y="250" class="module-text">• Seguimiento</text>
+                            <text x="750" y="270" class="module-text">• Asignación</text>
+                        </g>
+
+                        <!-- Data Flow -->
+                        <g>
+                            <text x="50" y="340" class="layer-label">Flujo de Datos:</text>
+
+                            <!-- Source Code -->
+                            <ellipse cx="100" cy="400" rx="50" ry="30" class="flow-source"/>
+                            <text x="70" y="410" class="flow-text">Código</text>
+
+                            <!-- Arrow -->
+                            <path d="M 150 400 L 220 400" class="flow-arrow"/>
+
+                            <!-- Analysis -->
+                            <rect x="220" y="370" width="120" height="60" class="flow-process"/>
+                            <text x="280" y="410" class="flow-text">Análisis</text>
+
+                            <!-- Arrow -->
+                            <path d="M 340 400 L 410 400" class="flow-arrow"/>
+
+                            <!-- Detection -->
+                            <polygon points="460,370 510,400 460,430" class="flow-process"/>
+                            <text x="420" y="410" class="flow-text">Detección</text>
+
+                            <!-- Arrow -->
+                            <path d="M 510 400 L 580 400" class="flow-arrow"/>
+
+                            <!-- Storage -->
+                            <rect x="580" y="370" width="120" height="60" class="flow-storage"/>
+                            <text x="635" y="410" class="flow-text">Base Datos</text>
+
+                            <!-- Arrow -->
+                            <path d="M 700 400 L 770 400" class="flow-arrow"/>
+
+                            <!-- Dashboard -->
+                            <rect x="770" y="370" width="120" height="60" class="flow-dashboard"/>
+                            <text x="820" y="410" class="flow-text">Dashboard</text>
+                        </g>
+
+                        <!-- Technology Stack -->
+                        <g>
+                            <text x="50" y="480" class="layer-label">Stack Tecnológico:</text>
+                            <text x="50" y="510" class="tech-text">Frontend: React 18 | Vite | TypeScript | Tailwind CSS | Framer Motion</text>
+                            <text x="50" y="530" class="tech-text">Backend: Node.js | Express | Prisma | PostgreSQL | Socket.io</text>
+                            <text x="50" y="550" class="tech-text">Analysis: AST Parsing | Pattern Detection | Risk Scoring | ML Models</text>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pipeline de Análisis -->
+    <section id="pipeline" class="pipeline">
+        <div class="container">
+            <h2 class="section-title">Pipeline de Análisis</h2>
+            <p class="section-subtitle">Proceso paso a paso de detección y evaluación</p>
+
+            <div class="pipeline-steps">
+                <div class="step step-1">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Ingesta de Código</h3>
+                        <p>Recepción de archivos fuente y análisis de estructura</p>
+                    </div>
+                </div>
+
+                <div class="step step-2">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Parsing & AST</h3>
+                        <p>Generación de árbol sintáctico para análisis profundo</p>
+                    </div>
+                </div>
+
+                <div class="step step-3">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Detección de Patrones</h3>
+                        <p>Búsqueda de vulnerabilidades conocidas y patrones maliciosos</p>
+                    </div>
+                </div>
+
+                <div class="step step-4">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Evaluación de Riesgo</h3>
+                        <p>Puntuación de severidad (CRITICAL, HIGH, MEDIUM, LOW)</p>
+                    </div>
+                </div>
+
+                <div class="step step-5">
+                    <div class="step-number">5</div>
+                    <div class="step-content">
+                        <h3>Generación de Reporte</h3>
+                        <p>Documentación con hallazgos, código y soluciones</p>
+                    </div>
+                </div>
+
+                <div class="step step-6">
+                    <div class="step-number">6</div>
+                    <div class="step-content">
+                        <h3>Trazabilidad</h3>
+                        <p>Registro de cambios, seguimiento y resolución de hallazgos</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pipeline-diagram">
+                <svg viewBox="0 0 1000 400" class="pipeline-svg">
+                    <!-- Main flow -->
+                    <defs>
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#F97316"/>
+                        </marker>
+                    </defs>
+
+                    <!-- Step 1: Ingesta -->
+                    <rect x="20" y="50" width="120" height="80" class="pipeline-box"/>
+                    <text x="80" y="95" class="pipeline-text">Ingesta</text>
+
+                    <!-- Arrow -->
+                    <line x1="140" y1="90" x2="200" y2="90" class="pipeline-arrow"/>
+
+                    <!-- Step 2: Parser -->
+                    <rect x="200" y="50" width="120" height="80" class="pipeline-box"/>
+                    <text x="260" y="95" class="pipeline-text">Parser</text>
+
+                    <!-- Arrow -->
+                    <line x1="320" y1="90" x2="380" y2="90" class="pipeline-arrow"/>
+
+                    <!-- Step 3: Patrones -->
+                    <rect x="380" y="50" width="120" height="80" class="pipeline-box"/>
+                    <text x="440" y="95" class="pipeline-text">Patrones</text>
+
+                    <!-- Arrow -->
+                    <line x1="500" y1="90" x2="560" y2="90" class="pipeline-arrow"/>
+
+                    <!-- Step 4: Riesgo -->
+                    <rect x="560" y="50" width="120" height="80" class="pipeline-box"/>
+                    <text x="620" y="95" class="pipeline-text">Riesgo</text>
+
+                    <!-- Arrow -->
+                    <line x1="680" y1="90" x2="740" y2="90" class="pipeline-arrow"/>
+
+                    <!-- Step 5: Reporte -->
+                    <rect x="740" y="50" width="120" height="80" class="pipeline-box"/>
+                    <text x="800" y="95" class="pipeline-text">Reporte</text>
+
+                    <!-- Feedback loop -->
+                    <path d="M 800 130 Q 400 250 80 130" class="pipeline-feedback"/>
+                    <text x="400" y="200" class="pipeline-feedback-text">Trazabilidad & Seguimiento</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Módulos Principales -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Módulos Principales</h2>
+
+            <div class="features-grid">
+                <!-- Amenazas -->
+                <div class="feature-card threat-card">
+                    <div class="feature-header threat">
+                        <span class="feature-icon">🎯</span>
+                        <h3>Análisis de Amenazas</h3>
+                    </div>
+                    <div class="feature-body">
+                        <h4>Identifica:</h4>
+                        <ul>
+                            <li>✅ Inyección SQL</li>
+                            <li>✅ XSS (Cross-Site Scripting)</li>
+                            <li>✅ Vulnerabilidades de Autenticación</li>
+                            <li>✅ Datos Sensibles Expuestos</li>
+                            <li>✅ Configuración Insegura</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Detalles:</h4>
+                        <ul>
+                            <li>📍 Ubicación exacta (archivo:línea)</li>
+                            <li>📄 Código vulnerable con contexto</li>
+                            <li>🎯 Código solución propuesto</li>
+                            <li>💡 Recomendaciones específicas</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Remediación -->
+                <div class="feature-card remediation-card">
+                    <div class="feature-header remediation">
+                        <span class="feature-icon">⚙️</span>
+                        <h3>Remediación</h3>
+                    </div>
+                    <div class="feature-body">
+                        <h4>Proporciona:</h4>
+                        <ul>
+                            <li>✅ Código solución inmediato</li>
+                            <li>✅ Pasos detallados de fix</li>
+                            <li>✅ Mejores prácticas</li>
+                            <li>✅ Validaciones necesarias</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Estados de Seguimiento:</h4>
+                        <ul>
+                            <li>🔴 Abierto</li>
+                            <li>⏳ En Curso</li>
+                            <li>✅ Resuelto</li>
+                            <li>🔒 Cerrado/FP</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Investigación Forense -->
+                <div class="feature-card forensic-card">
+                    <div class="feature-header forensic">
+                        <span class="feature-icon">🔍</span>
+                        <h3>Investigación Forense</h3>
+                    </div>
+                    <div class="feature-body">
+                        <h4>Proporciona:</h4>
+                        <ul>
+                            <li>✅ Timeline de cambios</li>
+                            <li>✅ Análisis de usuarios</li>
+                            <li>✅ Análisis de repositorios</li>
+                            <li>✅ Patrones de riesgo</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Vistas Disponibles:</h4>
+                        <ul>
+                            <li>📅 Timeline visual</li>
+                            <li>👤 Actividad por usuario</li>
+                            <li>📦 Distribución por repo</li>
+                            <li>⚠️ Eventos sospechosos</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Monitoreo de Incidentes -->
+                <div class="feature-card incident-card">
+                    <div class="feature-header incident">
+                        <span class="feature-icon">🔔</span>
+                        <h3>Monitoreo de Incidentes</h3>
+                    </div>
+                    <div class="feature-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Alertas críticas en tiempo real</li>
+                            <li>✅ Panel de seguimiento</li>
+                            <li>✅ Asignación de responsables</li>
+                            <li>✅ Documentación de acciones</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Panel Interactivo:</h4>
+                        <ul>
+                            <li>📊 Estado del incidente</li>
+                            <li>👥 Asignado a</li>
+                            <li>📝 Notas de seguimiento</li>
+                            <li>⏱️ Historial de cambios</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agentes IA -->
+    <section id="agentes" class="agentes">
+        <div class="container">
+            <h2 class="section-title">Agentes IA Autónomos</h2>
+            <p class="section-subtitle">Análisis inteligente con modelos de machine learning especializados</p>
+
+            <div class="agentes-grid">
+                <div class="agente-card">
+                    <div class="agente-header threat">
+                        <span class="agente-icon">🤖</span>
+                        <h3>Agente de Detección</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis de patrones conocidos</li>
+                            <li>✅ Detección de anomalías</li>
+                            <li>✅ Scoring automático de riesgo</li>
+                            <li>✅ Clasificación de vulnerabilidades</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🎯 Ejecución automática por webhook</li>
+                            <li>🔄 Análisis continuo cada 24h</li>
+                            <li>📊 Reportes automáticos por email</li>
+                            <li>⚡ Alertas en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header remediation">
+                        <span class="agente-icon">⚙️</span>
+                        <h3>Agente de Remediación</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Generación de soluciones</li>
+                            <li>✅ Análisis de impacto</li>
+                            <li>✅ Propuesta de parches</li>
+                            <li>✅ Validación de fixes</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🔧 Sugerencias automáticas</li>
+                            <li>💡 Mejores prácticas integradas</li>
+                            <li>🧪 Testing de soluciones</li>
+                            <li>📋 Documentación generada</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header forensic">
+                        <span class="agente-icon">🔬</span>
+                        <h3>Agente Forense</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis de cambios históricos</li>
+                            <li>✅ Detección de patrones de riesgo</li>
+                            <li>✅ Correlación de eventos</li>
+                            <li>✅ Investigación de usuarios</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🕐 Timeline automático de cambios</li>
+                            <li>👥 Análisis de comportamiento</li>
+                            <li>⚠️ Detección de anomalías</li>
+                            <li>📊 Reportes correlacionados</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header incident">
+                        <span class="agente-icon">🎯</span>
+                        <h3>Agente de Respuesta</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Monitoreo en tiempo real</li>
+                            <li>✅ Escalamiento automático</li>
+                            <li>✅ Gestión de incidentes</li>
+                            <li>✅ Seguimiento de resolución</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🚨 Alertas automáticas</li>
+                            <li>📍 Asignación inteligente</li>
+                            <li>⏱️ Recordatorios automáticos</li>
+                            <li>✓ Validación de cierre</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Modelos & Tecnología -->
+    <section id="modelos" class="modelos">
+        <div class="container">
+            <h2 class="section-title">Modelos & Tecnología</h2>
+            <p class="section-subtitle">Stack tecnológico y modelos de IA utilizados</p>
+
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h3>Frontend</h3>
+                    <ul class="tech-list">
+                        <li><strong>React 18</strong> - UI interactiva</li>
+                        <li><strong>TypeScript</strong> - Tipado seguro</li>
+                        <li><strong>Vite</strong> - Build ultrarrápido</li>
+                        <li><strong>Tailwind CSS</strong> - Estilos</li>
+                        <li><strong>Framer Motion</strong> - Animaciones</li>
+                        <li><strong>React Query</strong> - Data fetching</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h3>Backend</h3>
+                    <ul class="tech-list">
+                        <li><strong>Node.js 18+</strong> - Runtime</li>
+                        <li><strong>Express.js</strong> - Web framework</li>
+                        <li><strong>TypeScript</strong> - Tipado seguro</li>
+                        <li><strong>Prisma</strong> - ORM</li>
+                        <li><strong>PostgreSQL 14+</strong> - Base de datos</li>
+                        <li><strong>Redis</strong> - Cache</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h3>Análisis</h3>
+                    <ul class="tech-list">
+                        <li><strong>@babel/parser</strong> - JS parsing</li>
+                        <li><strong>acorn</strong> - AST walking</li>
+                        <li><strong>Regex + Custom</strong> - Pattern matching</li>
+                        <li><strong>ML Model</strong> - Risk evaluation</li>
+                        <li><strong>Git API</strong> - Forensics</li>
+                        <li><strong>OWASP DB</strong> - Vulnerabilities</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h3>Deployment</h3>
+                    <ul class="tech-list">
+                        <li><strong>Docker</strong> - Containerización</li>
+                        <li><strong>Docker Compose</strong> - Orquestación</li>
+                        <li><strong>GitHub Actions</strong> - CI/CD</li>
+                        <li><strong>Prometheus</strong> - Monitoreo</li>
+                        <li><strong>Grafana</strong> - Visualización</li>
+                        <li><strong>ELK Stack</strong> - Logging</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Estimaciones de Costos -->
+    <section id="costos" class="costos">
+        <div class="container">
+            <h2 class="section-title">Estimaciones de Costos</h2>
+            <p class="section-subtitle">Inversión inicial y costos operativos</p>
+
+            <div class="cost-table">
+                <div class="cost-row header">
+                    <div>Concepto</div>
+                    <div>Duración</div>
+                    <div>Costo (USD)</div>
+                    <div>Detalles</div>
+                </div>
+
+                <div class="cost-row development">
+                    <div><strong>Desarrollo</strong></div>
+                    <div>3 meses</div>
+                    <div><span class="cost-value">$24,000</span></div>
+                    <div style="font-size: 0.85rem;">4 personas × 3 meses × $50/h</div>
+                </div>
+
+                <div class="cost-row infrastructure">
+                    <div><strong>Infraestructura</strong></div>
+                    <div>Mensual</div>
+                    <div><span class="cost-value">$500</span></div>
+                    <div style="font-size: 0.85rem;">Servers + DB + Storage + Monitoring</div>
+                </div>
+
+                <div class="cost-row maintenance">
+                    <div><strong>Mantenimiento</strong></div>
+                    <div>Anual</div>
+                    <div><span class="cost-value">$6,000</span></div>
+                    <div style="font-size: 0.85rem;">Support 24/7 + Updates + Features</div>
+                </div>
+
+                <div class="cost-row roi">
+                    <div><strong>ROI Esperado</strong></div>
+                    <div>6 meses</div>
+                    <div><span class="cost-value">$150K+</span></div>
+                    <div style="font-size: 0.85rem;">Prevención de breaches + tiempo ahorrado</div>
+                </div>
+            </div>
+
+            <div class="cost-note">
+                <p>💡 <strong>Nota importante:</strong> Estas estimaciones son referenciales y basadas en mercado actual (2024). Los costos pueden variar según región, equipo y requisitos específicos.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Arquitectura Docker & Deployment -->
+    <section id="deployment" class="deployment">
+        <div class="container">
+            <h2 class="section-title">Arquitectura Docker & Deployment</h2>
+            <p class="section-subtitle">Solución containerizada y escalable</p>
+
+            <div class="deployment-grid">
+                <div class="deployment-card">
+                    <h3>🐳 Contenedores</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Frontend:</span> Node 18 + React</div>
+                        <div class="code-line"><span class="keyword">Backend:</span> Node 18 + Express</div>
+                        <div class="code-line"><span class="keyword">Database:</span> PostgreSQL 14</div>
+                        <div class="code-line"><span class="keyword">Cache:</span> Redis 7</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>⚙️ Orquestación</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Local:</span> Docker Compose</div>
+                        <div class="code-line"><span class="keyword">Production:</span> Docker Swarm / K8s</div>
+                        <div class="code-line"><span class="keyword">LB:</span> Nginx / HAProxy</div>
+                        <div class="code-line"><span class="keyword">Scaling:</span> Horizontal auto</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>📊 Monitoreo</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Metrics:</span> Prometheus</div>
+                        <div class="code-line"><span class="keyword">Dashboard:</span> Grafana</div>
+                        <div class="code-line"><span class="keyword">Logs:</span> ELK Stack</div>
+                        <div class="code-line"><span class="keyword">Alerts:</span> PagerDuty</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>🚀 CI/CD</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Pipeline:</span> GitHub Actions</div>
+                        <div class="code-line"><span class="keyword">Build:</span> Multi-stage Docker</div>
+                        <div class="code-line"><span class="keyword">Registry:</span> Docker Hub</div>
+                        <div class="code-line"><span class="keyword">Deploy:</span> Automated</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="deployment-diagram" style="margin-top: 40px;">
+                <h3>Flujo de Deployment</h3>
+                <div class="code-block" style="margin-top: 20px;">
+                    <div class="code-comment">-- Local Development</div>
+                    <div class="code-line">$ docker-compose up</div>
+                    <div class="code-line"># Servidor en http://localhost:3000</div>
+
+                    <div style="margin-top: 15px;" class="code-comment">-- Production Build</div>
+                    <div class="code-line">$ docker build -t scr-agent/app:v1.0.0 .</div>
+                    <div class="code-line">$ docker push docker-registry/scr-agent:v1.0.0</div>
+
+                    <div style="margin-top: 15px;" class="code-comment">-- Expose with Ngrok</div>
+                    <div class="code-line">$ ngrok http 3000</div>
+                    <div class="code-line"># URL pública: https://[random].ngrok.io</div>
+
+                    <div style="margin-top: 15px;" class="code-comment">-- Kubernetes Deploy</div>
+                    <div class="code-line">$ kubectl apply -f deployment.yaml</div>
+                    <div class="code-line">$ kubectl scale deployment scr-agent --replicas=10</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trazabilidad y Seguimiento -->
+    <section id="trazabilidad" class="trazabilidad">
+        <div class="container">
+            <h2 class="section-title">Trazabilidad y Seguimiento</h2>
+            <p class="section-subtitle">Sistema completo de rastreo desde detección hasta resolución</p>
+
+            <div class="trazabilidad-diagram">
+                <svg viewBox="0 0 1200 500" class="trazabilidad-svg">
+                    <!-- Timeline vertical -->
+                    <line x1="100" y1="50" x2="100" y2="450" class="timeline-line"/>
+
+                    <!-- Detección -->
+                    <circle cx="100" cy="80" r="20" class="timeline-point detection"/>
+                    <rect x="130" y="60" width="250" height="40" class="timeline-box"/>
+                    <text x="255" y="87" class="timeline-text">🔍 Detección</text>
+
+                    <!-- Información -->
+                    <rect x="400" y="60" width="700" height="80" class="timeline-info"/>
+                    <text x="420" y="80" class="timeline-info-title">Información Capturada:</text>
+                    <text x="420" y="100" class="timeline-info-text">• Tipo de vulnerabilidad | • Severidad | • Ubicación exacta</text>
+                    <text x="420" y="120" class="timeline-info-text">• Código vulnerable | • Confianza del análisis | • Timestamp</text>
+
+                    <!-- Análisis -->
+                    <circle cx="100" cy="170" r="20" class="timeline-point analysis"/>
+                    <rect x="130" y="150" width="250" height="40" class="timeline-box"/>
+                    <text x="255" y="177" class="timeline-text">📊 Análisis</text>
+
+                    <!-- Información -->
+                    <rect x="400" y="150" width="700" height="80" class="timeline-info"/>
+                    <text x="420" y="170" class="timeline-info-title">Análisis Profundo:</text>
+                    <text x="420" y="190" class="timeline-info-text">• Patrón detectado | • Impacto potencial | • Solución propuesta</text>
+                    <text x="420" y="210" class="timeline-info-text">• Recomendaciones | • Referencias de OWASP</text>
+
+                    <!-- Generación de Reporte -->
+                    <circle cx="100" cy="260" r="20" class="timeline-point report"/>
+                    <rect x="130" y="240" width="250" height="40" class="timeline-box"/>
+                    <text x="255" y="267" class="timeline-text">📄 Reporte</text>
+
+                    <!-- Información -->
+                    <rect x="400" y="240" width="700" height="80" class="timeline-info"/>
+                    <text x="420" y="260" class="timeline-info-title">Documentación Completa:</text>
+                    <text x="420" y="280" class="timeline-info-text">• Reporte completo PDF/JSON | • Código vulnerable destacado</text>
+                    <text x="420" y="300" class="timeline-info-text">• Solución paso a paso | • Evidencia visual</text>
+
+                    <!-- Remediación -->
+                    <circle cx="100" cy="350" r="20" class="timeline-point remediation"/>
+                    <rect x="130" y="330" width="250" height="40" class="timeline-box"/>
+                    <text x="255" y="357" class="timeline-text">⚙️ Remediación</text>
+
+                    <!-- Información -->
+                    <rect x="400" y="330" width="700" height="80" class="timeline-info"/>
+                    <text x="420" y="350" class="timeline-info-title">Seguimiento de Estado:</text>
+                    <text x="420" y="370" class="timeline-info-text">• Estado: Abierto → En Curso → Resuelto → Cerrado | • Responsable asignado</text>
+                    <text x="420" y="390" class="timeline-info-text">• Notas de progreso | • Fecha de resolución</text>
+
+                    <!-- Cierre -->
+                    <circle cx="100" cy="440" r="20" class="timeline-point closure"/>
+                    <rect x="130" y="420" width="250" height="40" class="timeline-box"/>
+                    <text x="255" y="447" class="timeline-text">✅ Cierre</text>
+
+                    <!-- Información -->
+                    <rect x="400" y="420" width="700" height="60" class="timeline-info"/>
+                    <text x="420" y="440" class="timeline-info-title">Verificación Final:</text>
+                    <text x="420" y="460" class="timeline-info-text">• Validación de fix | • Retest de vulnerabilidad | • Firma de aceptación</text>
+                </svg>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Live -->
+    <section id="dashboard" class="dashboard-section">
+        <div class="container">
+            <h2 class="section-title">Dashboard en Vivo</h2>
+            <p class="section-subtitle">Sistema integrado de monitoreo y gestión</p>
+
+            <div class="dashboard-preview">
+                <div class="dashboard-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-logo">SCR Agent Dashboard</div>
+                        <div class="mockup-tabs">
+                            <span class="tab active">Monitor Central</span>
+                            <span class="tab">Incidentes</span>
+                            <span class="tab">Amenazas</span>
+                            <span class="tab">Remediación</span>
+                            <span class="tab">Forense</span>
+                        </div>
+                    </div>
+
+                    <div class="mockup-content">
+                        <div class="dashboard-grid">
+                            <div class="dashboard-card stat-card">
+                                <div class="card-label">Hallazgos Detectados</div>
+                                <div class="card-value">42</div>
+                                <div class="card-trend">↑ 8 nuevos hoy</div>
+                            </div>
+                            <div class="dashboard-card stat-card">
+                                <div class="card-label">Críticos</div>
+                                <div class="card-value threat">6</div>
+                                <div class="card-trend warning">Atención inmediata</div>
+                            </div>
+                            <div class="dashboard-card stat-card">
+                                <div class="card-label">Resueltos</div>
+                                <div class="card-value success">28</div>
+                                <div class="card-trend">67% completados</div>
+                            </div>
+                            <div class="dashboard-card stat-card">
+                                <div class="card-label">En Seguimiento</div>
+                                <div class="card-value">8</div>
+                                <div class="card-trend">En remediación</div>
+                            </div>
+                        </div>
+
+                        <div class="dashboard-row">
+                            <div class="dashboard-chart">
+                                <h4>Hallazgos por Severidad</h4>
+                                <div class="chart-bars">
+                                    <div class="bar critical" style="height: 40px;"><span>6</span></div>
+                                    <div class="bar high" style="height: 25px;"><span>12</span></div>
+                                    <div class="bar medium" style="height: 18px;"><span>14</span></div>
+                                    <div class="bar low" style="height: 10px;"><span>10</span></div>
+                                </div>
+                            </div>
+
+                            <div class="dashboard-incidents">
+                                <h4>Incidentes Recientes</h4>
+                                <div class="incident-item critical">
+                                    <span class="incident-name">SQL Injection en login.js</span>
+                                    <span class="incident-time">Hace 2h</span>
+                                </div>
+                                <div class="incident-item critical">
+                                    <span class="incident-name">XSS en formulario contacto</span>
+                                    <span class="incident-time">Hace 4h</span>
+                                </div>
+                                <div class="incident-item high">
+                                    <span class="incident-name">Config Insegura en .env</span>
+                                    <span class="incident-time">Hace 6h</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Conclusión -->
+    <section class="conclusion">
+        <div class="container">
+            <h2 class="section-title">Conclusión</h2>
+            <div class="conclusion-content">
+                <p>
+                    SCR Agent es una solución integral de auditoría de código que combina análisis estático avanzado,
+                    investigación forense y seguimiento automático de remediciones. Diseñado para empresas que requieren
+                    máxima visibilidad y control sobre la seguridad de su código.
+                </p>
+                <div class="benefits">
+                    <div class="benefit">
+                        <span class="benefit-icon">⚡</span>
+                        <span>Análisis en tiempo real</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">🎯</span>
+                        <span>Alta precisión</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">📊</span>
+                        <span>Trazabilidad completa</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">🔒</span>
+                        <span>Seguridad garantizada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 SCR Agent - Auditoría Inteligente de Código</p>
+            <p>Tecnología de vanguardia en seguridad de aplicaciones</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/diagrams.js"></script>
+</body>
+</html>

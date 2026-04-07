@@ -1,0 +1,75 @@
+📦 ESTRUCTURA COMPLETA PRESENTATION
+
+presentation/
+├── index.html                    # Página principal con todas las secciones
+├── server.js                     # Servidor Node.js para servir la presentación
+├── Dockerfile                    # Imagen Docker para la presentación
+├── docker-compose.yml            # Compose para ejecutar localmente
+├── .dockerignore                 # Archivos a ignorar en Docker
+├── README.md                     # Documentación de uso
+├── package.json                  # Dependencias de Node.js
+│
+├── css/
+│   ├── main.css                 # Estilos principales
+│   ├── diagrams.css             # Estilos para diagramas
+│   └── responsive.css           # Estilos responsivos
+│
+├── js/
+│   ├── main.js                  # JavaScript principal (GSAP, animaciones)
+│   ├── diagrams.js              # Scripts para diagramas
+│   └── animations.js            # Animaciones adicionales
+│
+└── assets/
+    ├── data/
+    │   ├── stats.json           # Datos reales + ficticios
+    │   ├── models.json          # Descripción de modelos
+    │   └── architecture.json    # Arquitectura del sistema
+    │
+    ├── screenshots/             # Screenshots del dashboard real
+    │   ├── dashboard.png
+    │   ├── amenazas.png
+    │   ├── remediacion.png
+    │   └── forense.png
+    │
+    ├── mockups/                 # Mockups de interfaces
+    │   ├── threat-panel.png
+    │   ├── forensic-timeline.png
+    │   └── incident-detail.png
+    │
+    ├── logos/
+    │   └── scr-agent-logo.svg
+    │
+    └── icons/
+        ├── threat.svg
+        ├── remediation.svg
+        ├── forensic.svg
+        └── incident.svg
+
+📋 SECCIONES DEL HTML
+
+1. Navigation Bar
+2. Hero Section
+3. Problem & Solution
+4. Architecture
+5. Pipeline de Análisis
+6. Modules Principales
+7. ✅ [NUEVO] Agentes IA
+8. ✅ [NUEVO] Modelos & Tecnología
+9. ✅ [NUEVO] Estimaciones de Costos
+10. ✅ [NUEVO] Arquitectura Docker/Deployment
+11. Trazabilidad y Seguimiento
+12. Dashboard Live
+13. Conclusión
+14. Footer
+
+🚀 DEPLOYMENT
+
+Local:
+  docker-compose up
+
+Production:
+  docker build -t scr-agent/presentation .
+  docker run -p 3000:3000 scr-agent/presentation
+
+Ngrok:
+  ngrok http 3000

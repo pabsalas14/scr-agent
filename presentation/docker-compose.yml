@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  presentation:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: scr-agent-presentation
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    restart: unless-stopped
+    volumes:
+      - ./assets:/app/assets:ro
+    networks:
+      - scr-agent
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  scr-agent:
+    driver: bridge

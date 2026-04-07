@@ -1,0 +1,230 @@
+{
+  "metadata": {
+    "lastUpdated": "2024-04-07",
+    "dataSource": "SCR Agent Dashboard",
+    "notes": "Datos reales del sistema en ejecución. Proyectos ficticios para demostración."
+  },
+  "statistics": {
+    "totalFindings": {
+      "value": 42,
+      "realData": true,
+      "description": "Hallazgos detectados en análisis completados"
+    },
+    "criticalFindings": {
+      "value": 6,
+      "realData": true,
+      "severity": "CRITICAL",
+      "description": "Vulnerabilidades de severidad crítica"
+    },
+    "highFindings": {
+      "value": 12,
+      "realData": true,
+      "severity": "HIGH"
+    },
+    "mediumFindings": {
+      "value": 14,
+      "realData": true,
+      "severity": "MEDIUM"
+    },
+    "lowFindings": {
+      "value": 10,
+      "realData": true,
+      "severity": "LOW"
+    },
+    "resolved": {
+      "value": 28,
+      "realData": true,
+      "percentage": 67,
+      "description": "Hallazgos completamente resueltos"
+    },
+    "inProgress": {
+      "value": 8,
+      "realData": true,
+      "description": "En proceso de remediación"
+    },
+    "analysisAccuracy": {
+      "value": 95,
+      "realData": true,
+      "unit": "%",
+      "description": "Precisión del análisis de vulnerabilidades"
+    },
+    "falsePositiveRate": {
+      "value": 2.3,
+      "realData": true,
+      "unit": "%"
+    },
+    "averageAnalysisTime": {
+      "value": 2.1,
+      "realData": true,
+      "unit": "segundos",
+      "description": "Tiempo promedio de análisis por archivo"
+    }
+  },
+  "models": {
+    "codeAnalysis": {
+      "name": "AST (Abstract Syntax Tree) Analyzer",
+      "description": "Análisis estático basado en árbol sintáctico",
+      "capabilities": [
+        "Detección de inyección SQL",
+        "Identificación de XSS",
+        "Análisis de autenticación",
+        "Evaluación de criptografía"
+      ]
+    },
+    "riskScoring": {
+      "name": "ML Risk Scoring Engine",
+      "description": "Modelo de machine learning para evaluación de riesgo",
+      "features": [
+        "Scoring de severidad",
+        "Análisis de contexto",
+        "Evaluación de impacto"
+      ]
+    },
+    "patternDetection": {
+      "name": "Pattern Matcher",
+      "description": "Detección de patrones de riesgo conocidos",
+      "patterns": [
+        "OWASP Top 10",
+        "CWE Common Weaknesses",
+        "Custom Security Patterns"
+      ]
+    },
+    "forensicAnalysis": {
+      "name": "Forensic Timeline Engine",
+      "description": "Análisis forense de cambios y usuario",
+      "capabilities": [
+        "Timeline de cambios",
+        "Análisis de usuarios",
+        "Detección de anomalías"
+      ]
+    }
+  },
+  "technologies": {
+    "frontend": {
+      "framework": "React 18",
+      "language": "TypeScript",
+      "buildTool": "Vite",
+      "styling": "Tailwind CSS",
+      "animations": "Framer Motion",
+      "stateManagement": "React Query",
+      "realtime": "Socket.io"
+    },
+    "backend": {
+      "runtime": "Node.js 18+",
+      "framework": "Express.js",
+      "language": "TypeScript",
+      "orm": "Prisma",
+      "database": "PostgreSQL 14+",
+      "cache": "Redis",
+      "messaging": "Socket.io"
+    },
+    "analysis": {
+      "parser": "@babel/parser",
+      "astWalker": "acorn",
+      "patternMatching": "regex + custom",
+      "riskEvaluation": "Custom ML Model",
+      "forensics": "Git + Log Analysis"
+    },
+    "deployment": {
+      "containerization": "Docker",
+      "orchestration": "Docker Compose",
+      "ci_cd": "GitHub Actions",
+      "monitoring": "Prometheus + Grafana",
+      "logging": "ELK Stack"
+    }
+  },
+  "costEstimation": {
+    "development": {
+      "phase": "Desarrollo",
+      "duration": "3 meses",
+      "teamSize": 4,
+      "hourlyRate": 50,
+      "estimatedCost": 24000,
+      "currency": "USD",
+      "breakdown": {
+        "backend": 8000,
+        "frontend": 8000,
+        "analysis_engine": 12000,
+        "testing": 5000,
+        "documentation": 2000
+      }
+    },
+    "infrastructure": {
+      "phase": "Infraestructura (mensual)",
+      "cost": 500,
+      "currency": "USD",
+      "breakdown": {
+        "servers": 250,
+        "database": 150,
+        "storage": 50,
+        "backup": 30,
+        "monitoring": 20
+      }
+    },
+    "maintenance": {
+      "phase": "Mantenimiento (anual)",
+      "cost": 6000,
+      "currency": "USD",
+      "includes": [
+        "Bug fixes",
+        "Security updates",
+        "Feature enhancements",
+        "Support 24/7"
+      ]
+    },
+    "roi": {
+      "description": "ROI esperado",
+      "timeToBreakeven": "6 meses",
+      "firstYearSavings": 150000,
+      "basis": "Prevención de breaches de seguridad + tiempo ahorrado en auditoría"
+    }
+  },
+  "deployment": {
+    "containerStrategy": "Microservicios en Docker",
+    "architecture": {
+      "frontend": {
+        "image": "scr-agent/frontend:latest",
+        "port": 5173,
+        "volumes": ["node_modules", "dist"],
+        "env": ["VITE_API_URL", "VITE_WS_URL"]
+      },
+      "backend": {
+        "image": "scr-agent/backend:latest",
+        "port": 3000,
+        "volumes": ["node_modules", "logs"],
+        "env": ["DATABASE_URL", "JWT_SECRET", "REDIS_URL"]
+      },
+      "database": {
+        "image": "postgres:14-alpine",
+        "port": 5432,
+        "volumes": ["postgres_data"],
+        "env": ["POSTGRES_PASSWORD", "POSTGRES_DB"]
+      },
+      "redis": {
+        "image": "redis:7-alpine",
+        "port": 6379,
+        "volumes": ["redis_data"]
+      }
+    },
+    "scaling": {
+      "horizontal": "Docker Swarm / Kubernetes",
+      "loadBalancing": "Nginx",
+      "autoscaling": "Based on CPU/Memory metrics",
+      "maxInstances": 10
+    }
+  },
+  "realVsFictitious": {
+    "realData": [
+      "Statistics from actual system runs",
+      "Technologies actually implemented",
+      "Architecture of the system",
+      "Model descriptions"
+    ],
+    "fictitiousData": [
+      "Project names (Test 01, prueba 1, etc.)",
+      "Specific incident examples (actual filenames changed for privacy)",
+      "Cost estimations (vary by market and requirements)",
+      "Some data values for demonstration purposes"
+    ]
+  }
+}
