@@ -458,4 +458,49 @@ router.get('/analysis/:analysisId/stats', async (req: Request, res: Response) =>
   }
 });
 
+/**
+ * GET /api/v1/findings/analysis/:analysisId/export
+ * Export findings as CSV
+ */
+router.get('/analysis/:analysisId/export', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const findings = await findingsService.getFindings(analysisId!);
+    const rows = Array.isArray(findings) ? findings : (findings as { data: unknown[] }).data ?? [];
+
+    const escape = (v: unknown) => {
+      const s = String(v ?? '').replace(/"/g, '""');
+      return `"${s}"`;
+    };
+
+    const headers = ['ID', 'Archivo', 'Función', 'Líneas', 'Severidad', 'Tipo', 'Confianza', 'Estado', 'Por qué sospechoso'];
+    const lines: string[] = [headers.map(escape).join(',')];
+
+    for (const f of rows as Record<string, unknown>[]) {
+      const currentStatus =
+        Array.isArray(f['statusHistory']) && (f['statusHistory'] as { status: string }[]).length > 0
+          ? (f['statusHistory'] as { status: string }[])[0]!.status
+          : 'DETECTED';
+      lines.push([
+        f['id'],
+        f['file'],
+        f['function'] ?? '',
+        f['lineRange'] ?? '',
+        f['severity'],
+        f['riskType'],
+        typeof f['confidence'] === 'number' ? (f['confidence'] * 100).toFixed(0) + '%' : '',
+        currentStatus,
+        f['whySuspicious'],
+      ].map(escape).join(','));
+    }
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="findings-${analysisId}.csv"`);
+    res.send('\uFEFF' + lines.join('\r\n'));
+  } catch (error) {
+    logger.error('Error exporting findings CSV:', error);
+    res.status(500).json({ success: false, error: 'Error exporting findings' });
+  }
+});
+
 export default router;

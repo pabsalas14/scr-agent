@@ -27,11 +27,12 @@ export function useAuth() {
     if (!token) return null;
     try {
       const payload = JSON.parse(atob(token.split('.')[1] ?? ''));
+      if (payload.exp && payload.exp * 1000 < Date.now()) return null;
       return {
         id: payload.sub || payload.userId || payload.id,
         email: payload.email,
         name: payload.name,
-        role: payload.role,
+        role: payload.role ?? 'VIEWER',
       };
     } catch {
       return null;
@@ -53,5 +54,5 @@ export function useAuth() {
     }
   }
 
-  return { getToken, setToken, clearToken, isAuthenticated, user };
+  return { getToken, setToken, clearToken, isAuthenticated, user, getUser };
 }

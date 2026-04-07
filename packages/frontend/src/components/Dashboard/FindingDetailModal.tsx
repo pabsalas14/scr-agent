@@ -21,6 +21,7 @@ import { Finding, FindingStatus, User as IUser } from '../../types/findings';
 import { findingsService } from '../../services/findings.service';
 import { useToast } from '../../hooks/useToast';
 import { useSocketEvents } from '../../hooks/useSocketEvents';
+import { useAuth } from '../../hooks/useAuth';
 import CommentThread from './CommentThread';
 
 interface FindingDetailModalProps {
@@ -68,6 +69,8 @@ export default function FindingDetailModal({
   const [isUpdating, setIsUpdating] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const toast = useToast();
+  const { user: currentUser } = useAuth();
+  const isViewer = currentUser?.role === 'VIEWER';
 
   // Listen to socket events for this specific finding
   useSocketEvents({
@@ -332,7 +335,8 @@ export default function FindingDetailModal({
             <select
               value={selectedAnalyst || ''}
               onChange={(e) => setSelectedAnalyst(e.target.value || null)}
-              className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50"
+              disabled={isViewer}
+              className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="">Sin asignar</option>
               {analysts.map((analyst) => (
@@ -343,9 +347,10 @@ export default function FindingDetailModal({
             </select>
             <Button
               onClick={handleAssign}
-              disabled={isUpdating || !selectedAnalyst}
+              disabled={isUpdating || !selectedAnalyst || isViewer}
               isLoading={isUpdating}
               className="w-full"
+              title={isViewer ? 'Solo lectura — rol VIEWER' : undefined}
             >
               Asignar
             </Button>
@@ -353,7 +358,7 @@ export default function FindingDetailModal({
         </ExpandableSection>
 
         {/* Status Transition */}
-        {availableTransitions.length > 0 && (
+        {availableTransitions.length > 0 && !isViewer && (
           <ExpandableSection title="Cambiar Estado" icon={AlertCircle} id="transition">
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">

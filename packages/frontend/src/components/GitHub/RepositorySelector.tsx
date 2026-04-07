@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, GitBranch, Lock, Star, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import { Search, GitBranch, Lock, Star, CheckCircle, AlertCircle, ChevronDown, Link } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 
 interface Repository {
@@ -34,10 +34,11 @@ interface RepositorySelectorProps {
   onSelect: (repo: Repository) => void;
   onBranchSelect?: (branch: string) => void;
   onValidationChange?: (isValid: boolean, error?: string) => void;
+  onManualUrl?: (url: string) => void;
   isLoading?: boolean;
   selectedRepo?: Repository | null;
   selectedBranch?: string | null;
-  hideBranchSelector?: boolean; // New prop to control branch visibility
+  hideBranchSelector?: boolean;
 }
 
 type ValidationState = 'idle' | 'validating' | 'valid' | 'error';
@@ -46,10 +47,11 @@ export default function RepositorySelector({
   onSelect,
   onBranchSelect,
   onValidationChange,
+  onManualUrl,
   isLoading = false,
   selectedRepo = null,
   selectedBranch = null,
-  hideBranchSelector = false, // Default to false
+  hideBranchSelector = false,
 }: RepositorySelectorProps) {
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -57,6 +59,8 @@ export default function RepositorySelector({
   const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [validationError, setValidationError] = useState<string>('');
   const [showBranches, setShowBranches] = useState(false);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualUrl, setManualUrl] = useState('');
 
   /**
    * Cargar repositorios del usuario desde GitHub
@@ -148,12 +152,52 @@ export default function RepositorySelector({
     setValidationError('');
   };
 
-  if (reposError) {
+  if (reposError || manualMode) {
     return (
-      <div className="rounded-lg bg-red-900/20 border border-red-600/30 p-4">
-        <p className="text-red-400 text-sm">
-          Error cargando repositorios. Asegúrate de haber configurado tu GitHub token en Settings.
-        </p>
+      <div className="space-y-3">
+        {reposError && !manualMode && (
+          <div className="rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 p-3 text-xs text-[#EF4444]">
+            Error cargando repositorios. Asegúrate de haber configurado tu GitHub token en Configuración.
+          </div>
+        )}
+        <div className="space-y-2">
+          <label className="text-xs text-[#6B7280] flex items-center gap-1.5">
+            <Link className="w-3 h-3" /> URL del repositorio
+          </label>
+          <input
+            type="url"
+            placeholder="https://github.com/owner/repo"
+            value={manualUrl}
+            onChange={(e) => {
+              setManualUrl(e.target.value);
+              onManualUrl?.(e.target.value);
+            }}
+            className="w-full px-3 py-2.5 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:outline-none transition-all"
+          />
+          {manualUrl && (
+            <p className="text-xs text-[#22C55E] flex items-center gap-1">
+              <CheckCircle className="w-3 h-3" /> URL ingresada — puedes continuar
+            </p>
+          )}
+        </div>
+        {!manualMode && (
+          <button
+            type="button"
+            onClick={() => setManualMode(true)}
+            className="text-xs text-[#F97316] hover:text-[#EA6D00] transition-colors"
+          >
+            Ingresar URL manualmente →
+          </button>
+        )}
+        {manualMode && reposError === null && (
+          <button
+            type="button"
+            onClick={() => setManualMode(false)}
+            className="text-xs text-[#6B7280] hover:text-white transition-colors"
+          >
+            ← Seleccionar desde GitHub
+          </button>
+        )}
       </div>
     );
   }

@@ -273,7 +273,7 @@ router.post('/:analysisId/retry', async (req: Request, res: Response) => {
       return;
     }
 
-    if (analysis.status !== 'FAILED' && analysis.status !== 'ERROR') {
+    if (analysis.status !== 'FAILED') {
       res.status(400).json({
         success: false,
         error: 'Solo se pueden reintentar análisis fallidos',
@@ -286,7 +286,7 @@ router.post('/:analysisId/retry', async (req: Request, res: Response) => {
       data: { status: 'PENDING', progress: 0, errorMessage: null, completedAt: null },
     });
 
-    enqueueAnalysis(analysisId, analysis.projectId);
+    enqueueAnalysis(analysisId!, analysis.projectId);
     logger.info(`Analysis ${analysisId} re-enqueued for retry`);
 
     res.json({ success: true, data: updated });
