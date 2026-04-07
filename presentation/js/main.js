@@ -296,6 +296,32 @@ function showComponentTab(tabName) {
   event.target.classList.add('active');
 }
 
+// Architecture 3D Layer Details
+function showLayerDetails(layer) {
+  const infoBox = document.getElementById('arch-info');
+  const details = {
+    client: {
+      title: '🖥️ Capa Cliente',
+      desc: 'Interfaz de usuario responsiva con Dashboard en tiempo real. React 18 con TypeScript, Vite para build, Tailwind CSS y WebSockets para actualizaciones instantáneas.'
+    },
+    api: {
+      title: '🌐 API Gateway',
+      desc: 'Orquestador de servicios. Express.js con Node.js, REST API completa, autenticación JWT, rate limiting y webhooks para integraciones externas.'
+    },
+    engine: {
+      title: '🧠 Engine IA',
+      desc: 'Núcleo de análisis inteligente. AST parsing para análisis sintáctico, pattern detection para 200+ vulnerabilidades, ML models para risk scoring y flow analysis para trazado de datos.'
+    },
+    database: {
+      title: '💾 Capa de Datos',
+      desc: 'Almacenamiento escalable. PostgreSQL para datos transaccionales, Redis para caché en memoria y Elasticsearch para búsqueda ultrarrápida de hallazgos.'
+    }
+  };
+
+  const detail = details[layer] || details.client;
+  infoBox.innerHTML = `<h4>${detail.title}</h4><p>${detail.desc}</p>`;
+}
+
 // Report Tabs Navigation
 document.addEventListener('DOMContentLoaded', () => {
   const reportTabs = document.querySelectorAll('.report-tab');

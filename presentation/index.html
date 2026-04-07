@@ -103,9 +103,50 @@
     <section id="arquitectura" class="arquitectura">
         <div class="container">
             <h2 class="section-title">Arquitectura del Sistema</h2>
-            <p class="section-subtitle">Diseño escalable de componentes y flujo de análisis inteligente</p>
+            <p class="section-subtitle">Sistema escalable con 4 capas integradas - Hover para ver detalles</p>
 
-            <!-- Architecture Layers -->
+            <!-- 3D Architecture Diagram -->
+            <div class="arch-3d-container">
+                <div class="arch-3d-scene">
+                    <!-- Layer 1: Client -->
+                    <div class="arch-3d-layer layer-1" onclick="showLayerDetails('client')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🖥️ Cliente</div>
+                            <div class="layer-tech">React • TypeScript • WebSockets</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 2: API -->
+                    <div class="arch-3d-layer layer-2" onclick="showLayerDetails('api')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🌐 API Gateway</div>
+                            <div class="layer-tech">Node.js • Express • REST</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 3: Engine -->
+                    <div class="arch-3d-layer layer-3" onclick="showLayerDetails('engine')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🧠 Engine IA</div>
+                            <div class="layer-tech">AST • Patterns • ML Models</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 4: Database -->
+                    <div class="arch-3d-layer layer-4" onclick="showLayerDetails('database')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">💾 Datos</div>
+                            <div class="layer-tech">PostgreSQL • Redis • Elasticsearch</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="arch-3d-info" id="arch-info">
+                    <h4>👆 Clickea en cualquier capa para ver detalles</h4>
+                    <p>La arquitectura está diseñada para procesar código en 4 etapas: recepción, validación, análisis profundo y almacenamiento con búsqueda ultrarrápida.</p>
+                </div>
+            </div>
+
+            <!-- Architecture Layers (Original) -->
             <div class="arch-layers">
                 <!-- Client Layer -->
                 <div class="arch-layer client-layer">

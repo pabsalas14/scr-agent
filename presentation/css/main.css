@@ -331,6 +331,119 @@ section:nth-child(even) {
 
 /* Diagrams */
 .diagram-container,
+/* 3D Architecture */
+.arch-3d-container {
+    margin: 50px 0;
+    padding: 40px;
+    background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(0, 0, 0, 0.1));
+    border-radius: 16px;
+    border: 2px solid var(--border);
+}
+
+.arch-3d-scene {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+    margin-bottom: 40px;
+    perspective: 1000px;
+    min-height: 300px;
+    align-items: center;
+}
+
+.arch-3d-layer {
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-style: preserve-3d;
+}
+
+.arch-3d-layer:hover {
+    transform: rotateY(15deg) translateZ(50px) scale(1.05);
+}
+
+.layer-box.3d {
+    background: linear-gradient(135deg, var(--card-bg), rgba(0, 0, 0, 0.3));
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 30px 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.layer-box.3d::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(249, 115, 22, 0.3), transparent);
+    transform: rotate(45deg);
+    animation: shine 3s infinite;
+}
+
+@keyframes shine {
+    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+}
+
+.layer-box.3d > * {
+    position: relative;
+    z-index: 1;
+}
+
+.layer-1 { --delay: 0s; }
+.layer-2 { --delay: 0.1s; animation: floatIn 0.8s ease backwards; animation-delay: var(--delay); }
+.layer-3 { --delay: 0.2s; animation: floatIn 0.8s ease backwards; animation-delay: var(--delay); }
+.layer-4 { --delay: 0.3s; animation: floatIn 0.8s ease backwards; animation-delay: var(--delay); }
+
+@keyframes floatIn {
+    from {
+        opacity: 0;
+        transform: translateY(50px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.layer-label {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 10px;
+}
+
+.layer-tech {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    font-family: monospace;
+}
+
+.arch-3d-info {
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+}
+
+.arch-3d-info h4 {
+    color: var(--primary);
+    margin: 0 0 10px 0;
+    font-size: 1rem;
+}
+
+.arch-3d-info p {
+    color: var(--text-secondary);
+    margin: 0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
 /* Architecture Layers */
 .arch-layers {
     display: flex;
@@ -666,18 +779,22 @@ section:nth-child(even) {
 
 .component-features {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 25px;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    max-width: 100%;
 }
 
 .feature-item {
     display: flex;
-    gap: 15px;
-    padding: 20px;
+    flex-direction: column;
+    gap: 12px;
+    padding: 18px;
     background: var(--card-bg);
     border: 1px solid var(--border);
     border-radius: 10px;
     transition: all 0.3s ease;
+    min-height: 150px;
+    height: 100%;
 }
 
 .feature-item:hover {
