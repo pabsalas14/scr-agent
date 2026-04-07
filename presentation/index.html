@@ -21,8 +21,8 @@
                 <li><a href="#hero" class="nav-link">Inicio</a></li>
                 <li><a href="#problema" class="nav-link">Problema</a></li>
                 <li><a href="#arquitectura" class="nav-link">Arquitectura</a></li>
-                <li><a href="#pipeline" class="nav-link">Pipeline</a></li>
-                <li><a href="#features" class="nav-link">Características</a></li>
+                <li><a href="#agentes" class="nav-link">Agentes IA</a></li>
+                <li><a href="#ejemplos" class="nav-link">Casos de Uso</a></li>
                 <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
             </ul>
         </div>
@@ -362,507 +362,53 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Stack Tecnológico -->
+            <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">📚 Stack Tecnológico</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>🎨 Frontend</h4>
+                    <ul class="tech-list">
+                        <li><strong>React 18</strong> - UI interactiva</li>
+                        <li><strong>TypeScript</strong> - Tipado seguro</li>
+                        <li><strong>Vite</strong> - Build ultrarrápido</li>
+                        <li><strong>Tailwind CSS</strong> - Estilos</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>⚙️ Backend</h4>
+                    <ul class="tech-list">
+                        <li><strong>Node.js 18+</strong> - Runtime</li>
+                        <li><strong>Express.js</strong> - API Gateway</li>
+                        <li><strong>PostgreSQL 14+</strong> - BD Principal</li>
+                        <li><strong>Redis</strong> - Cache en memoria</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🧠 Análisis & IA</h4>
+                    <ul class="tech-list">
+                        <li><strong>@babel/parser</strong> - JS/TS parsing</li>
+                        <li><strong>AST Analysis</strong> - Estructura sintáctica</li>
+                        <li><strong>ML Models</strong> - Risk scoring</li>
+                        <li><strong>OWASP DB</strong> - 200+ patrones</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🔍 Búsqueda & Forense</h4>
+                    <ul class="tech-list">
+                        <li><strong>Elasticsearch</strong> - Full-text search</li>
+                        <li><strong>Git API</strong> - Análisis de commits</li>
+                        <li><strong>Timeline Engine</strong> - Correlación</li>
+                        <li><strong>Pattern Matching</strong> - Detección</li>
+                    </ul>
+                </div>
+            </div>
                 </div>
             </div>
 
-            <h3 style="margin-top: 50px; margin-bottom: 30px;">Detalles de Componentes Clave</h3>
-
-            <!-- Component Tabs Navigation -->
-            <div class="components-tabs-nav">
-                <button class="component-tab-btn active" onclick="showComponentTab('frontend')">🎨 Frontend</button>
-                <button class="component-tab-btn" onclick="showComponentTab('api')">🔌 API</button>
-                <button class="component-tab-btn" onclick="showComponentTab('engine')">🧠 Engine IA</button>
-                <button class="component-tab-btn" onclick="showComponentTab('database')">💾 BD</button>
-                <button class="component-tab-btn" onclick="showComponentTab('threats')">📊 Amenazas</button>
-                <button class="component-tab-btn" onclick="showComponentTab('remediation')">⚙️ Remediación</button>
-                <button class="component-tab-btn" onclick="showComponentTab('forensic')">🔍 Forense</button>
-                <button class="component-tab-btn" onclick="showComponentTab('incidents')">🔔 Incidentes</button>
-            </div>
-
-            <!-- Component Content Panels -->
-            <div class="components-content">
-                <!-- Frontend Panel -->
-                <div id="frontend-panel" class="component-panel active">
-                    <div class="component-header">
-                        <h4>🎨 Frontend - React 18 + TypeScript</h4>
-                        <p class="component-category">Interfaz de usuario interactiva</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">📊</span>
-                            <div>
-                                <h5>Dashboard Interactivo</h5>
-                                <p>Monitoreo en tiempo real de hallazgos, estadísticas, y métricas de seguridad</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📄</span>
-                            <div>
-                                <h5>Reportes Ejecutivos</h5>
-                                <p>PDF exportables con gráficos, tablas y análisis detallado</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🎯</span>
-                            <div>
-                                <h5>Gestión de Hallazgos</h5>
-                                <p>Estados, asignaciones, seguimiento, comentarios colaborativos</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">⚡</span>
-                            <div>
-                                <h5>WebSockets</h5>
-                                <p>Actualizaciones en vivo sin necesidad de recargar</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- API Gateway Panel -->
-                <div id="api-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>🔌 API Gateway - Express.js</h4>
-                        <p class="component-category">Orquestación de servicios</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">🌐</span>
-                            <div>
-                                <h5>REST API</h5>
-                                <p>Endpoints completos para análisis, reportes, seguimiento y webhooks</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🔐</span>
-                            <div>
-                                <h5>Autenticación JWT</h5>
-                                <p>JWT tokens con refresh automático y validación de sesión</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🛡️</span>
-                            <div>
-                                <h5>Rate Limiting</h5>
-                                <p>Protección contra abuso y ataques DoS</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📜</span>
-                            <div>
-                                <h5>Logging & Auditoría</h5>
-                                <p>Registro completo de acciones, accesos y cambios</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Engine IA Panel -->
-                <div id="engine-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>🧠 Engine IA - Análisis Automático</h4>
-                        <p class="component-category">Núcleo de detección inteligente</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">🌳</span>
-                            <div>
-                                <h5>AST Parsing</h5>
-                                <p>Análisis sintáctico profundo de código fuente</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🎯</span>
-                            <div>
-                                <h5>Pattern Detection</h5>
-                                <p>Detección de 200+ patrones de vulnerabilidades OWASP</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🤖</span>
-                            <div>
-                                <h5>ML Models</h5>
-                                <p>Risk scoring y anomaly detection con modelos especializados</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">⚙️</span>
-                            <div>
-                                <h5>Parallel Processing</h5>
-                                <p>Análisis simultáneo de múltiples archivos y repositorios</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Database Panel -->
-                <div id="database-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>💾 Database - PostgreSQL</h4>
-                        <p class="component-category">Almacenamiento persistente</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">📁</span>
-                            <div>
-                                <h5>Hallazgos</h5>
-                                <p>Almacenamiento de vulnerabilidades, contexto y evidencia</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📚</span>
-                            <div>
-                                <h5>Histórico</h5>
-                                <p>Registro completo de cambios, resoluciones y evolución</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🔍</span>
-                            <div>
-                                <h5>Auditoría</h5>
-                                <p>Quién, qué, cuándo, por qué de todas las acciones</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📈</span>
-                            <div>
-                                <h5>Backup & Replicación</h5>
-                                <p>Snapshots automáticos y replicación en tiempo real</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Threats Panel -->
-                <div id="threats-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>📊 Módulo de Amenazas</h4>
-                        <p class="component-category">Detección y clasificación</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">🚨</span>
-                            <div>
-                                <h5>Detección de Vulnerabilidades</h5>
-                                <p>SQL Injection, XSS, CSRF, Path Traversal, Authentication flaws...</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📋</span>
-                            <div>
-                                <h5>Clasificación OWASP</h5>
-                                <p>Mapeo automático a OWASP Top 10 y CVE</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">⚠️</span>
-                            <div>
-                                <h5>CVSS Score Automático</h5>
-                                <p>Cálculo de severidad basado en contexto y impacto</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">✅</span>
-                            <div>
-                                <h5>Evidencia Contextual</h5>
-                                <p>Línea exacta, snippets de código, flujo de datos vulnerable</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Remediation Panel -->
-                <div id="remediation-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>⚙️ Módulo de Remediación</h4>
-                        <p class="component-category">Soluciones inteligentes</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">💡</span>
-                            <div>
-                                <h5>Soluciones Propuestas</h5>
-                                <p>Código corregido automático para cada vulnerabilidad</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">📖</span>
-                            <div>
-                                <h5>Instrucciones Paso a Paso</h5>
-                                <p>Guía detallada para implementación de fixes</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🎓</span>
-                            <div>
-                                <h5>Best Practices</h5>
-                                <p>Referencias a OWASP, CWE y patrones seguros</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🧪</span>
-                            <div>
-                                <h5>Validación Post-Fix</h5>
-                                <p>Retest automático para confirmar remediación</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Forensic Panel -->
-                <div id="forensic-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>🔍 Módulo Forense</h4>
-                        <p class="component-category">Investigación profunda</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">📅</span>
-                            <div>
-                                <h5>Timeline de Cambios</h5>
-                                <p>Historial completo de commits, autores, fecha y cambios</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">👥</span>
-                            <div>
-                                <h5>Análisis de Usuarios</h5>
-                                <p>Patrones de actividad por desarrollador y comportamiento riesgo</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🏗️</span>
-                            <div>
-                                <h5>Análisis de Repositorios</h5>
-                                <p>Riesgos por repositorio, puntos calientes, áreas críticas</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🔗</span>
-                            <div>
-                                <h5>Correlación de Eventos</h5>
-                                <p>Relación entre vulnerabilidades, commits y cambios de comportamiento</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Incidents Panel -->
-                <div id="incidents-panel" class="component-panel">
-                    <div class="component-header">
-                        <h4>🔔 Módulo de Incidentes</h4>
-                        <p class="component-category">Respuesta y gestión</p>
-                    </div>
-                    <div class="component-features">
-                        <div class="feature-item">
-                            <span class="feature-icon">📢</span>
-                            <div>
-                                <h5>Alertas en Tiempo Real</h5>
-                                <p>Notificaciones instantáneas por email, Slack, SMS</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">🔄</span>
-                            <div>
-                                <h5>Escalonamiento Automático</h5>
-                                <p>Escalada según criticidad y SLA definido</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">👤</span>
-                            <div>
-                                <h5>Asignación Inteligente</h5>
-                                <p>A desarrolladores con expertise en el área afectada</p>
-                            </div>
-                        </div>
-                        <div class="feature-item">
-                            <span class="feature-icon">⏱️</span>
-                            <div>
-                                <h5>Seguimiento y SLA</h5>
-                                <p>Progreso en tiempo real, recordatorios, tracking de resolución</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Pipeline de Análisis -->
-    <section id="pipeline" class="pipeline">
-        <div class="container">
-            <h2 class="section-title">Pipeline de Análisis</h2>
-            <p class="section-subtitle">Flujo en línea del análisis automático de código</p>
-
-            <div class="pipeline-horizontal">
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📥 Ingesta de Código', 'Descarga desde GitHub/GitLab, análisis de estructura, validación de integridad')">
-                    <div class="step-icon">📥</div>
-                    <div class="step-title">Ingesta</div>
-                    <div class="step-info">Git Clone</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '🔍 Parsing & AST', 'Generación de árbol sintáctico, análisis de dependencias, mapeo de flujos')">
-                    <div class="step-icon">🔍</div>
-                    <div class="step-title">Parsing</div>
-                    <div class="step-info">AST Analyze</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '🎯 Detección', 'Búsqueda de patrones OWASP, anomalías con ML, flujo de datos inseguro')">
-                    <div class="step-icon">🎯</div>
-                    <div class="step-title">Detección</div>
-                    <div class="step-info">Pattern Match</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📊 Evaluación', 'Cálculo de CVSS Score, análisis contextual, asignación de severidad')">
-                    <div class="step-icon">📊</div>
-                    <div class="step-title">Evaluación</div>
-                    <div class="step-info">CVSS Score</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '💡 Soluciones', 'Generación automática de código, pasos de remediación, mejores prácticas')">
-                    <div class="step-icon">💡</div>
-                    <div class="step-title">Soluciones</div>
-                    <div class="step-info">Auto Code</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage" onmouseenter="showStageInfo(this, '📄 Reporte', 'Generación de PDF/JSON, dashboard interactivo, evidencia visual')">
-                    <div class="step-icon">📄</div>
-                    <div class="step-title">Reporte</div>
-                    <div class="step-info">Export</div>
-                </div>
-
-                <div class="arrow-connector">→</div>
-
-                <div class="pipeline-step-h interactive-stage final" onmouseenter="showStageInfo(this, '✅ Cierre', 'Tracking de estado, historial automático, validación y retest post-fix')">
-                    <div class="step-icon">✅</div>
-                    <div class="step-title">Cierre</div>
-                    <div class="step-info">Verified</div>
-                </div>
-            </div>
-
-            <div class="pipeline-info-box" id="pipelineInfo">
-                <p style="text-align: center; color: var(--text-muted); padding: 20px;">
-                    Pasa el mouse sobre cada paso para ver más detalles →
-                </p>
-            </div>
-        </div>
-    </section>
-
-    <!-- Módulos Principales -->
-    <section id="features" class="features">
-        <div class="container">
-            <h2 class="section-title">Módulos Principales</h2>
-
-            <div class="features-grid">
-                <!-- Amenazas -->
-                <div class="feature-card threat-card">
-                    <div class="feature-header threat">
-                        <span class="feature-icon">🎯</span>
-                        <h3>Análisis de Amenazas</h3>
-                    </div>
-                    <div class="feature-body">
-                        <h4>Identifica:</h4>
-                        <ul>
-                            <li>✅ Inyección SQL</li>
-                            <li>✅ XSS (Cross-Site Scripting)</li>
-                            <li>✅ Vulnerabilidades de Autenticación</li>
-                            <li>✅ Datos Sensibles Expuestos</li>
-                            <li>✅ Configuración Insegura</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Detalles:</h4>
-                        <ul>
-                            <li>📍 Ubicación exacta (archivo:línea)</li>
-                            <li>📄 Código vulnerable con contexto</li>
-                            <li>🎯 Código solución propuesto</li>
-                            <li>💡 Recomendaciones específicas</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Remediación -->
-                <div class="feature-card remediation-card">
-                    <div class="feature-header remediation">
-                        <span class="feature-icon">⚙️</span>
-                        <h3>Remediación</h3>
-                    </div>
-                    <div class="feature-body">
-                        <h4>Proporciona:</h4>
-                        <ul>
-                            <li>✅ Código solución inmediato</li>
-                            <li>✅ Pasos detallados de fix</li>
-                            <li>✅ Mejores prácticas</li>
-                            <li>✅ Validaciones necesarias</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Estados de Seguimiento:</h4>
-                        <ul>
-                            <li>🔴 Abierto</li>
-                            <li>⏳ En Curso</li>
-                            <li>✅ Resuelto</li>
-                            <li>🔒 Cerrado/FP</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Investigación Forense -->
-                <div class="feature-card forensic-card">
-                    <div class="feature-header forensic">
-                        <span class="feature-icon">🔍</span>
-                        <h3>Investigación Forense</h3>
-                    </div>
-                    <div class="feature-body">
-                        <h4>Proporciona:</h4>
-                        <ul>
-                            <li>✅ Timeline de cambios</li>
-                            <li>✅ Análisis de usuarios</li>
-                            <li>✅ Análisis de repositorios</li>
-                            <li>✅ Patrones de riesgo</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Vistas Disponibles:</h4>
-                        <ul>
-                            <li>📅 Timeline visual</li>
-                            <li>👤 Actividad por usuario</li>
-                            <li>📦 Distribución por repo</li>
-                            <li>⚠️ Eventos sospechosos</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <!-- Monitoreo de Incidentes -->
-                <div class="feature-card incident-card">
-                    <div class="feature-header incident">
-                        <span class="feature-icon">🔔</span>
-                        <h3>Monitoreo de Incidentes</h3>
-                    </div>
-                    <div class="feature-body">
-                        <h4>Funcionalidades:</h4>
-                        <ul>
-                            <li>✅ Alertas críticas en tiempo real</li>
-                            <li>✅ Panel de seguimiento</li>
-                            <li>✅ Asignación de responsables</li>
-                            <li>✅ Documentación de acciones</li>
-                        </ul>
-                        <h4 style="margin-top: 15px;">Panel Interactivo:</h4>
-                        <ul>
-                            <li>📊 Estado del incidente</li>
-                            <li>👥 Asignado a</li>
-                            <li>📝 Notas de seguimiento</li>
-                            <li>⏱️ Historial de cambios</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Agentes IA -->
     <section id="agentes" class="agentes">
@@ -966,63 +512,6 @@
         </div>
     </section>
 
-    <!-- Modelos & Tecnología -->
-    <section id="modelos" class="modelos">
-        <div class="container">
-            <h2 class="section-title">Modelos & Tecnología</h2>
-            <p class="section-subtitle">Stack tecnológico y modelos de IA utilizados</p>
-
-            <div class="tech-grid">
-                <div class="tech-card">
-                    <h3>Frontend</h3>
-                    <ul class="tech-list">
-                        <li><strong>React 18</strong> - UI interactiva</li>
-                        <li><strong>TypeScript</strong> - Tipado seguro</li>
-                        <li><strong>Vite</strong> - Build ultrarrápido</li>
-                        <li><strong>Tailwind CSS</strong> - Estilos</li>
-                        <li><strong>Framer Motion</strong> - Animaciones</li>
-                        <li><strong>React Query</strong> - Data fetching</li>
-                    </ul>
-                </div>
-
-                <div class="tech-card">
-                    <h3>Backend</h3>
-                    <ul class="tech-list">
-                        <li><strong>Node.js 18+</strong> - Runtime</li>
-                        <li><strong>Express.js</strong> - Web framework</li>
-                        <li><strong>TypeScript</strong> - Tipado seguro</li>
-                        <li><strong>Prisma</strong> - ORM</li>
-                        <li><strong>PostgreSQL 14+</strong> - Base de datos</li>
-                        <li><strong>Redis</strong> - Cache</li>
-                    </ul>
-                </div>
-
-                <div class="tech-card">
-                    <h3>Análisis</h3>
-                    <ul class="tech-list">
-                        <li><strong>@babel/parser</strong> - JS parsing</li>
-                        <li><strong>acorn</strong> - AST walking</li>
-                        <li><strong>Regex + Custom</strong> - Pattern matching</li>
-                        <li><strong>ML Model</strong> - Risk evaluation</li>
-                        <li><strong>Git API</strong> - Forensics</li>
-                        <li><strong>OWASP DB</strong> - Vulnerabilities</li>
-                    </ul>
-                </div>
-
-                <div class="tech-card">
-                    <h3>Deployment</h3>
-                    <ul class="tech-list">
-                        <li><strong>Docker</strong> - Containerización</li>
-                        <li><strong>Docker Compose</strong> - Orquestación</li>
-                        <li><strong>GitHub Actions</strong> - CI/CD</li>
-                        <li><strong>Prometheus</strong> - Monitoreo</li>
-                        <li><strong>Grafana</strong> - Visualización</li>
-                        <li><strong>ELK Stack</strong> - Logging</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
 
     <!-- Arquitectura Docker & Deployment -->
     <section id="deployment" class="deployment">
