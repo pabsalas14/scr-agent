@@ -158,6 +158,20 @@ class ApiService {
   }
 
   /**
+   * Obtener análisis global (historial)
+   */
+  async obtenerAnalisisGlobales(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<Analisis & { projectName?: string }>> {
+    const { data } = await this.client.get<any>('/analyses', { params });
+    return {
+      data: data.data || [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+      limit: data.limit ?? 20,
+      hasMore: data.hasMore ?? false,
+    };
+  }
+
+  /**
    * Cancelar un análisis en curso
    */
   async cancelarAnalisis(projectId: string, analysisId: string): Promise<Analisis> {
@@ -187,6 +201,20 @@ class ApiService {
       `/analyses/${analysisId}/findings`
     );
     return data.data;
+  }
+
+  /**
+   * Obtener hallazgos a nivel global (Alertas e Incidentes)
+   */
+  async obtenerHallazgosGlobales(params?: { page?: number; limit?: number; severity?: string; isIncident?: boolean }): Promise<PaginatedResponse<Hallazgo>> {
+    const { data } = await this.client.get<any>('/findings/global', { params });
+    return {
+      data: data.data || [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+      limit: data.limit ?? 50,
+      hasMore: data.hasMore ?? false,
+    };
   }
 
   // ==================== FORENSES ====================

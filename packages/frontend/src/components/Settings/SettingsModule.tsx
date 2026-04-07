@@ -18,6 +18,7 @@ import {
 import { apiService } from '../../services/api.service';
 import { useAuth } from '../../hooks/useAuth';
 import type { UserProfile } from '../../types/api';
+import NotificationPreferences from './NotificationPreferences';
 
 const ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -152,7 +153,7 @@ export default function SettingsModule() {
                 <button
                   onClick={() => {
                     setEditingProfile(false);
-                    setProfileForm({ name: perfil?.name || '', email: perfil?.email || '' });
+                    setProfileForm({ name: perfil?.name || '', email: perfil?.email || '', avatar: perfil?.avatar || '', bio: perfil?.bio || '' });
                   }}
                   className="text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
                 >
@@ -205,7 +206,7 @@ export default function SettingsModule() {
                 <button
                   onClick={() => {
                     setEditingProfile(false);
-                    setProfileForm({ name: perfil?.name || '', email: perfil?.email || '' });
+                    setProfileForm({ name: perfil?.name || '', email: perfil?.email || '', avatar: perfil?.avatar || '', bio: perfil?.bio || '' });
                   }}
                   className="px-4 py-2 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:text-white transition-all"
                 >
@@ -327,6 +328,11 @@ export default function SettingsModule() {
               Los tokens de acceso se almacenan cifrados en el backend. Los agentes utilizan estos tokens para acceder a tus recursos a través de canales protegidos.
             </p>
           </div>
+        </div>
+
+        {/* Notificaciones */}
+        <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6">
+           <NotificationPreferences />
         </div>
 
         {/* Gestión de equipo — solo admin */}

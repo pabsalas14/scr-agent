@@ -11,6 +11,7 @@ interface KPICardProps {
     value: number;
     isPositive: boolean;
   };
+  onClick?: () => void;
 }
 
 export default function KPICard({
@@ -20,9 +21,15 @@ export default function KPICard({
   icon,
   accentColor,
   trend,
+  onClick,
 }: KPICardProps) {
   return (
-    <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 hover:border-[#404040] transition-all duration-200 overflow-hidden relative group">
+    <div 
+      onClick={onClick}
+      className={`bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-4 transition-all duration-200 overflow-hidden relative group ${
+        onClick ? 'cursor-pointer hover:border-[#F97316]/50 hover:bg-[#242424]' : 'hover:border-[#404040]'
+      }`}
+    >
       <div className="flex items-start justify-between mb-3">
         <div
           className="w-8 h-8 rounded-lg flex items-center justify-center"

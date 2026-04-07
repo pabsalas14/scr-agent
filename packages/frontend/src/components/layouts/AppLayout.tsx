@@ -24,8 +24,8 @@ export default function AppLayout() {
     const initSocket = async () => {
       try {
         // Try to connect socket, but don't block app if it fails
-        // Connect to '/' to use Vite proxy allowing ws connections to /socket.io
-        socketClientService.connect('/').then(() => {
+        // Uses VITE_SOCKET_URL from .env
+        socketClientService.connect().then(() => {
           setSocketConnected(true);
 
           // Set up event listeners for real-time updates

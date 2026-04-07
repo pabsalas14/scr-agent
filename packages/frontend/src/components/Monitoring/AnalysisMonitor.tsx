@@ -20,21 +20,17 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; co
 };
 
 export default function AnalysisMonitor() {
-  const { data: projectsData, isLoading } = useQuery({
-    queryKey: ['projects'],
-    queryFn: () => apiService.obtenerProyectos(),
+  const { data: analysesData, isLoading } = useQuery({
+    queryKey: ['global-analyses'],
+    queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     refetchInterval: 5000,
   });
 
-  const proyectos = projectsData?.data || [];
-
-  const allAnalyses: EnrichedAnalysis[] = proyectos.flatMap((proyecto: Proyecto) =>
-    (proyecto.analyses || []).map((analysis: Analisis) => ({
-      ...analysis,
-      projectName: proyecto.name,
-      projectId: proyecto.id,
-    }))
-  ).sort((a: EnrichedAnalysis, b: EnrichedAnalysis) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const allAnalyses: EnrichedAnalysis[] = (analysesData?.data || []).map((a: any) => ({
+    ...a,
+    projectName: a.projectName || 'Desconocido',
+    projectId: a.projectId,
+  }));
 
   const enProgreso = allAnalyses.filter((a: EnrichedAnalysis) => a.status === 'RUNNING' || a.status.includes('RUNNING'));
   const completados = allAnalyses.filter((a: EnrichedAnalysis) => a.status === 'COMPLETED').slice(0, 10);

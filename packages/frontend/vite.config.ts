@@ -35,6 +35,7 @@ export default defineConfig({
         target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
         ws: true,
         changeOrigin: true,
+        secure: false, // Useful for development with self-signed certs or local dev
       },
     },
   },

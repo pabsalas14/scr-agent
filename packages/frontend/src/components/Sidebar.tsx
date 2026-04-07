@@ -99,7 +99,7 @@ export default function Sidebar({ onSettingsClick = () => {} }: SidebarProps) {
       {/* Bottom Actions */}
       <div className="p-3 border-t border-[#2D2D2D] space-y-1">
         <button
-          onClick={() => navigate('/dashboard?tab=settings')}
+          onClick={() => navigate('/settings')}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[#6B7280] hover:bg-[#242424] hover:text-[#A0A0A0] transition-all"
         >
           <Settings className="w-4 h-4" />
