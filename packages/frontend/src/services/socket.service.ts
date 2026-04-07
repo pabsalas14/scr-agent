@@ -12,7 +12,7 @@ class SocketClientService {
   /**
    * Initialize socket connection
    */
-  connect(serverUrl: string = import.meta.env.VITE_SOCKET_URL || 'http://localhost:3000'): Promise<void> {
+  connect(serverUrl: string = import.meta.env['VITE_SOCKET_URL'] || 'http://localhost:3000'): Promise<void> {
     return new Promise((resolve, reject) => {
       try {
         this.socket = io(serverUrl, {

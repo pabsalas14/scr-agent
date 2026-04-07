@@ -214,13 +214,21 @@ class ApiService {
   }
 
   /**
-   * Descargar PDF del reporte
+   * Exportar hallazgos como CSV (descarga directa)
    */
-  async descargarPDF(analysisId: string): Promise<Blob> {
-    const { data } = await this.client.get(`/analyses/${analysisId}/report/pdf`, {
-      responseType: 'blob',
-    });
-    return data as Blob;
+  async exportarHallazgosCSV(analysisId: string): Promise<void> {
+    const { data } = await this.client.get<string>(
+      `/findings/analysis/${analysisId}/export`,
+      { responseType: 'blob' }
+    );
+    const url = URL.createObjectURL(new Blob([data as unknown as BlobPart], { type: 'text/csv;charset=utf-8;' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `findings-${analysisId}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   // ==================== SETTINGS ====================

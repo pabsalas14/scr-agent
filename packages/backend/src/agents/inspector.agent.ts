@@ -123,8 +123,8 @@ export class InspectorAgentService {
       });
 
       const textoRespuesta = response.content
-        .filter((block: { type: string }) => block.type === 'text')
-        .map((block: { text: string }) => block.text)
+        .filter((block) => block.type === 'text')
+        .map((block) => ('text' in block ? block.text : ''))
         .join('\n')
         .trim();
 

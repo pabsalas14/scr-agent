@@ -48,9 +48,9 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
 
   const stats = {
     totalProyectos: proyectos.length,
-    analisisCompletados: analyticsData?.totalAnalyses ?? 0,
-    hallazgosCriticos: analyticsData?.criticalFindings ?? 0,
-    riskScoreGlobal: analyticsData?.averageRiskScore ?? 0,
+    analisisCompletados: analyticsData?.["totalAnalyses"] ?? 0,
+    hallazgosCriticos: analyticsData?.["criticalFindings"] ?? 0,
+    riskScoreGlobal: analyticsData?.["averageRiskScore"] ?? 0,
   };
 
   if (isLoadingAnalytics || isLoadingProyectos) {

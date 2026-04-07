@@ -20,6 +20,7 @@ export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     email: string;
+    role: string;
   };
 }
 
@@ -47,8 +48,8 @@ export function authMiddleware(
   const token = authHeader.split(' ')[1]!;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as unknown as { id: string; email: string };
-    req.user = { id: decoded.id, email: decoded.email };
+    const decoded = jwt.verify(token, JWT_SECRET!) as unknown as { id: string; email: string; role?: string };
+    req.user = { id: decoded.id, email: decoded.email, role: decoded.role ?? 'VIEWER' };
     next();
   } catch (err) {
     logger.warn({ message: 'Token JWT inválido', error: err });
