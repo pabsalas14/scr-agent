@@ -182,6 +182,11 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
                         setIsRepoValid(isValid);
                         setRepoValidationError(error || '');
                       }}
+                      onManualUrl={(url) => {
+                        setSelectedRepo(null);
+                        setIsRepoValid(true);
+                        setValue('repositoryUrl', url);
+                      }}
                       selectedRepo={selectedRepo}
                       selectedBranch={selectedBranch}
                       isLoading={cargando}

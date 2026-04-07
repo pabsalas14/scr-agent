@@ -216,21 +216,20 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         code = 'INVALID_TOKEN';
         userMessage = 'GitHub token is invalid or expired. Please refresh it in Settings.';
       } else if (errorMessage.startsWith('NETWORK_')) {
+        // Network errors don't block project creation — repo may be accessible during analysis
+        logger.warn(`Repository validation failed for ${repositoryUrl}: ${errorMessage} — proceeding with project creation`);
         code = 'NETWORK_ERROR';
-        statusCode = 503;
-        userMessage = 'Failed to verify repository access. Please try again later.';
+        // Fall through: don't return, allow project creation to continue
       }
 
-      logger.warn(`Repository validation failed for ${repositoryUrl}: ${errorMessage}`);
-
-      return res.status(statusCode).json({
-        success: false,
-        error: userMessage,
-        details: {
-          code,
-          message: errorMessage,
-        },
-      });
+      if (code !== 'NETWORK_ERROR') {
+        logger.warn(`Repository validation failed for ${repositoryUrl}: ${errorMessage}`);
+        return res.status(statusCode).json({
+          success: false,
+          error: userMessage,
+          details: { code, message: errorMessage },
+        });
+      }
     }
     // ========== FIN VALIDACIÓN ==========
 

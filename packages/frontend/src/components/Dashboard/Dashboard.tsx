@@ -118,6 +118,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           subtitle="repositorios en vigilancia"
           icon={<Shield className="w-5 h-5" />}
           accentColor="#F97316"
+          onClick={() => navigate('/projects')}
         />
         <KPICard
           title="Scans Ejecutados"
@@ -125,6 +126,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           subtitle="auditorías finalizadas"
           icon={<Activity className="w-5 h-5" />}
           accentColor="#6366F1"
+          onClick={() => navigate('/analytics')}
         />
         <KPICard
           title="Alerta de Riesgo"
@@ -133,6 +135,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           icon={<AlertOctagon className="w-5 h-5" />}
           accentColor="#EF4444"
           trend={{ value: 5, isPositive: false }}
+          onClick={() => navigate('/analytics')}
         />
         <KPICard
           title="Eficiencia"
@@ -140,6 +143,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs }: DashboardProps) 
           subtitle="optimización de tokens"
           icon={<TrendingUp className="w-5 h-5" />}
           accentColor="#22C55E"
+          onClick={() => navigate('/analytics')}
         />
       </div>
 
