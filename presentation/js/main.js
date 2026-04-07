@@ -239,6 +239,32 @@ function displayResults(findings) {
     demoResults.innerHTML = html;
 }
 
+// Dashboard Interactive Tabs
+const dashboardTabs = document.querySelectorAll('.mockup-tabs .tab');
+const dashboardContents = document.querySelectorAll('.dashboard-tab-content');
+
+dashboardTabs.forEach((tab, index) => {
+    tab.addEventListener('click', () => {
+        // Remove active class from all tabs
+        dashboardTabs.forEach(t => t.classList.remove('active'));
+        // Add active class to clicked tab
+        tab.classList.add('active');
+
+        // Hide all content
+        dashboardContents.forEach(content => content.classList.remove('active'));
+
+        // Show corresponding content
+        const tabNames = ['monitor', 'incidentes', 'amenazas', 'remediacion', 'forense'];
+        if (index < tabNames.length) {
+            const contentId = `tab-${tabNames[index]}`;
+            const content = document.getElementById(contentId);
+            if (content) {
+                content.classList.add('active');
+            }
+        }
+    });
+});
+
 // Console message
 console.log('%cSCR Agent - Auditoría Inteligente de Código', 'color: #F97316; font-size: 24px; font-weight: bold;');
 console.log('%cTecnología avanzada en análisis de seguridad', 'color: #6B7280; font-size: 14px;');

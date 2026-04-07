@@ -229,103 +229,118 @@
     <section id="pipeline" class="pipeline">
         <div class="container">
             <h2 class="section-title">Pipeline de Análisis</h2>
-            <p class="section-subtitle">Proceso paso a paso de detección y evaluación</p>
+            <p class="section-subtitle">Flujo detallado del análisis automático de código</p>
 
-            <div class="pipeline-steps">
-                <div class="step step-1">
-                    <div class="step-number">1</div>
-                    <div class="step-content">
-                        <h3>Ingesta de Código</h3>
-                        <p>Recepción de archivos fuente y análisis de estructura</p>
+            <div class="pipeline-detailed">
+                <div class="pipeline-stage">
+                    <div class="stage-number">1</div>
+                    <h3>📥 Ingesta de Código</h3>
+                    <div class="stage-details">
+                        <p><strong>Entrada:</strong> Repositorio Git o archivos fuente</p>
+                        <ul>
+                            <li>Descarga del código desde GitHub/GitLab/Bitbucket</li>
+                            <li>Análisis de estructura del proyecto</li>
+                            <li>Identificación de lenguajes de programación</li>
+                            <li>Validación de integridad de archivos</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="step step-2">
-                    <div class="step-number">2</div>
-                    <div class="step-content">
-                        <h3>Parsing & AST</h3>
-                        <p>Generación de árbol sintáctico para análisis profundo</p>
+                <div class="pipeline-connector">→</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">2</div>
+                    <h3>🔍 Parsing & AST</h3>
+                    <div class="stage-details">
+                        <p><strong>Proceso:</strong> Análisis sintáctico profundo</p>
+                        <ul>
+                            <li>Generación de árbol sintáctico abstracto (AST)</li>
+                            <li>Análisis de dependencias entre módulos</li>
+                            <li>Mapeo de flujos de datos</li>
+                            <li>Identificación de funciones y variables</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="step step-3">
-                    <div class="step-number">3</div>
-                    <div class="step-content">
-                        <h3>Detección de Patrones</h3>
-                        <p>Búsqueda de vulnerabilidades conocidas y patrones maliciosos</p>
+                <div class="pipeline-connector">→</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">3</div>
+                    <h3>🎯 Detección de Patrones</h3>
+                    <div class="stage-details">
+                        <p><strong>Análisis:</strong> Búsqueda de vulnerabilidades conocidas</p>
+                        <ul>
+                            <li>Búsqueda de patrones OWASP Top 10</li>
+                            <li>Detección de anomalías con ML</li>
+                            <li>Análisis de flujo de datos inseguro</li>
+                            <li>Identificación de configuraciones peligrosas</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="step step-4">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <h3>Evaluación de Riesgo</h3>
-                        <p>Puntuación de severidad (CRITICAL, HIGH, MEDIUM, LOW)</p>
+                <div class="pipeline-connector">→</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">4</div>
+                    <h3>📊 Evaluación de Riesgo</h3>
+                    <div class="stage-details">
+                        <p><strong>Cálculo:</strong> CVSS + Contexto = Criticidad</p>
+                        <ul>
+                            <li>Cálculo de CVSS Score automático</li>
+                            <li>Análisis contextual de impacto</li>
+                            <li>Asignación de severidad (CRITICAL/HIGH/MEDIUM/LOW)</li>
+                            <li>Determinación de prioridad de remediación</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="step step-5">
-                    <div class="step-number">5</div>
-                    <div class="step-content">
-                        <h3>Generación de Reporte</h3>
-                        <p>Documentación con hallazgos, código y soluciones</p>
+                <div class="pipeline-connector">→</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">5</div>
+                    <h3>💡 Generación de Soluciones</h3>
+                    <div class="stage-details">
+                        <p><strong>Salida:</strong> Código remediado automático</p>
+                        <ul>
+                            <li>Propuesta de código solución</li>
+                            <li>Pasos detallados de remediación</li>
+                            <li>Referencias a mejores prácticas</li>
+                            <li>Validación de la solución propuesta</li>
+                        </ul>
                     </div>
                 </div>
 
-                <div class="step step-6">
-                    <div class="step-number">6</div>
-                    <div class="step-content">
-                        <h3>Trazabilidad</h3>
-                        <p>Registro de cambios, seguimiento y resolución de hallazgos</p>
+                <div class="pipeline-connector">→</div>
+
+                <div class="pipeline-stage">
+                    <div class="stage-number">6</div>
+                    <h3>📄 Generación de Reporte</h3>
+                    <div class="stage-details">
+                        <p><strong>Documentación:</strong> Reporte ejecutivo</p>
+                        <ul>
+                            <li>Reporte PDF/JSON con hallazgos</li>
+                            <li>Dashboard interactivo en web</li>
+                            <li>Evidencia visual de vulnerabilidades</li>
+                            <li>Estimaciones de tiempo de fix</li>
+                        </ul>
                     </div>
                 </div>
-            </div>
 
-            <div class="pipeline-diagram">
-                <svg viewBox="0 0 1000 400" class="pipeline-svg">
-                    <!-- Main flow -->
-                    <defs>
-                        <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-                            <polygon points="0 0, 10 3.5, 0 7" fill="#F97316"/>
-                        </marker>
-                    </defs>
+                <div class="pipeline-connector">↺</div>
 
-                    <!-- Step 1: Ingesta -->
-                    <rect x="20" y="50" width="120" height="80" class="pipeline-box"/>
-                    <text x="80" y="95" class="pipeline-text">Ingesta</text>
-
-                    <!-- Arrow -->
-                    <line x1="140" y1="90" x2="200" y2="90" class="pipeline-arrow"/>
-
-                    <!-- Step 2: Parser -->
-                    <rect x="200" y="50" width="120" height="80" class="pipeline-box"/>
-                    <text x="260" y="95" class="pipeline-text">Parser</text>
-
-                    <!-- Arrow -->
-                    <line x1="320" y1="90" x2="380" y2="90" class="pipeline-arrow"/>
-
-                    <!-- Step 3: Patrones -->
-                    <rect x="380" y="50" width="120" height="80" class="pipeline-box"/>
-                    <text x="440" y="95" class="pipeline-text">Patrones</text>
-
-                    <!-- Arrow -->
-                    <line x1="500" y1="90" x2="560" y2="90" class="pipeline-arrow"/>
-
-                    <!-- Step 4: Riesgo -->
-                    <rect x="560" y="50" width="120" height="80" class="pipeline-box"/>
-                    <text x="620" y="95" class="pipeline-text">Riesgo</text>
-
-                    <!-- Arrow -->
-                    <line x1="680" y1="90" x2="740" y2="90" class="pipeline-arrow"/>
-
-                    <!-- Step 5: Reporte -->
-                    <rect x="740" y="50" width="120" height="80" class="pipeline-box"/>
-                    <text x="800" y="95" class="pipeline-text">Reporte</text>
-
-                    <!-- Feedback loop -->
-                    <path d="M 800 130 Q 400 250 80 130" class="pipeline-feedback"/>
-                    <text x="400" y="200" class="pipeline-feedback-text">Trazabilidad & Seguimiento</text>
-                </svg>
+                <div class="pipeline-stage">
+                    <div class="stage-number">7</div>
+                    <h3>✅ Trazabilidad & Cierre</h3>
+                    <div class="stage-details">
+                        <p><strong>Seguimiento:</strong> Resolución completa</p>
+                        <ul>
+                            <li>Tracking de estado de cada hallazgo</li>
+                            <li>Historial de cambios automático</li>
+                            <li>Validación de remediación</li>
+                            <li>Retest automático post-fix</li>
+                        </ul>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
@@ -596,55 +611,6 @@
         </div>
     </section>
 
-    <!-- Estimaciones de Costos -->
-    <section id="costos" class="costos">
-        <div class="container">
-            <h2 class="section-title">Estimaciones de Costos</h2>
-            <p class="section-subtitle">Inversión inicial y costos operativos</p>
-
-            <div class="cost-table">
-                <div class="cost-row header">
-                    <div>Concepto</div>
-                    <div>Duración</div>
-                    <div>Costo (USD)</div>
-                    <div>Detalles</div>
-                </div>
-
-                <div class="cost-row development">
-                    <div><strong>Desarrollo</strong></div>
-                    <div>3 meses</div>
-                    <div><span class="cost-value">$24,000</span></div>
-                    <div style="font-size: 0.85rem;">4 personas × 3 meses × $50/h</div>
-                </div>
-
-                <div class="cost-row infrastructure">
-                    <div><strong>Infraestructura</strong></div>
-                    <div>Mensual</div>
-                    <div><span class="cost-value">$500</span></div>
-                    <div style="font-size: 0.85rem;">Servers + DB + Storage + Monitoring</div>
-                </div>
-
-                <div class="cost-row maintenance">
-                    <div><strong>Mantenimiento</strong></div>
-                    <div>Anual</div>
-                    <div><span class="cost-value">$6,000</span></div>
-                    <div style="font-size: 0.85rem;">Support 24/7 + Updates + Features</div>
-                </div>
-
-                <div class="cost-row roi">
-                    <div><strong>ROI Esperado</strong></div>
-                    <div>6 meses</div>
-                    <div><span class="cost-value">$150K+</span></div>
-                    <div style="font-size: 0.85rem;">Prevención de breaches + tiempo ahorrado</div>
-                </div>
-            </div>
-
-            <div class="cost-note">
-                <p>💡 <strong>Nota importante:</strong> Estas estimaciones son referenciales y basadas en mercado actual (2024). Los costos pueden variar según región, equipo y requisitos específicos.</p>
-            </div>
-        </div>
-    </section>
-
     <!-- Arquitectura Docker & Deployment -->
     <section id="deployment" class="deployment">
         <div class="container">
@@ -767,31 +733,271 @@
                 </svg>
             </div>
 
-            <div class="deployment-diagram" style="margin-top: 40px;">
-                <h3>Comandos de Despliegue</h3>
-                <div class="code-block" style="margin-top: 20px;">
-                    <div class="code-comment">-- Local Development / Fase 1</div>
-                    <div class="code-line">$ docker-compose up -d</div>
-                    <div class="code-line"># Servidor en http://localhost:3000</div>
+        </div>
+    </section>
 
-                    <div style="margin-top: 15px;" class="code-comment">-- Production Build / Fase 2</div>
-                    <div class="code-line">$ docker build -t scr-agent/app:v1.0.0 .</div>
-                    <div class="code-line">$ docker push docker-registry/scr-agent:v1.0.0</div>
+    <!-- Ventajas de SCR -->
+    <section id="ventajas" class="ventajas">
+        <div class="container">
+            <h2 class="section-title">Ventajas de SCR Agent</h2>
+            <p class="section-subtitle">Beneficios clave vs análisis manual y herramientas tradicionales</p>
 
-                    <div style="margin-top: 15px;" class="code-comment">-- CI/CD Integration (GitHub Actions)</div>
-                    <div class="code-line">name: SCR Agent Analysis</div>
-                    <div class="code-line">on: [push, pull_request]</div>
-                    <div class="code-line">jobs:</div>
-                    <div class="code-line">  analyze:</div>
-                    <div class="code-line">    runs-on: ubuntu-latest</div>
-                    <div class="code-line">    steps:</div>
-                    <div class="code-line">      - uses: actions/checkout@v3</div>
-                    <div class="code-line">      - run: docker run scr-agent/app:latest /app/analyze.js</div>
-                    <div class="code-line">      - run: curl -X POST ${{ secrets.WEBHOOK_URL }} -d @report.json</div>
+            <div class="ventajas-grid">
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⚡</div>
+                    <h3>Análisis Automático 24/7</h3>
+                    <p>Escanea tu código continuamente sin intervención manual, detectando vulnerabilidades en tiempo real.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🎯</div>
+                    <h3>Precisión Superior</h3>
+                    <p>95% de precisión con ML avanzado. Reduce falsos positivos comparado con SAST tradicional.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔍</div>
+                    <h3>Análisis Profundo</h3>
+                    <p>Va más allá del análisis estático: incluye forense, patrones de riesgo y análisis arquitectónico.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">📊</div>
+                    <h3>Inteligencia Contextual</h3>
+                    <p>Entiende el contexto del código, no solo patrones. Identifica vulnerabilidades lógicas y de arquitectura.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">💡</div>
+                    <h3>Remediación Automática</h3>
+                    <p>Propone soluciones de código listos para usar, no solo reporta problemas.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔒</div>
+                    <h3>Trazabilidad Completa</h3>
+                    <p>Registra quién, qué, cuándo y cómo de cada hallazgo. Cumple con auditorías de seguridad.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⏱️</div>
+                    <h3>Ahorro de Tiempo</h3>
+                    <p>Análisis que tomaría días ahora se completa en minutos. Reduce carga de trabajo manual.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🚀</div>
+                    <h3>Escalabilidad</h3>
+                    <p>Analiza múltiples repositorios simultáneamente sin degradación de performance.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🧠</div>
+                    <h3>Aprendizaje Continuo</h3>
+                    <p>Mejora con cada análisis. Los patrones detectados entrenan el modelo para futuras detecciones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-                    <div style="margin-top: 15px;" class="code-comment">-- Kubernetes Deploy</div>
-                    <div class="code-line">$ kubectl apply -f deployment.yaml</div>
-                    <div class="code-line">$ kubectl scale deployment scr-agent --replicas=10</div>
+    <!-- SCR vs SAST -->
+    <section id="scr-vs-sast" class="scr-vs-sast">
+        <div class="container">
+            <h2 class="section-title">SCR Agent vs SAST Tradicional</h2>
+            <p class="section-subtitle">Comparación detallada de capacidades y resultados</p>
+
+            <div class="comparison-table">
+                <div class="comparison-row header">
+                    <div class="comparison-cell">Criterio</div>
+                    <div class="comparison-cell">SAST Tradicional</div>
+                    <div class="comparison-cell">SCR Agent</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Velocidad de Análisis</strong></div>
+                    <div class="comparison-cell">30-60 minutos por repositorio</div>
+                    <div class="comparison-cell scr-better">2-5 minutos por repositorio</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Precisión (True Positives)</strong></div>
+                    <div class="comparison-cell">60-75% (muchos falsos positivos)</div>
+                    <div class="comparison-cell scr-better">95%+ (IA entrenada)</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Investigación Forense</strong></div>
+                    <div class="comparison-cell">❌ No incluida</div>
+                    <div class="comparison-cell scr-better">✅ Timeline completo con usuarios</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Remediación</strong></div>
+                    <div class="comparison-cell">Solo reporte del problema</div>
+                    <div class="comparison-cell scr-better">Código solución automático</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Análisis de Arquitectura</strong></div>
+                    <div class="comparison-cell">❌ No</div>
+                    <div class="comparison-cell scr-better">✅ Patrones y flujos</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Seguimiento de Estado</strong></div>
+                    <div class="comparison-cell">Básico (done/not done)</div>
+                    <div class="comparison-cell scr-better">Multi-estado con asignación</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Automatización CI/CD</strong></div>
+                    <div class="comparison-cell">Integración manual</div>
+                    <div class="comparison-cell scr-better">Totalmente automatizado</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Costo Operativo</strong></div>
+                    <div class="comparison-cell">Licencias anuales ($20K-100K)</div>
+                    <div class="comparison-cell scr-better">Basado en uso (más económico)</div>
+                </div>
+
+                <div class="comparison-row">
+                    <div class="comparison-cell"><strong>Esfuerzo Manual Requerido</strong></div>
+                    <div class="comparison-cell">Alto (triaging, análisis)</div>
+                    <div class="comparison-cell scr-better">Bajo (IA hace el análisis)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Determinación de Criticidad -->
+    <section id="criticidad" class="criticidad">
+        <div class="container">
+            <h2 class="section-title">¿Cómo se Determina la Criticidad?</h2>
+            <p class="section-subtitle">Sistema de clasificación basado en CVSS y análisis contextual</p>
+
+            <div class="criticidad-content">
+                <div class="criticidad-section">
+                    <h3>📊 CVSS Score (Common Vulnerability Scoring System)</h3>
+                    <p>Es la métrica base que evalúa la vulnerabilidad de forma técnica:</p>
+
+                    <div class="cvss-scales">
+                        <div class="cvss-scale">
+                            <div class="cvss-label">9.0 - 10.0</div>
+                            <div class="cvss-band critical">🔴 CRÍTICO</div>
+                            <div class="cvss-desc">Explotable remotamente, sin autenticación, impacto máximo</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">7.0 - 8.9</div>
+                            <div class="cvss-band high">🟠 ALTO</div>
+                            <div class="cvss-desc">Impacto significativo, fácil de explotar, requiere poco conocimiento</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">4.0 - 6.9</div>
+                            <div class="cvss-band medium">🟡 MEDIO</div>
+                            <div class="cvss-desc">Impacto moderado, requiere ciertos requisitos previos</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">0.1 - 3.9</div>
+                            <div class="cvss-band low">🟢 BAJO</div>
+                            <div class="cvss-desc">Impacto mínimo, difícil de explotar, o requiere permisos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>🔍 Factores de CVSS Considerados</h3>
+                    <div class="factors-grid">
+                        <div class="factor-card">
+                            <h4>Vector de Acceso</h4>
+                            <p><strong>Remoto:</strong> Máximo riesgo<br>
+                            <strong>Local:</strong> Riesgo menor<br>
+                            <strong>Física:</strong> Riesgo mínimo</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Complejidad de Ataque</h4>
+                            <p><strong>Baja:</strong> Se explota fácilmente<br>
+                            <strong>Alta:</strong> Requiere bypass de seguridad</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Privilegios Requeridos</h4>
+                            <p><strong>Ninguno:</strong> Máximo riesgo<br>
+                            <strong>Usuario:</strong> Riesgo medio<br>
+                            <strong>Admin:</strong> Riesgo bajo</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Confidencialidad</h4>
+                            <p><strong>Alto:</strong> Datos sensibles expuestos<br>
+                            <strong>Parcial:</strong> Algunos datos afectados<br>
+                            <strong>Ninguno:</strong> Sin exposición</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Integridad</h4>
+                            <p><strong>Alto:</strong> Modificación sin restricción<br>
+                            <strong>Parcial:</strong> Cambios limitados<br>
+                            <strong>Ninguno:</strong> No afectada</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Disponibilidad</h4>
+                            <p><strong>Alto:</strong> Servicio no disponible<br>
+                            <strong>Parcial:</strong> Degradación de servicio<br>
+                            <strong>Ninguno:</strong> No afectada</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>⚖️ Ponderación en SCR Agent</h3>
+                    <div class="ponderacion-table">
+                        <div class="pond-row header">
+                            <div>Factor</div>
+                            <div>Peso</div>
+                            <div>Justificación</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>CVSS Score</strong></div>
+                            <div>50%</div>
+                            <div>Métrica estándar de la industria, base técnica</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Contexto de la App</strong></div>
+                            <div>20%</div>
+                            <div>¿Es app crítica? ¿Maneja datos sensibles?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Exposición de Datos</strong></div>
+                            <div>15%</div>
+                            <div>¿Qué tipo de datos está en riesgo?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Antigüedad del Hallazgo</strong></div>
+                            <div>10%</div>
+                            <div>¿Cuánto tiempo lleva sin remediarse?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Exploitabilidad Real</strong></div>
+                            <div>5%</div>
+                            <div>¿Se conocen exploits públicos?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>📋 Ejemplos de Clasificación</h3>
+                    <div class="ejemplos-criticidad">
+                        <div class="ejemplo-crit critical">
+                            <h4>🔴 CRÍTICO: SQL Injection en Login</h4>
+                            <p><strong>CVSS:</strong> 9.8 | <strong>Contexto:</strong> App web pública | <strong>Datos:</strong> Bases de datos de usuarios</p>
+                            <p><strong>Por qué:</strong> Fácil de explotar (acceso remoto, sin autenticación), impacto máximo (acceso a BD completa)</p>
+                        </div>
+                        <div class="ejemplo-crit high">
+                            <h4>🟠 ALTO: XSS en Formulario</h4>
+                            <p><strong>CVSS:</strong> 6.1 | <strong>Contexto:</strong> Datos de usuario | <strong>Datos:</strong> Sesiones, cookies</p>
+                            <p><strong>Por qué:</strong> Se puede explotar remotamente pero requiere que el usuario interactúe</p>
+                        </div>
+                        <div class="ejemplo-crit medium">
+                            <h4>🟡 MEDIO: Configuración Débil en Staging</h4>
+                            <p><strong>CVSS:</strong> 5.3 | <strong>Contexto:</strong> Servidor no producción | <strong>Datos:</strong> Datos de prueba</p>
+                            <p><strong>Por qué:</strong> Impacto moderado, pero es entorno de staging, no crítico</p>
+                        </div>
+                        <div class="ejemplo-crit low">
+                            <h4>🟢 BAJO: Comentario TODO con Contraseña</h4>
+                            <p><strong>CVSS:</strong> 3.1 | <strong>Contexto:</strong> Código fuente privado | <strong>Datos:</strong> Cuenta de prueba</p>
+                            <p><strong>Por qué:</strong> Requiere acceso al código fuente (no remoto), contraseña es de prueba no producción</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -886,53 +1092,160 @@
                     </div>
 
                     <div class="mockup-content">
-                        <div class="dashboard-grid">
-                            <div class="dashboard-card stat-card">
-                                <div class="card-label">Hallazgos Detectados</div>
-                                <div class="card-value">42</div>
-                                <div class="card-trend">↑ 8 nuevos hoy</div>
+                        <!-- Tab: Monitor Central -->
+                        <div class="dashboard-tab-content active" id="tab-monitor">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Hallazgos Detectados</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">↑ 8 nuevos hoy</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Críticos</div>
+                                    <div class="card-value threat">6</div>
+                                    <div class="card-trend warning">Atención inmediata</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Resueltos</div>
+                                    <div class="card-value success">28</div>
+                                    <div class="card-trend">67% completados</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Seguimiento</div>
+                                    <div class="card-value">8</div>
+                                    <div class="card-trend">En remediación</div>
+                                </div>
                             </div>
-                            <div class="dashboard-card stat-card">
-                                <div class="card-label">Críticos</div>
-                                <div class="card-value threat">6</div>
-                                <div class="card-trend warning">Atención inmediata</div>
-                            </div>
-                            <div class="dashboard-card stat-card">
-                                <div class="card-label">Resueltos</div>
-                                <div class="card-value success">28</div>
-                                <div class="card-trend">67% completados</div>
-                            </div>
-                            <div class="dashboard-card stat-card">
-                                <div class="card-label">En Seguimiento</div>
-                                <div class="card-value">8</div>
-                                <div class="card-trend">En remediación</div>
+
+                            <div class="dashboard-row">
+                                <div class="dashboard-chart">
+                                    <h4>Hallazgos por Severidad</h4>
+                                    <div class="chart-bars">
+                                        <div class="bar critical" style="height: 40px;"><span>6</span></div>
+                                        <div class="bar high" style="height: 25px;"><span>12</span></div>
+                                        <div class="bar medium" style="height: 18px;"><span>14</span></div>
+                                        <div class="bar low" style="height: 10px;"><span>10</span></div>
+                                    </div>
+                                </div>
+
+                                <div class="dashboard-incidents">
+                                    <h4>Últimos Hallazgos</h4>
+                                    <div class="incident-item critical">
+                                        <span class="incident-name">SQL Injection en login.js</span>
+                                        <span class="incident-time">Hace 2h</span>
+                                    </div>
+                                    <div class="incident-item critical">
+                                        <span class="incident-name">XSS en formulario contacto</span>
+                                        <span class="incident-time">Hace 4h</span>
+                                    </div>
+                                    <div class="incident-item high">
+                                        <span class="incident-name">Config Insegura en .env</span>
+                                        <span class="incident-time">Hace 6h</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="dashboard-row">
-                            <div class="dashboard-chart">
-                                <h4>Hallazgos por Severidad</h4>
-                                <div class="chart-bars">
-                                    <div class="bar critical" style="height: 40px;"><span>6</span></div>
-                                    <div class="bar high" style="height: 25px;"><span>12</span></div>
-                                    <div class="bar medium" style="height: 18px;"><span>14</span></div>
-                                    <div class="bar low" style="height: 10px;"><span>10</span></div>
+                        <!-- Tab: Incidentes -->
+                        <div class="dashboard-tab-content" id="tab-incidentes">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Incidentes Abiertos</div>
+                                    <div class="card-value threat">12</div>
+                                    <div class="card-trend warning">Requieren acción</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Progreso</div>
+                                    <div class="card-value">5</div>
+                                    <div class="card-trend">Siendo remediados</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Resueltos Hoy</div>
+                                    <div class="card-value success">8</div>
+                                    <div class="card-trend">SLA cumplido</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Tiempo Promedio</div>
+                                    <div class="card-value">4.2h</div>
+                                    <div class="card-trend">Para resolver</div>
                                 </div>
                             </div>
+                        </div>
 
-                            <div class="dashboard-incidents">
-                                <h4>Incidentes Recientes</h4>
-                                <div class="incident-item critical">
-                                    <span class="incident-name">SQL Injection en login.js</span>
-                                    <span class="incident-time">Hace 2h</span>
+                        <!-- Tab: Amenazas -->
+                        <div class="dashboard-tab-content" id="tab-amenazas">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Vulnerabilidades</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">Todas categorizadas</div>
                                 </div>
-                                <div class="incident-item critical">
-                                    <span class="incident-name">XSS en formulario contacto</span>
-                                    <span class="incident-time">Hace 4h</span>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">OWASP Top 10</div>
+                                    <div class="card-value threat">7</div>
+                                    <div class="card-trend warning">Detectadas</div>
                                 </div>
-                                <div class="incident-item high">
-                                    <span class="incident-name">Config Insegura en .env</span>
-                                    <span class="incident-time">Hace 6h</span>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Confianza Promedio</div>
+                                    <div class="card-value success">94%</div>
+                                    <div class="card-trend">Alta precisión</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Patrones únicos</div>
+                                    <div class="card-value">23</div>
+                                    <div class="card-trend">Identificados</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Remediación -->
+                        <div class="dashboard-tab-content" id="tab-remediacion">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Soluciones Propuestas</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">100% cobertura</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Implementadas</div>
+                                    <div class="card-value success">28</div>
+                                    <div class="card-trend">66% completadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Validación</div>
+                                    <div class="card-value">8</div>
+                                    <div class="card-trend">Siendo testeadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Falsos Positivos</div>
+                                    <div class="card-value low">6</div>
+                                    <div class="card-trend">14% revisión</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Forense -->
+                        <div class="dashboard-tab-content" id="tab-forense">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Cambios Analizados</div>
+                                    <div class="card-value">1,243</div>
+                                    <div class="card-trend">En 30 días</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Usuarios Monitoreados</div>
+                                    <div class="card-value">28</div>
+                                    <div class="card-trend">Active developers</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Repos Bajo Vigilancia</div>
+                                    <div class="card-value">12</div>
+                                    <div class="card-trend">100% coverage</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Anomalías Detectadas</div>
+                                    <div class="card-value warning">3</div>
+                                    <div class="card-trend">Siendo investigadas</div>
                                 </div>
                             </div>
                         </div>
@@ -1012,6 +1325,148 @@ DATABASE_URL=postgres://user:PASSWORD@db.com
                         </div>
                         <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
                         <p><strong>Impacto:</strong> Exposición de credenciales de BD</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">04</span>
+                        <h3>Command Injection</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> utils/shell.js:34</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const result = exec(`ls -la ${userInput}`);</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const { execFile } = require('child_process');
+execFile('ls', ['-la', userInput], (err, stdout) => {...});</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.6 (Crítico)</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">05</span>
+                        <h3>Path Traversal</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> routes/files.js:56</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>fs.readFile(`/uploads/${req.query.file}`, (err, data) => {...});</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const path = require('path');
+const uploadDir = path.resolve('/uploads');
+const filePath = path.resolve(uploadDir, req.query.file);
+if (!filePath.startsWith(uploadDir)) throw new Error('Access denied');</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.5</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">06</span>
+                        <h3>CORS Misconfiguration</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> middleware/cors.js:8</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>app.use(cors({ origin: '*', credentials: true }));</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>app.use(cors({
+  origin: ['https://example.com', 'https://app.example.com'],
+  credentials: true,
+  methods: ['GET', 'POST']
+}));</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 6.8</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header success">
+                        <span class="ejemplo-number">07</span>
+                        <h3>Weak Cryptography</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> auth/crypto.js:23</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const hash = md5(password); // MD5 es quebrantable</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const bcrypt = require('bcrypt');
+const hash = await bcrypt.hash(password, 10);</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge medium">MEDIO</span></p>
+                        <p><strong>CVSS Score:</strong> 5.9</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">08</span>
+                        <h3>Insecure Deserialization</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> cache/redis.js:45</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const obj = JSON.parse(untrustedData);
+// No valida estructura</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const schema = Joi.object({
+  id: Joi.number().required(),
+  email: Joi.string().email().required()
+});
+const { error, value } = schema.validate(JSON.parse(untrustedData));</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 8.1</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header success">
+                        <span class="ejemplo-number">09</span>
+                        <h3>Missing Rate Limiting</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> routes/api.js:12</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>app.post('/login', (req, res) => {
+  // Sin límite de intentos
+  validateUser(req.body);
+});</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const rateLimit = require('express-rate-limit');
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5 // 5 requests per 15 minutes
+});
+app.post('/login', limiter, (req, res) => {...});</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge medium">MEDIO</span></p>
+                        <p><strong>CVSS Score:</strong> 5.3</p>
                     </div>
                 </div>
             </div>
