@@ -22,7 +22,7 @@ import { apiService } from '../../services/api.service';
 import type { EventoTimeline } from '../../types/timeline';
 import type { Reporte, Proyecto, Hallazgo, EventoForense } from '../../types/api';
 import Button from '../ui/Button';
-import ForensicTimeline from '../Timeline/ForensicTimeline';
+import ForensicTimelineVisual from '../Timeline/ForensicTimelineVisual';
 import IncidentResponseViewer from '../Analysis/IncidentResponseViewer';
 import AnalysisReport from '../Analysis/AnalysisReport';
 import FindingsPanel from '../Analysis/FindingsPanel';
@@ -354,7 +354,7 @@ export default function ReportViewer() {
           {seccionActiva === 'timeline' && (
             <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl overflow-hidden min-h-[600px] relative">
               {eventosTimeline.length > 0 ? (
-                <ForensicTimeline eventos={eventosTimeline} />
+                <ForensicTimelineVisual eventos={eventosTimeline} />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
                   <Activity className="w-10 h-10 text-[#2D2D2D]" />
