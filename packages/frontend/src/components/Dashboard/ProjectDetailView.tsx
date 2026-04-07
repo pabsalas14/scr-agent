@@ -8,7 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Edit, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
 import { apiService } from '../../services/api.service';
-import type { Proyecto } from '../../types/api';
+import type { Proyecto, AlcanceAnalisis } from '../../types/api';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import Modal from '../ui/Modal';
@@ -63,7 +63,7 @@ export default function ProjectDetailView({
 
   // Actualizar proyecto
   const actualizarMutation = useMutation({
-    mutationFn: (data: { name: string; description: string; scope: string }) => apiService.actualizarProyecto(projectId, data),
+    mutationFn: (data: { name: string; description: string; scope: string }) => apiService.actualizarProyecto(projectId, { ...data, scope: data.scope as AlcanceAnalisis }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       queryClient.invalidateQueries({ queryKey: ['project', projectId] });

@@ -44,7 +44,7 @@ const VerifySchema = z.object({
 // ==================== HELPER ====================
 
 function generateToken(id: string, email: string): string {
-  return jwt.sign({ id, email }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
+  return jwt.sign({ id, email }, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
 }
 
 // ==================== RUTAS ====================

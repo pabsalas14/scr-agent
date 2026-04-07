@@ -36,8 +36,8 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.patch('/:userId/role', async (req: Request, res: Response) => {
   try {
-    const currentUserId = (req as any).user?.id;
-    const { userId } = req.params;
+    const currentUserId = (req as any).user?.id as string;
+    const userId = req.params['userId'] as string;
     const { role } = req.body;
 
     const currentRole = await usersService.getUserRole(currentUserId);

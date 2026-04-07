@@ -131,7 +131,7 @@ export default function NotificationPanel({ onClose }: NotificationPanelProps) {
           </div>
         ) : (
           (notifications as Notification[]).map((n) => {
-            const cfg = TYPE_CONFIG[n.type] ?? TYPE_CONFIG['ANALYSIS_COMPLETED'];
+            const cfg = (TYPE_CONFIG[n.type] ?? TYPE_CONFIG['ANALYSIS_COMPLETED'])!;
             const Icon = cfg.icon;
             return (
               <button

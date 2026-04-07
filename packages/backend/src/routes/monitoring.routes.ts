@@ -436,7 +436,7 @@ async function getDashboardMetrics(): Promise<SystemMetrics> {
       total: totalMemory,
       usage: (usedMemory / totalMemory) * 100,
     },
-    disk: diskUsage,
+    disk: diskUsage ?? { used: 0, total: 0, usage: 0 },
     uptime: process.uptime(),
   };
 }

@@ -368,7 +368,7 @@ export default function ReportViewer() {
 
               <div className="grid md:grid-cols-2 gap-4">
                 {reporte.remediationSteps.map((step, i) => {
-                  const s = step as Record<string, string | number>;
+                  const s = step as unknown as Record<string, string | number>;
                   return (
                     <motion.div
                       key={i}

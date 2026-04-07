@@ -12,19 +12,11 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { monitoringService } from '../../services/monitoring.service';
+import type { Agent } from '../../types/monitoring';
 import Card from '../ui/Card';
 
 interface AgentsMonitorProps {
   onSelectAgent: (agentId: string) => void;
-}
-
-interface Agent {
-  id: string;
-  name: string;
-  type: string;
-  status: string;
-  executionCount: number;
-  lastExecution?: string | null;
 }
 
 const AGENT_TYPE_CONFIG: Record<string, { icon: LucideIcon; color: string }> = {
@@ -122,7 +114,7 @@ export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
                     </p>
                     <p className="text-sm font-semibold text-white">
                       {agent.lastExecution
-                        ? new Date(agent.lastExecution).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        ? agent.lastExecution.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                         : '---'}
                     </p>
                   </div>

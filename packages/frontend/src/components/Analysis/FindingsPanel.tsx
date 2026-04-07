@@ -116,7 +116,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
       {/* Summary Bento Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
         {Object.entries(findingsBySeverity).map(([severity, items]) => {
-          const config = SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG];
+          const config = SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG]!;
           return (
             <div
               key={severity}
@@ -147,15 +147,15 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
               <section key={severity} className="space-y-6">
                 <div className="flex items-center gap-4">
                   <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG].color.replace('text-', 'bg-')}`} />
-                    {SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG].label}
+                    <span className={`w-2 h-2 rounded-full ${SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG]!.color.replace('text-', 'bg-')}`} />
+                    {SEVERITY_CONFIG[severity as keyof typeof SEVERITY_CONFIG]!.label}
                   </h3>
                   <div className="h-px bg-[#2D2D2D] flex-1" />
                 </div>
 
                 <div className="grid gap-6">
                   {items.map((finding: Hallazgo) => {
-                    const config = SEVERITY_CONFIG[finding.severity as keyof typeof SEVERITY_CONFIG];
+                    const config = SEVERITY_CONFIG[finding.severity as keyof typeof SEVERITY_CONFIG]!;
                     const Icon = config.icon;
 
                     return (
