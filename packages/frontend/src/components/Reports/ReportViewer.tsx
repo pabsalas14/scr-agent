@@ -367,68 +367,142 @@ export default function ReportViewer() {
 
           {/* REMEDIACIÓN */}
           {seccionActiva === 'remediacion' && (
-            <div className="space-y-6">
-              <section className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-8 space-y-4">
-                <div className="flex items-center gap-2 text-[#22C55E]">
-                  <Wrench className="w-4 h-4" />
-                  <h3 className="text-sm font-semibold text-white">Plan de mitigación</h3>
-                </div>
-                <p className="text-base text-[#A0A0A0] leading-relaxed">
-                  {reporte.generalRecommendation}
-                </p>
-              </section>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                {(reporte.remediationSteps || []).length > 0 ? (
-                  reporte.remediationSteps.map((step, i) => {
-                    const s = step as unknown as Record<string, string | number | undefined>;
-                    const action = (s['action'] || s['accion'] || s['title'] || s['paso']) as string;
-                    const justification = (s['justification'] || s['justificacion'] || s['description'] || s['descripcion']) as string;
-                    const urgency = (s['urgency'] || s['urgencia'] || s['prioridad'] || 'Normal') as string;
-
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.08 }}
-                        className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-4 hover:border-[#404040] transition-all"
-                      >
-                        <div className="flex justify-between items-start gap-4">
-                          <div className="w-9 h-9 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 flex items-center justify-center text-[#22C55E] font-semibold text-sm flex-shrink-0">
-                            {i + 1}
-                          </div>
-                          <span className={`text-xs font-medium px-2.5 py-1 rounded-md border flex-shrink-0 ${
-                            urgency?.toUpperCase().includes('URGENTE') || urgency?.toUpperCase().includes('CRITICAL')
-                              ? 'bg-[#EF4444]/10 border-[#EF4444]/20 text-[#EF4444]'
-                              : urgency?.toUpperCase().includes('ALTO') || urgency?.toUpperCase().includes('HIGH')
-                              ? 'bg-[#F97316]/10 border-[#F97316]/20 text-[#F97316]'
-                              : 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#A0A0A0]'
-                          }`}>
-                            {urgency || 'Normal'}
-                          </span>
-                        </div>
-                        <div className="space-y-2">
-                          {action && (
-                            <h4 className="text-base font-semibold text-white leading-snug break-words">
-                              {action}
-                            </h4>
-                          )}
-                          {justification && (
-                            <p className="text-sm text-[#6B7280] leading-relaxed break-words">
-                              {justification}
-                            </p>
-                          )}
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                ) : (
-                  <div className="col-span-full py-12 text-center">
-                    <p className="text-[#6B7280]">No hay pasos de remediación disponibles</p>
+            <div className="space-y-8">
+              {/* General Recommendation */}
+              {reporte.generalRecommendation && (
+                <motion.section
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-[#1E1E20] border border-[#22C55E]/30 rounded-xl p-8 space-y-4"
+                >
+                  <div className="flex items-center gap-2 text-[#22C55E]">
+                    <ShieldCheck className="w-5 h-5" />
+                    <h3 className="text-lg font-semibold text-white">Plan de mitigación general</h3>
                   </div>
-                )}
-              </div>
+                  <p className="text-base text-[#94A3B8] leading-relaxed font-medium">
+                    {reporte.generalRecommendation}
+                  </p>
+                </motion.section>
+              )}
+
+              {/* Remediation Steps */}
+              {(reporte.remediationSteps || []).length > 0 ? (
+                <div className="space-y-6">
+                  <div className="flex items-center gap-2">
+                    <div className="h-px bg-[#2D2D2D] flex-1" />
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <Wrench className="w-4 h-4" />
+                      Pasos de remediación
+                    </h3>
+                    <div className="h-px bg-[#2D2D2D] flex-1" />
+                  </div>
+
+                  <div className="grid gap-6">
+                    {reporte.remediationSteps.map((step, i) => {
+                      const s = step as unknown as Record<string, string | number | undefined>;
+                      const action = (s['action'] || s['accion'] || s['title'] || s['paso']) as string;
+                      const justification = (s['justification'] || s['justificacion'] || s['description'] || s['descripcion']) as string;
+                      const urgency = (s['urgency'] || s['urgencia'] || s['prioridad'] || 'Normal') as string;
+                      const code = (s['code'] || s['codigo']) as string | undefined;
+
+                      const isUrgent = urgency?.toUpperCase().includes('URGENTE') || urgency?.toUpperCase().includes('CRITICAL');
+                      const isHigh = urgency?.toUpperCase().includes('ALTO') || urgency?.toUpperCase().includes('HIGH');
+
+                      return (
+                        <motion.div
+                          key={i}
+                          initial={{ opacity: 0, y: 10 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: i * 0.05 }}
+                          className={`rounded-xl border transition-all p-6 relative overflow-hidden group ${
+                            isUrgent
+                              ? 'border-[#EF4444]/30 bg-[#EF4444]/5'
+                              : isHigh
+                              ? 'border-[#F97316]/30 bg-[#F97316]/5'
+                              : 'border-[#2D2D2D] bg-[#242424]/50 hover:border-[#404040]'
+                          }`}
+                        >
+                          {/* Side Accent */}
+                          <div className={`absolute left-0 top-0 bottom-0 w-1 opacity-40 group-hover:opacity-100 transition-opacity ${
+                            isUrgent ? 'bg-[#EF4444]' : isHigh ? 'bg-[#F97316]' : 'bg-[#22C55E]'
+                          }`} />
+
+                          <div className="relative z-10 space-y-4">
+                            {/* Header */}
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex items-start gap-4 flex-1">
+                                <div className={`w-8 h-8 rounded-lg border flex items-center justify-center font-semibold text-sm flex-shrink-0 ${
+                                  isUrgent
+                                    ? 'bg-[#EF4444]/10 border-[#EF4444]/20 text-[#EF4444]'
+                                    : isHigh
+                                    ? 'bg-[#F97316]/10 border-[#F97316]/20 text-[#F97316]'
+                                    : 'bg-[#22C55E]/10 border-[#22C55E]/20 text-[#22C55E]'
+                                }`}>
+                                  {i + 1}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  {action && (
+                                    <h4 className="text-base font-semibold text-white leading-snug break-words">
+                                      {action}
+                                    </h4>
+                                  )}
+                                </div>
+                              </div>
+                              {urgency && (
+                                <span className={`text-xs font-medium px-3 py-1.5 rounded-md border flex-shrink-0 whitespace-nowrap ${
+                                  isUrgent
+                                    ? 'bg-[#EF4444]/10 border-[#EF4444]/20 text-[#EF4444]'
+                                    : isHigh
+                                    ? 'bg-[#F97316]/10 border-[#F97316]/20 text-[#F97316]'
+                                    : 'bg-[#6B7280]/10 border-[#6B7280]/20 text-[#A0A0A0]'
+                                }`}>
+                                  {urgency}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Justification */}
+                            {justification && (
+                              <div className="bg-[#1C1C1E]/50 rounded-lg p-4 border border-[#2D2D2D]">
+                                <p className="text-sm text-[#94A3B8] leading-relaxed font-medium">
+                                  {justification}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Code Example */}
+                            {code && (
+                              <div className="space-y-2">
+                                <p className="text-xs font-semibold text-[#64748B] uppercase tracking-wide flex items-center gap-2">
+                                  <Terminal className="w-3 h-3" /> Implementación
+                                </p>
+                                <pre className="bg-[#1C1C1E] p-4 rounded-lg border border-[#2D2D2D] overflow-x-auto font-mono text-[11px] leading-relaxed">
+                                  <code className="text-[#94A3B8]">{code}</code>
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/5 p-12 text-center flex flex-col items-center space-y-4"
+                >
+                  <div className="w-14 h-14 rounded-xl bg-[#22C55E]/10 flex items-center justify-center border border-[#22C55E]/20">
+                    <ShieldCheck className="text-[#22C55E] w-7 h-7" />
+                  </div>
+                  <h3 className="text-white text-lg font-semibold">Ninguna acción requerida</h3>
+                  <p className="text-[#6B7280] text-sm max-w-sm mx-auto">
+                    No hay pasos de remediación disponibles. El análisis no ha identificado vulnerabilidades que requieran intervención.
+                  </p>
+                </motion.div>
+              )}
             </div>
           )}
         </motion.div>

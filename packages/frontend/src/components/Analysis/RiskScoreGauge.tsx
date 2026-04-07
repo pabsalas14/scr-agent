@@ -76,12 +76,12 @@ export default function RiskScoreGauge({
       </svg>
 
       <div className="absolute inset-0 flex flex-col items-center justify-center text-center z-20">
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center gap-1">
           <motion.span
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5, duration: 0.8 }}
-            className="text-5xl font-semibold text-white leading-none"
+            className="text-6xl font-bold text-white leading-none"
           >
             {Math.round(score)}
           </motion.span>
@@ -89,13 +89,13 @@ export default function RiskScoreGauge({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1 }}
-            className="mt-2 flex flex-col items-center"
+            className="flex flex-col items-center gap-1.5"
           >
-            <div className="h-px w-8 bg-[#2D2D2D] mb-2" />
-            <span className="text-[10px] text-[#64748B] uppercase tracking-widest">Índice de Riesgo</span>
+            <div className="h-0.5 w-6 bg-[#2D2D2D]" />
+            <span className="text-[8px] font-semibold text-[#4B5563] uppercase tracking-widest whitespace-nowrap">Amenaza</span>
             <span
-              className="text-[9px] uppercase tracking-widest mt-1 px-2 py-0.5 rounded border border-current"
-              style={{ color, borderColor: `${color}40` }}
+              className="text-[8px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-md border"
+              style={{ color, backgroundColor: `${color}10`, borderColor: `${color}40` }}
             >
               {getLabel(score)}
             </span>

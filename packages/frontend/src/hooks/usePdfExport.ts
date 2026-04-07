@@ -109,9 +109,19 @@ export function usePdfExport() {
 
         // --- PÁGINA 2: RESUMEN EJECUTIVO ---
         doc.addPage();
-        
+
         // Header with Logo
-        doc.addImage(CODA_LOGO_BASE64, 'PNG', margin, 10, 15, 15);
+        try {
+          if (CODA_LOGO_BASE64) {
+            doc.addImage(CODA_LOGO_BASE64, 'PNG', margin, 10, 15, 15);
+          }
+        } catch (imgError) {
+          console.warn('Logo image failed to load:', imgError);
+          // Draw a simple rectangle as placeholder
+          doc.setFillColor(cPrimary[0], cPrimary[1], cPrimary[2]);
+          doc.rect(margin, 10, 15, 15, 'F');
+        }
+
         doc.setTextColor(cPrimary[0], cPrimary[1], cPrimary[2]);
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
