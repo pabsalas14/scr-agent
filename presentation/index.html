@@ -693,20 +693,101 @@
                 </div>
             </div>
 
+            <h3 style="margin-top: 50px; margin-bottom: 30px; text-align: center;">Fases de Implementación</h3>
+
+            <div class="phases-grid">
+                <div class="phase-card phase-1">
+                    <div class="phase-header">
+                        <h4>Fase 1: Etapa Piloto</h4>
+                        <span class="phase-badge">Análisis Bajo Demanda</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Docker local por analista</p>
+                        <ul>
+                            <li>✓ Deploy en máquina local del analista</li>
+                            <li>✓ Análisis bajo demanda por repositorio</li>
+                            <li>✓ Generación manual de reportes</li>
+                            <li>✓ Sin automatización CI/CD</li>
+                            <li>✓ Control total del analista</li>
+                            <li>✓ Pruebas de viabilidad</li>
+                        </ul>
+                        <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                            <strong>Duración:</strong> 1-3 meses<br>
+                            <strong>Objetivo:</strong> Validar metodología y resultados
+                        </p>
+                    </div>
+                </div>
+
+                <div class="phase-card phase-2">
+                    <div class="phase-header">
+                        <h4>Fase 2: Producción</h4>
+                        <span class="phase-badge">Análisis Automatizado</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Servidor en producción con pipeline CI/CD</p>
+                        <ul>
+                            <li>✓ Deploy en infraestructura dedicada</li>
+                            <li>✓ Análisis automático en cada push</li>
+                            <li>✓ Integración con GitHub Actions/GitLab CI</li>
+                            <li>✓ Reportes automáticos por email</li>
+                            <li>✓ Alertas en tiempo real</li>
+                            <li>✓ Dashboard centralizado 24/7</li>
+                            <li>✓ Escalabilidad horizontal</li>
+                        </ul>
+                        <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                            <strong>Duración:</strong> Implementación gradual<br>
+                            <strong>Objetivo:</strong> Automatización completa del pipeline
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="deployment-diagram" style="margin-top: 50px;">
+                <h3>Transición de Fases</h3>
+                <svg viewBox="0 0 1000 200" class="deployment-svg" style="margin-top: 20px;">
+                    <!-- Fase 1 -->
+                    <rect x="50" y="40" width="350" height="120" class="phase-box phase1-box" rx="8"/>
+                    <text x="225" y="65" class="phase-title">FASE 1: Piloto</text>
+                    <text x="75" y="90" class="phase-text">• Docker Local</text>
+                    <text x="75" y="110" class="phase-text">• Análisis Manual</text>
+                    <text x="75" y="130" class="phase-text">• Validación</text>
+                    <text x="75" y="150" class="phase-text">• 1-3 meses</text>
+
+                    <!-- Arrow -->
+                    <path d="M 420 100 L 520 100" class="phase-arrow"/>
+                    <text x="450" y="90" class="phase-label">Validación Exitosa</text>
+
+                    <!-- Fase 2 -->
+                    <rect x="550" y="40" width="350" height="120" class="phase-box phase2-box" rx="8"/>
+                    <text x="725" y="65" class="phase-title">FASE 2: Producción</text>
+                    <text x="575" y="90" class="phase-text">• Servidor Dedicado</text>
+                    <text x="575" y="110" class="phase-text">• CI/CD Automatizado</text>
+                    <text x="575" y="130" class="phase-text">• Escalable</text>
+                    <text x="575" y="150" class="phase-text">• 24/7 Activo</text>
+                </svg>
+            </div>
+
             <div class="deployment-diagram" style="margin-top: 40px;">
-                <h3>Flujo de Deployment</h3>
+                <h3>Comandos de Despliegue</h3>
                 <div class="code-block" style="margin-top: 20px;">
-                    <div class="code-comment">-- Local Development</div>
-                    <div class="code-line">$ docker-compose up</div>
+                    <div class="code-comment">-- Local Development / Fase 1</div>
+                    <div class="code-line">$ docker-compose up -d</div>
                     <div class="code-line"># Servidor en http://localhost:3000</div>
 
-                    <div style="margin-top: 15px;" class="code-comment">-- Production Build</div>
+                    <div style="margin-top: 15px;" class="code-comment">-- Production Build / Fase 2</div>
                     <div class="code-line">$ docker build -t scr-agent/app:v1.0.0 .</div>
                     <div class="code-line">$ docker push docker-registry/scr-agent:v1.0.0</div>
 
-                    <div style="margin-top: 15px;" class="code-comment">-- Expose with Ngrok</div>
-                    <div class="code-line">$ ngrok http 3000</div>
-                    <div class="code-line"># URL pública: https://[random].ngrok.io</div>
+                    <div style="margin-top: 15px;" class="code-comment">-- CI/CD Integration (GitHub Actions)</div>
+                    <div class="code-line">name: SCR Agent Analysis</div>
+                    <div class="code-line">on: [push, pull_request]</div>
+                    <div class="code-line">jobs:</div>
+                    <div class="code-line">  analyze:</div>
+                    <div class="code-line">    runs-on: ubuntu-latest</div>
+                    <div class="code-line">    steps:</div>
+                    <div class="code-line">      - uses: actions/checkout@v3</div>
+                    <div class="code-line">      - run: docker run scr-agent/app:latest /app/analyze.js</div>
+                    <div class="code-line">      - run: curl -X POST ${{ secrets.WEBHOOK_URL }} -d @report.json</div>
 
                     <div style="margin-top: 15px;" class="code-comment">-- Kubernetes Deploy</div>
                     <div class="code-line">$ kubectl apply -f deployment.yaml</div>
@@ -857,6 +938,113 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ejemplos & Casos de Uso -->
+    <section id="casos-uso" class="casos-uso">
+        <div class="container">
+            <h2 class="section-title">Ejemplos & Casos de Uso</h2>
+            <p class="section-subtitle">Vulnerabilidades reales detectadas y remediadas</p>
+
+            <div class="ejemplos-grid">
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">01</span>
+                        <h3>SQL Injection</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> auth/login.js:45</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const query = `SELECT * FROM users WHERE email = '${email}'`;</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const query = 'SELECT * FROM users WHERE email = ?';
+db.query(query, [email]);</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.8 (Crítico)</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">02</span>
+                        <h3>XSS (Cross-Site Scripting)</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> components/UserProfile.jsx:78</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>&lt;div dangerouslySetInnerHTML={{__html: userInput}} /&gt;</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>&lt;div&gt;{userInput}&lt;/div&gt;</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 6.1 (Medio)</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header success">
+                        <span class="ejemplo-number">03</span>
+                        <h3>Credenciales en .env</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Detectado en:</strong> config/.env:12</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>DATABASE_URL=postgres://user:password123@db.com</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>// .env.example (committed)
+DATABASE_URL=postgres://user:PASSWORD@db.com
+
+// Add to .gitignore
+.env
+.env.*.local</pre>
+                        </div>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>Impacto:</strong> Exposición de credenciales de BD</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Interactiva -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <h2 class="section-title">Demo Interactiva</h2>
+            <p class="section-subtitle">Prueba el análisis en tiempo real</p>
+
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>📤 Analizar Código</h3>
+                    <p>Pega tu código y obtén un análisis instantáneo:</p>
+                    <textarea id="demoCode" class="demo-textarea" placeholder="// Pega tu código aquí&#10;const query = `SELECT * FROM users WHERE id = ${id}`;">const query = `SELECT * FROM users WHERE id = ${id}`;</textarea>
+                    <button id="demoButton" class="demo-button">Analizar Ahora</button>
+                </div>
+
+                <div class="demo-card demo-results">
+                    <h3>📊 Resultados</h3>
+                    <div id="demoResults" class="demo-output">
+                        <p style="color: var(--text-muted); text-align: center;">Los resultados aparecerán aquí...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-info">
+                <p>
+                    💡 <strong>Nota:</strong> Esta es una demo interactiva que muestra el tipo de análisis que SCR Agent realiza.
+                    Los resultados son simulados para fines de demostración. Para análisis reales, contacta al equipo.
+                </p>
             </div>
         </div>
     </section>

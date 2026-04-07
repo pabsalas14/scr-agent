@@ -135,6 +135,110 @@ document.addEventListener('click', e => {
     }
 });
 
+// Demo Interactive Analysis
+const demoButton = document.getElementById('demoButton');
+const demoCode = document.getElementById('demoCode');
+const demoResults = document.getElementById('demoResults');
+
+if (demoButton && demoCode && demoResults) {
+    demoButton.addEventListener('click', () => {
+        const code = demoCode.value;
+        demoResults.innerHTML = '<p style="color: var(--text-muted);">Analizando código...</p>';
+
+        // Simulate analysis delay
+        setTimeout(() => {
+            const findings = analyzeCode(code);
+            displayResults(findings);
+        }, 800);
+    });
+}
+
+function analyzeCode(code) {
+    const findings = [];
+
+    // SQL Injection pattern
+    if (/`SELECT.*\$\{/.test(code) || /`INSERT.*\$\{/.test(code)) {
+        findings.push({
+            type: 'SQL Injection',
+            severity: 'CRITICAL',
+            cvss: '9.8',
+            message: 'Posible SQL Injection detectada. Usa prepared statements.',
+            line: code.split('\n').findIndex(l => /`SELECT.*\$\{|`INSERT.*\$\{/.test(l)) + 1
+        });
+    }
+
+    // XSS vulnerability
+    if (/dangerouslySetInnerHTML|innerHTML\s*=/.test(code)) {
+        findings.push({
+            type: 'Cross-Site Scripting (XSS)',
+            severity: 'HIGH',
+            cvss: '6.1',
+            message: 'Riesgo de XSS detectado. Evita dangerouslySetInnerHTML.',
+            line: code.split('\n').findIndex(l => /dangerouslySetInnerHTML|innerHTML\s*=/.test(l)) + 1
+        });
+    }
+
+    // Hardcoded credentials
+    if (/password\s*[=:]\s*['"]/.test(code) || /api[_-]?key\s*[=:]\s*['"]/.test(code)) {
+        findings.push({
+            type: 'Credenciales Hardcoded',
+            severity: 'CRITICAL',
+            cvss: '8.2',
+            message: 'Credenciales detectadas en código. Usa variables de entorno.',
+            line: code.split('\n').findIndex(l => /password\s*[=:]\s*['"]|api[_-]?key\s*[=:]\s*['"]/.test(l)) + 1
+        });
+    }
+
+    // eval() usage
+    if (/eval\s*\(/.test(code)) {
+        findings.push({
+            type: 'Eval Usage',
+            severity: 'CRITICAL',
+            cvss: '9.6',
+            message: 'Uso de eval() detectado. Esto es una vulnerabilidad grave.',
+            line: code.split('\n').findIndex(l => /eval\s*\(/.test(l)) + 1
+        });
+    }
+
+    // No findings
+    if (findings.length === 0) {
+        findings.push({
+            type: 'Análisis Completado',
+            severity: 'INFO',
+            message: 'No se detectaron vulnerabilidades conocidas en este snippet.',
+        });
+    }
+
+    return findings;
+}
+
+function displayResults(findings) {
+    if (findings.length === 0) {
+        demoResults.innerHTML = '<p style="color: var(--success); text-align: center;">✅ No se detectaron vulnerabilidades</p>';
+        return;
+    }
+
+    let html = '';
+    findings.forEach(finding => {
+        const severityClass = finding.severity === 'CRITICAL' ? 'critical' :
+                            finding.severity === 'HIGH' ? 'high' :
+                            finding.severity === 'MEDIUM' ? 'medium' : '';
+
+        html += `
+            <div class="demo-result-item ${severityClass}">
+                <div class="demo-result-title">${finding.type}</div>
+                <div class="demo-result-desc">
+                    ${finding.message}<br/>
+                    ${finding.severity !== 'INFO' ? `<strong>CVSS Score:</strong> ${finding.cvss} (${finding.severity})<br/>` : ''}
+                    ${finding.line ? `<strong>Línea:</strong> ${finding.line}` : ''}
+                </div>
+            </div>
+        `;
+    });
+
+    demoResults.innerHTML = html;
+}
+
 // Console message
 console.log('%cSCR Agent - Auditoría Inteligente de Código', 'color: #F97316; font-size: 24px; font-weight: bold;');
 console.log('%cTecnología avanzada en análisis de seguridad', 'color: #6B7280; font-size: 14px;');
