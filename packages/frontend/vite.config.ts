@@ -29,7 +29,7 @@ export default defineConfig({
       '/api': {
         target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        rewrite: (path) => path, // Mantener el path tal cual (ej: /api/v1/projects)
       },
       '/socket.io': {
         target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
