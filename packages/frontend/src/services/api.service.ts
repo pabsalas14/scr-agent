@@ -217,6 +217,79 @@ class ApiService {
     };
   }
 
+  /**
+   * Cambiar estado de un hallazgo
+   */
+  async cambiarEstadoHallazgo(findingId: string, status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'): Promise<Hallazgo> {
+    const { data } = await this.client.put<ApiResponse<Hallazgo>>(
+      `/findings/${findingId}/status`,
+      { status }
+    );
+    return data.data;
+  }
+
+  /**
+   * Asignar hallazgo a un usuario
+   */
+  async asignarHallazgo(findingId: string, userId: string): Promise<Hallazgo> {
+    const { data } = await this.client.post<ApiResponse<Hallazgo>>(
+      `/findings/${findingId}/assign`,
+      { userId }
+    );
+    return data.data;
+  }
+
+  /**
+   * Desasignar hallazgo de un usuario
+   */
+  async desasignarHallazgo(findingId: string): Promise<Hallazgo> {
+    const { data } = await this.client.delete<ApiResponse<Hallazgo>>(
+      `/findings/${findingId}/assign`
+    );
+    return data.data;
+  }
+
+  /**
+   * Obtener remediación de un hallazgo
+   */
+  async obtenerRemediacion(findingId: string): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>(
+      `/findings/${findingId}/remediation`
+    );
+    return data.data;
+  }
+
+  /**
+   * Crear o actualizar remediación de un hallazgo
+   */
+  async crearRemediacion(findingId: string, remediationData: { description: string; steps: string[]; estimatedTime?: number }): Promise<any> {
+    const { data } = await this.client.post<ApiResponse<any>>(
+      `/findings/${findingId}/remediation`,
+      remediationData
+    );
+    return data.data;
+  }
+
+  /**
+   * Verificar remediación de un hallazgo
+   */
+  async verificarRemediacion(findingId: string): Promise<any> {
+    const { data } = await this.client.put<ApiResponse<any>>(
+      `/findings/${findingId}/remediation/verify`
+    );
+    return data.data;
+  }
+
+  /**
+   * Obtener estadísticas de hallazgos de un análisis
+   */
+  async obtenerEstadisticasHallazgos(analysisId: string): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>(
+      `/findings/analysis/${analysisId}/stats`
+    );
+    return data.data;
+  }
+
   // ==================== FORENSES ====================
 
   /**
@@ -225,6 +298,193 @@ class ApiService {
   async obtenerEventosForenses(analysisId: string): Promise<EventoForense[]> {
     const { data } = await this.client.get<ApiResponse<EventoForense[]>>(
       `/analyses/${analysisId}/forensics`
+    );
+    return data.data;
+  }
+
+  // ==================== MONITOREO ====================
+
+  /**
+   * Obtener lista de agentes activos
+   */
+  async obtenerAgentes(): Promise<any[]> {
+    const { data } = await this.client.get<ApiResponse<any[]>>('/monitoring/agents');
+    return data.data;
+  }
+
+  /**
+   * Obtener detalles de un agente específico
+   */
+  async obtenerDetalleAgente(agentId: string): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>(
+      `/monitoring/agents/${agentId}`
+    );
+    return data.data;
+  }
+
+  /**
+   * Obtener historial de ejecuciones de un agente
+   */
+  async obtenerEjecucionesAgente(agentId: string, params?: { page?: number; limit?: number }): Promise<any> {
+    const { data } = await this.client.get<any>(
+      `/monitoring/agents/${agentId}/executions`,
+      { params }
+    );
+    return data.data || data;
+  }
+
+  /**
+   * Obtener métricas del sistema (CPU, RAM, disco)
+   */
+  async obtenerMetricasSistema(): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/monitoring/system-metrics');
+    return data.data;
+  }
+
+  /**
+   * Obtener costos por período
+   */
+  async obtenerCostos(periodo?: 'today' | 'week' | 'month'): Promise<any> {
+    const params = periodo ? { period: periodo } : {};
+    const { data } = await this.client.get<ApiResponse<any>>('/monitoring/costs', { params });
+    return data.data;
+  }
+
+  /**
+   * Obtener dashboard consolidado de monitoreo
+   */
+  async obtenerDashboardMonitoreo(): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/monitoring/dashboard');
+    return data.data;
+  }
+
+  // ==================== ANALÍTICAS ====================
+
+  /**
+   * Obtener resumen de analíticas globales
+   */
+  async obtenerAnalyticsSummary(): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/analytics/summary');
+    return data.data;
+  }
+
+  /**
+   * Obtener timeline de hallazgos
+   */
+  async obtenerTimelineAnalyticas(params?: { startDate?: string; endDate?: string }): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/analytics/timeline', { params });
+    return data.data;
+  }
+
+  /**
+   * Obtener analíticas desglosadas por tipo de riesgo
+   */
+  async obtenerAnalyticasPorTipo(): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/analytics/by-type');
+    return data.data;
+  }
+
+  // ==================== COMENTARIOS ====================
+
+  /**
+   * Crear comentario en un hallazgo
+   */
+  async crearComentario(findingId: string, comentario: { content: string; mentions?: string[] }): Promise<any> {
+    const { data } = await this.client.post<ApiResponse<any>>(
+      `/findings/${findingId}/comments`,
+      comentario
+    );
+    return data.data;
+  }
+
+  /**
+   * Obtener comentarios de un hallazgo
+   */
+  async obtenerComentarios(findingId: string, params?: { page?: number; limit?: number }): Promise<any> {
+    const { data } = await this.client.get<any>(
+      `/findings/${findingId}/comments`,
+      { params }
+    );
+    return {
+      data: data.data || [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+    };
+  }
+
+  /**
+   * Obtener comentario específico
+   */
+  async obtenerComentario(commentId: string): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>(
+      `/comments/${commentId}`
+    );
+    return data.data;
+  }
+
+  // ==================== NOTIFICACIONES ====================
+
+  /**
+   * Obtener notificaciones del usuario
+   */
+  async obtenerNotificaciones(params?: { page?: number; limit?: number }): Promise<any> {
+    const { data } = await this.client.get<any>('/notifications', { params });
+    return {
+      data: data.data || [],
+      total: data.total ?? 0,
+      page: data.page ?? 1,
+    };
+  }
+
+  /**
+   * Obtener cantidad de notificaciones sin leer
+   */
+  async obtenerCountNoLeidos(): Promise<number> {
+    const { data } = await this.client.get<ApiResponse<{ count: number }>>('/notifications/unread-count');
+    return data.data?.count ?? 0;
+  }
+
+  /**
+   * Marcar notificación como leída
+   */
+  async marcarComoLeido(notificationId: string): Promise<any> {
+    const { data } = await this.client.put<ApiResponse<any>>(
+      `/notifications/${notificationId}/read`
+    );
+    return data.data;
+  }
+
+  /**
+   * Marcar todas las notificaciones como leídas
+   */
+  async marcarTodosComoLeidos(): Promise<any> {
+    const { data } = await this.client.put<ApiResponse<any>>('/notifications/mark-all-read');
+    return data.data;
+  }
+
+  /**
+   * Limpiar todas las notificaciones
+   */
+  async limpiarNotificaciones(): Promise<void> {
+    await this.client.delete('/notifications');
+  }
+
+  // ==================== GITHUB ====================
+
+  /**
+   * Listar repositorios del usuario en GitHub
+   */
+  async listarRepositorios(): Promise<any[]> {
+    const { data } = await this.client.get<ApiResponse<any[]>>('/github/repos');
+    return data.data;
+  }
+
+  /**
+   * Listar ramas de un repositorio
+   */
+  async listarRamasRepositorio(owner: string, repo: string): Promise<any[]> {
+    const { data } = await this.client.get<ApiResponse<any[]>>(
+      `/github/repos/${owner}/${repo}/branches`
     );
     return data.data;
   }

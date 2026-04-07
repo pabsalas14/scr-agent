@@ -11,7 +11,7 @@ import {
   Binary,
   type LucideIcon,
 } from 'lucide-react';
-import { monitoringService } from '../../services/monitoring.service';
+import { apiService } from '../../services/api.service';
 import type { Agent } from '../../types/monitoring';
 import Card from '../ui/Card';
 
@@ -29,7 +29,7 @@ const AGENT_TYPE_CONFIG: Record<string, { icon: LucideIcon; color: string }> = {
 export default function AgentsMonitor({ onSelectAgent }: AgentsMonitorProps) {
   const { data: agentsData, isLoading } = useQuery({
     queryKey: ['monitoring', 'agents'],
-    queryFn: () => monitoringService.getAgents(),
+    queryFn: () => apiService.obtenerAgentes(),
     refetchInterval: 5000,
   });
 

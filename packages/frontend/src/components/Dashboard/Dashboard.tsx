@@ -29,10 +29,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
 
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['analytics-summary'],
-    queryFn: async () => {
-      const { data } = await apiService.get<any>('/analytics/summary');
-      return data.data;
-    },
+    queryFn: () => apiService.obtenerAnalyticsSummary(),
     refetchInterval: 15_000,
   });
 
