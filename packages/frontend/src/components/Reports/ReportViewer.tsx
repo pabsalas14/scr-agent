@@ -23,7 +23,7 @@ import type { EventoTimeline } from '../../types/timeline';
 import type { Reporte, Proyecto, Hallazgo, EventoForense } from '../../types/api';
 import Button from '../ui/Button';
 import ForensicTimeline from '../Timeline/ForensicTimeline';
-import FindingsTracker from '../Dashboard/FindingsTracker';
+import IncidentResponseViewer from '../Analysis/IncidentResponseViewer';
 import AnalysisReport from '../Analysis/AnalysisReport';
 import FindingsPanel from '../Analysis/FindingsPanel';
 import RiskScoreGauge from '../Analysis/RiskScoreGauge';
@@ -345,11 +345,9 @@ export default function ReportViewer() {
             <FindingsPanel analysisId={analysisId} />
           )}
 
-          {/* GESTOR */}
+          {/* GESTOR (Incident Response) */}
           {seccionActiva === 'gestor' && (
-            <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 min-h-[600px]">
-              <FindingsTracker analysisId={analysisId} />
-            </div>
+            <IncidentResponseViewer analysisId={analysisId} />
           )}
 
           {/* TIMELINE */}
