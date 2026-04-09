@@ -345,3 +345,131 @@ document.addEventListener('DOMContentLoaded', () => {
 // Console message
 console.log('%cSCR Agent - Auditoría Inteligente de Código', 'color: #F97316; font-size: 24px; font-weight: bold;');
 console.log('%cTecnología avanzada en análisis de seguridad', 'color: #6B7280; font-size: 14px;');
+
+// Stage Details Interactive
+const stageDetails = {
+    deteccion: {
+        title: '🔍 Etapa 1: Detección (0-5 min)',
+        content: `
+            <h4 style="color: var(--primary); margin-bottom: 10px;">¿Qué sucede?</h4>
+            <p>SCR Agent escanea el repositorio automáticamente identificando patrones de vulnerabilidades.</p>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Acciones:</h4>
+            <ul style="margin-left: 20px; list-style: disc;">
+                <li>✓ AST Parsing del código fuente</li>
+                <li>✓ Búsqueda de 200+ patrones OWASP</li>
+                <li>✓ Análisis de dependencias</li>
+                <li>✓ Mapeo de flujos de datos</li>
+            </ul>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Salida:</h4>
+            <p>Lista inicial de hallazgos (sin filtrado aún)</p>
+        `
+    },
+    analisis: {
+        title: '📊 Etapa 2: Análisis (5-15 min)',
+        content: `
+            <h4 style="color: var(--primary); margin-bottom: 10px;">¿Qué sucede?</h4>
+            <p>IA valida, contextualiza y prioriza cada hallazgo automáticamente.</p>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Análisis realizados:</h4>
+            <ul style="margin-left: 20px; list-style: disc;">
+                <li>✓ ML Validation (reduce falsos positivos a 5%)</li>
+                <li>✓ CVSS Score Automático</li>
+                <li>✓ Análisis de contexto e impacto</li>
+                <li>✓ Forense: ¿Quién lo introdujo?</li>
+            </ul>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Resultado:</h4>
+            <p>95% hallazgos válidos, priorizados por severidad</p>
+        `
+    },
+    reporte: {
+        title: '📄 Etapa 3: Reporte (15-20 min)',
+        content: `
+            <h4 style="color: var(--primary); margin-bottom: 10px;">¿Qué sucede?</h4>
+            <p>Se genera documentación completa con soluciones automáticas.</p>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Generación de:</h4>
+            <ul style="margin-left: 20px; list-style: disc;">
+                <li>✓ PDF ejecutivo con hallazgos</li>
+                <li>✓ Código solución propuesto</li>
+                <li>✓ Pasos de remediación</li>
+                <li>✓ JSON para integración</li>
+            </ul>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Distribución:</h4>
+            <p>Email, Slack, webhook, dashboard</p>
+        `
+    },
+    remediacion: {
+        title: '⚙️ Etapa 4: Remediación (20h-48h)',
+        content: `
+            <h4 style="color: var(--primary); margin-bottom: 10px;">¿Qué sucede?</h4>
+            <p>El equipo implementa las soluciones propuestas con seguimiento automático.</p>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Actividades:</h4>
+            <ul style="margin-left: 20px; list-style: disc;">
+                <li>✓ Asignación automática al dev responsable</li>
+                <li>✓ Implementación del código solución</li>
+                <li>✓ Testing local</li>
+                <li>✓ Code review y PR</li>
+            </ul>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Dashboard muestra:</h4>
+            <p>Progreso, asignado a, fecha límite, reminders</p>
+        `
+    },
+    cierre: {
+        title: '✅ Etapa 5: Cierre (48h+)',
+        content: `
+            <h4 style="color: var(--primary); margin-bottom: 10px;">¿Qué sucede?</h4>
+            <p>Validación final y cierre automático del hallazgo.</p>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Validación:</h4>
+            <ul style="margin-left: 20px; list-style: disc;">
+                <li>✓ Re-test automático en main</li>
+                <li>✓ Confirmación: vulnerabilidad resuelta</li>
+                <li>✓ Archivo de evidencia</li>
+                <li>✓ Notificación a stakeholders</li>
+            </ul>
+            
+            <h4 style="color: var(--primary); margin-bottom: 10px; margin-top: 20px;">Resultado:</h4>
+            <p>Hallazgo archivado con historial completo e auditable</p>
+        `
+    }
+};
+
+function showStageDetails(element, stage) {
+    const panel = document.getElementById('stageDetailsPanel');
+    const title = document.getElementById('stageDetailsTitle');
+    const body = document.getElementById('stageDetailsBody');
+    
+    title.textContent = stageDetails[stage].title;
+    body.innerHTML = stageDetails[stage].content;
+    
+    panel.classList.add('active');
+    
+    // Highlight the selected stage
+    document.querySelectorAll('.stage-interactive').forEach(s => s.style.opacity = '0.5');
+    element.style.opacity = '1';
+}
+
+function closeStageDetails() {
+    const panel = document.getElementById('stageDetailsPanel');
+    panel.classList.remove('active');
+    
+    // Remove highlight
+    document.querySelectorAll('.stage-interactive').forEach(s => s.style.opacity = '1');
+}
+
+// Close panel when clicking outside
+document.addEventListener('click', function(e) {
+    const panel = document.getElementById('stageDetailsPanel');
+    const content = document.querySelector('.stage-details-content');
+    
+    if (panel && panel.classList.contains('active') && 
+        e.target === panel) {
+        closeStageDetails();
+    }
+});

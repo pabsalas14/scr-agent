@@ -1036,40 +1036,49 @@
                     </div>
                 </div>
                 <div class="track-stages">
-                    <div class="stage stage-1" style="--index: 0">
+                    <div class="stage stage-1 stage-interactive" style="--index: 0" onclick="showStageDetails(this, 'deteccion')" data-stage="deteccion">
                         <div class="stage-circle">
                             <span class="stage-icon">🔍</span>
                         </div>
                         <div class="stage-label">Detección</div>
                         <div class="stage-time">0-5 min</div>
                     </div>
-                    <div class="stage stage-2" style="--index: 1">
+                    <div class="stage stage-2 stage-interactive" style="--index: 1" onclick="showStageDetails(this, 'analisis')" data-stage="analisis">
                         <div class="stage-circle">
                             <span class="stage-icon">📊</span>
                         </div>
                         <div class="stage-label">Análisis</div>
                         <div class="stage-time">5-15 min</div>
                     </div>
-                    <div class="stage stage-3" style="--index: 2">
+                    <div class="stage stage-3 stage-interactive" style="--index: 2" onclick="showStageDetails(this, 'reporte')" data-stage="reporte">
                         <div class="stage-circle">
                             <span class="stage-icon">📄</span>
                         </div>
                         <div class="stage-label">Reporte</div>
                         <div class="stage-time">15-20 min</div>
                     </div>
-                    <div class="stage stage-4" style="--index: 3">
+                    <div class="stage stage-4 stage-interactive" style="--index: 3" onclick="showStageDetails(this, 'remediacion')" data-stage="remediacion">
                         <div class="stage-circle">
                             <span class="stage-icon">⚙️</span>
                         </div>
                         <div class="stage-label">Remediación</div>
                         <div class="stage-time">20h-48h</div>
                     </div>
-                    <div class="stage stage-5" style="--index: 4">
+                    <div class="stage stage-5 stage-interactive" style="--index: 4" onclick="showStageDetails(this, 'cierre')" data-stage="cierre">
                         <div class="stage-circle">
                             <span class="stage-icon">✅</span>
                         </div>
                         <div class="stage-label">Cierre</div>
                         <div class="stage-time">48h+</div>
+                    </div>
+                </div>
+
+                <!-- Stage Details Panel -->
+                <div id="stageDetailsPanel" class="stage-details-panel">
+                    <div class="stage-details-content">
+                        <button class="stage-details-close" onclick="closeStageDetails()">✕</button>
+                        <h3 id="stageDetailsTitle" style="color: var(--primary); margin-bottom: 15px;"></h3>
+                        <div id="stageDetailsBody" style="color: var(--text-secondary); line-height: 1.8;"></div>
                     </div>
                 </div>
             </div>
