@@ -530,84 +530,70 @@
     <!-- SCR Agent + Checkmarx/Sonar -->
     <section id="scr-vs-sast" class="scr-vs-sast">
         <div class="container">
-            <h2 class="section-title">SCR Agent + Checkmarx/Sonar = Cobertura Completa</h2>
-            <p class="section-subtitle">No es reemplazo, es complemento inteligente de tus herramientas actuales</p>
+            <h2 class="section-title">SCR Agent + Checkmarx/Sonar = Auditoría Completa</h2>
+            <p class="section-subtitle">Complemento estratégico: detecta vulnerabilidades + descubre funciones maliciosas y lógica no autorizada</p>
 
-            <!-- Qué hacen bien -->
-            <div style="margin-bottom: 50px;">
-                <h3 style="text-align: center; margin-bottom: 30px;">✅ Lo que Checkmarx & Sonar hacen bien</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-bottom: 40px;">
-                    <div style="border: 2px solid #22C55E; border-radius: 12px; padding: 20px; background: #22C55E/5;">
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">🔍 Detección de patrones conocidos</h4>
-                        <p>Checkmarx y Sonar detectan muy bien vulnerabilidades OWASP Top 10 en patrones estándares</p>
-                    </div>
-                    <div style="border: 2px solid #22C55E; border-radius: 12px; padding: 20px; background: #22C55E/5;">
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">📋 Reportes de cumplimiento</h4>
-                        <p>Excelentes para auditoría, cumplimiento normativo y documentación</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- El GAP: lo que les falta -->
-            <div style="margin-bottom: 50px; border-left: 4px solid #EF4444; padding-left: 20px;">
-                <h3 style="color: #EF4444; margin-bottom: 30px;">⚠️ El GAP que existe (donde entra SCR Agent)</h3>
+            <!-- Estatus actual -->
+            <div style="margin-bottom: 50px; background: #1E1E20; border: 2px solid #EAB308; border-radius: 12px; padding: 30px;">
+                <h3 style="color: #EAB308; margin-bottom: 25px;">⚠️ Situación Actual: Gaps de Auditoría</h3>
+                <p style="color: #94A3B8; margin-bottom: 20px;">Actualmente, incluso CON Checkmarx y Sonar, no detectamos:</p>
 
                 <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Muchos falsos positivos</h5>
-                        <p style="font-size: 13px;">60-75% de los hallazgos no son verdaderas vulnerabilidades</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">🎭 Funciones Maliciosas</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código oculto que hace algo diferente a su propósito aparente. Ej: función que "registra datos" pero también exfiltra datos sensibles</p>
                     </div>
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Sin investigación forense</h5>
-                        <p style="font-size: 13px;">¿Quién introdujo el problema? ¿Por qué? ¿Cuándo?</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">🚪 Backdoors y Trampas</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Puertas traseras intencionales en el código. Ej: credenciales hardcodeadas, métodos administrativos ocultos</p>
                     </div>
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Sin remediación automática</h5>
-                        <p style="font-size: 13px;">Solo reportan el problema, el desarrollador debe arreglarlo</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">❌ Lógica No Requerida</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Funcionalidad que NO está en los requerimientos de negocio. Ej: endpoints no documentados, operaciones no autorizadas</p>
                     </div>
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Sin análisis de arquitectura</h5>
-                        <p style="font-size: 13px;">No ven patrones de riesgo en el flujo global</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">📊 Bypass de Validaciones</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código que evita controles o validaciones deliberadamente. Ej: saltarse autenticación en ciertas rutas</p>
                     </div>
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Gestión manual de hallazgos</h5>
-                        <p style="font-size: 13px;">No hay estados, asignación inteligente o seguimiento automático</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">⏰ Lógica Temporal (Bombas)</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código que actúa solo en fechas/horas específicas. Ej: transferencias automáticas cada primer día del mes</p>
                     </div>
-                    <div style="background: #EF4444/10; border: 1px solid #EF4444/30; border-radius: 8px; padding: 15px;">
-                        <h5 style="color: #EF4444; margin-bottom: 8px;">❌ Tiempo manual alto</h5>
-                        <p style="font-size: 13px;">Los equipos gastan horas triaging y priorizando hallazgos</p>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">👥 Comportamientos Sospechosos</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Patrones de código que no encajan con la arquitectura. Ej: función que accede a datos que no debería</p>
                     </div>
                 </div>
             </div>
 
-            <!-- La solución: SCR Agent como complemento -->
+            <!-- Lo que aporta SCR Agent -->
             <div style="background: #F97316/5; border: 2px solid #F97316; border-radius: 12px; padding: 30px; margin-bottom: 40px;">
-                <h3 style="color: #F97316; margin-bottom: 25px; text-align: center;">🚀 SCR Agent: El complemento perfecto</h3>
+                <h3 style="color: #F97316; margin-bottom: 25px; text-align: center;">🔬 Lo que SCR Agent descubre (que Checkmarx/Sonar no pueden)</h3>
 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Reduce falsos positivos</h4>
-                        <p>IA entrenada valida hallazgos de Checkmarx/Sonar → solo 95%+ real positives</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Detección de Funciones Maliciosas</h4>
+                        <p>IA analiza comportamiento de funciones: ¿hace lo que dice que hace? ¿accede a datos no autorizados?</p>
                     </div>
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Investigación forense</h4>
-                        <p>Timeline de quién, cuándo y por qué se introdujo cada problema</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Validación de Requerimientos</h4>
+                        <p>Compara el código contra especificaciones de negocio: ¿Se implementó exactamente lo que se pidió?</p>
                     </div>
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Remediación automática</h4>
-                        <p>Genera código solución para cada hallazgo con mejores prácticas</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Análisis de Intención</h4>
+                        <p>Reconoce patrones de backdoors, trampas, lógica oculta. Ej: detecta credenciales hardcodeadas incluso si están "bien ocultadas"</p>
                     </div>
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Análisis arquitectónico</h4>
-                        <p>Identifica patrones de riesgo en flujos de datos y componentes</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Auditoría de Arquitectura</h4>
+                        <p>Valida que el código respete la arquitectura definida. Detecta desviaciones intencionales o negligentes</p>
                     </div>
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Gestión inteligente</h4>
-                        <p>Estados automáticos, asignación inteligente, seguimiento completo</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Investigación Forense</h4>
+                        <p>Quién introdujo esta función? ¿En qué commit? ¿Fue aprobado en code review? ¿Tiene historia?</p>
                     </div>
                     <div>
-                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ 80% menos tiempo manual</h4>
-                        <p>De horas a minutos: la IA hace el análisis y triaging</p>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Contexto y Correlación</h4>
+                        <p>Relaciona funciones sospechosas con cambios recientes, usuarios, patterns. ¿Es coincidencia o patrón deliberado?</p>
                     </div>
                 </div>
             </div>
