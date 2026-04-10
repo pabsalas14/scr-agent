@@ -39,6 +39,9 @@ model User {
   comments     Comment[]
   mentionedIn  CommentMention[] @relation("CommentMentions")
   notificationPreferences NotificationPreferences?
+  auditLogs    AuditLog[]
+  remediationActions RemediationAction[] // Phase 1 - asignaciones de remediación
+  remediationComments RemediationComment[]
 
   @@index([email])
   @@map("users")
@@ -141,6 +144,12 @@ model Analysis {
   // Resumen de cobertura: cuánto código quedó fuera del análisis
   coverageSummary Json?
 
+  // Job tracking (Phase 1)
+  job AnalysisJob?
+
+  // Incremental analysis tracking (Phase 1)
+  lastCommitProcessed String? // SHA del último commit analizado (para análisis incrementales)
+
   // Timing
   startedAt   DateTime?
   completedAt DateTime?
@@ -185,6 +194,7 @@ model Finding {
   assignment FindingAssignment?
   statusHistory FindingStatusChange[]
   remediation RemediationEntry?
+  remediationAction RemediationAction? // Phase 1
   comments Comment[]
   notifications Notification[]
 
@@ -231,7 +241,7 @@ model FindingStatusChange {
   @@map("finding_status_changes")
 }
 
-// Entrada de remediación
+// Entrada de remediación (legacy - deprecated en Phase 1)
 model RemediationEntry {
   id        String   @id @default(cuid())
   findingId String   @unique
@@ -255,6 +265,64 @@ model RemediationEntry {
   @@index([findingId])
   @@index([status])
   @@map("remediation_entries")
+}
+
+// ==================== PHASE 1: REMEDIATION TRACKING ====================
+
+/// RemediationAction - Seguimiento de remediación de hallazgos
+/// Sistema mejorado para registrar fixes y validarlos
+model RemediationAction {
+  id           String   @id @default(cuid())
+  findingId    String
+  finding      Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  // Estado
+  status       RemediationStatus @default(PENDING) // pending, in_progress, completed, verified, rejected
+  assigneeId   String?
+  assignee     User?    @relation(fields: [assigneeId], references: [id], onDelete: SetNull, name: "remediationActions")
+
+  // Detalles
+  title        String?  @db.VarChar(255)
+  description  String?  @db.Text
+  dueDate      DateTime?
+  priority     Int      @default(0) // 0=normal, 1=high, 2=critical
+
+  // Evidencia de fix
+  evidence     Json? // {commitSha, prUrl, description, verifiedAt}
+  comment      String?  @db.Text
+
+  // Timing
+  startedAt    DateTime?
+  completedAt  DateTime?
+  verifiedAt   DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relaciones
+  comments     RemediationComment[]
+
+  @@unique([findingId])
+  @@index([status, dueDate])
+  @@index([assigneeId])
+  @@map("remediation_actions")
+}
+
+/// RemediationComment - Comentarios en remediación
+model RemediationComment {
+  id              String   @id @default(cuid())
+  remediationId   String
+  remediation     RemediationAction @relation(fields: [remediationId], references: [id], onDelete: Cascade)
+
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  content         String   @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([remediationId, createdAt])
+  @@index([userId])
+  @@map("remediation_comments")
 }
 
 // ==================== AGENTE DETECTIVE ====================
@@ -516,6 +584,65 @@ model NotificationPreferences {
   @@map("notification_preferences")
 }
 
+// ==================== PHASE 1: JOB QUEUE TRACKING ====================
+
+/// AuditLog - Registro de auditoría de acciones en el sistema
+/// Trazabilidad: quién hizo qué cuándo
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Acción realizada
+  action        String   @db.VarChar(50) // create, update, delete, run, cancel, etc
+  resourceType  String   @db.VarChar(50) // analysis, finding, project, etc
+  resourceId    String?  @db.VarChar(255)
+
+  // Detalles
+  details       Json? // información adicional sobre la acción
+  ipAddress     String?  @db.VarChar(45)
+  userAgent     String?  @db.Text
+
+  // Timing
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, resourceType, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+/// AnalysisJob - Seguimiento de jobs en Bull queue
+/// Para procesamiento concurrente y recuperación tras fallos
+model AnalysisJob {
+  id           String   @id @default(cuid())
+  analysisId   String
+  analysis     Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  // Job status
+  bullJobId    String   @unique // ID del job en Bull/Redis
+  status       JobStatus @default(PENDING) // pending, active, completed, failed, delayed
+  priority     Int       @default(0) // 0=normal, 1=high
+
+  // Error tracking
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  lastError    String?   @db.Text
+  nextRetryAt  DateTime?
+
+  // Timing
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([analysisId])
+  @@index([status, priority, createdAt])
+  @@index([status])
+  @@index([bullJobId])
+  @@map("analysis_jobs")
+}
+
 // ==================== ENUMS: PHASE 4 ====================
 
 /// Tipo de notificación
@@ -534,4 +661,15 @@ enum NotificationSeverity {
   SUCCESS
   WARNING
   ERROR
+}
+
+// ==================== ENUMS: PHASE 1 ====================
+
+/// Estado de job en Bull queue
+enum JobStatus {
+  PENDING      // Esperando ser procesado
+  ACTIVE       // Actualmente siendo procesado
+  COMPLETED    // Completado exitosamente
+  FAILED       // Falló después de todos los reintentos
+  DELAYED      // Esperando retry después de fallo
 }
