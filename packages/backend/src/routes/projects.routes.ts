@@ -19,13 +19,19 @@ const router: ExpressRouter = Router();
 router.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role; // ADMIN, ANALYST, DEVELOPER, VIEWER
     const page = Math.max(1, parseInt(req.query['page'] as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 20));
     const search = (req.query['search'] as string)?.trim() || '';
+    const showAll = req.query['showAll'] === 'true'; // Permitir ver todos los proyectos
     const skip = (page - 1) * limit;
 
+    // ADMINs ven todos los proyectos por defecto, otros usuarios solo los suyos
+    const isAdmin = userRole === 'ADMIN';
+
     const where: any = {
-      ...(userId ? { userId } : {}),
+      // Admins ven todos, otros usuarios ven solo los suyos
+      ...(isAdmin ? {} : (userId ? { userId } : {})),
       ...(search ? {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },

@@ -51,10 +51,16 @@ class ApiService {
     /**
      * Interceptor de request
      * Agrega token JWT si existe
+     *
+     * BUG FIX #12: Token security improvement
+     * Changed from localStorage to sessionStorage:
+     * - sessionStorage is cleared when browser closes (less persistent)
+     * - Still not ideal, long-term solution is HttpOnly cookies
+     * TODO: Migrate to HttpOnly cookies + CSRF tokens in future
      */
     this.client.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('auth_token');
+        const token = sessionStorage.getItem('auth_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }

@@ -19,6 +19,14 @@ router.use(authMiddleware);
 router.get('/global', async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user?.id;
+
+    // BUG FIX #5: Authorization bypass - require authentication
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required. Please provide a valid user token.'
+      });
+    }
+
     const pageParam = req.query['page'] as string | undefined;
     const page = Math.max(1, parseInt(pageParam || '1') || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 50));
@@ -30,7 +38,7 @@ router.get('/global', async (req: Request, res: Response) => {
 
     const where: any = {
       analysis: {
-        project: userId ? { userId } : {},
+        project: { userId },  // Now guaranteed to have userId
       }
     };
 

@@ -40,7 +40,7 @@ model User {
   mentionedIn  CommentMention[] @relation("CommentMentions")
   notificationPreferences NotificationPreferences?
   auditLogs    AuditLog[]
-  remediationActions RemediationAction[] // Phase 1 - asignaciones de remediación
+  remediationActions RemediationAction[] @relation("remediationActions") // Phase 1 - asignaciones de remediación
   remediationComments RemediationComment[]
 
   @@index([email])
@@ -72,6 +72,15 @@ model UserSettings {
   // GitHub token (encriptado en BD)
   githubToken   String?  @db.VarChar(500)
   githubValidatedAt DateTime?
+
+  // Claude API Key (encriptado en BD)
+  claudeApiKey  String?  @db.VarChar(500)
+
+  // Configuración de IA
+  selectedModel String?  @default("claude-3-5-sonnet") @db.VarChar(100)
+  temperature   Float?   @default(0.7) // 0.0 to 2.0
+  maxTokens     Int?     @default(4096) // tokens máximos para respuesta
+  webhookUrl    String?  @db.VarChar(500) // URL para notificaciones
 
   // API Key para servicios externos
   apiKey        String?  @db.VarChar(500)
@@ -189,6 +198,9 @@ model Finding {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // BUG FIX #10: Soft deletes - prevent data loss from cascade deletes
+  deletedAt DateTime?
+
   // Relaciones
   forensicEvents ForensicEvent[]
   assignment FindingAssignment?
@@ -198,7 +210,9 @@ model Finding {
   comments Comment[]
   notifications Notification[]
 
+  // Índices (mejorados con soft deletes)
   @@index([analysisId, severity])
+  @@index([analysisId, deletedAt])  // Para queries que filtran por no eliminados
   @@index([analysisId])
   @@index([severity])
   @@index([riskType])

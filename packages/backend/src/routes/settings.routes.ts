@@ -32,6 +32,17 @@ const GitHubTokenSchema = z.object({
 });
 
 /**
+ * Schema para configuración de IA
+ */
+const AIConfigSchema = z.object({
+  claudeApiKey: z.string().optional(),
+  selectedModel: z.string().min(1),
+  temperature: z.number().min(0).max(2),
+  maxTokens: z.number().min(512).max(8192),
+  webhookUrl: z.string().url().optional(),
+});
+
+/**
  * POST /api/v1/settings/github-token
  * Guardar y validar GitHub token
  */
@@ -144,6 +155,103 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
     const msg = error instanceof Error ? error.message : String(error);
     logger.error(`Error obteniendo configuraciones: ${msg}`);
     res.status(500).json({ error: 'Error al obtener configuraciones' });
+  }
+});
+
+/**
+ * POST /api/v1/settings/ai-config
+ * Guardar configuración de IA (Claude API key, modelo, temperatura, etc)
+ */
+router.post('/ai-config', validarBody(AIConfigSchema), async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    const { claudeApiKey, selectedModel, temperature, maxTokens, webhookUrl } = req.body;
+
+    if (!userId) {
+      res.status(401).json({ error: 'Usuario no autenticado' });
+      return;
+    }
+
+    /**
+     * Validar Claude API key si se proporciona
+     */
+    if (claudeApiKey) {
+      try {
+        const response = await axios.post(
+          'https://api.anthropic.com/v1/messages',
+          {
+            model: selectedModel || 'claude-3-5-sonnet-20241022',
+            max_tokens: 10,
+            messages: [{ role: 'user', content: 'test' }],
+          },
+          {
+            headers: {
+              'x-api-key': claudeApiKey,
+              'anthropic-version': '2023-06-01',
+            },
+            timeout: 5000,
+          }
+        );
+        // Si llega aquí, la clave es válida (puede fallar por créditos pero eso es OK)
+      } catch (error: any) {
+        if (error.response?.status === 401) {
+          res.status(401).json({
+            error: 'Claude API key inválida o expirada',
+            valid: false,
+          });
+          return;
+        }
+        // Otros errores son OK (créditos insuficientes, etc)
+      }
+    }
+
+    /**
+     * Guardar configuración en BD
+     */
+    const encryptedClaudeKey = claudeApiKey ? encrypt(claudeApiKey) : undefined;
+
+    const updatedSettings = await prisma.userSettings.upsert({
+      where: { userId },
+      create: {
+        userId,
+        claudeApiKey: encryptedClaudeKey,
+        selectedModel,
+        temperature,
+        maxTokens,
+        webhookUrl,
+      },
+      update: {
+        ...(claudeApiKey && { claudeApiKey: encryptedClaudeKey }),
+        selectedModel,
+        temperature,
+        maxTokens,
+        webhookUrl,
+      },
+    });
+
+    auditLog(AuditEventType.DB_OPERATION, 'Configuración de IA actualizada', {
+      userId,
+      model: selectedModel,
+      temperature,
+      maxTokens,
+      timestamp: new Date().toISOString(),
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Configuración de IA guardada correctamente',
+      data: {
+        selectedModel,
+        temperature,
+        maxTokens,
+        has_claude_key: !!updatedSettings.claudeApiKey,
+        has_webhook: !!updatedSettings.webhookUrl,
+      },
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error guardando configuración de IA: ${msg}`);
+    res.status(500).json({ error: 'Error al guardar configuración de IA' });
   }
 });
 

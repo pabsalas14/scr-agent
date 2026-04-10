@@ -43,8 +43,8 @@ const VerifySchema = z.object({
 
 // ==================== HELPER ====================
 
-function generateToken(id: string, email: string): string {
-  return jwt.sign({ id, email }, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
+function generateToken(id: string, email: string, role?: string): string {
+  return jwt.sign({ id, email, role: role ?? 'VIEWER' }, JWT_SECRET!, { expiresIn: JWT_EXPIRES_IN } as jwt.SignOptions);
 }
 
 // ==================== RUTAS ====================
@@ -111,10 +111,17 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const token = generateToken(user.id, user.email);
-    logger.info({ message: 'Login exitoso', userId: user.id });
+    // Obtener el rol del usuario de la tabla user_roles
+    const userRole = await prisma.userRole.findFirst({
+      where: { userId: user.id },
+      select: { role: true },
+    });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt } });
+    const role = userRole?.role ?? 'VIEWER';
+    const token = generateToken(user.id, user.email, role);
+    logger.info({ message: 'Login exitoso', userId: user.id, role });
+
+    res.json({ token, user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt, role } });
   } catch (err) {
     logger.error({ message: 'Error en login', error: err });
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -135,7 +142,7 @@ router.post('/verify', async (req: Request, res: Response): Promise<void> => {
   const { token } = parsed.data;
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as unknown as { id: string; email: string };
+    const decoded = jwt.verify(token, JWT_SECRET) as unknown as { id: string; email: string; role?: string };
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { id: true, email: true, createdAt: true },
@@ -146,7 +153,7 @@ router.post('/verify', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    res.json({ valid: true, user });
+    res.json({ valid: true, user, role: decoded.role ?? 'VIEWER' });
   } catch {
     res.status(401).json({ valid: false, error: 'Token inválido o expirado' });
   }

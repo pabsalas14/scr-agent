@@ -51,8 +51,11 @@
   },
   "dependencies": {
     "@types/socket.io": "^3.0.2",
+    "bullmq": "^5.10.0",
+    "date-fns": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "recharts": "^3.8.1",
+    "redis": "^4.6.12",
     "socket.io": "^4.8.3",
     "socket.io-client": "^4.8.3"
   }
