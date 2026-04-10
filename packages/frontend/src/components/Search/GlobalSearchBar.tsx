@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { Search, X, Clock, TrendingUp, Zap } from 'lucide-react';
+import { Search, X, Clock, TrendingUp, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { searchService } from '../../services/search.service';
+import { useToast } from '../../hooks/useToast';
 
 interface SearchResult {
   id: string;
   title: string;
-  type: 'project' | 'finding' | 'report' | 'incident';
+  type: 'project' | 'finding' | 'report' | 'incident' | 'analysis';
   description?: string;
-  score: number;
+  relevance: number;
+  href?: string;
 }
 
 interface GlobalSearchBarProps {
@@ -16,35 +19,12 @@ interface GlobalSearchBarProps {
   placeholder?: string;
 }
 
-const mockResults: SearchResult[] = [
-  {
-    id: '1',
-    title: 'SQL Injection en login.ts',
-    type: 'finding',
-    description: 'Inyección SQL en módulo de autenticación',
-    score: 0.95,
-  },
-  {
-    id: '2',
-    title: 'Backend Security Audit',
-    type: 'project',
-    description: 'Auditoría de seguridad del backend',
-    score: 0.85,
-  },
-  {
-    id: '3',
-    title: 'XSS Vulnerability Report',
-    type: 'report',
-    description: 'Reporte de vulnerabilidades XSS identificadas',
-    score: 0.78,
-  },
-];
-
 const typeConfig = {
   project: { label: 'Proyecto', color: 'bg-[#F97316]', icon: '📁' },
   finding: { label: 'Hallazgo', color: 'bg-[#EF4444]', icon: '⚠️' },
   report: { label: 'Reporte', color: 'bg-[#22C55E]', icon: '📊' },
   incident: { label: 'Incidente', color: 'bg-[#6366F1]', icon: '🚨' },
+  analysis: { label: 'Análisis', color: 'bg-[#3B82F6]', icon: '🔍' },
 };
 
 export default function GlobalSearchBar({
@@ -55,28 +35,52 @@ export default function GlobalSearchBar({
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>(['SQL Injection', 'XSS', 'CSRF']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    const stored = localStorage.getItem('recentSearches');
+    return stored ? JSON.parse(stored) : [];
+  });
+  const toast = useToast();
 
   const handleSearch = useCallback(
-    (value: string) => {
+    async (value: string) => {
       setQuery(value);
 
-      if (value.trim().length > 0) {
-        // Simulate search results
-        const filtered = mockResults.filter(
-          (r) =>
-            r.title.toLowerCase().includes(value.toLowerCase()) ||
-            r.description?.toLowerCase().includes(value.toLowerCase())
-        );
-        setResults(filtered.sort((a, b) => b.score - a.score));
-        setIsOpen(true);
-      } else {
+      if (value.trim().length >= 2) {
+        setIsLoading(true);
+        try {
+          const response = await searchService.search({
+            query: value,
+            page: 1,
+            limit: 10,
+            filters: {},
+          });
+
+          // Map API results to SearchResult format
+          const mappedResults: SearchResult[] = response.results.map((r: any) => ({
+            id: r.id,
+            title: r.title,
+            type: r.type,
+            description: r.description,
+            relevance: r.relevance,
+            href: r.href,
+          }));
+
+          setResults(mappedResults);
+          setIsOpen(true);
+        } catch (error) {
+          toast.error('Error en la búsqueda');
+          setResults([]);
+        } finally {
+          setIsLoading(false);
+        }
+      } else if (value.trim().length === 0) {
         setResults([]);
       }
 
       onSearch?.(value);
     },
-    [onSearch]
+    [onSearch, toast]
   );
 
   const handleSelectResult = (result: SearchResult) => {
@@ -84,8 +88,10 @@ export default function GlobalSearchBar({
     setIsOpen(false);
     onSelectResult?.(result);
 
-    // Add to recent searches
-    setRecentSearches((prev) => [result.title, ...prev.filter((s) => s !== result.title)].slice(0, 5));
+    // Add to recent searches and persist
+    const updated = [result.title, ...recentSearches.filter((s) => s !== result.title)].slice(0, 5);
+    setRecentSearches(updated);
+    localStorage.setItem('recentSearches', JSON.stringify(updated));
   };
 
   const handleSelectRecent = (search: string) => {
@@ -127,7 +133,12 @@ export default function GlobalSearchBar({
             exit={{ opacity: 0, y: -10 }}
             className="absolute top-full left-0 right-0 mt-2 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg shadow-lg z-50 max-h-96 overflow-y-auto"
           >
-            {results.length > 0 ? (
+            {isLoading ? (
+              <div className="p-8 flex flex-col items-center justify-center gap-3 text-center">
+                <Loader2 className="w-5 h-5 text-[#F97316] animate-spin" />
+                <p className="text-sm text-[#6B7280]">Buscando...</p>
+              </div>
+            ) : results.length > 0 ? (
               <div className="p-2">
                 <div className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider px-3 py-2 mb-2">
                   Resultados ({results.length})
@@ -144,7 +155,7 @@ export default function GlobalSearchBar({
                         <span className={`text-sm font-semibold text-white px-2 py-0.5 rounded ${config.color} bg-opacity-20`}>
                           {config.label}
                         </span>
-                        <span className="text-xs text-[#6B7280]">Match: {Math.round(result.score * 100)}%</span>
+                        <span className="text-xs text-[#6B7280]">Relevancia: {Math.round(result.relevance)}</span>
                       </div>
                       <p className="text-sm text-white font-medium">{result.title}</p>
                       {result.description && (
