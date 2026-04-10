@@ -159,6 +159,9 @@ import remediationRoutes from './routes/remediation.routes';
 import timelineRoutes from './routes/timeline.routes';
 import trendsRoutes from './routes/trends.routes';
 import detectionRoutes from './routes/detection.routes';
+import visualizationsRoutes from './routes/visualizations.routes';
+import codeAnalysisRoutes from './routes/code-analysis.routes';
+import reportsRoutes from './routes/reports.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 
@@ -187,6 +190,9 @@ app.use('/api/v1/remediation', remediationRoutes);
 app.use('/api/v1/timeline', timelineRoutes);
 app.use('/api/v1/trends', trendsRoutes);
 app.use('/api/v1/detection', detectionRoutes);
+app.use('/api/v1/visualizations', visualizationsRoutes);
+app.use('/api/v1/code-analysis', codeAnalysisRoutes);
+app.use('/api/v1/reports', reportsRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 
