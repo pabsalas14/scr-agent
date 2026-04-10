@@ -8,6 +8,8 @@ class SocketClientService {
   private socket: Socket | null = null;
   private connected = false;
   private userId: string | null = null;
+  // BUG FIX #16: Track registered listeners to prevent memory leaks
+  private listeners = new Map<string, Function>();
 
   /**
    * Initialize socket connection
@@ -77,16 +79,30 @@ class SocketClientService {
   }
 
   /**
+   * Helper method to register a listener with proper cleanup tracking
+   * BUG FIX #16: Prevents memory leaks by removing old listeners before registering new ones
+   */
+  private registerListener<T>(eventName: string, callback: (data: T) => void): void {
+    if (!this.socket) return;
+
+    // Remove previous listener if it exists
+    const oldListener = this.listeners.get(eventName);
+    if (oldListener) {
+      this.socket.off(eventName, oldListener as any);
+    }
+
+    // Register new listener and track it
+    this.socket.on(eventName, callback);
+    this.listeners.set(eventName, callback);
+  }
+
+  /**
    * Listen for finding status changes
    */
   onFindingStatusChanged(
     callback: (data: { findingId: string; newStatus: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('finding:statusChanged', (data) => {
-        callback(data);
-      });
-    }
+    this.registerListener('finding:statusChanged', callback);
   }
 
   /**
@@ -95,11 +111,7 @@ class SocketClientService {
   onFindingAssigned(
     callback: (data: { findingId: string; assignedTo: string; assignedBy: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('finding:assigned', (data) => {
-        callback(data);
-      });
-    }
+    this.registerListener('finding:assigned', callback);
   }
 
   /**
@@ -108,11 +120,7 @@ class SocketClientService {
   onRemediationUpdated(
     callback: (data: { findingId: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('remediation:updated', (data) => {
-        callback(data);
-      });
-    }
+    this.registerListener('remediation:updated', callback);
   }
 
   /**
@@ -121,11 +129,7 @@ class SocketClientService {
   onRemediationVerified(
     callback: (data: { findingId: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('remediation:verified', (data) => {
-        callback(data);
-      });
-    }
+    this.registerListener('remediation:verified', callback);
   }
 
   /**
@@ -141,11 +145,7 @@ class SocketClientService {
       timestamp: Date;
     }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('comment:added', (data) => {
-        callback(data);
-      });
-    }
+    this.registerListener('comment:added', callback);
   }
 
   /**
@@ -154,9 +154,7 @@ class SocketClientService {
   onAnalysisStatusChanged(
     callback: (data: { analysisId: string; status: string; progress: number; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('analysis:statusChanged', callback);
-    }
+    this.registerListener('analysis:statusChanged', callback);
   }
 
   /**
@@ -165,9 +163,7 @@ class SocketClientService {
   onFindingsDiscovered(
     callback: (data: { analysisId: string; findings: unknown[]; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('analysis:findingsDiscovered', callback);
-    }
+    this.registerListener('analysis:findingsDiscovered', callback);
   }
 
   /**
@@ -176,9 +172,7 @@ class SocketClientService {
   onAnalysisCompleted(
     callback: (data: { analysisId: string; projectId: string; reportId: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('analysis:completed', callback);
-    }
+    this.registerListener('analysis:completed', callback);
   }
 
   /**
@@ -187,15 +181,22 @@ class SocketClientService {
   onAnalysisError(
     callback: (data: { analysisId: string; error: string; timestamp: Date }) => void
   ): void {
-    if (this.socket) {
-      this.socket.on('analysis:error', callback);
-    }
+    this.registerListener('analysis:error', callback);
   }
 
   /**
-   * Disconnect socket
+   * Disconnect socket and clean up all listeners
+   * BUG FIX #16: Ensure all listeners are properly cleaned up
    */
   disconnect(): void {
+    // Remove all registered listeners
+    for (const [eventName, callback] of this.listeners.entries()) {
+      if (this.socket) {
+        this.socket.off(eventName, callback as any);
+      }
+    }
+    this.listeners.clear();
+
     if (this.socket) {
       this.socket.disconnect();
       this.connected = false;

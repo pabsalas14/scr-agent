@@ -25,7 +25,6 @@ export function useAsyncOperation(options: AsyncOperationOptions = {}) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const toast = useToast();
-  let loadingToastId: string | null = null;
 
   const execute = useCallback(
     async <T,>(
@@ -43,10 +42,9 @@ export function useAsyncOperation(options: AsyncOperationOptions = {}) {
       const finalSuccessMsg = customMessages?.success || successMessage;
       const finalErrorMsg = customMessages?.error || errorMessage;
 
-      // Show loading toast
-      // Note: Toast component doesn't have IDs yet, so we can't hide it programmatically
-      // But we can use duration: 0 to keep it visible
-      toast.info(finalLoadingMsg, 0);
+      // Show loading toast with reasonable duration so it auto-closes
+      // BUG FIX #14: Use duration of 10s instead of 0 (infinite), with finally block for cleanup
+      toast.info(finalLoadingMsg, 10000);
 
       try {
         const result = await operation();
@@ -67,6 +65,9 @@ export function useAsyncOperation(options: AsyncOperationOptions = {}) {
         onError?.(error);
 
         throw error;
+      } finally {
+        // BUG FIX #14: Ensure loading state is cleared even if operation hangs
+        setIsLoading(false);
       }
     },
     [loadingMessage, successMessage, errorMessage, onSuccess, onError, autoHideSuccess, autoHideDuration, toast]

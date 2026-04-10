@@ -60,8 +60,10 @@ class CacheService {
   }
 
   destroy(): void {
-    if (this.cleanupInterval) {
+    // BUG FIX #17: Ensure timer is always cancelled and set to null
+    if (this.cleanupInterval !== null) {
       clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
     }
     this.clear();
   }

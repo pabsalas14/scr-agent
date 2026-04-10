@@ -6,6 +6,7 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
+import type { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router: ExpressRouter = Router();
 
@@ -32,19 +33,39 @@ interface TimelineData {
  * GET /api/v1/analytics/summary
  * Get analytics summary with key statistics
  */
-router.get('/summary', async (req: Request, res: Response) => {
+router.get('/summary', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = (req as any).user?.id;
+
+    // BUG FIX #6: Filter by userId to show only user's own projects' findings
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
     // Run both queries in parallel
     const [findings, totalAnalyses] = await Promise.all([
       prisma.finding.findMany({
-        where: { analysis: { status: 'COMPLETED' } },
+        where: {
+          analysis: {
+            status: 'COMPLETED',
+            project: { userId }  // Filter by current user's projects
+          }
+        },
         include: {
           analysis: true,
           remediation: true,
           statusHistory: { orderBy: { createdAt: 'desc' }, take: 1 },
         },
       }),
-      prisma.analysis.count({ where: { status: 'COMPLETED' } }),
+      prisma.analysis.count({
+        where: {
+          status: 'COMPLETED',
+          project: { userId }  // Filter by current user's projects
+        }
+      }),
     ]);
 
     let totalFindings = 0;
@@ -54,6 +75,7 @@ router.get('/summary', async (req: Request, res: Response) => {
     let lowFindings = 0;
     let totalResolutionTime = 0;
     let remediatedFindings = 0;
+    let findingsWithRemediationEntry = 0;
 
     // Process each finding
     for (const finding of findings) {
@@ -70,9 +92,13 @@ router.get('/summary', async (req: Request, res: Response) => {
         lowFindings++;
       }
 
-      // Count remediated findings
-      if (finding.remediation?.status === 'VERIFIED') {
-        remediatedFindings++;
+      // BUG FIX #1: Only count findings that have remediation entries in the remediation rate
+      // This prevents artificially low rates from findings without remediation records
+      if (finding.remediation) {
+        findingsWithRemediationEntry++;
+        if (finding.remediation.status === 'VERIFIED') {
+          remediatedFindings++;
+        }
       }
 
       // Calculate resolution time
@@ -84,8 +110,9 @@ router.get('/summary', async (req: Request, res: Response) => {
 
     const averageResolutionTime =
       totalFindings > 0 ? totalResolutionTime / totalFindings : 0;
+    // BUG FIX #1: Use findingsWithRemediationEntry as denominator, not totalFindings
     const remediationRate =
-      totalFindings > 0 ? remediatedFindings / totalFindings : 0;
+      findingsWithRemediationEntry > 0 ? remediatedFindings / findingsWithRemediationEntry : 0;
 
     const summary: AnalyticsSummary = {
       totalFindings,
@@ -114,10 +141,29 @@ router.get('/summary', async (req: Request, res: Response) => {
  * GET /api/v1/analytics/timeline?days=30
  * Get timeline data for the last N days
  */
-router.get('/timeline', async (req: Request, res: Response) => {
+router.get('/timeline', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = (req as any).user?.id;
+
+    // BUG FIX #6: Filter by userId to show only user's own projects' findings
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
     const daysParam = req.query['days'];
-    const days = typeof daysParam === 'string' ? parseInt(daysParam, 10) : 30;
+    let days = typeof daysParam === 'string' ? parseInt(daysParam, 10) : 30;
+
+    // BUG FIX #4: Validate days parameter - prevent negative or excessive values
+    if (isNaN(days) || days < 1) {
+      days = 30;
+    } else if (days > 365) {
+      // Cap at 1 year to prevent performance issues
+      days = 365;
+    }
+
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
@@ -126,6 +172,7 @@ router.get('/timeline', async (req: Request, res: Response) => {
       where: {
         analysis: {
           status: 'COMPLETED',
+          project: { userId },  // Filter by current user's projects
           createdAt: {
             gte: startDate as unknown as Date
           }
@@ -194,12 +241,23 @@ router.get('/timeline', async (req: Request, res: Response) => {
  * GET /api/v1/analytics/by-type
  * Get findings breakdown by risk type
  */
-router.get('/by-type', async (req: Request, res: Response) => {
+router.get('/by-type', async (req: AuthenticatedRequest, res: Response) => {
   try {
+    const userId = (req as any).user?.id;
+
+    // BUG FIX #6: Filter by userId to show only user's own projects' findings
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
     const findings = await prisma.finding.findMany({
       where: {
         analysis: {
-          status: 'COMPLETED'
+          status: 'COMPLETED',
+          project: { userId }  // Filter by current user's projects
         }
       },
       select: {

@@ -213,6 +213,7 @@ model Finding {
   // Índices (mejorados con soft deletes)
   @@index([analysisId, severity])
   @@index([analysisId, deletedAt])  // Para queries que filtran por no eliminados
+  @@index([analysisId, createdAt])  // BUG FIX #9: Para timeline queries que ordenan por fecha
   @@index([analysisId])
   @@index([severity])
   @@index([riskType])
