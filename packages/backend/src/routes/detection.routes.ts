@@ -11,6 +11,10 @@ import { Router, type Request, type Response, type Router as ExpressRouter } fro
 import { logger } from '../services/logger.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { detectAPTThreat, detectMultipleAPTThreats } from '../services/apt-detection.service';
+import {
+  detectBusinessLogicAttack,
+  detectMultipleBusinessLogicAttacks,
+} from '../services/business-logic-attacks.service';
 
 const router: ExpressRouter = Router();
 router.use(authMiddleware);
@@ -61,6 +65,55 @@ router.get('/apt', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(`Error escaneando APT threats: ${error}`);
     res.status(500).json({ success: false, error: 'Error escaneando amenazas' });
+  }
+});
+
+/**
+ * GET /api/detection/bla/:userId
+ * Detectar Business Logic Attack para usuario
+ */
+router.get('/bla/:userId', async (req: Request, res: Response) => {
+  try {
+    const attack = await detectBusinessLogicAttack(req.params.userId);
+
+    if (!attack) {
+      return res.json({
+        success: true,
+        data: null,
+        message: 'No business logic attack detected',
+      });
+    }
+
+    res.json({ success: true, data: attack });
+  } catch (error) {
+    logger.error(`Error detectando business logic attack: ${error}`);
+    res.status(500).json({ success: false, error: 'Error detectando ataque' });
+  }
+});
+
+/**
+ * GET /api/detection/bla
+ * Escanear Business Logic Attacks en todos los usuarios
+ */
+router.get('/bla', async (req: Request, res: Response) => {
+  try {
+    const minConfidence = parseInt(req.query.minConfidence as string) || 60;
+    const riskLevel = req.query.riskLevel as 'CRITICAL' | 'HIGH' | undefined;
+
+    const attacks = await detectMultipleBusinessLogicAttacks({
+      minConfidence,
+      riskLevel,
+    });
+
+    res.json({
+      success: true,
+      data: attacks,
+      count: attacks.length,
+      filter: { minConfidence, riskLevel },
+    });
+  } catch (error) {
+    logger.error(`Error escaneando BLA: ${error}`);
+    res.status(500).json({ success: false, error: 'Error escaneando ataques' });
   }
 });
 
