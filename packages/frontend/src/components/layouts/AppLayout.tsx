@@ -2,6 +2,7 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import { Outlet, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from '../Sidebar';
+import SearchHeader from '../Search/SearchHeader';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../hooks/useAuth';
 import ToastContainer from '../ui/Toast';
@@ -92,6 +93,9 @@ export default function AppLayout() {
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col min-w-0 pl-20 lg:pl-64 transition-all duration-300">
+            {/* Search Header */}
+            <SearchHeader />
+
             <main className="flex-1 relative z-10 p-6 sm:p-8 lg:p-10">
               <AnimatePresence mode="wait">
                 <Outlet />
