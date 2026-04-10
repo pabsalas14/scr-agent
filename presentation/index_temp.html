@@ -1,0 +1,1968 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCR Agent - Auditoría de Código Inteligente</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F97316;
+            --primary-dark: #EA580C;
+            --secondary: #FB923C;
+            --danger: #EF4444;
+            --success: #22C55E;
+            --warning: #F97316;
+            --background: #0A0E27;
+            --surface: #111827;
+            --border: #1F2937;
+            --text: #F3F4F6;
+            --text-secondary: #D1D5DB;
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            color: var(--text);
+            background: var(--background);
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: var(--text);
+        }
+
+        .logo-icon {
+            font-size: 1.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.3s ease;
+            cursor: pointer;
+        }
+
+        .nav-link:hover {
+            color: var(--primary);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 120px 2rem;
+            text-align: center;
+            background: linear-gradient(135deg, var(--background) 0%, var(--surface) 100%);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-weight: 600;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+            max-width: 700px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Section */
+        .section {
+            padding: 80px 2rem;
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .section-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 3rem;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .card {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--primary);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Architecture */
+        .arch-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            margin-bottom: 3rem;
+        }
+
+        .arch-layer {
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, var(--surface), var(--surface));
+            border-left: 4px solid var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .arch-layer:hover {
+            background: linear-gradient(135deg, var(--surface), #1f2937);
+            border-left-color: var(--secondary);
+        }
+
+        .arch-layer-title {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .arch-layer-tech {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Flow Diagram */
+        .flow-diagram {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            overflow-x: auto;
+            padding: 2rem;
+            background: var(--surface);
+            border-radius: 12px;
+            margin-bottom: 3rem;
+        }
+
+        .flow-stage {
+            flex-shrink: 0;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .flow-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .flow-stage h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .flow-stage p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .flow-arrow {
+            flex-shrink: 0;
+            font-size: 1.5rem;
+            color: var(--text-secondary);
+        }
+
+        /* Tech Grid */
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .tech-card {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .tech-card h4 {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .tech-list {
+            list-style: none;
+        }
+
+        .tech-list li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .tech-list li:last-child {
+            border-bottom: none;
+        }
+
+        /* Agents */
+        .agentes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 2rem;
+        }
+
+        .agente-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .agente-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .agente-header {
+            padding: 2rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .agente-header.threat {
+            background: linear-gradient(135deg, #ff3b3b, #ff6b6b);
+        }
+
+        .agente-header.remediation {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        .agente-header.forensic {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .agente-header.incident {
+            background: linear-gradient(135deg, #0066ff, #0084ff);
+        }
+
+        .agente-icon {
+            font-size: 2.5rem;
+        }
+
+        .agente-header h3 {
+            font-size: 1.25rem;
+            margin: 0;
+        }
+
+        .agente-body {
+            padding: 2rem;
+        }
+
+        .agente-body h4 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .agente-body ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .agente-body li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Deployment */
+        .deployment-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-bottom: 4rem;
+        }
+
+        .deployment-card {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .deployment-card h3 {
+            margin-bottom: 1.5rem;
+            color: var(--text);
+        }
+
+        .code-block {
+            background: var(--surface);
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .code-line {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+        }
+
+        .keyword {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Phases */
+        .phases-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .phase-card {
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+            background: var(--surface);
+        }
+
+        .phase-card.phase-1 {
+            border-color: #f59e0b;
+            background: linear-gradient(135deg, #78350f, var(--surface));
+        }
+
+        .phase-card.phase-2 {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, #1e3a8a, var(--surface));
+        }
+
+        .phase-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        .phase-header h4 {
+            margin: 0;
+            font-size: 1.2rem;
+        }
+
+        .phase-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .phase-1 .phase-badge {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .phase-2 .phase-badge {
+            background: var(--primary);
+            color: white;
+        }
+
+        .phase-body ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .phase-body li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Ventajas */
+        .ventajas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+        }
+
+        .ventaja-card {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .ventaja-card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-4px);
+        }
+
+        .ventaja-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .ventaja-card h3 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: var(--text);
+        }
+
+        .ventaja-card p {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Comparison */
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 2rem;
+            background: var(--surface);
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .comparison-table th {
+            background: var(--surface);
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .comparison-table td {
+            color: var(--text-secondary);
+        }
+
+        .comparison-table tr:hover {
+            background: var(--surface);
+        }
+
+        .check {
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        .cross {
+            color: var(--danger);
+            font-weight: 700;
+        }
+
+        /* Criticidad */
+        .criticidad-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+        }
+
+        .criticidad-card {
+            padding: 2rem;
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            font-weight: 600;
+            cursor: default;
+            transition: transform 0.3s ease;
+        }
+
+        .criticidad-card:hover {
+            transform: scale(1.05);
+        }
+
+        .criticidad-card.critical {
+            background: linear-gradient(135deg, #ff3b3b, #ff6b6b);
+        }
+
+        .criticidad-card.high {
+            background: linear-gradient(135deg, #f59e0b, #fbbf24);
+        }
+
+        .criticidad-card.medium {
+            background: linear-gradient(135deg, #06b6d4, #22d3ee);
+        }
+
+        .criticidad-card.low {
+            background: linear-gradient(135deg, #10b981, #34d399);
+        }
+
+        .criticidad-value {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* Trazabilidad */
+        .trazabilidad-timeline {
+            position: relative;
+            padding: 2rem;
+            background: var(--surface);
+            border-radius: 12px;
+        }
+
+        .timeline-item {
+            padding: 2rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid var(--primary);
+            padding-left: 2rem;
+            background: var(--surface);
+            border-radius: 8px;
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        .timeline-item:hover {
+            background: var(--surface);
+            border-left-color: var(--secondary);
+        }
+
+        .timeline-title {
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-date {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-desc {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        /* Dashboard */
+        .dashboard-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .dashboard-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--surface);
+        }
+
+        .dashboard-tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .dashboard-tab.active {
+            color: var(--primary);
+            border-bottom: 2px solid var(--primary);
+        }
+
+        .dashboard-content {
+            padding: 2rem;
+            display: none;
+        }
+
+        .dashboard-content.active {
+            display: block;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-bottom: 2rem;
+        }
+
+        /* Use Cases */
+        .usecase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .usecase-card {
+            padding: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+        }
+
+        .usecase-card h3 {
+            margin-bottom: 1rem;
+            color: var(--text);
+        }
+
+        .usecase-card p {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            font-size: 0.95rem;
+        }
+
+        .usecase-features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .usecase-features li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Demo */
+        .demo-container {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+        }
+
+        .demo-button {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 1rem 0;
+        }
+
+        .demo-button:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .demo-output {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 8px;
+            text-align: left;
+            margin-top: 2rem;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+        }
+
+        .demo-output code {
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        /* Footer */
+        .footer {
+            padding: 3rem 2rem;
+            background: var(--text);
+            color: white;
+            text-align: center;
+        }
+
+        .footer p {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2.5rem;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .flow-diagram {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+
+            .agentes-grid,
+            .tech-grid,
+            .deployment-grid,
+            .ventajas-grid,
+            .usecase-grid,
+            .criticidad-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🔐</span>
+                <span class="logo-text">SCR Agent</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#inicio" class="nav-link">Inicio</a></li>
+                <li><a href="#problema" class="nav-link">Problema</a></li>
+                <li><a href="#agentes" class="nav-link">Agentes IA</a></li>
+                <li><a href="#ventajas" class="nav-link">Ventajas</a></li>
+                <li><a href="#metodologia" class="nav-link">Metodología</a></li>
+                <li><a href="#trazabilidad" class="nav-link">Trazabilidad</a></li>
+                <li><a href="#casos" class="nav-link">Casos de Uso</a></li>
+                <li><a href="#demo" class="nav-link">Demo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="hero">
+        <div class="container">
+            <h1 class="hero-title">SCR Agent</h1>
+            <h2 class="hero-subtitle">Auditoría Inteligente de Código con IA</h2>
+            <p class="hero-description">
+                Análisis automático de vulnerabilidades, investigación forense en tiempo real,
+                y remediación inteligente de hallazgos de seguridad
+            </p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">14</div>
+                    <div class="stat-label">Incidentes Detectados</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Precisión Análisis</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">200+</div>
+                    <div class="stat-label">Patrones Detectados</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problema & Solución -->
+    <section id="problema" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">El Desafío de la Seguridad de Código</h2>
+            <p class="section-subtitle">Los problemas que enfrenta la industria hoy</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">❌</div>
+                    <h3>Vulnerabilidades No Detectadas</h3>
+                    <p>Análisis manual lento y propenso a errores humanos. Las herramientas tradicionales pierden hallazgos críticos.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⏱️</div>
+                    <h3>Falta de Trazabilidad</h3>
+                    <p>Sin seguimiento claro de cambios y remediciones. Imposible auditar quién encontró qué y cuándo.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Análisis Superficial</h3>
+                    <p>Sin investigación forense de patrones de riesgo. No se detectan funciones maliciosas o lógica no autorizada.</p>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 4rem;">La Solución: SCR Agent</h2>
+            <p class="section-subtitle">Auditoría completa de código con inteligencia artificial</p>
+
+            <div class="grid">
+                <div class="card">
+                    <div class="card-icon">✅</div>
+                    <h3>Análisis Automático</h3>
+                    <p>IA detecta vulnerabilidades en segundos con 95% de precisión. Reduce falsos positivos vs SAST tradicional.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Dashboard Integral</h3>
+                    <p>Seguimiento completo con estados, asignaciones, historial y reportes automáticos por email.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔬</div>
+                    <h3>Investigación Forense</h3>
+                    <p>Timeline de cambios, patrones de riesgo, análisis arquitectónico y correlación de eventos.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Arquitectura -->
+    <section id="arquitectura" class="section">
+        <div class="container">
+            <h2 class="section-title">Arquitectura del Sistema</h2>
+            <p class="section-subtitle">Sistema escalable con 4 capas integradas</p>
+
+            <div class="arch-container">
+                <h3 style="margin-bottom: 1.5rem;">4 Capas de Procesamiento</h3>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🖥️ Capa 1: Cliente</div>
+                    <div class="arch-layer-tech">React 18 • TypeScript • WebSockets • Interfaz interactiva en tiempo real</div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🌐 Capa 2: API Gateway</div>
+                    <div class="arch-layer-tech">Node.js 18+ • Express • REST API • Validación y autenticación</div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">🧠 Capa 3: Engine IA</div>
+                    <div class="arch-layer-tech">AST Analysis • ML Models • Pattern Matching • 200+ patrones OWASP</div>
+                </div>
+
+                <div class="arch-layer">
+                    <div class="arch-layer-title">💾 Capa 4: Persistencia</div>
+                    <div class="arch-layer-tech">PostgreSQL 14+ • Redis Cache • Elasticsearch • Búsqueda ultrarrápida</div>
+                </div>
+            </div>
+
+            <!-- Flujo de Análisis -->
+            <h3 style="margin-bottom: 1.5rem;">📊 Flujo de Análisis</h3>
+            <div class="flow-diagram">
+                <div class="flow-stage">
+                    <div class="flow-icon">📝</div>
+                    <h4>Ingesta</h4>
+                    <p>Código Fuente</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage">
+                    <div class="flow-icon">🔍</div>
+                    <h4>Parsing</h4>
+                    <p>AST Analysis</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage">
+                    <div class="flow-icon">🎯</div>
+                    <h4>Detección</h4>
+                    <p>Pattern Match</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage">
+                    <div class="flow-icon">📊</div>
+                    <h4>Scoring</h4>
+                    <p>ML Risk Score</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage">
+                    <div class="flow-icon">💾</div>
+                    <h4>Storage</h4>
+                    <p>Base de Datos</p>
+                </div>
+                <div class="flow-arrow">→</div>
+                <div class="flow-stage">
+                    <div class="flow-icon">📈</div>
+                    <h4>Visualización</h4>
+                    <p>Dashboard</p>
+                </div>
+            </div>
+
+            <!-- Stack Tecnológico -->
+            <h3 style="margin-top: 3rem; margin-bottom: 1.5rem;">📚 Stack Tecnológico</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>🎨 Frontend</h4>
+                    <ul class="tech-list">
+                        <li><strong>React 18</strong> - UI interactiva</li>
+                        <li><strong>TypeScript</strong> - Tipado seguro</li>
+                        <li><strong>Vite</strong> - Build ultrarrápido</li>
+                        <li><strong>Tailwind CSS</strong> - Estilos modernos</li>
+                        <li><strong>GSAP</strong> - Animaciones suaves</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>⚙️ Backend</h4>
+                    <ul class="tech-list">
+                        <li><strong>Node.js 18+</strong> - Runtime</li>
+                        <li><strong>Express.js</strong> - API Gateway</li>
+                        <li><strong>PostgreSQL 14+</strong> - BD Principal</li>
+                        <li><strong>Redis</strong> - Cache en memoria</li>
+                        <li><strong>Docker</strong> - Containerización</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🧠 Análisis & IA</h4>
+                    <ul class="tech-list">
+                        <li><strong>@babel/parser</strong> - JS/TS parsing</li>
+                        <li><strong>AST Analysis</strong> - Estructura sintáctica</li>
+                        <li><strong>ML Models</strong> - Risk scoring</li>
+                        <li><strong>OWASP DB</strong> - 200+ patrones</li>
+                        <li><strong>Pattern Matching</strong> - Correlación</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🔍 Búsqueda & Forense</h4>
+                    <ul class="tech-list">
+                        <li><strong>Elasticsearch</strong> - Full-text search</li>
+                        <li><strong>Git API</strong> - Análisis commits</li>
+                        <li><strong>Timeline Engine</strong> - Correlación temporal</li>
+                        <li><strong>Event Correlation</strong> - Análisis forense</li>
+                        <li><strong>Audit Logs</strong> - Trazabilidad completa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agentes IA -->
+    <section id="agentes" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Agentes IA Autónomos</h2>
+            <p class="section-subtitle">Análisis inteligente con modelos de machine learning especializados</p>
+
+            <div class="agentes-grid">
+                <div class="agente-card">
+                    <div class="agente-header threat">
+                        <span class="agente-icon">🤖</span>
+                        <h3>Agente de Detección</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis de patrones conocidos</li>
+                            <li>✅ Detección de anomalías</li>
+                            <li>✅ Scoring automático de riesgo</li>
+                            <li>✅ Clasificación de vulnerabilidades</li>
+                            <li>✅ CVSS scoring automático</li>
+                        </ul>
+                        <h4 style="margin-top: 1rem;">Explotación:</h4>
+                        <ul>
+                            <li>🎯 Ejecución automática por webhook</li>
+                            <li>🔄 Análisis continuo cada 24h</li>
+                            <li>📊 Reportes automáticos por email</li>
+                            <li>⚡ Alertas en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header remediation">
+                        <span class="agente-icon">⚙️</span>
+                        <h3>Agente de Remediación</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Generación de soluciones</li>
+                            <li>✅ Análisis de impacto</li>
+                            <li>✅ Propuesta de parches</li>
+                            <li>✅ Validación de fixes</li>
+                            <li>✅ Mejores prácticas integradas</li>
+                        </ul>
+                        <h4 style="margin-top: 1rem;">Explotación:</h4>
+                        <ul>
+                            <li>🔧 Sugerencias automáticas</li>
+                            <li>💡 Código listo para aplicar</li>
+                            <li>🧪 Testing de soluciones</li>
+                            <li>📋 Documentación generada</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header forensic">
+                        <span class="agente-icon">🔬</span>
+                        <h3>Agente Forense</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis histórico de cambios</li>
+                            <li>✅ Detección de patrones de riesgo</li>
+                            <li>✅ Correlación de eventos</li>
+                            <li>✅ Investigación de usuarios</li>
+                            <li>✅ Detección de comportamientos anómalos</li>
+                        </ul>
+                        <h4 style="margin-top: 1rem;">Explotación:</h4>
+                        <ul>
+                            <li>🕐 Timeline automático de cambios</li>
+                            <li>👥 Análisis de comportamiento</li>
+                            <li>⚠️ Detección de anomalías</li>
+                            <li>📊 Reportes correlacionados</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header incident">
+                        <span class="agente-icon">🎯</span>
+                        <h3>Agente de Respuesta</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Monitoreo en tiempo real</li>
+                            <li>✅ Escalamiento automático</li>
+                            <li>✅ Gestión de incidentes</li>
+                            <li>✅ Seguimiento de resolución</li>
+                            <li>✅ Validación de cierre</li>
+                        </ul>
+                        <h4 style="margin-top: 1rem;">Explotación:</h4>
+                        <ul>
+                            <li>🚨 Alertas automáticas</li>
+                            <li>📍 Asignación inteligente</li>
+                            <li>⏱️ Recordatorios automáticos</li>
+                            <li>✓ Validación de cierre</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Deployment -->
+    <section id="deployment" class="section">
+        <div class="container">
+            <h2 class="section-title">Arquitectura Docker & Deployment</h2>
+            <p class="section-subtitle">Solución containerizada y escalable para cualquier entorno</p>
+
+            <div class="deployment-grid">
+                <div class="deployment-card">
+                    <h3>🐳 Contenedores</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Frontend:</span> Node 18 + React</div>
+                        <div class="code-line"><span class="keyword">Backend:</span> Node 18 + Express</div>
+                        <div class="code-line"><span class="keyword">Database:</span> PostgreSQL 14</div>
+                        <div class="code-line"><span class="keyword">Cache:</span> Redis 7</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>⚙️ Orquestación</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Local:</span> Docker Compose</div>
+                        <div class="code-line"><span class="keyword">Production:</span> Kubernetes/Swarm</div>
+                        <div class="code-line"><span class="keyword">LB:</span> Nginx / HAProxy</div>
+                        <div class="code-line"><span class="keyword">Scaling:</span> Horizontal automático</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>📊 Monitoreo</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Metrics:</span> Prometheus</div>
+                        <div class="code-line"><span class="keyword">Dashboard:</span> Grafana</div>
+                        <div class="code-line"><span class="keyword">Logs:</span> ELK Stack</div>
+                        <div class="code-line"><span class="keyword">Alerts:</span> PagerDuty</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>🚀 CI/CD</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Pipeline:</span> GitHub Actions</div>
+                        <div class="code-line"><span class="keyword">Build:</span> Multi-stage Docker</div>
+                        <div class="code-line"><span class="keyword">Registry:</span> Docker Hub</div>
+                        <div class="code-line"><span class="keyword">Deploy:</span> Automated rolling</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 3rem; margin-bottom: 1.5rem; text-align: center;">📋 Fases de Implementación</h3>
+
+            <div class="phases-grid">
+                <div class="phase-card phase-1">
+                    <div class="phase-header">
+                        <h4>Fase 1: Etapa Piloto</h4>
+                        <span class="phase-badge">Análisis Bajo Demanda</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Docker local por analista</p>
+                        <ul>
+                            <li>✓ Deploy en máquina local del analista</li>
+                            <li>✓ Análisis bajo demanda por repositorio</li>
+                            <li>✓ Generación manual de reportes</li>
+                            <li>✓ Sin automatización CI/CD</li>
+                            <li>✓ Control total del analista</li>
+                            <li>✓ Pruebas de viabilidad</li>
+                        </ul>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                            <strong>Duración:</strong> 1-3 meses<br>
+                            <strong>Objetivo:</strong> Validar metodología y resultados
+                        </p>
+                    </div>
+                </div>
+
+                <div class="phase-card phase-2">
+                    <div class="phase-header">
+                        <h4>Fase 2: Producción</h4>
+                        <span class="phase-badge">Análisis Automatizado</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Servidor en producción con CI/CD</p>
+                        <ul>
+                            <li>✓ Deploy en infraestructura dedicada</li>
+                            <li>✓ Análisis automático en cada push</li>
+                            <li>✓ Integración con GitHub Actions/GitLab CI</li>
+                            <li>✓ Reportes automáticos por email</li>
+                            <li>✓ Alertas en tiempo real</li>
+                            <li>✓ Dashboard centralizado 24/7</li>
+                            <li>✓ Escalabilidad horizontal</li>
+                        </ul>
+                        <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--text-secondary);">
+                            <strong>Duración:</strong> Implementación gradual<br>
+                            <strong>Objetivo:</strong> Automatización completa
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ventajas -->
+    <section id="ventajas" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Ventajas de SCR Agent</h2>
+            <p class="section-subtitle">9 beneficios clave vs análisis manual y herramientas tradicionales</p>
+
+            <div class="ventajas-grid">
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⚡</div>
+                    <h3>Análisis Automático 24/7</h3>
+                    <p>Escanea tu código continuamente sin intervención manual, detectando vulnerabilidades en tiempo real.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🎯</div>
+                    <h3>Precisión Superior (95%)</h3>
+                    <p>Reduce falsos positivos comparado con SAST tradicional. ML avanzado entiende el contexto.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔍</div>
+                    <h3>Análisis Profundo</h3>
+                    <p>Va más allá del análisis estático: forense, patrones de riesgo y análisis arquitectónico integrados.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">📊</div>
+                    <h3>Inteligencia Contextual</h3>
+                    <p>Entiende el contexto del código, no solo patrones. Identifica vulnerabilidades lógicas.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">💡</div>
+                    <h3>Remediación Automática</h3>
+                    <p>Propone soluciones de código listos para usar, no solo reporta problemas.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔒</div>
+                    <h3>Trazabilidad Completa</h3>
+                    <p>Registra quién, qué, cuándo y cómo de cada hallazgo. Cumple con auditorías de seguridad.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⏱️</div>
+                    <h3>Ahorro de Tiempo</h3>
+                    <p>Análisis que tomaría días ahora se completa en minutos. Reduce carga de trabajo manual.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🚀</div>
+                    <h3>Escalabilidad</h3>
+                    <p>Analiza múltiples repositorios simultáneamente sin degradación de performance.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🧠</div>
+                    <h3>Aprendizaje Continuo</h3>
+                    <p>Mejora con cada análisis. Los patrones detectados entrenan el modelo para futuras detecciones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparación -->
+    <section class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">SCR Agent + Checkmarx One</h2>
+            <p class="section-subtitle">Complemento estratégico: detecta vulnerabilidades + descubre funciones maliciosas</p>
+
+            <table class="comparison-table">
+                <thead>
+                    <tr>
+                        <th>Característica</th>
+                        <th>Checkmarx OneQube</th>
+                        <th>SCR Agent</th>
+                        <th>Combinado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Análisis de Código Estático</strong></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓ Dual</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Patrones OWASP</strong></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓ Enriquecido</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Investigación Forense</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Detección de Funciones Maliciosas</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Análisis de Lógica No Autorizada</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Timeline de Cambios</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Remediación Automática</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Dashboard Completo con Trazabilidad</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Historial de Auditoría</strong></td>
+                        <td><span class="cross">✗</span></td>
+                        <td><span class="check">✓</span></td>
+                        <td><span class="check">✓</span></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div style="background: var(--surface); padding: 2rem; border-radius: 12px; margin-top: 2rem;">
+                <h3>Estrategia de Integración</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    <strong>Fase 1:</strong> Checkmarx OneQube detecta vulnerabilidades conocidas (200+ patrones OWASP)<br>
+                    <strong>Fase 2:</strong> SCR Agent investiga, descubre funciones maliciosas y realiza análisis forense<br>
+                    <strong>Fase 3:</strong> Integración: Dashboard unificado, reportes correlacionados, remediación automática
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CVSS -->
+    <section class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Criticidad y Scoring CVSS</h2>
+            <p class="section-subtitle">Evaluación automática de severidad basada en CVSS 3.1</p>
+
+            <div class="criticidad-grid">
+                <div class="criticidad-card critical">
+                    <div class="criticidad-value">9.0 - 10</div>
+                    <div>Crítica</div>
+                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Acción inmediata</p>
+                </div>
+                <div class="criticidad-card high">
+                    <div class="criticidad-value">7.0 - 8.9</div>
+                    <div>Alta</div>
+                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Resolver en 7 días</p>
+                </div>
+                <div class="criticidad-card medium">
+                    <div class="criticidad-value">4.0 - 6.9</div>
+                    <div>Media</div>
+                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Resolver en 30 días</p>
+                </div>
+                <div class="criticidad-card low">
+                    <div class="criticidad-value">0.1 - 3.9</div>
+                    <div>Baja</div>
+                    <p style="font-size: 0.85rem; margin-top: 0.5rem;">Monitoreo continuo</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metodología de Evaluación -->
+    <section id="metodologia" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Metodología de Evaluación SCR Agent</h2>
+            <p class="section-subtitle">Marco de evaluación de seguridad de código basado en análisis comportamental e intención</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 3rem;">
+                <div class="card" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary);">🎯 Enfoque de SCR Agent</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">🔍</span>
+                            <strong>Análisis Comportamental:</strong> Detección de intención maliciosa en el código
+                        </li>
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">⚠️</span>
+                            <strong>Lógica No Autorizada:</strong> Funciones no especificadas en requisitos
+                        </li>
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">💼</span>
+                            <strong>Desviaciones de Negocio:</strong> Cambios no autorizados en lógica crítica
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="card" style="padding: 2rem;">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--primary);">🏗️ Pilares de Evaluación</h3>
+                    <ul style="list-style: none; padding: 0;">
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">1️⃣</span>
+                            <strong>Análisis Comportamental:</strong> Intención del código, flujos de datos, comportamientos anómalos
+                        </li>
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">2️⃣</span>
+                            <strong>Validación de Requisitos:</strong> Confirmación de lógica de negocio, cambios no autorizados
+                        </li>
+                        <li style="margin-bottom: 1rem; padding-left: 1.5rem; position: relative;">
+                            <span style="position: absolute; left: 0;">3️⃣</span>
+                            <strong>Forensia de Código:</strong> Autor, timeline, intención maliciosa, patrones sospechosos
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div style="background: var(--surface); padding: 2rem; border-radius: 12px; margin-top: 2rem; border-left: 4px solid var(--primary);">
+                <h3 style="margin-bottom: 1.5rem;">📊 Matriz de Evaluación SCR</h3>
+                <table class="comparison-table" style="margin-top: 1rem;">
+                    <thead>
+                        <tr>
+                            <th>Categoría</th>
+                            <th>Criterios de Evaluación</th>
+                            <th>Riesgo</th>
+                            <th>Ejemplo</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Funciones Maliciosas</strong></td>
+                            <td>Comportamiento anómalo, acceso a datos no autorizado, exfiltración de datos</td>
+                            <td><span class="check" style="background: #ff3b3b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">Crítica</span></td>
+                            <td>Código que envía contraseñas a servidor remoto</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Lógica No Autorizada</strong></td>
+                            <td>Código que ejecuta funciones no especificadas en requisitos, bypass de seguridad</td>
+                            <td><span class="check" style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">Alta</span></td>
+                            <td>Función backdoor que abre conexión de shell</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Desviación de Negocio</strong></td>
+                            <td>Cambios en flujo de lógica, cálculos financieros incorrectos, reglas incumplidas</td>
+                            <td><span class="check" style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">Alta</span></td>
+                            <td>Cambio en cálculo de comisiones en código de pagos</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cambios Sospechosos</strong></td>
+                            <td>Autor no autorizado, cambios fuera de horas laboral, patrones de ataque conocidos</td>
+                            <td><span class="check" style="background: #06b6d4; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">Media</span></td>
+                            <td>Cambio en módulo crítico por cuenta comprometida</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Dependencias Comprometidas</strong></td>
+                            <td>Librerías con CVE, versiones conocidas vulnerables, cambios maliciosos en deps</td>
+                            <td><span class="check" style="background: #06b6d4; color: white; padding: 0.25rem 0.5rem; border-radius: 4px;">Media</span></td>
+                            <td>Dependencia con backdoor inyectado en supply chain</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Trazabilidad -->
+    <section id="trazabilidad" class="section">
+        <div class="container">
+            <h2 class="section-title">Trazabilidad y Seguimiento</h2>
+            <p class="section-subtitle">Auditoría completa de hallazgos, detección → remediación → cierre</p>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+                <div style="background: linear-gradient(135deg, #ff3b3b20, #ff3b3b10); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--danger);">
+                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--danger); margin-bottom: 0.5rem;">🔴 DETECCIÓN</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Sistema detecta hallazgo crítico en tiempo real
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text); background: var(--surface); padding: 0.75rem; border-radius: 6px;">
+                        XSS en login (CVSS 7.2)<br>
+                        Timestamp: 09:30 UTC
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, #f59e0b20, #f59e0b10); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--warning);">
+                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--warning); margin-bottom: 0.5rem;">🟡 ANÁLISIS FORENSE</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Agente investiga: autor, timeline, intención
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text); background: var(--surface); padding: 0.75rem; border-radius: 6px;">
+                        3 cambios históricos<br>
+                        Autor: carlos.dev@co<br>
+                        Patrón detectado
+                    </div>
+                </div>
+
+                <div style="background: linear-gradient(135deg, #10b98120, #10b98110); padding: 1.5rem; border-radius: 12px; border-left: 4px solid var(--success);">
+                    <div style="font-weight: 700; font-size: 0.9rem; color: var(--success); margin-bottom: 0.5rem;">🟢 REMEDIACIÓN + CIERRE</div>
+                    <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem;">
+                        Soluciones automáticas → Validación → Resuelto
+                    </div>
+                    <div style="font-size: 0.8rem; color: var(--text); background: var(--surface); padding: 0.75rem; border-radius: 6px;">
+                        Solución aplicada<br>
+                        Tests pasados ✓<br>
+                        Reporte automático
+                    </div>
+                </div>
+            </div>
+
+            <div style="background: var(--surface); padding: 1.5rem; border-radius: 12px; margin-top: 2rem; border: 1px solid var(--border);">
+                <h4 style="font-size: 0.95rem; margin-bottom: 1rem;">📋 Auditoría Completa Disponible 24/7</h4>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; font-size: 0.85rem;">
+                    <div><span style="font-weight: 700; color: var(--text);">Quién:</span> <span style="color: var(--text-secondary);">carlos.developer@company.com</span></div>
+                    <div><span style="font-weight: 700; color: var(--text);">Qué:</span> <span style="color: var(--text-secondary);">XSS en formulario login</span></div>
+                    <div><span style="font-weight: 700; color: var(--text);">Cuándo:</span> <span style="color: var(--text-secondary);">2024-01-15 09:30 UTC</span></div>
+                    <div><span style="font-weight: 700; color: var(--text);">Cómo:</span> <span style="color: var(--text-secondary);">Input sanitization</span></div>
+                    <div><span style="font-weight: 700; color: var(--text);">Resultado:</span> <span style="color: var(--success); font-weight: 700;">✓ Resuelto</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Caso Real -->
+    <section class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Caso Real: Impacto Financiero</h2>
+            <p class="section-subtitle">Ejemplo de detección temprana de vulnerabilidad crítica</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center;">
+                <div>
+                    <h3 style="margin-bottom: 1rem;">SQL Injection en API de Pagos</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        Una startup de fintech detecta mediante SCR Agent una SQL Injection crítica en su endpoint de procesamiento de pagos.
+                    </p>
+                    <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                        Sin SCR Agent, el impacto hubiera sido:
+                    </p>
+
+                    <div style="padding: 1.5rem; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 8px; margin: 1rem 0;">
+                        <h4 style="color: var(--danger); margin-bottom: 0.5rem;">Potencial Robo de Datos</h4>
+                        <p style="color: var(--text-secondary);">Acceso a información de 50,000 clientes (números de tarjeta, direcciones, transacciones)</p>
+                    </div>
+
+                    <div style="padding: 1.5rem; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 8px; margin: 1rem 0;">
+                        <h4 style="color: var(--danger); margin-bottom: 0.5rem;">Impacto Financiero Directo</h4>
+                        <p style="color: var(--text-secondary);">Multas GDPR: $2.2M<br>Compensación a clientes: $1.5M<br>Remediación de emergencia: $500K</p>
+                    </div>
+
+                    <div style="padding: 1.5rem; background: var(--surface); border-left: 4px solid var(--danger); border-radius: 8px;">
+                        <h4 style="color: var(--danger); margin-bottom: 0.5rem;">Impacto Indirecto</h4>
+                        <p style="color: var(--text-secondary);">Pérdida de reputación, retención de clientes, aumento de seguros de ciberseguridad</p>
+                    </div>
+                </div>
+                <div>
+                    <div style="padding: 2rem; background: var(--surface); border: 2px solid var(--danger); border-radius: 12px;">
+                        <h4 style="margin-bottom: 1.5rem; text-align: center;">Impacto Total Evitado</h4>
+                        <div style="text-align: center;">
+                            <div style="font-size: 3rem; font-weight: 700; color: var(--danger); margin-bottom: 1rem;">
+                                $4.2M
+                            </div>
+                            <p style="color: var(--text-secondary); margin-bottom: 2rem;">
+                                Mediante detección temprana en fase de desarrollo
+                            </p>
+                        </div>
+                        <div style="background: var(--surface); padding: 1.5rem; border-radius: 8px;">
+                            <h5 style="margin-bottom: 0.75rem;">ROI de SCR Agent en este caso:</h5>
+                            <p style="color: var(--text); font-weight: 700;">
+                                Inversión: $50K<br>
+                                ROI: 8,400% en una sola detección
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard -->
+    <section class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Dashboard en Vivo</h2>
+            <p class="section-subtitle">Visualización en tiempo real de hallazgos, tendencias y estado del sistema</p>
+
+            <div class="dashboard-container">
+                <div class="dashboard-tabs">
+                    <button class="dashboard-tab active" onclick="showDashboardTab('vulnerabilidades')">📊 Vulnerabilidades</button>
+                    <button class="dashboard-tab" onclick="showDashboardTab('estado')">📈 Estado del Sistema</button>
+                    <button class="dashboard-tab" onclick="showDashboardTab('forense')">🔬 Análisis Forense</button>
+                    <button class="dashboard-tab" onclick="showDashboardTab('remediacion')">⚙️ Remediación</button>
+                </div>
+
+                <div class="dashboard-content active" id="vulnerabilidades">
+                    <div class="chart-container">
+                        <canvas id="vulnerabilidadesChart"></canvas>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px; border-left: 4px solid var(--danger);">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">14</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Críticas encontradas</div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px; border-left: 4px solid var(--warning);">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">32</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Altas encontradas</div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px; border-left: 4px solid var(--success);">
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">28</div>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">Resueltas este mes</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content" id="estado">
+                    <div class="chart-container">
+                        <canvas id="estadoChart"></canvas>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 2rem;">
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text);">Repositorios Analizados</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">47</div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text);">Análisis Completados</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">2,340</div>
+                        </div>
+                        <div style="padding: 1rem; background: var(--surface); border-radius: 8px;">
+                            <div style="font-size: 1.2rem; font-weight: 700; color: var(--text);">Tiempo Promedio</div>
+                            <div style="font-size: 1.8rem; font-weight: 700; color: var(--primary); margin-top: 0.5rem;">2.3 min</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content" id="forense">
+                    <div style="padding: 2rem; background: var(--surface); border-radius: 8px;">
+                        <h4>Análisis Forense Activo</h4>
+                        <div style="margin-top: 1rem;">
+                            <div style="padding: 1rem; background: var(--surface); border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="font-weight: 700; color: var(--text);">Patrones de Riesgo Detectados: 12</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Últimas 72 horas</div>
+                            </div>
+                            <div style="padding: 1rem; background: var(--surface); border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="font-weight: 700; color: var(--text);">Usuarios Bajo Monitoreo: 8</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Comportamientos anómalos</div>
+                            </div>
+                            <div style="padding: 1rem; background: var(--surface); border-radius: 8px;">
+                                <div style="font-weight: 700; color: var(--text);">Correlaciones Encontradas: 45</div>
+                                <div style="color: var(--text-secondary); font-size: 0.9rem;">Eventos relacionados</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-content" id="remediacion">
+                    <div style="padding: 2rem; background: var(--surface); border-radius: 8px;">
+                        <h4>Estado de Remediciones</h4>
+                        <div style="margin-top: 1rem;">
+                            <div style="padding: 1rem; background: linear-gradient(90deg, var(--success), #34d39920); border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 700; color: var(--text);">Resueltas</span>
+                                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--success);">28</span>
+                                </div>
+                            </div>
+                            <div style="padding: 1rem; background: linear-gradient(90deg, var(--warning), #fbbf2420); border-radius: 8px; margin-bottom: 1rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 700; color: var(--text);">En Progreso</span>
+                                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">14</span>
+                                </div>
+                            </div>
+                            <div style="padding: 1rem; background: linear-gradient(90deg, var(--danger), #ff6b6b20); border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-weight: 700; color: var(--text);">Pendientes</span>
+                                    <span style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">8</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agente Forense -->
+    <section class="section">
+        <div class="container">
+            <h2 class="section-title">Agente Forense en Acción</h2>
+            <p class="section-subtitle">Ejemplo de investigación automática de patrón de riesgo</p>
+
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; overflow: hidden;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <h3 style="margin-bottom: 1rem;">Escenario Detectado</h3>
+                        <div style="background: var(--surface); padding: 1.5rem; border-radius: 8px; font-size: 0.9rem; color: var(--text-secondary);">
+                            <p><strong>Hallazgo:</strong> SQL Injection en endpoint /api/users</p>
+                            <p style="margin-top: 0.5rem;"><strong>Severidad:</strong> CVSS 8.2 (Crítica)</p>
+                            <p style="margin-top: 0.5rem;"><strong>Última confirmación:</strong> 2024-01-15 14:20 UTC</p>
+                        </div>
+
+                        <h3 style="margin-top: 2rem; margin-bottom: 1rem;">Análisis Forense Iniciado</h3>
+                        <ul style="list-style: none; padding: 0; font-size: 0.95rem;">
+                            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Rastreando cambios históricos...</li>
+                            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Analizando patrones de riesgo...</li>
+                            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Investigando usuarios responsables...</li>
+                            <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border);">✓ Correlacionando eventos...</li>
+                            <li style="padding: 0.5rem 0;">✓ Generando reporte...</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 style="margin-bottom: 1rem;">Hallazgos Forenses</h3>
+                        <div style="background: #78350f; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--warning); margin-bottom: 1rem;">
+                            <div style="font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">3 Cambios Históricos</div>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                Introducida en commit ab3c4d5 (2024-01-10)<br>
+                                Modificada en 2 commits posteriores<br>
+                                Patrón de "intentos fallidos de fix"
+                            </p>
+                        </div>
+
+                        <div style="background: #1e3a8a; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--primary); margin-bottom: 1rem;">
+                            <div style="font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">Usuario Principal</div>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                carlos.developer@company.com<br>
+                                3 cambios sospechosos últimos 30 días<br>
+                                Requiere training de seguridad
+                            </p>
+                        </div>
+
+                        <div style="background: #164e63; padding: 1.5rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                            <div style="font-weight: 700; color: var(--text); margin-bottom: 0.5rem;">Reporte Completo</div>
+                            <p style="color: var(--text-secondary); font-size: 0.9rem;">
+                                ✓ Timeline visual disponible<br>
+                                ✓ Gráfico de correlaciones<br>
+                                ✓ Recomendaciones automáticas
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reporte -->
+    <section class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Reporte Vivo Automatizado</h2>
+            <p class="section-subtitle">Reportes generados automáticamente en tiempo real</p>
+
+            <div style="background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; overflow-x: auto;">
+                <div style="font-family: 'Courier New', monospace; font-size: 0.85rem; color: var(--text); line-height: 1.8;">
+                    <div style="color: var(--primary); font-weight: 700;">═══════════════════════════════════════════════════════</div>
+                    <div style="color: var(--primary); font-weight: 700;">SCR AGENT - REPORTE DE AUDITORÍA</div>
+                    <div style="color: var(--primary); font-weight: 700;">═══════════════════════════════════════════════════════</div>
+                    <br>
+                    <div><span style="color: var(--text-secondary);">Fecha:</span> 2024-01-15 14:30 UTC</div>
+                    <div><span style="color: var(--text-secondary);">Repositorio:</span> company/backend-api</div>
+                    <div><span style="color: var(--text-secondary);">Rama:</span> main</div>
+                    <div><span style="color: var(--text-secondary);">Commits analizados:</span> 127</div>
+                    <br>
+                    <div style="color: var(--primary); font-weight: 700;">RESUMEN DE HALLAZGOS</div>
+                    <div style="color: var(--primary); font-weight: 700;">─────────────────────────────────────────────────────</div>
+                    <div style="color: var(--danger);">● Críticas: 14 (1 nueva)</div>
+                    <div style="color: var(--warning);">● Altas: 32 (3 resueltas)</div>
+                    <div style="color: #06b6d4;">● Medias: 45 (5 en progreso)</div>
+                    <div style="color: var(--success);">● Bajas: 78 (12 resueltas)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Casos de Uso -->
+    <section id="casos" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Casos de Uso</h2>
+            <p class="section-subtitle">Aplicaciones reales de SCR Agent en diferentes contextos</p>
+
+            <div class="usecase-grid">
+                <div class="usecase-card">
+                    <h3>💳 Fintech y Pagos</h3>
+                    <p>Cumplimiento de PCI-DSS, prevención de fraude, análisis forense de intentos de ataque.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Detección de inyecciones SQL en endpoints de pagos</li>
+                        <li>✓ Análisis de acceso a datos sensibles</li>
+                        <li>✓ Auditoría de cambios en código crítico</li>
+                        <li>✓ Reportes PCI-DSS automáticos</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <h3>🏥 Healthcare</h3>
+                    <p>Cumplimiento HIPAA, protección de datos de pacientes, auditoría forense.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Prevención de acceso no autorizado a PHI</li>
+                        <li>✓ Detección de vulnerabilidades en APIs médicas</li>
+                        <li>✓ Timeline de auditoría para reguladores</li>
+                        <li>✓ Análisis de cumplimiento normativo</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <h3>🏦 Banca</h3>
+                    <p>Prevención de fraude, detección de malware, cumplimiento regulatorio.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Análisis de aplicaciones críticas 24/7</li>
+                        <li>✓ Detección de funciones maliciosas</li>
+                        <li>✓ Investigación forense de incidentes</li>
+                        <li>✓ Reportes para autoridades regulatorias</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <h3>📱 SaaS y Cloud</h3>
+                    <p>Seguridad del código en producción, monitoreo continuo, cumplimiento SOC 2.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Análisis automático en cada deployment</li>
+                        <li>✓ Detección de regresiones de seguridad</li>
+                        <li>✓ Auditoría de cambios por desarrollador</li>
+                        <li>✓ Certificación SOC 2 facilitada</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <h3>🔐 Ciberseguridad</h3>
+                    <p>Análisis forense profundo, detección de amenazas internas, investigación de incidentes.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Análisis post-incidente</li>
+                        <li>✓ Detección de amenazas internas</li>
+                        <li>✓ Análisis de código fuente malicioso</li>
+                        <li>✓ Correlación de eventos de seguridad</li>
+                    </ul>
+                </div>
+
+                <div class="usecase-card">
+                    <h3>⚖️ Legal y Cumplimiento</h3>
+                    <p>Pruebas digitales, auditoría forense, cumplimiento normativo.</p>
+                    <ul class="usecase-features">
+                        <li>✓ Cadena de custodia de código</li>
+                        <li>✓ Reportes admisibles en cortes</li>
+                        <li>✓ Análisis de cumplimiento normativo</li>
+                        <li>✓ Documentación de auditoría completa</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo -->
+    <section id="demo" class="section" style="background: var(--surface);">
+        <div class="container">
+            <h2 class="section-title">Demo Interactiva</h2>
+            <p class="section-subtitle">Analiza código malicioso y funciones no autorizadas con SCR Agent</p>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-top: 2rem;">
+                <!-- Left side: Code input -->
+                <div style="background: var(--surface); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 1rem;">📝 Código para Analizar</h3>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem;">
+                            Selecciona un ejemplo:
+                        </label>
+                        <select id="codeExample" style="width: 100%; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 6px; font-family: monospace; font-size: 0.9rem;" onchange="loadExample()">
+                            <option value="">-- Selecciona un ejemplo bancario --</option>
+                            <option value="1">1. Transferencia Fraudulenta (SQL Injection)</option>
+                            <option value="2">2. Manipulación de Saldos de Cuenta</option>
+                            <option value="3">3. Exfiltración de Datos Bancarios</option>
+                            <option value="4">4. Cambio de Moneda con Ventaja Injusta (Forex)</option>
+                            <option value="5">5. Robo de Credenciales (Keylogger Bancario)</option>
+                            <option value="6">6. Bypass de Autenticación 2FA</option>
+                            <option value="7">7. Lavado de Dinero (Múltiples Transferencias)</option>
+                            <option value="8">8. Inyección en Reportes Financieros</option>
+                            <option value="9">9. Evasión de Límites de Transacción</option>
+                        </select>
+                    </div>
+
+                    <div style="margin-bottom: 1rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600; font-size: 0.9rem;">
+                            O copia/pega tu código:
+                        </label>
+                        <textarea id="codeInput" placeholder="// Pega tu código aquí..." style="width: 100%; height: 300px; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 6px; font-family: monospace; font-size: 0.85rem; resize: vertical;"></textarea>
+                    </div>
+
+                    <button onclick="runDemo()" style="width: 100%; padding: 0.75rem; background: #0066ff; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 1rem;">
+                        🚀 Analizar Código
+                    </button>
+                </div>
+
+                <!-- Right side: Analysis results -->
+                <div style="background: var(--surface); padding: 2rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                    <h3 style="margin-bottom: 1rem;">🔍 Resultados del Análisis</h3>
+                    <div id="demo-empty" style="color: var(--text-secondary); text-align: center; padding: 2rem;">
+                        Los resultados aparecerán aquí después de ejecutar el análisis
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 SCR Agent. Auditoría Inteligente de Código con IA.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                Protegiendo aplicaciones empresariales con inteligencia artificial avanzada.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

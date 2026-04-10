@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCR Agent - Dashboard Interactivo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #F97316;
+            --critical: #EF4444;
+            --success: #22C55E;
+            --warning: #EAB308;
+            --bg: #0A0A0A;
+            --card-bg: #1E1E20;
+            --border: #2D2D2D;
+            --text: #FFFFFF;
+            --text-secondary: #94A3B8;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Navbar Sticky */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            z-index: 1000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .progress-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary), var(--critical));
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* Full Screen Sections */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 100px 2rem 50px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0A0A0A 0%, #1a1a2e 100%);
+            padding-top: 80px !important;
+        }
+
+        .hero-content {
+            text-align: center;
+            max-width: 900px;
+            z-index: 10;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            font-weight: 900;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .hero-subtitle {
+            font-size: 1.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            animation: slideUp 0.8s ease-out 0.2s both;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: #888;
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .hero-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 2rem;
+            margin-top: 3rem;
+            animation: fadeIn 0.8s ease-out 0.6s both;
+        }
+
+        .stat-box {
+            padding: 2rem;
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .stat-box:hover {
+            border-color: var(--primary);
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            margin-top: 0.5rem;
+        }
+
+        /* Content Section */
+        .content-section {
+            background: linear-gradient(180deg, rgba(249, 115, 22, 0.05), transparent);
+        }
+
+        .section-content {
+            max-width: 1000px;
+            width: 100%;
+            animation: slideInLeft 0.8s ease-out;
+        }
+
+        .section-content h2 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .section-content p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.8;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Grid Content */
+        .content-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .grid-item {
+            padding: 2rem;
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .grid-item:hover {
+            border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(249, 115, 22, 0.15);
+            transform: translateY(-5px);
+        }
+
+        .grid-item-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .grid-item h4 {
+            margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+
+        .grid-item p {
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            padding: 2rem 0;
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 100px 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .timeline-marker {
+            text-align: center;
+            padding: 1rem;
+            background: rgba(249, 115, 22, 0.1);
+            border-radius: 8px;
+            font-weight: bold;
+            color: var(--primary);
+        }
+
+        .timeline-content h4 {
+            margin-bottom: 0.5rem;
+        }
+
+        .timeline-content p {
+            margin-bottom: 0;
+        }
+
+        /* Feature Showcase */
+        .feature-showcase {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            max-width: 1200px;
+        }
+
+        .showcase-text h3 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+        }
+
+        .showcase-text p {
+            margin-bottom: 1rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            margin-top: 1.5rem;
+        }
+
+        .feature-list li {
+            padding: 0.8rem 0;
+            padding-left: 2rem;
+            position: relative;
+            color: var(--text-secondary);
+        }
+
+        .feature-list li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .showcase-visual {
+            width: 100%;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.2), rgba(34, 197, 94, 0.2));
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+        }
+
+        /* Impact Section */
+        .impact-section {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(34, 197, 94, 0.1));
+        }
+
+        .impact-numbers {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 2rem;
+            max-width: 800px;
+        }
+
+        .impact-item {
+            padding: 2rem;
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .impact-number {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .impact-text {
+            color: var(--text-secondary);
+        }
+
+        /* CTA */
+        .cta-section {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+        }
+
+        .cta-content {
+            text-align: center;
+            max-width: 600px;
+        }
+
+        .cta-content h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: var(--primary);
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        /* Animations */
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes slideInLeft {
+            from {
+                opacity: 0;
+                transform: translateX(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-stats {
+                grid-template-columns: 1fr;
+            }
+
+            .feature-showcase {
+                grid-template-columns: 1fr;
+            }
+
+            .showcase-visual {
+                height: 300px;
+            }
+
+            .impact-numbers {
+                grid-template-columns: 1fr;
+            }
+
+            .cta-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">🔐 SCR Agent</div>
+        <div class="progress-bar" id="progressBar"></div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>SCR Agent</h1>
+            <p class="hero-subtitle">Auditoría Inteligente de Código</p>
+            <p class="hero-desc">La capa de seguridad que falta. Detecta funciones maliciosas y lógica no autorizada.</p>
+            <div class="hero-stats">
+                <div class="stat-box">
+                    <div class="stat-number">95%</div>
+                    <div class="stat-label">Precisión</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">2 min</div>
+                    <div class="stat-label">Análisis</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">60%</div>
+                    <div class="stat-label">Menos triaging</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- El Problema -->
+    <section class="content-section">
+        <div class="section-content">
+            <h2>El Problema</h2>
+            <p>Incluso con Checkmarx y Sonar, no detectas:</p>
+            <div class="content-grid">
+                <div class="grid-item">
+                    <div class="grid-item-icon">🎭</div>
+                    <h4>Funciones Maliciosas</h4>
+                    <p>Código que hace algo diferente a su propósito aparente</p>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-item-icon">🚪</div>
+                    <h4>Backdoors</h4>
+                    <p>Puertas traseras intencionales y credenciales ocultas</p>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-item-icon">❌</div>
+                    <h4>Lógica No Requerida</h4>
+                    <p>Funcionalidad que NO está en los requisitos</p>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-item-icon">⏰</div>
+                    <h4>Bombas de Tiempo</h4>
+                    <p>Código que actúa en fechas/horas específicas</p>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-item-icon">📊</div>
+                    <h4>Bypass de Validaciones</h4>
+                    <p>Código que evita controles deliberadamente</p>
+                </div>
+                <div class="grid-item">
+                    <div class="grid-item-icon">👥</div>
+                    <h4>Comportamientos Sospechosos</h4>
+                    <p>Patrones que no encajan con la arquitectura</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- La Solución -->
+    <section class="content-section" style="background: linear-gradient(180deg, transparent, rgba(34, 197, 94, 0.05));">
+        <div class="feature-showcase">
+            <div class="showcase-text">
+                <h3>La Solución: SCR Agent</h3>
+                <p>Análisis profundo que va más allá de vulnerabilidades OWASP</p>
+                <ul class="feature-list">
+                    <li>Detección de intenciones maliciosas con IA</li>
+                    <li>Validación contra requerimientos de negocio</li>
+                    <li>Investigación forense completa (quién, qué, cuándo)</li>
+                    <li>95% precisión vs 60% de herramientas SAST</li>
+                    <li>2 minutos de análisis vs 3 horas de triaging</li>
+                    <li>Seguimiento automático hasta resolución</li>
+                </ul>
+            </div>
+            <div class="showcase-visual">🔬</div>
+        </div>
+    </section>
+
+    <!-- Cómo Funciona -->
+    <section class="content-section">
+        <div class="section-content">
+            <h2>Cómo Funciona</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-marker">1</div>
+                    <div class="timeline-content">
+                        <h4>Ingesta</h4>
+                        <p>El código llega desde Git, webhooks o uploads. SCR Agent lo recibe en tiempo real.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">2</div>
+                    <div class="timeline-content">
+                        <h4>Análisis Profundo</h4>
+                        <p>IA analiza AST, patrones de comportamiento, contexto arquitectónico y requerimientos.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">3</div>
+                    <div class="timeline-content">
+                        <h4>Detección</h4>
+                        <p>Identifica hallazgos, genera código solución automático y scoring CVSS contextual.</p>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-marker">4</div>
+                    <div class="timeline-content">
+                        <h4>Remediación Automática</h4>
+                        <p>Dashboard auto-asigna, recordatorios automáticos y tracking hasta cierre.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Impacto -->
+    <section class="impact-section">
+        <div class="section-content">
+            <h2>Impacto Medible</h2>
+            <div class="impact-numbers">
+                <div class="impact-item">
+                    <div class="impact-number">60%</div>
+                    <div class="impact-text">Menos tiempo triaging</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">95%</div>
+                    <div class="impact-text">Precisión (vs 60%)</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">18h</div>
+                    <div class="impact-text">Resolución promedio</div>
+                </div>
+                <div class="impact-item">
+                    <div class="impact-number">2-3 sem</div>
+                    <div class="impact-text">Payback period</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>¿Listo para auditoría inteligente?</h2>
+            <p>Complementa tu SAST con la capa de análisis que necesitas</p>
+            <div class="cta-buttons">
+                <button class="btn btn-primary">Solicitar Demo</button>
+                <button class="btn btn-secondary">Documentación</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Progress bar
+        window.addEventListener('scroll', () => {
+            const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+            const scrolled = window.scrollY;
+            const scrollPercent = (scrolled / scrollHeight) * 100;
+            document.getElementById('progressBar').style.width = scrollPercent + '%';
+        });
+
+        // Animate grid items
+        gsap.utils.toArray('.grid-item, .impact-item').forEach((item, index) => {
+            gsap.to(item, {
+                scrollTrigger: {
+                    trigger: item,
+                    start: 'top 80%',
+                    onEnter: () => {
+                        gsap.to(item, {
+                            duration: 0.6,
+                            delay: index * 0.1,
+                            opacity: 1,
+                            y: 0,
+                            ease: 'back.out'
+                        });
+                    }
+                },
+                opacity: 0,
+                y: 30
+            });
+        });
+
+        // Navbar scroll shadow
+        window.addEventListener('scroll', () => {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.3)';
+            } else {
+                navbar.style.boxShadow = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

