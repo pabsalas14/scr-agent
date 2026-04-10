@@ -13,7 +13,7 @@ import { Router, type Router as ExpressRouter, Request, Response } from 'express
 import { logger } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { enqueueAnalysis } from '../services/analysis-queue';
+import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 
 const router: ExpressRouter = Router();
 router.use(authMiddleware);
@@ -250,6 +250,79 @@ router.get('/:id/report', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/analyses
+ * Crear nuevo análisis (enqueuing automático)
+ */
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const { projectId } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!projectId) {
+      res.status(400).json({ success: false, error: 'projectId es requerido' });
+      return;
+    }
+
+    const project = await prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, userId: true, repositoryUrl: true },
+    });
+
+    if (!project) {
+      res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+      return;
+    }
+
+    if (userId && project.userId && project.userId !== userId) {
+      res.status(403).json({ success: false, error: 'Acceso denegado' });
+      return;
+    }
+
+    // Crear análisis en estado PENDING
+    const analysis = await prisma.analysis.create({
+      data: {
+        projectId,
+        status: 'PENDING',
+        progress: 0,
+      },
+    });
+
+    // Encolar para procesamiento
+    try {
+      await enqueueAnalysis(analysis.id, projectId);
+    } catch (queueError) {
+      logger.error(`Error encolando análisis ${analysis.id}: ${queueError}`);
+      await prisma.analysis.update({
+        where: { id: analysis.id },
+        data: { status: 'FAILED', errorMessage: 'Error encolando para análisis' },
+      });
+      res.status(500).json({
+        success: false,
+        error: 'Error encolando análisis',
+        analysisId: analysis.id,
+      });
+      return;
+    }
+
+    logger.info(`✓ Análisis ${analysis.id} creado y encolado para proyecto ${projectId}`);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: analysis.id,
+        projectId,
+        status: 'PENDING',
+        progress: 0,
+        createdAt: analysis.createdAt,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error creando análisis: ${error}`);
+    res.status(500).json({ success: false, error: 'Error al crear análisis' });
+  }
+});
+
+/**
  * POST /api/v1/analyses/:analysisId/retry
  * Reintentar un análisis fallido
  */
@@ -286,13 +359,72 @@ router.post('/:analysisId/retry', async (req: Request, res: Response) => {
       data: { status: 'PENDING', progress: 0, errorMessage: null, completedAt: null },
     });
 
-    enqueueAnalysis(analysisId!, analysis.projectId);
+    await enqueueAnalysis(analysisId!, analysis.projectId);
     logger.info(`Analysis ${analysisId} re-enqueued for retry`);
 
     res.json({ success: true, data: updated });
   } catch (error) {
     logger.error(`Error reintentando análisis: ${error}`);
     res.status(500).json({ success: false, error: 'Error al reintentar análisis' });
+  }
+});
+
+/**
+ * PATCH /api/v1/analyses/:analysisId/cancel
+ * Cancelar un análisis en progreso o en cola
+ */
+router.patch('/:analysisId/cancel', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    const userId = (req as any).user?.id;
+
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: { project: { select: { userId: true } } },
+    });
+
+    if (!analysis) {
+      res.status(404).json({ success: false, error: 'Análisis no encontrado' });
+      return;
+    }
+
+    if (userId && analysis.project?.userId && analysis.project.userId !== userId) {
+      res.status(403).json({ success: false, error: 'Acceso denegado' });
+      return;
+    }
+
+    // Solo se pueden cancelar análisis no completados
+    if (['COMPLETED', 'FAILED', 'CANCELLED'].includes(analysis.status)) {
+      res.status(400).json({
+        success: false,
+        error: 'No se puede cancelar un análisis ya completado o fallido',
+      });
+      return;
+    }
+
+    // Intentar cancelar en Bull queue
+    const cancelled = await cancelAnalysis(analysisId);
+
+    if (!cancelled) {
+      res.status(500).json({
+        success: false,
+        error: 'No se pudo cancelar el análisis',
+      });
+      return;
+    }
+
+    // Actualizar estado en BD
+    const updated = await prisma.analysis.update({
+      where: { id: analysisId },
+      data: { status: 'CANCELLED', progress: 0, completedAt: new Date() },
+    });
+
+    logger.info(`🚫 Análisis ${analysisId} cancelado`);
+
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    logger.error(`Error cancelando análisis: ${error}`);
+    res.status(500).json({ success: false, error: 'Error al cancelar análisis' });
   }
 });
 
