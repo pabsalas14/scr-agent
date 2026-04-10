@@ -154,13 +154,18 @@ import notificationsRoutes from './routes/notifications.routes';
 import commentsRoutes from './routes/comments.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import userSettingsRoutes from './routes/user-settings.routes';
+import auditRoutes from './routes/audit.routes';
 import { authMiddleware } from './middleware/auth.middleware';
+import { auditMiddleware } from './middleware/audit.middleware';
 
 // Rutas públicas de autenticación (sin JWT)
 app.use('/api/v1/auth', authRoutes);
 
 // Middleware JWT para todas las rutas protegidas
 app.use('/api/v1', authMiddleware);
+
+// Middleware de auditoría para registrar acciones
+app.use('/api/v1', auditMiddleware);
 
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
@@ -173,6 +178,7 @@ app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/findings', commentsRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
+app.use('/api/v1/audit', auditRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 
