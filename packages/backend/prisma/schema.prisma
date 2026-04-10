@@ -141,6 +141,9 @@ model Analysis {
   // Resumen de cobertura: cuánto código quedó fuera del análisis
   coverageSummary Json?
 
+  // Job tracking (Phase 1)
+  job AnalysisJob?
+
   // Timing
   startedAt   DateTime?
   completedAt DateTime?
@@ -516,6 +519,39 @@ model NotificationPreferences {
   @@map("notification_preferences")
 }
 
+// ==================== PHASE 1: JOB QUEUE TRACKING ====================
+
+/// AnalysisJob - Seguimiento de jobs en Bull queue
+/// Para procesamiento concurrente y recuperación tras fallos
+model AnalysisJob {
+  id           String   @id @default(cuid())
+  analysisId   String
+  analysis     Analysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  // Job status
+  bullJobId    String   @unique // ID del job en Bull/Redis
+  status       JobStatus @default(PENDING) // pending, active, completed, failed, delayed
+  priority     Int       @default(0) // 0=normal, 1=high
+
+  // Error tracking
+  attempts     Int       @default(0)
+  maxAttempts  Int       @default(3)
+  lastError    String?   @db.Text
+  nextRetryAt  DateTime?
+
+  // Timing
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@unique([analysisId])
+  @@index([status, priority, createdAt])
+  @@index([status])
+  @@index([bullJobId])
+  @@map("analysis_jobs")
+}
+
 // ==================== ENUMS: PHASE 4 ====================
 
 /// Tipo de notificación
@@ -534,4 +570,15 @@ enum NotificationSeverity {
   SUCCESS
   WARNING
   ERROR
+}
+
+// ==================== ENUMS: PHASE 1 ====================
+
+/// Estado de job en Bull queue
+enum JobStatus {
+  PENDING      // Esperando ser procesado
+  ACTIVE       // Actualmente siendo procesado
+  COMPLETED    // Completado exitosamente
+  FAILED       // Falló después de todos los reintentos
+  DELAYED      // Esperando retry después de fallo
 }
