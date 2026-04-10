@@ -1,150 +1,150 @@
-# SCR Agent - Forensic Code Intelligence Platform
+# SCR Agent - Plataforma de Inteligencia Forense de Código
 
-> **Intelligent code analysis platform designed to detect malicious patterns, security threats, and compromised repositories.**
+> **Plataforma inteligente de análisis de código diseñada para detectar patrones maliciosos, amenazas de seguridad y repositorios comprometidos.**
 
-## 🚀 What is SCR Agent?
+## 🚀 ¿Qué es SCR Agent?
 
-SCR Agent is a **intelligent code forensics platform** that analyzes your repositories to detect security threats, malicious code patterns, and potential insider risks.
+SCR Agent es una **plataforma inteligente de análisis forense de código** que analiza tus repositorios para detectar amenazas de seguridad, patrones de código malicioso y riesgos potenciales de insiders.
 
-Unlike traditional static analysis tools, SCR Agent:
-- 🔍 **Detects behavioral anomalies** in code commits across time
-- 🧠 **Uses AI-powered analysis** to identify sophisticated attacks
-- 📊 **Visualizes threat patterns** with interactive dashboards
-- 🎯 **Tracks remediation** from detection to resolution
-- 👥 **Correlates activities** across users and repositories
+A diferencia de las herramientas tradicionales de análisis estático, SCR Agent:
+- 🔍 **Detecta anomalías de comportamiento** en commits de código a lo largo del tiempo
+- 🧠 **Utiliza análisis impulsado por IA** para identificar ataques sofisticados
+- 📊 **Visualiza patrones de amenazas** con dashboards interactivos
+- 🎯 **Realiza seguimiento de remediaciones** desde detección hasta resolución
+- 👥 **Correlaciona actividades** entre usuarios y repositorios
 
-## ✨ Key Capabilities
+## ✨ Capacidades Clave
 
-### 📈 **Intelligent Threat Detection**
-- Analyzes code changes to identify malicious patterns
-- Detects business logic attacks and validation bypasses
-- Identifies persistent threat indicators across repositories
-- Recognizes collusion patterns when multiple users collaborate
+### 📈 **Detección Inteligente de Amenazas**
+- Analiza cambios de código para identificar patrones maliciosos
+- Detecta ataques de lógica de negocio y bypasses de validación
+- Identifica indicadores de amenaza persistente en repositorios
+- Reconoce patrones de colusión cuando múltiples usuarios colaboran
 
-### 🔎 **Forensic Investigation**
-- Complete timeline visualization of all code changes
-- User activity traceability across all repositories
-- Author behavior profiling with anomaly detection
-- Risk scoring with transparent factor breakdowns
+### 🔎 **Investigación Forense**
+- Visualización completa de cronograma de todos los cambios de código
+- Trazabilidad de actividad de usuarios en todos los repositorios
+- Perfilado de comportamiento de autor con detección de anomalías
+- Puntuación de riesgo con desglose de factores transparentes
 
-### 📊 **Visual Analytics**
-- Interactive heatmaps showing threat density over time
-- Risk trend graphs tracking security posture evolution
-- Risk maps highlighting vulnerable code areas
-- Side-by-side code comparisons for attack analysis
+### 📊 **Análisis Visual**
+- Mapas de calor interactivos que muestran densidad de amenaza en el tiempo
+- Gráficos de tendencia de riesgo rastreando la evolución de la postura de seguridad
+- Mapas de riesgo resaltando áreas de código vulnerable
+- Comparaciones de código lado a lado para análisis de ataques
 
-### ✅ **Remediation Management**
-- Track findings from detection to resolution
-- Monitor remediation progress and deadlines
-- Validate fixes with automatic re-analysis
-- Comment and collaborate on findings
+### ✅ **Gestión de Remediación**
+- Realiza seguimiento de hallazgos desde detección hasta resolución
+- Monitorea el progreso y plazos de remediación
+- Valida correcciones con re-análisis automático
+- Comenta y colabora en hallazgos
 
-### 📋 **Comprehensive Reporting**
-- Executive summaries with risk scores
-- Detailed technical reports with evidence
-- Exportable PDF/CSV reports for audits
-- Comparison reports showing improvements
+### 📋 **Reportes Comprehensivos**
+- Resúmenes ejecutivos con puntuaciones de riesgo
+- Reportes técnicos detallados con evidencia
+- Reportes exportables en PDF/CSV para auditorías
+- Reportes de comparación mostrando mejoras
 
-### 📝 **Complete Audit Trail**
-- Track all user actions (who did what when)
-- Resource-level audit history
-- System-wide activity dashboard
-- Compliance-ready logging
+### 📝 **Pista de Auditoría Completa**
+- Realiza seguimiento de todas las acciones del usuario (quién hizo qué cuándo)
+- Historial de auditoría a nivel de recurso
+- Dashboard de actividad en todo el sistema
+- Logging listo para cumplimiento
 
-## 🏗️ Architecture
+## 🏗️ Arquitectura
 
 **Backend:**
-- Node.js + Express API
-- PostgreSQL database
-- Redis queue for concurrent analysis
-- AI-powered analysis engines
+- API Node.js + Express
+- Base de datos PostgreSQL
+- Cola Redis para análisis concurrente
+- Motores de análisis impulsados por IA
 
 **Frontend:**
-- React dashboard with visualizations
-- Real-time analysis monitoring
-- Forensic timeline browser
-- Remediation tracking
+- Dashboard React con visualizaciones
+- Monitoreo de análisis en tiempo real
+- Navegador de cronograma forense
+- Seguimiento de remediaciones
 
-## 🚀 Getting Started
+## 🚀 Comenzando
 
-### Prerequisites
+### Requisitos Previos
 - Node.js 16+
 - PostgreSQL 12+
 - Redis 6+
 - Git
 
-### Installation
+### Instalación
 
 ```bash
-# Clone and install
+# Clonar e instalar
 git clone https://github.com/your-org/scr-agent.git
 cd scr-agent
 npm install
 
-# Setup backend
+# Configurar backend
 cd packages/backend
 npm install
 npx prisma migrate dev
 
-# Setup frontend
+# Configurar frontend
 cd ../frontend
 npm install
 
-# Configure environment
+# Configurar entorno
 cp .env.example .env
-# Edit .env with your settings
+# Editar .env con tus configuraciones
 
-# Start services
+# Iniciar servicios
 npm run dev:backend    # Terminal 1
 npm run dev:frontend   # Terminal 2
 ```
 
-Visit `http://localhost:5173`
+Visita `http://localhost:5173`
 
-## 📚 How It Works
+## 📚 Cómo Funciona
 
-### Phase 1: Intelligent Scanning
-- Investigates entire git history
-- Detects malicious patterns and anomalies
-- Only rescans new commits (70% performance improvement)
-- Synthesizes findings into risk scores
+### Fase 1: Escaneo Inteligente
+- Investiga el historial git completo
+- Detecta patrones maliciosos y anomalías
+- Solo re-escanea commits nuevos (mejora de 70% en rendimiento)
+- Sintetiza hallazgos en puntuaciones de riesgo
 
-### Phase 2: Visual Investigation
-- Timeline View: when/where threats emerged
-- User Profiles: activity across repos
-- Risk Heatmaps: threat hotspots
-- Audit Trail: complete action history
+### Fase 2: Investigación Visual
+- Vista de Cronograma: cuándo y dónde surgieron las amenazas
+- Perfiles de Usuario: actividad en todos los repos
+- Mapas de Calor de Riesgo: puntos calientes de amenaza
+- Pista de Auditoría: historial de acciones completo
 
-### Phase 3: Remediation & Validation
-- Track fixes and completion status
-- Re-analyze to confirm fixes work
-- Monitor progress over time
-- Collaborate with team
+### Fase 3: Remediación y Validación
+- Realiza seguimiento de correcciones y estado de finalización
+- Re-analiza para confirmar que las correcciones funcionan
+- Monitorea el progreso en el tiempo
+- Colabora con el equipo
 
-## 🎯 Use Cases
+## 🎯 Casos de Uso
 
-- **Security Teams**: Detect compromised repos, investigate threats, generate audit reports
-- **DevOps**: Monitor health, integrate into CI/CD, validate fixes
-- **Developers**: Understand security issues, track remediations
-- **Executives**: Monitor security trends, track improvements
+- **Equipos de Seguridad**: Detectar repos comprometidos, investigar amenazas, generar reportes de auditoría
+- **DevOps**: Monitorear salud, integrar en CI/CD, validar correcciones
+- **Desarrolladores**: Entender problemas de seguridad, rastrear remediaciones
+- **Ejecutivos**: Monitorear tendencias de seguridad, rastrear mejoras
 
-## 🔒 Security & Privacy
+## 🔒 Seguridad y Privacidad
 
-- All analysis runs locally on your infrastructure
-- No code sent to external services
-- Database encrypted at rest
-- Audit trail of all platform activities
+- Todo el análisis se ejecuta localmente en tu infraestructura
+- Ningún código se envía a servicios externos
+- Base de datos encriptada en reposo
+- Pista de auditoría de todas las actividades de plataforma
 
-## 📖 Documentation
+## 📖 Documentación
 
-- [Installation Guide](./docs/installation.md)
-- [Configuration](./docs/configuration.md)
-- [API Reference](./docs/api.md)
+- [Guía de Instalación](./docs/installation.md)
+- [Configuración](./docs/configuration.md)
+- [Referencia de API](./docs/api.md)
 
-## 📝 License
+## 📝 Licencia
 
 MIT
 
 ---
 
-**SCR Agent**: *Detect. Investigate. Remediate.*
+**SCR Agent**: *Detecta. Investiga. Remedia.*
