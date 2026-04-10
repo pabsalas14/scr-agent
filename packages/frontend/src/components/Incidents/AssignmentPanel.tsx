@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, X, Check, Search } from 'lucide-react';
+import { User, X, Check, Search, Loader2 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface TeamMember {
   id: string;
@@ -28,8 +30,24 @@ export default function AssignmentPanel({
 }: AssignmentPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAssigning, setIsAssigning] = useState(false);
   const toast = useToast();
+  const { confirm } = useConfirm();
+
+  const assignOperation = useAsyncOperation({
+    loadingMessage: 'Asignando incidente...',
+    successMessage: 'Incidente asignado exitosamente',
+    errorMessage: 'Error al asignar el incidente',
+    onSuccess: () => {
+      setIsOpen(false);
+      setSearchTerm('');
+    },
+  });
+
+  const unassignOperation = useAsyncOperation({
+    loadingMessage: 'Removiendo asignación...',
+    successMessage: 'Asignación removida exitosamente',
+    errorMessage: 'Error al remover la asignación',
+  });
 
   const filteredMembers = teamMembers.filter(
     (member) =>
@@ -38,26 +56,32 @@ export default function AssignmentPanel({
   );
 
   const handleAssign = async (member: TeamMember) => {
-    setIsAssigning(true);
-    try {
-      await onAssign?.(member);
-      setIsOpen(false);
-      setSearchTerm('');
-      toast.success(`Asignado a ${member.name}`);
-    } catch (error) {
-      toast.error('Error al asignar');
-    } finally {
-      setIsAssigning(false);
-    }
+    const confirmed = await confirm({
+      title: 'Asignar incidente',
+      message: `¿Asignar este incidente a ${member.name}?`,
+      confirmText: 'Asignar',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        await assignOperation.execute(async () => {
+          await onAssign?.(member);
+        });
+      },
+    });
   };
 
   const handleUnassign = async () => {
-    try {
-      await onUnassign?.();
-      toast.success('Asignación removida');
-    } catch (error) {
-      toast.error('Error al remover asignación');
-    }
+    const confirmed = await confirm({
+      title: 'Remover asignación',
+      message: '¿Remover la asignación actual de este incidente?',
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      isDangerous: true,
+      onConfirm: async () => {
+        await unassignOperation.execute(async () => {
+          await onUnassign?.();
+        });
+      },
+    });
   };
 
   return (
@@ -75,9 +99,10 @@ export default function AssignmentPanel({
         {assignedTo && (
           <button
             onClick={handleUnassign}
-            disabled={isLoading || isAssigning}
-            className="text-xs px-2 py-1 rounded bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444]/20 transition-colors disabled:opacity-50"
+            disabled={isLoading || unassignOperation.isLoading}
+            className="text-xs px-2 py-1 rounded bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444]/20 transition-colors disabled:opacity-50 flex items-center gap-1"
           >
+            {unassignOperation.isLoading && <Loader2 className="w-3 h-3 animate-spin" />}
             Remover
           </button>
         )}
@@ -136,7 +161,7 @@ export default function AssignmentPanel({
                 <button
                   key={member.id}
                   onClick={() => handleAssign(member)}
-                  disabled={isAssigning}
+                  disabled={assignOperation.isLoading}
                   className="w-full p-2 rounded-lg hover:bg-[#2D2D2D] transition-colors flex items-center gap-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <div className="w-6 h-6 rounded-full bg-[#F97316] flex items-center justify-center text-xs font-semibold text-white flex-shrink-0">
