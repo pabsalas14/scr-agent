@@ -2,7 +2,7 @@
  * Search Service - Global search across all resources
  */
 
-import { apiClient } from './api.service';
+import { apiService } from './api.service';
 
 export interface SearchQuery {
   query: string;
@@ -53,7 +53,7 @@ class SearchService {
         params.append('status', query.filters.status);
       }
 
-      const response = await apiClient.get<SearchResponse>(`/search?${params.toString()}`);
+      const response = await apiService.get<SearchResponse>(`/search?${params.toString()}`);
       return response.data;
     } catch (error) {
       console.error('Search error:', error);
@@ -66,7 +66,7 @@ class SearchService {
    */
   async getSuggestions(query: string): Promise<string[]> {
     try {
-      const response = await apiClient.get<{ suggestions: string[] }>(
+      const response = await apiService.get<{ suggestions: string[] }>(
         `/search/suggestions?q=${encodeURIComponent(query)}`
       );
       return response.data.suggestions;
@@ -81,7 +81,7 @@ class SearchService {
    */
   async saveFilter(name: string, filters: any): Promise<{ id: string }> {
     try {
-      const response = await apiClient.post<{ id: string }>('/search/filters/save', {
+      const response = await apiService.post<{ id: string }>('/search/filters/save', {
         name,
         filters,
       });
@@ -97,7 +97,7 @@ class SearchService {
    */
   async getSavedFilters(): Promise<Array<{ id: string; name: string; filters: any }>> {
     try {
-      const response = await apiClient.get<Array<{ id: string; name: string; filters: any }>>(
+      const response = await apiService.get<Array<{ id: string; name: string; filters: any }>>(
         '/search/filters/saved'
       );
       return response.data;

@@ -41,8 +41,24 @@ export default function NotificationBell({ onNotificationClick }: NotificationBe
     }
   };
 
-  // TODO: Add WebSocket support for real-time notifications
-  // This will be integrated when notification events are added to useSocketEvents hook
+  // Listen to real-time notification events
+  useSocketEvents({
+    onNotificationReceived: (data) => {
+      setUnreadCount((prev) => prev + 1);
+      loadUnreadNotifications();
+      // Show toast notification for new notifications
+      const toastType = data.type.toLowerCase() as 'info' | 'success' | 'warning' | 'error';
+      if (toastType === 'success') {
+        toast.success(data.message || data.title);
+      } else if (toastType === 'error') {
+        toast.error(data.message || data.title);
+      } else if (toastType === 'warning') {
+        toast.warning(data.message || data.title);
+      } else {
+        toast.info(data.message || data.title);
+      }
+    },
+  });
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {

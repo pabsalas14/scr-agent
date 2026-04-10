@@ -65,6 +65,16 @@ interface CommentMentionedData {
   timestamp: Date;
 }
 
+interface NotificationData {
+  id: string;
+  title: string;
+  message: string;
+  type: 'INFO' | 'SUCCESS' | 'WARNING' | 'ERROR';
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  relatedId?: string;
+  timestamp: Date;
+}
+
 // ── Hook ────────────────────────────────────────────────────────────────
 
 export function useSocketEvents(callbacks: {
@@ -83,6 +93,9 @@ export function useSocketEvents(callbacks: {
   onAnalysisFindingsDiscovered?: (data: AnalysisFindingsDiscoveredData) => void;
   onAnalysisCompleted?: (data: AnalysisCompletedData) => void;
   onAnalysisError?: (data: AnalysisErrorData) => void;
+
+  // Notification events
+  onNotificationReceived?: (data: NotificationData) => void;
 }) {
   useEffect(() => {
     let socket: Socket | null = null;
@@ -148,6 +161,12 @@ export function useSocketEvents(callbacks: {
 
       socket.on('analysis:error', (data: AnalysisErrorData) => {
         callbacks.onAnalysisError?.(data);
+      });
+
+      // ── Handlers para Eventos Notification ──────────────────────────────
+
+      socket.on('notification:received', (data: NotificationData) => {
+        callbacks.onNotificationReceived?.(data);
       });
     } catch (error) {
       console.error('Error initializing Socket.io:', error);
