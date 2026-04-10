@@ -33,6 +33,8 @@ export function usePaginatedQuery<T>({
   const [totalItems, setTotalItems] = useState(0);
 
   const cacheRef = useRef<Map<number, T[]>>(new Map());
+  // BUG FIX #15: Track in-flight requests to prevent race conditions
+  const inflightRef = useRef<Map<number, Promise<{ data: T[]; total: number }>>>(new Map());
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
@@ -40,18 +42,35 @@ export function usePaginatedQuery<T>({
     async (page: number) => {
       if (!enabled) return;
 
-      // Check cache first
+      // Check cache first (for already-completed requests)
       if (cacheRef.current.has(page)) {
         setData(cacheRef.current.get(page)!);
         setCurrentPage(page);
         return;
       }
 
+      // BUG FIX #15: Return cached promise if request already in flight
+      if (inflightRef.current.has(page)) {
+        try {
+          const result = await inflightRef.current.get(page)!;
+          setData(result.data);
+          setTotalItems(result.total);
+          setCurrentPage(page);
+        } catch (err) {
+          setError(err instanceof Error ? err : new Error('Unknown error'));
+        }
+        return;
+      }
+
       setIsLoading(true);
       setError(null);
 
+      // Create the promise for this request
+      const requestPromise = queryFn(page, pageSize);
+      inflightRef.current.set(page, requestPromise);
+
       try {
-        const result = await queryFn(page, pageSize);
+        const result = await requestPromise;
         setData(result.data);
         setTotalItems(result.total);
         cacheRef.current.set(page, result.data);
@@ -60,6 +79,8 @@ export function usePaginatedQuery<T>({
         setError(err instanceof Error ? err : new Error('Unknown error'));
       } finally {
         setIsLoading(false);
+        // Clean up the in-flight promise
+        inflightRef.current.delete(page);
       }
     },
     [queryFn, pageSize, enabled]
