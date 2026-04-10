@@ -3,6 +3,7 @@ import { Search, X, Clock, TrendingUp, Zap, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { searchService } from '../../services/search.service';
 import { useToast } from '../../hooks/useToast';
+import AdvancedFilters, { FilterOptions } from './AdvancedFilters';
 
 interface SearchResult {
   id: string;
@@ -36,6 +37,8 @@ export default function GlobalSearchBar({
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({});
+  const [showFilters, setShowFilters] = useState(false);
   const [recentSearches, setRecentSearches] = useState<string[]>(() => {
     const stored = localStorage.getItem('recentSearches');
     return stored ? JSON.parse(stored) : [];
@@ -53,7 +56,7 @@ export default function GlobalSearchBar({
             query: value,
             page: 1,
             limit: 10,
-            filters: {},
+            filters: filters,
           });
 
           // Map API results to SearchResult format
@@ -80,7 +83,7 @@ export default function GlobalSearchBar({
 
       onSearch?.(value);
     },
-    [onSearch, toast]
+    [onSearch, toast, filters]
   );
 
   const handleSelectResult = (result: SearchResult) => {
@@ -99,30 +102,45 @@ export default function GlobalSearchBar({
     handleSearch(search);
   };
 
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+    // Re-run search with new filters if query is present
+    if (query.trim().length >= 2) {
+      handleSearch(query);
+    }
+  };
+
   return (
-    <div className="relative flex-1 max-w-2xl">
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] pointer-events-none" />
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-          onFocus={() => setIsOpen(true)}
-          placeholder={placeholder}
-          className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none transition-colors"
+    <div className="relative flex-1 max-w-2xl space-y-2">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] pointer-events-none" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            onFocus={() => setIsOpen(true)}
+            placeholder={placeholder}
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none transition-colors"
+          />
+          {query && (
+            <button
+              onClick={() => {
+                setQuery('');
+                setResults([]);
+                setIsOpen(false);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-[#2D2D2D] rounded transition-colors"
+            >
+              <X className="w-4 h-4 text-[#6B7280]" />
+            </button>
+          )}
+        </div>
+        <AdvancedFilters
+          onFilterChange={handleFilterChange}
+          isOpen={showFilters}
+          onToggle={() => setShowFilters(!showFilters)}
         />
-        {query && (
-          <button
-            onClick={() => {
-              setQuery('');
-              setResults([]);
-              setIsOpen(false);
-            }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-[#2D2D2D] rounded transition-colors"
-          >
-            <X className="w-4 h-4 text-[#6B7280]" />
-          </button>
-        )}
       </div>
 
       <AnimatePresence>
