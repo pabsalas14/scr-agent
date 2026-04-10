@@ -10,6 +10,7 @@ import {
   getUserRepos,
   getUserRiskScore,
 } from '../services/user-search.service';
+import { calculateAdvancedRiskScore, getRiskScoreHistory } from '../services/risk-scoring.service';
 
 const VALID_ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
 
@@ -161,6 +162,37 @@ router.get('/:userId/risk-score', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error(`Error calculando risk score: ${error}`);
     res.status(500).json({ success: false, error: 'Error calculando risk score' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-score/advanced
+ * Obtener score de riesgo avanzado con factores desglosados
+ */
+router.get('/:userId/risk-score/advanced', async (req: Request, res: Response) => {
+  try {
+    const advancedScore = await calculateAdvancedRiskScore(req.params.userId);
+    res.json({ success: true, data: advancedScore });
+  } catch (error) {
+    logger.error(`Error calculando advanced risk score: ${error}`);
+    res.status(500).json({ success: false, error: 'Error calculando risk score avanzado' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-score/history
+ * Obtener histórico de scores de riesgo
+ */
+router.get('/:userId/risk-score/history', async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+
+    const history = await getRiskScoreHistory(req.params.userId, { days, limit });
+    res.json({ success: true, data: history, period: `${days} days` });
+  } catch (error) {
+    logger.error(`Error obteniendo risk score history: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo histórico' });
   }
 });
 
