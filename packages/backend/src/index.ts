@@ -216,8 +216,8 @@ socketService.init(httpServer, allowedOrigins);
 
 // ==================== QUEUE PROCESSOR ====================
 
-// Importar y iniciar el procesador de análisis (async — recupera atascados en DB)
-import { startAnalysisProcessor } from './services/analysis-queue';
+// Importar y iniciar el procesador de análisis (async — Bull queue + Worker)
+import { startAnalysisProcessor, stopAnalysisProcessor } from './services/analysis-queue';
 startAnalysisProcessor().catch((err) => {
   logger.error(`Error iniciando analysis processor: ${err}`);
 });
@@ -232,22 +232,32 @@ const server = httpServer.listen(PORT, () => {
 
 /**
  * Manejo de Shutdown Graceful
- * Cierra conexiones ordenadamente
+ * Cierra conexiones ordenadamente (Bull queue, Worker, HTTP server)
  */
-process.on('SIGTERM', () => {
-  logger.info('📴 SIGTERM recibido, cerrando servidor...');
+async function gracefulShutdown() {
+  logger.info('🔌 Iniciando shutdown graceful...');
+
+  try {
+    // Cerrar Bull queue y worker
+    await stopAnalysisProcessor();
+  } catch (err) {
+    logger.error(`Error cerrando processor: ${err}`);
+  }
+
   server.close(() => {
     logger.info('✅ Servidor cerrado');
     process.exit(0);
   });
+}
+
+process.on('SIGTERM', () => {
+  logger.info('📴 SIGTERM recibido, cerrando servidor...');
+  gracefulShutdown();
 });
 
 process.on('SIGINT', () => {
   logger.info('⏹️ SIGINT recibido, cerrando servidor...');
-  server.close(() => {
-    logger.info('✅ Servidor cerrado');
-    process.exit(0);
-  });
+  gracefulShutdown();
 });
 
 // ==================== EXPORTAR ====================
