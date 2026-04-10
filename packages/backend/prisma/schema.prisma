@@ -144,6 +144,9 @@ model Analysis {
   // Job tracking (Phase 1)
   job AnalysisJob?
 
+  // Incremental analysis tracking (Phase 1)
+  lastCommitProcessed String? // SHA del último commit analizado (para análisis incrementales)
+
   // Timing
   startedAt   DateTime?
   completedAt DateTime?
