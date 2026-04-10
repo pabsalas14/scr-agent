@@ -156,6 +156,7 @@ import analyticsRoutes from './routes/analytics.routes';
 import userSettingsRoutes from './routes/user-settings.routes';
 import auditRoutes from './routes/audit.routes';
 import remediationRoutes from './routes/remediation.routes';
+import timelineRoutes from './routes/timeline.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 
@@ -181,6 +182,7 @@ app.use('/api/v1/findings', commentsRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
 app.use('/api/v1/audit', auditRoutes);
 app.use('/api/v1/remediation', remediationRoutes);
+app.use('/api/v1/timeline', timelineRoutes);
 
 // ==================== MANEJO DE ERRORES ====================
 
