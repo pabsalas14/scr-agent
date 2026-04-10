@@ -18,6 +18,8 @@ import Button from '../ui/Button';
 import { Finding, RemediationEntry } from '../../types/findings';
 import { findingsService } from '../../services/findings.service';
 import { useToast } from '../../hooks/useToast';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
+import { useConfirm } from '../../hooks/useConfirm';
 
 interface RemediationModalProps {
   finding: Finding;
@@ -35,11 +37,28 @@ export default function RemediationModal({
   const [proofOfFixUrl, setProofOfFixUrl] = useState('');
   const [verificationNotes, setVerificationNotes] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [tab, setTab] = useState<'correction' | 'verification'>('correction');
   const [copiedUrl, setCopiedUrl] = useState(false);
   const toast = useToast();
+  const { confirm } = useConfirm();
+
+  const saveOperation = useAsyncOperation({
+    loadingMessage: 'Guardando corrección...',
+    successMessage: 'Corrección guardada exitosamente',
+    errorMessage: 'Error al guardar la corrección',
+    onSuccess: () => {
+      onSave();
+    },
+  });
+
+  const verifyOperation = useAsyncOperation({
+    loadingMessage: 'Verificando remediación...',
+    successMessage: 'Remediación verificada exitosamente',
+    errorMessage: 'Error al verificar la remediación',
+    onSuccess: () => {
+      onSave();
+    },
+  });
 
   // Load existing remediation
   useEffect(() => {
@@ -67,33 +86,36 @@ export default function RemediationModal({
       return;
     }
 
-    try {
-      setIsSaving(true);
-      await findingsService.updateRemediation(finding.id, {
-        correctionNotes,
-        proofOfFixUrl,
-        status: 'IN_PROGRESS',
-      });
-      toast.success('Remediación registrada');
-      onSave();
-    } catch (error) {
-      toast.error('Error al guardar');
-    } finally {
-      setIsSaving(false);
-    }
+    const confirmed = await confirm({
+      title: 'Guardar corrección',
+      message: '¿Registrar esta corrección? Podrá ser verificada posteriormente.',
+      confirmText: 'Guardar',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        await saveOperation.execute(async () => {
+          await findingsService.updateRemediation(finding.id, {
+            correctionNotes,
+            proofOfFixUrl,
+            status: 'IN_PROGRESS',
+          });
+        });
+      },
+    });
   };
 
   const handleVerifyRemediation = async () => {
-    try {
-      setIsVerifying(true);
-      await findingsService.verifyRemediation(finding.id, verificationNotes);
-      toast.success('Remediación verificada');
-      onSave();
-    } catch (error) {
-      toast.error('Error al verificar');
-    } finally {
-      setIsVerifying(false);
-    }
+    const confirmed = await confirm({
+      title: 'Verificar remediación',
+      message: '¿Confirmar que la corrección ha solucionado completamente el problema?',
+      confirmText: 'Verificar',
+      cancelText: 'Cancelar',
+      isDangerous: false,
+      onConfirm: async () => {
+        await verifyOperation.execute(async () => {
+          await findingsService.verifyRemediation(finding.id, verificationNotes);
+        });
+      },
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -214,10 +236,10 @@ export default function RemediationModal({
             {/* Save Button */}
             <button
               onClick={handleSaveRemediation}
-              disabled={isSaving || (!correctionNotes && !proofOfFixUrl)}
+              disabled={saveOperation.isLoading || (!correctionNotes && !proofOfFixUrl)}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#F97316] hover:bg-[#EA6D00] text-white text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isSaving ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : 'Guardar Corrección'}
+              {saveOperation.isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</> : 'Guardar Corrección'}
             </button>
 
             {remediation && (
@@ -265,10 +287,10 @@ export default function RemediationModal({
 
                 <button
                   onClick={handleVerifyRemediation}
-                  disabled={isVerifying || !remediation}
+                  disabled={verifyOperation.isLoading || !remediation}
                   className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#22C55E] hover:bg-[#16A34A] text-white text-sm font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isVerifying ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</> : <><CheckCircle2 className="w-4 h-4" /> Verificar Remediación</>}
+                  {verifyOperation.isLoading ? <><Loader2 className="w-4 h-4 animate-spin" /> Verificando...</> : <><CheckCircle2 className="w-4 h-4" /> Verificar Remediación</>}
                 </button>
               </>
             ) : (

@@ -14,6 +14,7 @@ import { commentsService, Comment } from '../../services/comments.service';
 import { usersService } from '../../services/users.service';
 import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 import Button from '../ui/Button';
 import { useSocketEvents } from '../../hooks/useSocketEvents';
 
@@ -33,6 +34,7 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { getToken } = useAuth();
   const toast = useToast();
+  const { confirm } = useConfirm();
   const queryClient = useQueryClient();
 
   // Get current user ID from token
@@ -183,8 +185,16 @@ export default function CommentThread({ findingId }: CommentThreadProps) {
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!window.confirm('¿Eliminar comentario?')) return;
-    await deleteCommentMutation.mutateAsync(commentId);
+    const confirmed = await confirm({
+      title: 'Eliminar comentario',
+      message: '¿Estás seguro de que deseas eliminar este comentario? Esta acción no se puede deshacer.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      isDangerous: true,
+      onConfirm: async () => {
+        await deleteCommentMutation.mutateAsync(commentId);
+      },
+    });
   };
 
   return (

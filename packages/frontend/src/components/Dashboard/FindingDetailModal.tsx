@@ -22,6 +22,8 @@ import { findingsService } from '../../services/findings.service';
 import { useToast } from '../../hooks/useToast';
 import { useSocketEvents } from '../../hooks/useSocketEvents';
 import { useAuth } from '../../hooks/useAuth';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
+import { useConfirm } from '../../hooks/useConfirm';
 import CommentThread from './CommentThread';
 
 interface FindingDetailModalProps {
@@ -66,11 +68,31 @@ export default function FindingDetailModal({
   const [selectedAnalyst, setSelectedAnalyst] = useState<string | null>(
     finding.assignment?.assignedTo || null
   );
-  const [isUpdating, setIsUpdating] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
   const toast = useToast();
   const { user: currentUser } = useAuth();
+  const { confirm } = useConfirm();
   const isViewer = currentUser?.role === 'VIEWER';
+
+  const statusUpdateOperation = useAsyncOperation({
+    loadingMessage: 'Actualizando estado...',
+    successMessage: 'Estado actualizado exitosamente',
+    errorMessage: 'Error al actualizar el estado',
+    onSuccess: () => {
+      setSelectedStatus(null);
+      setStatusNote('');
+      onStatusChange();
+    },
+  });
+
+  const assignOperation = useAsyncOperation({
+    loadingMessage: 'Asignando hallazgo...',
+    successMessage: 'Hallazgo asignado exitosamente',
+    errorMessage: 'Error al asignar el hallazgo',
+    onSuccess: () => {
+      onStatusChange();
+    },
+  });
 
   // Listen to socket events for this specific finding
   useSocketEvents({
@@ -101,32 +123,42 @@ export default function FindingDetailModal({
 
   const handleStatusChange = async () => {
     if (!selectedStatus) return;
-    try {
-      setIsUpdating(true);
-      await findingsService.updateFindingStatus(finding.id, selectedStatus, statusNote);
-      toast.success(`Estado actualizado a ${STATUS_COLORS[selectedStatus].label}`);
-      setSelectedStatus(null);
-      setStatusNote('');
-      onStatusChange();
-    } catch (error) {
-      toast.error('Error al actualizar el estado');
-    } finally {
-      setIsUpdating(false);
-    }
+
+    const confirmed = await confirm({
+      title: 'Confirmar cambio de estado',
+      message: `¿Cambiar estado a "${STATUS_COLORS[selectedStatus].label}"?`,
+      confirmText: 'Cambiar',
+      cancelText: 'Cancelar',
+      isDangerous: selectedStatus === 'FALSE_POSITIVE' || selectedStatus === 'CLOSED',
+      onConfirm: async () => {
+        await statusUpdateOperation.execute(async () => {
+          await findingsService.updateFindingStatus(
+            finding.id,
+            selectedStatus,
+            statusNote
+          );
+        });
+      },
+    });
   };
 
   const handleAssign = async () => {
     if (!selectedAnalyst) return;
-    try {
-      setIsUpdating(true);
-      await findingsService.assignFinding(finding.id, selectedAnalyst);
-      toast.success('Hallazgo asignado');
-      onStatusChange();
-    } catch (error) {
-      toast.error('Error al asignar');
-    } finally {
-      setIsUpdating(false);
-    }
+
+    const selectedAnalystName = analysts.find(a => a.id === selectedAnalyst)?.name ||
+                               analysts.find(a => a.id === selectedAnalyst)?.email;
+
+    const confirmed = await confirm({
+      title: 'Confirmar asignación',
+      message: `¿Asignar hallazgo a ${selectedAnalystName}?`,
+      confirmText: 'Asignar',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        await assignOperation.execute(async () => {
+          await findingsService.assignFinding(finding.id, selectedAnalyst);
+        });
+      },
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -347,8 +379,8 @@ export default function FindingDetailModal({
             </select>
             <Button
               onClick={handleAssign}
-              disabled={isUpdating || !selectedAnalyst || isViewer}
-              isLoading={isUpdating}
+              disabled={assignOperation.isLoading || !selectedAnalyst || isViewer}
+              isLoading={assignOperation.isLoading}
               className="w-full"
               title={isViewer ? 'Solo lectura — rol VIEWER' : undefined}
             >
@@ -395,8 +427,8 @@ export default function FindingDetailModal({
                   />
                   <Button
                     onClick={handleStatusChange}
-                    disabled={isUpdating}
-                    isLoading={isUpdating}
+                    disabled={statusUpdateOperation.isLoading}
+                    isLoading={statusUpdateOperation.isLoading}
                     className="w-full mt-2"
                   >
                     Confirmar Cambio

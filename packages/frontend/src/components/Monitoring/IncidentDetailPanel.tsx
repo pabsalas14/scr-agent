@@ -4,6 +4,7 @@ import { X, Save, AlertCircle, Check, Clock, User, MessageSquare, Zap } from 'lu
 import { apiService } from '../../services/api.service';
 import { useConfirm } from '../../hooks/useConfirm';
 import { useToast } from '../../hooks/useToast';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
 import type { Hallazgo } from '../../types/api';
 
 interface IncidentDetailPanelProps {
@@ -33,56 +34,48 @@ export default function IncidentDetailPanel({
   );
   const [assignedTo, setAssignedTo] = useState(incident?.assignedTo || '');
   const [notes, setNotes] = useState(incident?.notes || '');
-  const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'status' | 'assignment' | 'timeline'>('status');
-  const confirm = useConfirm();
+  const { confirm } = useConfirm();
   const toast = useToast();
+
+  const saveOperation = useAsyncOperation({
+    loadingMessage: 'Guardando cambios...',
+    successMessage: 'Cambios guardados exitosamente',
+    errorMessage: 'Error al guardar los cambios',
+  });
 
   if (!incident) return null;
 
   const handleSave = async () => {
     // If changing to CLOSED, require confirmation
     if (status === 'CLOSED' && incident.status !== 'CLOSED') {
-      await confirm.confirm({
+      const confirmed = await confirm({
         title: 'Cerrar Incidente',
         message: '¿Estás seguro de que deseas cerrar este incidente? Esta acción marcará el incidente como completamente resuelto y verificado.',
         confirmText: 'Cerrar',
         cancelText: 'Cancelar',
         isDangerous: true,
         onConfirm: async () => {
-          setIsSaving(true);
-          try {
+          await saveOperation.execute(async () => {
             await apiService.cambiarEstadoHallazgo(incident.id, {
               status,
               notes,
               assignedTo: assignedTo || undefined,
             });
-            toast.success('Incidente cerrado correctamente');
             onStatusChange?.();
-          } catch (error) {
-            toast.error('Error al cerrar el incidente');
-            throw error;
-          } finally {
-            setIsSaving(false);
-          }
+          });
         },
       });
     } else {
       // For other status changes, save directly
-      setIsSaving(true);
-      try {
+      await saveOperation.execute(async () => {
         await apiService.cambiarEstadoHallazgo(incident.id, {
           status,
           notes,
           assignedTo: assignedTo || undefined,
         });
-        toast.success('Cambios guardados correctamente');
         onStatusChange?.();
-      } catch (error) {
-        toast.error('Error al guardar los cambios');
-      } finally {
-        setIsSaving(false);
-      }
+      });
     }
   };
 
@@ -312,11 +305,11 @@ export default function IncidentDetailPanel({
             <div className="sticky bottom-0 bg-[#111111] border-t border-[#2D2D2D] p-6 space-y-2">
               <button
                 onClick={handleSave}
-                disabled={isSaving}
+                disabled={saveOperation.isLoading}
                 className="w-full flex items-center justify-center gap-2 bg-[#F97316] hover:bg-[#EA8F1B] disabled:opacity-50 text-white font-semibold py-2 rounded-lg transition-colors"
               >
                 <Save className="w-4 h-4" />
-                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                {saveOperation.isLoading ? 'Guardando...' : 'Guardar Cambios'}
               </button>
               <button
                 onClick={onClose}
