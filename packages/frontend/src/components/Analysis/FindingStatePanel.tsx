@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Save, AlertCircle, CheckCircle2, Clock, Zap } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useToast } from '../../hooks/useToast';
+import { useConfirm } from '../../hooks/useConfirm';
 
 type FindingState = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED';
 
@@ -49,8 +50,44 @@ export default function FindingStatePanel({ hallazgoId, currentState, riskType, 
   const [notes, setNotes] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const toast = useToast();
+  const confirm = useConfirm();
 
   const handleSave = async () => {
+    // Check if state change requires confirmation
+    const needsConfirmation = selectedState === 'CLOSED' || selectedState === 'RESOLVED';
+
+    if (needsConfirmation && selectedState !== currentState) {
+      const confirmMessages = {
+        CLOSED: {
+          title: 'Cerrar Hallazgo',
+          message: selectedState === 'CLOSED'
+            ? '¿Estás seguro de que deseas cerrar este hallazgo? Esto indica que es un falso positivo o ha sido rechazado.'
+            : '¿Estás seguro de que deseas marcar este hallazgo como resuelto? Esta acción indica que la vulnerabilidad ha sido corregida.',
+          isDangerous: true,
+        },
+        RESOLVED: {
+          title: 'Marcar como Resuelto',
+          message: '¿Estás seguro de que deseas marcar este hallazgo como resuelto? Esta acción indica que la vulnerabilidad ha sido corregida.',
+          isDangerous: false,
+        },
+      };
+
+      const message = confirmMessages[selectedState] || confirmMessages.CLOSED;
+
+      await confirm.confirm({
+        title: message.title,
+        message: message.message,
+        isDangerous: message.isDangerous,
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar',
+        onConfirm: performSave,
+      });
+    } else {
+      await performSave();
+    }
+  };
+
+  const performSave = async () => {
     try {
       setIsSaving(true);
       await apiService.cambiarEstadoHallazgo(hallazgoId, {
@@ -63,16 +100,17 @@ export default function FindingStatePanel({ hallazgoId, currentState, riskType, 
     } catch (error) {
       console.error('Error updating finding state:', error);
       toast.error('Error al actualizar el estado');
+      throw error;
     } finally {
       setIsSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-end z-50">
-      <div className="bg-[#1E1E20] border-t border-[#2D2D2D] w-full max-w-2xl rounded-t-2xl shadow-2xl animate-in slide-in-from-bottom">
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+      <div className="bg-[#1E1E20] border border-[#2D2D2D] w-full max-w-2xl rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="border-b border-[#2D2D2D] p-6 flex items-center justify-between">
+        <div className="border-b border-[#2D2D2D] p-6 flex items-center justify-between sticky top-0 bg-[#1E1E20]/95">
           <div>
             <h2 className="text-lg font-semibold text-white">Marcar estado de hallazgo</h2>
             <p className="text-sm text-[#6B7280] mt-1">{riskType}</p>
@@ -141,7 +179,7 @@ export default function FindingStatePanel({ hallazgoId, currentState, riskType, 
         </div>
 
         {/* Footer */}
-        <div className="border-t border-[#2D2D2D] p-6 flex items-center justify-end gap-3 bg-[#242424]/50">
+        <div className="border-t border-[#2D2D2D] p-6 flex items-center justify-end gap-3 bg-[#1E1E20]/95 sticky bottom-0">
           <button
             onClick={onClose}
             className="px-4 py-2.5 rounded-lg border border-[#2D2D2D] text-sm font-medium text-[#A0A0A0] hover:text-white hover:border-[#404040] transition-all"

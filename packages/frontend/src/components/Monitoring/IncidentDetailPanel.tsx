@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Save, AlertCircle, Check, Clock, User, MessageSquare, Zap } from 'lucide-react';
 import { apiService } from '../../services/api.service';
+import { useConfirm } from '../../hooks/useConfirm';
+import { useToast } from '../../hooks/useToast';
 import type { Hallazgo } from '../../types/api';
 
 interface IncidentDetailPanelProps {
@@ -33,20 +35,54 @@ export default function IncidentDetailPanel({
   const [notes, setNotes] = useState(incident?.notes || '');
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'status' | 'assignment' | 'timeline'>('status');
+  const confirm = useConfirm();
+  const toast = useToast();
 
   if (!incident) return null;
 
   const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await apiService.cambiarEstadoHallazgo(incident.id, {
-        status,
-        notes,
-        assignedTo: assignedTo || undefined,
+    // If changing to CLOSED, require confirmation
+    if (status === 'CLOSED' && incident.status !== 'CLOSED') {
+      await confirm.confirm({
+        title: 'Cerrar Incidente',
+        message: '¿Estás seguro de que deseas cerrar este incidente? Esta acción marcará el incidente como completamente resuelto y verificado.',
+        confirmText: 'Cerrar',
+        cancelText: 'Cancelar',
+        isDangerous: true,
+        onConfirm: async () => {
+          setIsSaving(true);
+          try {
+            await apiService.cambiarEstadoHallazgo(incident.id, {
+              status,
+              notes,
+              assignedTo: assignedTo || undefined,
+            });
+            toast.success('Incidente cerrado correctamente');
+            onStatusChange?.();
+          } catch (error) {
+            toast.error('Error al cerrar el incidente');
+            throw error;
+          } finally {
+            setIsSaving(false);
+          }
+        },
       });
-      onStatusChange?.();
-    } finally {
-      setIsSaving(false);
+    } else {
+      // For other status changes, save directly
+      setIsSaving(true);
+      try {
+        await apiService.cambiarEstadoHallazgo(incident.id, {
+          status,
+          notes,
+          assignedTo: assignedTo || undefined,
+        });
+        toast.success('Cambios guardados correctamente');
+        onStatusChange?.();
+      } catch (error) {
+        toast.error('Error al guardar los cambios');
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 

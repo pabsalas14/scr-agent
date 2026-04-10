@@ -6,8 +6,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Trash2, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, ChevronDown } from 'lucide-react';
 import { apiService } from '../../services/api.service';
+import { useConfirm } from '../../hooks/useConfirm';
+import { useToast } from '../../hooks/useToast';
 import type { Proyecto, AlcanceAnalisis } from '../../types/api';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -35,7 +37,8 @@ export default function ProjectDetailView({
   const queryClient = useQueryClient();
   const [editando, setEditando] = useState(false);
   const [mostrarHistorial, setMostrarHistorial] = useState(false);
-  const [confirmarEliminar, setConfirmarEliminar] = useState(false);
+  const confirm = useConfirm();
+  const toast = useToast();
 
   const [formData, setFormData] = useState({
     name: '',
@@ -76,8 +79,12 @@ export default function ProjectDetailView({
     mutationFn: () => apiService.eliminarProyecto(projectId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
+      toast.success('Proyecto eliminado correctamente');
       onProjectDeleted?.();
       onClose();
+    },
+    onError: () => {
+      toast.error('Error al eliminar el proyecto');
     },
   });
 
@@ -85,8 +92,17 @@ export default function ProjectDetailView({
     actualizarMutation.mutate(formData);
   };
 
-  const handleEliminar = () => {
-    eliminarMutation.mutate();
+  const handleEliminar = async () => {
+    await confirm.confirm({
+      title: 'Eliminar Proyecto',
+      message: '¿Estás seguro de que deseas eliminar este proyecto? Esta acción no se puede deshacer y se eliminarán todos los análisis asociados.',
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      isDangerous: true,
+      onConfirm: () => {
+        eliminarMutation.mutate();
+      },
+    });
   };
 
   if (!isOpen) return null;
@@ -272,7 +288,7 @@ export default function ProjectDetailView({
               <Button
                 variant="danger"
                 className="w-full"
-                onClick={() => setConfirmarEliminar(true)}
+                onClick={handleEliminar}
               >
                 <Trash2 className="w-4 h-4" />
                 Eliminar Proyecto
@@ -301,54 +317,6 @@ export default function ProjectDetailView({
         </div>
       </div>
 
-      {/* Confirmación de Eliminar */}
-      <AnimatePresence>
-        {confirmarEliminar && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
-            onClick={() => setConfirmarEliminar(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.9 }}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 max-w-sm mx-4"
-            >
-              <div className="flex items-center gap-3 mb-4">
-                <AlertTriangle className="w-6 h-6 text-red-600" />
-                <h3 className="text-lg font-semibold text-white">
-                  Eliminar Proyecto
-                </h3>
-              </div>
-              <p className="text-[#6B7280] mb-6">
-                ¿Estás seguro? Esta acción no se puede deshacer y se eliminarán todos los análisis asociados.
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  variant="secondary"
-                  className="flex-1"
-                  onClick={() => setConfirmarEliminar(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="danger"
-                  className="flex-1"
-                  onClick={handleEliminar}
-                  disabled={eliminarMutation.isPending}
-                  isLoading={eliminarMutation.isPending}
-                >
-                  Eliminar
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </Modal>
   );
 }
