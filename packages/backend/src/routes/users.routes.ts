@@ -3,6 +3,20 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { usersService } from '../services/users.service';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
+import {
+  searchUsers,
+  getUserProfile,
+  getUserActivityTimeline,
+  getUserRepos,
+  getUserRiskScore,
+} from '../services/user-search.service';
+import { calculateAdvancedRiskScore, getRiskScoreHistory } from '../services/risk-scoring.service';
+import {
+  getUserRiskTrend,
+  getProjectRiskTrend,
+  getGlobalRiskTrend,
+  compareUserRiskTrends,
+} from '../services/risk-trends.service';
 
 const VALID_ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
 
@@ -65,6 +79,174 @@ router.patch('/:userId/role', async (req: Request, res: Response) => {
   } catch (error) {
     logger.error('Error changing user role:', error);
     res.status(500).json({ success: false, error: 'Error actualizando rol' });
+  }
+});
+
+/**
+ * GET /api/v1/users/search
+ * Buscar usuarios por nombre o email
+ */
+router.get('/search', async (req: Request, res: Response) => {
+  try {
+    const query = req.query.q as string | undefined;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
+
+    if (!query || query.length < 2) {
+      return res.status(400).json({
+        success: false,
+        error: 'Parámetro q debe tener al menos 2 caracteres',
+      });
+    }
+
+    const users = await searchUsers(query, { limit });
+    res.json({ success: true, data: users });
+  } catch (error) {
+    logger.error(`Error buscando usuarios: ${error}`);
+    res.status(500).json({ success: false, error: 'Error buscando usuarios' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/profile
+ * Obtener perfil completo de usuario con estadísticas forenses
+ */
+router.get('/:userId/profile', async (req: Request, res: Response) => {
+  try {
+    const profile = await getUserProfile(req.params.userId);
+
+    if (!profile) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    res.json({ success: true, data: profile });
+  } catch (error) {
+    logger.error(`Error obteniendo perfil de usuario: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo perfil' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/activity
+ * Obtener timeline de actividad del usuario
+ */
+router.get('/:userId/activity', async (req: Request, res: Response) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+    const offset = parseInt(req.query.offset as string) || 0;
+    const severity = req.query.severity as 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' | undefined;
+
+    const events = await getUserActivityTimeline(req.params.userId, { limit, offset, severity });
+    res.json({ success: true, data: events, limit, offset });
+  } catch (error) {
+    logger.error(`Error obteniendo actividad de usuario: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo actividad' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/repos
+ * Obtener repositorios donde el usuario ha commitido
+ */
+router.get('/:userId/repos', async (req: Request, res: Response) => {
+  try {
+    const repos = await getUserRepos(req.params.userId);
+    res.json({ success: true, data: repos });
+  } catch (error) {
+    logger.error(`Error obteniendo repos del usuario: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo repositorios' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-score
+ * Obtener score de riesgo agregado del usuario
+ */
+router.get('/:userId/risk-score', async (req: Request, res: Response) => {
+  try {
+    const riskData = await getUserRiskScore(req.params.userId);
+    res.json({ success: true, data: riskData });
+  } catch (error) {
+    logger.error(`Error calculando risk score: ${error}`);
+    res.status(500).json({ success: false, error: 'Error calculando risk score' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-score/advanced
+ * Obtener score de riesgo avanzado con factores desglosados
+ */
+router.get('/:userId/risk-score/advanced', async (req: Request, res: Response) => {
+  try {
+    const advancedScore = await calculateAdvancedRiskScore(req.params.userId);
+    res.json({ success: true, data: advancedScore });
+  } catch (error) {
+    logger.error(`Error calculando advanced risk score: ${error}`);
+    res.status(500).json({ success: false, error: 'Error calculando risk score avanzado' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-score/history
+ * Obtener histórico de scores de riesgo
+ */
+router.get('/:userId/risk-score/history', async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const limit = Math.min(parseInt(req.query.limit as string) || 50, 200);
+
+    const history = await getRiskScoreHistory(req.params.userId, { days, limit });
+    res.json({ success: true, data: history, period: `${days} days` });
+  } catch (error) {
+    logger.error(`Error obteniendo risk score history: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo histórico' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-trend
+ * Obtener tendencia de riesgo del usuario
+ */
+router.get('/:userId/risk-trend', async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const interval = (req.query.interval as 'daily' | 'weekly' | 'monthly') || 'daily';
+
+    const trend = await getUserRiskTrend(req.params.userId, { days, interval });
+
+    if (!trend) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    res.json({ success: true, data: trend });
+  } catch (error) {
+    logger.error(`Error obteniendo user risk trend: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo tendencia de riesgo' });
+  }
+});
+
+/**
+ * POST /api/v1/users/risk-trend/compare
+ * Comparar tendencias de riesgo de múltiples usuarios
+ */
+router.post('/risk-trend/compare', async (req: Request, res: Response) => {
+  try {
+    const { userIds } = req.body;
+    const days = parseInt(req.query.days as string) || 30;
+    const interval = (req.query.interval as 'daily' | 'weekly' | 'monthly') || 'daily';
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'userIds debe ser un array no vacío' });
+    }
+
+    const comparisons = await compareUserRiskTrends(userIds, { days, interval });
+    const results = Object.fromEntries(comparisons);
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    logger.error(`Error comparando risk trends: ${error}`);
+    res.status(500).json({ success: false, error: 'Error comparando tendencias' });
   }
 });
 
