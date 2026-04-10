@@ -11,6 +11,12 @@ import {
   getUserRiskScore,
 } from '../services/user-search.service';
 import { calculateAdvancedRiskScore, getRiskScoreHistory } from '../services/risk-scoring.service';
+import {
+  getUserRiskTrend,
+  getProjectRiskTrend,
+  getGlobalRiskTrend,
+  compareUserRiskTrends,
+} from '../services/risk-trends.service';
 
 const VALID_ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
 
@@ -193,6 +199,54 @@ router.get('/:userId/risk-score/history', async (req: Request, res: Response) =>
   } catch (error) {
     logger.error(`Error obteniendo risk score history: ${error}`);
     res.status(500).json({ success: false, error: 'Error obteniendo histórico' });
+  }
+});
+
+/**
+ * GET /api/v1/users/:userId/risk-trend
+ * Obtener tendencia de riesgo del usuario
+ */
+router.get('/:userId/risk-trend', async (req: Request, res: Response) => {
+  try {
+    const days = parseInt(req.query.days as string) || 30;
+    const interval = (req.query.interval as 'daily' | 'weekly' | 'monthly') || 'daily';
+
+    const trend = await getUserRiskTrend(req.params.userId, { days, interval });
+
+    if (!trend) {
+      return res.status(404).json({ success: false, error: 'Usuario no encontrado' });
+    }
+
+    res.json({ success: true, data: trend });
+  } catch (error) {
+    logger.error(`Error obteniendo user risk trend: ${error}`);
+    res.status(500).json({ success: false, error: 'Error obteniendo tendencia de riesgo' });
+  }
+});
+
+/**
+ * POST /api/v1/users/risk-trend/compare
+ * Comparar tendencias de riesgo de múltiples usuarios
+ */
+router.post('/risk-trend/compare', async (req: Request, res: Response) => {
+  try {
+    const { userIds } = req.body;
+    const days = parseInt(req.query.days as string) || 30;
+    const interval = (req.query.interval as 'daily' | 'weekly' | 'monthly') || 'daily';
+
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res
+        .status(400)
+        .json({ success: false, error: 'userIds debe ser un array no vacío' });
+    }
+
+    const comparisons = await compareUserRiskTrends(userIds, { days, interval });
+    const results = Object.fromEntries(comparisons);
+
+    res.json({ success: true, data: results });
+  } catch (error) {
+    logger.error(`Error comparando risk trends: ${error}`);
+    res.status(500).json({ success: false, error: 'Error comparando tendencias' });
   }
 });
 
