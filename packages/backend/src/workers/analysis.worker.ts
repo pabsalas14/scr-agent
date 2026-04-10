@@ -21,6 +21,12 @@ import { FiscalAgentService } from '../agents/fiscal.agent';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
+import {
+  getNewCommits,
+  getLastAnalysisPosition,
+  shouldBeIncremental,
+  updateLastProcessedCommit,
+} from '../services/incremental-analysis.service';
 
 // Instanciar agentes
 const inspectorAgent = new InspectorAgentService();
@@ -204,8 +210,19 @@ async function processAnalysisJob(job: Job) {
     });
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'DETECTIVE_RUNNING', 40);
 
-    const historialGit = await gitService.getCommitHistory(
+    // Determinar si análisis debe ser incremental
+    const isIncremental = await shouldBeIncremental(projectId);
+    const lastCommitSha = isIncremental ? await getLastAnalysisPosition(projectId) : undefined;
+
+    if (isIncremental && lastCommitSha) {
+      logger.info(`📊 Usando análisis incremental desde ${lastCommitSha.substring(0, 7)}`);
+    } else {
+      logger.info(`📊 Realizando análisis completo del repositorio`);
+    }
+
+    const historialGit = await getNewCommits(
       project.repositoryUrl,
+      lastCommitSha,
       (project as any).maxCommits ?? 50
     );
 
@@ -305,6 +322,13 @@ async function processAnalysisJob(job: Job) {
 
     // ========== COMPLETADO ==========
     logger.info(`✅ [Job ${job.id}] Análisis ${analysisId} completado exitosamente`);
+
+    // Actualizar última posición procesada si hay commits en el historial
+    if (historialGit.length > 0) {
+      const lastCommit = historialGit[0]; // Primer commit en el historial (más reciente)
+      await updateLastProcessedCommit(analysisId, lastCommit.hash);
+    }
+
     await prisma.analysis.update({
       where: { id: analysisId },
       data: { status: 'COMPLETED', progress: 100, completedAt: new Date() },
