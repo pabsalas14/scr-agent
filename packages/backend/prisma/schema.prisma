@@ -39,6 +39,7 @@ model User {
   comments     Comment[]
   mentionedIn  CommentMention[] @relation("CommentMentions")
   notificationPreferences NotificationPreferences?
+  auditLogs    AuditLog[]
 
   @@index([email])
   @@map("users")
@@ -523,6 +524,32 @@ model NotificationPreferences {
 }
 
 // ==================== PHASE 1: JOB QUEUE TRACKING ====================
+
+/// AuditLog - Registro de auditoría de acciones en el sistema
+/// Trazabilidad: quién hizo qué cuándo
+model AuditLog {
+  id            String   @id @default(cuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Acción realizada
+  action        String   @db.VarChar(50) // create, update, delete, run, cancel, etc
+  resourceType  String   @db.VarChar(50) // analysis, finding, project, etc
+  resourceId    String?  @db.VarChar(255)
+
+  // Detalles
+  details       Json? // información adicional sobre la acción
+  ipAddress     String?  @db.VarChar(45)
+  userAgent     String?  @db.Text
+
+  // Timing
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([action, resourceType, createdAt])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
 
 /// AnalysisJob - Seguimiento de jobs en Bull queue
 /// Para procesamiento concurrente y recuperación tras fallos
