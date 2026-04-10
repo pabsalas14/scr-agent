@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Trash2, Bell, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Bell, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '../../hooks/useToast';
+import { useAsyncOperation } from '../../hooks/useAsyncOperation';
+import { useConfirm } from '../../hooks/useConfirm';
 
 export interface AlertRule {
   id: string;
@@ -35,6 +37,23 @@ export default function AlertRuleBuilder({
     threshold: 3,
   });
   const toast = useToast();
+  const { confirm } = useConfirm();
+
+  const createRuleOperation = useAsyncOperation({
+    loadingMessage: 'Creando regla de alerta...',
+    successMessage: 'Regla de alerta creada exitosamente',
+    errorMessage: 'Error al crear la regla de alerta',
+    onSuccess: () => {
+      setNewRule({ severity: [], notificationChannels: [], threshold: 3 });
+      setIsAdding(false);
+    },
+  });
+
+  const deleteRuleOperation = useAsyncOperation({
+    loadingMessage: 'Eliminando regla...',
+    successMessage: 'Regla eliminada exitosamente',
+    errorMessage: 'Error al eliminar la regla',
+  });
 
   const handleAddRule = async () => {
     if (!newRule.name?.trim()) {
@@ -59,14 +78,25 @@ export default function AlertRuleBuilder({
       isActive: true,
     };
 
-    try {
+    await createRuleOperation.execute(async () => {
       await onAddRule?.(rule);
-      setNewRule({ severity: [], notificationChannels: [], threshold: 3 });
-      setIsAdding(false);
-      toast.success('Regla de alerta creada');
-    } catch (error) {
-      toast.error('Error al crear regla');
-    }
+    });
+  };
+
+  const handleDeleteRule = async (ruleId: string) => {
+    const ruleName = rules.find(r => r.id === ruleId)?.name || 'la regla';
+    const confirmed = await confirm({
+      title: 'Eliminar regla de alerta',
+      message: `¿Estás seguro de que deseas eliminar "${ruleName}"? Las alertas de esta regla dejarán de enviarse.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      isDangerous: true,
+      onConfirm: async () => {
+        await deleteRuleOperation.execute(async () => {
+          await onDeleteRule?.(ruleId);
+        });
+      },
+    });
   };
 
   return (
@@ -163,8 +193,10 @@ export default function AlertRuleBuilder({
             <div className="flex gap-2">
               <button
                 onClick={handleAddRule}
-                className="flex-1 px-4 py-2 rounded-lg bg-[#F97316] text-white hover:bg-[#EA6B1B] transition-colors font-medium text-sm"
+                disabled={createRuleOperation.isLoading}
+                className="flex-1 px-4 py-2 rounded-lg bg-[#F97316] text-white hover:bg-[#EA6B1B] transition-colors font-medium text-sm flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
+                {createRuleOperation.isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
                 Crear Regla
               </button>
               <button
@@ -215,10 +247,15 @@ export default function AlertRuleBuilder({
                   </p>
                 </div>
                 <button
-                  onClick={() => onDeleteRule?.(rule.id)}
-                  className="p-2 rounded-lg hover:bg-[#EF4444]/20 transition-colors text-[#6B7280] hover:text-[#EF4444]"
+                  onClick={() => handleDeleteRule(rule.id)}
+                  disabled={deleteRuleOperation.isLoading}
+                  className="p-2 rounded-lg hover:bg-[#EF4444]/20 transition-colors text-[#6B7280] hover:text-[#EF4444] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Trash2 className="w-4 h-4" />
+                  {deleteRuleOperation.isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
                 </button>
               </div>
 
