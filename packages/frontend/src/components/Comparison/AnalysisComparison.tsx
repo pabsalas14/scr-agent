@@ -69,13 +69,13 @@ export default function AnalysisComparison({
       label: 'Score de Riesgo',
       value1: analysis1.riskScore,
       value2: analysis2.riskScore,
-      format: (v) => `${Math.round(v * 100)}%`,
+      format: (v: number) => `${Math.round(v * 100)}%`,
     },
     {
       label: 'Tasa de Remediación',
       value1: analysis1.remediationRate,
       value2: analysis2.remediationRate,
-      format: (v) => `${Math.round(v * 100)}%`,
+      format: (v: number) => `${Math.round(v * 100)}%`,
     },
   ];
 

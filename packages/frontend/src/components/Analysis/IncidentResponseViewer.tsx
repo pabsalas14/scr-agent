@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
-  GitBranch, AlertTriangle, Lock, Zap, FileSearch, Network,
+  GitBranch, AlertTriangle, AlertOctagon, Lock, Zap, FileSearch, Network,
   Shield, ChevronDown, TrendingUp, Code2, type LucideIcon
 } from 'lucide-react';
 import type { Hallazgo } from '../../types/api';
@@ -32,37 +32,54 @@ export default function IncidentResponseViewer({ hallazgos = [], isLoading }: In
     );
   }
 
-  // Detect patterns from hallazgos
-  const patterns: Pattern[] = [
-    {
-      name: 'Vulnerabilidades de Autenticación',
-      icon: Lock,
-      color: '#EF4444',
-      count: hallazgos.filter(h => h.riskType?.toLowerCase().includes('auth')).length,
-      description: 'Fallos en mecanismos de autenticación y manejo de sesiones',
-    },
-    {
-      name: 'Inyección SQL',
-      icon: AlertTriangle,
-      color: '#F97316',
-      count: hallazgos.filter(h => h.riskType?.toLowerCase().includes('sql')).length,
-      description: 'Construcción insegura de queries y validación de entrada',
-    },
-    {
-      name: 'Exposición de Datos',
-      icon: Shield,
-      color: '#EAB308',
-      count: hallazgos.filter(h => h.riskType?.toLowerCase().includes('data')).length,
-      description: 'Información sensible expuesta o sin cifrar',
-    },
-    {
-      name: 'Configuración Insegura',
-      icon: Zap,
-      color: '#22C55E',
-      count: hallazgos.filter(h => h.riskType?.toLowerCase().includes('config')).length,
-      description: 'Configuraciones predeterminadas y opciones inseguras',
-    },
-  ];
+  // Group hallazgos by risk type AND function for dynamic pattern detection
+  const riskTypeGroups = hallazgos.reduce((acc: Record<string, typeof hallazgos>, h) => {
+    const type = h.riskType || 'Otro';
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(h);
+    return acc;
+  }, {});
+
+  // Detect DYNAMIC patterns from actual findings discovered across the analysis
+  // This learns from each repo's unique vulnerability profile
+  const patterns: Pattern[] = Object.entries(riskTypeGroups).map(([riskType, items]) => {
+    // Dynamic color assignment based on severity of findings in this pattern
+    const severities = items.map(i => i.severity?.toUpperCase() || 'MEDIUM');
+    const hasCritical = severities.includes('CRITICAL');
+    const hasHigh = severities.includes('HIGH');
+
+    const getColorByRisk = (): string => {
+      if (hasCritical) return '#EF4444'; // Red for CRITICAL
+      if (hasHigh) return '#FB923C';     // Orange for HIGH
+      return '#EAB308';                   // Yellow for MEDIUM/LOW
+    };
+
+    // Get meaningful pattern description
+    const getDescription = (type: string, items: typeof hallazgos): string => {
+      if (items.length === 0) return 'No hallazgos detectados';
+
+      const affectedFiles = new Set(items.map(i => i.file)).size;
+      const affectedFunctions = new Set(items.map(i => i.function).filter(Boolean)).size;
+
+      let desc = `${items.length} hallazgo${items.length !== 1 ? 's' : ''} en ${affectedFiles} archivo${affectedFiles !== 1 ? 's' : ''}`;
+      if (affectedFunctions > 0) {
+        desc += ` (${affectedFunctions} función${affectedFunctions !== 1 ? 's' : ''} afectada${affectedFunctions !== 1 ? 's' : ''})`;
+      }
+      return desc;
+    };
+
+    return {
+      name: `${riskType}${hasCritical ? ' ⚠️ CRÍTICO' : hasHigh ? ' ⚠️ ALTO' : ''}`,
+      icon: hasCritical ? AlertOctagon : AlertTriangle,
+      color: getColorByRisk(),
+      count: items.length,
+      description: getDescription(riskType, items),
+    };
+  }).sort((a, b) => {
+    // Sort by count first, then by severity (critical first)
+    if (b.count !== a.count) return b.count - a.count;
+    return (b.name.includes('CRÍTICO') ? 1 : 0) - (a.name.includes('CRÍTICO') ? 1 : 0);
+  });
 
   // Analyze file architecture
   const files = [...new Set(hallazgos.map(h => h.file).filter(Boolean))] as string[];

@@ -127,7 +127,7 @@ class AnomalyDetectionService {
     const seasonalMean = seasonalStats.mean;
     const seasonalStdDev = seasonalStats.stdDev;
 
-    if (seasonalStdDev === 0) {
+    if (seasonalStdDev === 0 || !seasonalMean) {
       return null;
     }
 
@@ -137,7 +137,7 @@ class AnomalyDetectionService {
       return null;
     }
 
-    const severity =
+    const severity: 'low' | 'medium' | 'high' | 'critical' =
       deviation < 2.5 ? 'low' : deviation < 3.5 ? 'medium' : deviation < 4.5 ? 'high' : 'critical';
 
     const expectedRange: [number, number] = [
@@ -172,29 +172,36 @@ class AnomalyDetectionService {
 
     const sumX = xValues.reduce((a, b) => a + b, 0);
     const sumY = recentValues.reduce((a, b) => a + b, 0);
-    const sumXY = xValues.reduce((sum, x, i) => sum + x * recentValues[i], 0);
+    const sumXY = xValues.reduce((sum, x, i) => sum + x * (recentValues[i] ?? 0), 0);
     const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
 
-    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const denominator = n * sumX2 - sumX * sumX;
+    if (denominator === 0) {
+      return null;
+    }
+
+    const slope = (n * sumXY - sumX * sumY) / denominator;
     const intercept = (sumY - slope * sumX) / n;
 
     // Predict next value
     const predictedNext = intercept + slope * (n + 1);
 
     // Check if actual trend is accelerating
-    const acceleration = Math.abs(slope) > Math.abs((recentValues[n - 1] - recentValues[n - 2]) * 2);
+    const lastValue = recentValues[n - 1] ?? 0;
+    const prevValue = recentValues[n - 2] ?? 0;
+    const acceleration = Math.abs(slope) > Math.abs((lastValue - prevValue) * 2);
 
     if (!acceleration) {
       return null;
     }
 
-    const severity =
+    const severity: 'low' | 'medium' | 'high' | 'critical' =
       Math.abs(slope) < 5 ? 'low' : Math.abs(slope) < 10 ? 'medium' : Math.abs(slope) < 20 ? 'high' : 'critical';
 
     return {
       id: `${metric}-trend-${Date.now()}`,
       metric,
-      value: recentValues[n - 1],
+      value: recentValues[n - 1] ?? 0,
       expectedRange: [predictedNext - 5, predictedNext + 5],
       severity,
       confidence: 0.7,

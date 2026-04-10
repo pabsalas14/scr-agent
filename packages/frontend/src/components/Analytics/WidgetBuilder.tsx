@@ -31,8 +31,8 @@ export function WidgetBuilder({ isOpen, onClose, onSave, editingWidget }: Widget
   const [widgetSize, setWidgetSize] = useState<'small' | 'medium' | 'large'>(
     editingWidget?.size || 'medium'
   );
-  const [metricName, setMetricName] = useState(editingWidget?.config?.metric || '');
-  const [chartType, setChartType] = useState(editingWidget?.config?.chartType || 'line');
+  const [metricName, setMetricName] = useState((editingWidget?.config?.['metric'] as string | undefined) || '');
+  const [chartType, setChartType] = useState((editingWidget?.config?.['chartType'] as string | undefined) || 'line');
 
   const handleNext = () => {
     if (widgetType) {

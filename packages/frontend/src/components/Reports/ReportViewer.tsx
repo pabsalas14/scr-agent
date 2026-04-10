@@ -348,7 +348,7 @@ export default function ReportViewer() {
 
           {/* GESTOR (Incident Response) */}
           {seccionActiva === 'gestor' && (
-            <IncidentResponseViewer analysisId={analysisId} />
+            <IncidentResponseViewer analysisId={analysisId} hallazgos={hallazgos} isLoading={isLoadingHallazgos} />
           )}
 
           {/* TIMELINE */}

@@ -14,6 +14,9 @@ import {
   Pencil,
   X,
   Users,
+  Brain,
+  Zap,
+  Webhook,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useAuth } from '../../hooks/useAuth';
@@ -39,10 +42,24 @@ export default function SettingsModule() {
   const { user: currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'ADMIN';
   const [githubToken, setGithubToken] = useState('');
-  const [showToken, setShowToken] = useState(false);
+  const [claudeApiKey, setClaudeApiKey] = useState('');
+  const [showGithubToken, setShowGithubToken] = useState(false);
+  const [showClaudeKey, setShowClaudeKey] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('claude-3-5-sonnet');
+  const [temperature, setTemperature] = useState(0.7);
+  const [maxTokens, setMaxTokens] = useState(4096);
+  const [webhookUrl, setWebhookUrl] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
+
+  const AI_MODELS = [
+    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Recomendado)' },
+    { value: 'claude-3-opus', label: 'Claude 3 Opus' },
+    { value: 'claude-3-haiku', label: 'Claude 3 Haiku (Rápido)' },
+    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
+    { value: 'gpt-4', label: 'GPT-4' },
+  ];
 
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
@@ -61,6 +78,21 @@ export default function SettingsModule() {
     if (userSettings?.githubToken) {
       setGithubToken(userSettings.githubToken);
     }
+    if (userSettings?.claudeApiKey) {
+      setClaudeApiKey(userSettings.claudeApiKey);
+    }
+    if (userSettings?.selectedModel) {
+      setSelectedModel(userSettings.selectedModel);
+    }
+    if (userSettings?.temperature) {
+      setTemperature(userSettings.temperature);
+    }
+    if (userSettings?.maxTokens) {
+      setMaxTokens(userSettings.maxTokens);
+    }
+    if (userSettings?.webhookUrl) {
+      setWebhookUrl(userSettings.webhookUrl);
+    }
   }, [userSettings]);
 
   useEffect(() => {
@@ -78,6 +110,20 @@ export default function SettingsModule() {
     },
     onError: () => {
       setStatus({ type: 'error', message: 'Error al procesar el token.' });
+      setTimeout(() => setStatus(null), 5000);
+    },
+  });
+
+  const guardarConfiguracionIAMutation = useMutation({
+    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string }) =>
+      apiService.guardarConfiguracionIA(config),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user-settings'] });
+      setStatus({ type: 'success', message: 'Configuración de IA actualizada correctamente.' });
+      setTimeout(() => setStatus(null), 5000);
+    },
+    onError: () => {
+      setStatus({ type: 'error', message: 'Error al guardar la configuración de IA.' });
       setTimeout(() => setStatus(null), 5000);
     },
   });
@@ -253,6 +299,125 @@ export default function SettingsModule() {
           )}
         </div>
 
+        <div className="space-y-6">
+          {/* AI Configuration */}
+          <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-5">
+            <div className="flex items-center gap-3 pb-4 border-b border-[#2D2D2D]">
+              <div className="w-8 h-8 rounded-lg bg-[#8B5CF6]/10 border border-[#8B5CF6]/20 flex items-center justify-center">
+                <Brain className="w-4 h-4 text-[#8B5CF6]" />
+              </div>
+              <h3 className="text-sm font-medium text-white">Configuración de IA</h3>
+            </div>
+
+            <div className="space-y-4">
+              {/* Claude API Key */}
+              <div className="space-y-2">
+                <label className="text-xs text-[#6B7280]">Claude API Key</label>
+                <div className="relative">
+                  <input
+                    type={showClaudeKey ? 'text' : 'password'}
+                    value={claudeApiKey}
+                    onChange={(e) => setClaudeApiKey(e.target.value)}
+                    placeholder="sk-ant-xxxxxxxxxxxx"
+                    className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-[#4B5563] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/40 outline-none transition-all pr-10 font-mono"
+                  />
+                  <button
+                    onClick={() => setShowClaudeKey(!showClaudeKey)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
+                  >
+                    {showClaudeKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                <p className="text-[11px] text-[#6B7280]">Obtén tu clave en https://console.anthropic.com</p>
+              </div>
+
+              {/* Model Selection */}
+              <div className="space-y-2">
+                <label className="text-xs text-[#6B7280]">Modelo de IA</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-2.5 text-sm text-white focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/40 outline-none transition-all"
+                >
+                  {AI_MODELS.map((model) => (
+                    <option key={model.value} value={model.value}>
+                      {model.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Temperature */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-[#6B7280]">Temperatura (Creatividad)</label>
+                  <span className="text-xs bg-[#8B5CF6]/20 text-[#C4B5FD] px-2 py-1 rounded">{temperature.toFixed(1)}</span>
+                </div>
+                <input
+                  type="range"
+                  min="0"
+                  max="2"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                  className="w-full accent-[#8B5CF6]"
+                />
+                <p className="text-[11px] text-[#6B7280]">0 = Determinista, 2 = Muy creativo</p>
+              </div>
+
+              {/* Max Tokens */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-[#6B7280]">Máximo de Tokens</label>
+                  <span className="text-xs bg-[#8B5CF6]/20 text-[#C4B5FD] px-2 py-1 rounded">{maxTokens}</span>
+                </div>
+                <input
+                  type="range"
+                  min="512"
+                  max="8192"
+                  step="256"
+                  value={maxTokens}
+                  onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                  className="w-full accent-[#8B5CF6]"
+                />
+                <p className="text-[11px] text-[#6B7280]">Limita la longitud de la respuesta</p>
+              </div>
+
+              {/* Webhook URL */}
+              <div className="space-y-2">
+                <label className="text-xs text-[#6B7280]">Webhook URL (Opcional)</label>
+                <input
+                  type="url"
+                  value={webhookUrl}
+                  onChange={(e) => setWebhookUrl(e.target.value)}
+                  placeholder="https://tu-dominio.com/webhook"
+                  className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-[#4B5563] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/40 outline-none transition-all font-mono"
+                />
+                <p className="text-[11px] text-[#6B7280]">Recibe notificaciones cuando se completen análisis</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() =>
+                guardarConfiguracionIAMutation.mutate({
+                  claudeApiKey: claudeApiKey || undefined,
+                  selectedModel,
+                  temperature,
+                  maxTokens,
+                  webhookUrl: webhookUrl || undefined,
+                })
+              }
+              disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}
+              className="w-full bg-[#8B5CF6] text-white text-sm font-medium py-2.5 rounded-lg hover:bg-[#7C3AED] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {guardarConfiguracionIAMutation.isPending
+                ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Guardando...</>
+                : <><Save className="w-3.5 h-3.5" /> Guardar Configuración IA</>
+              }
+            </button>
+          </div>
+        </div>
+
         <div className="grid md:grid-cols-2 gap-6">
           {/* GitHub Integration */}
           <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-5">
@@ -267,17 +432,17 @@ export default function SettingsModule() {
               <label className="text-xs text-[#6B7280]">Token de acceso personal</label>
               <div className="relative">
                 <input
-                  type={showToken ? 'text' : 'password'}
+                  type={showGithubToken ? 'text' : 'password'}
                   value={githubToken}
                   onChange={(e) => setGithubToken(e.target.value)}
                   placeholder="ghp_xxxxxxxxxxxx"
                   className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-2.5 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/40 outline-none transition-all pr-10 font-mono"
                 />
                 <button
-                  onClick={() => setShowToken(!showToken)}
+                  onClick={() => setShowGithubToken(!showGithubToken)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
                 >
-                  {showToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showGithubToken ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
             </div>

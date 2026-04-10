@@ -60,8 +60,13 @@ export function AdvancedDashboard({
     const draggedIndex = orderedWidgets.findIndex((w) => w.id === draggedWidget);
     const targetIndex = orderedWidgets.findIndex((w) => w.id === targetId);
 
+    if (draggedIndex < 0 || targetIndex < 0) return;
+
     const newWidgets = [...orderedWidgets];
-    [newWidgets[draggedIndex], newWidgets[targetIndex]] = [newWidgets[targetIndex], newWidgets[draggedIndex]];
+    const [draggedWidget_Item] = newWidgets.splice(draggedIndex, 1);
+    if (draggedWidget_Item) {
+      newWidgets.splice(targetIndex, 0, draggedWidget_Item);
+    }
 
     setOrderedWidgets(newWidgets);
     setDraggedWidget(null);

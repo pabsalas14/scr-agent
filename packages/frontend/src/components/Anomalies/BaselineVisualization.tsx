@@ -1,5 +1,5 @@
 import React from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Band } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { AnomalyProfile } from '../../services/anomaly-detection.service';
 
 interface BaselineVisualizationProps {
@@ -113,11 +113,19 @@ export function BaselineVisualization({
               dataKey="value"
               stroke="#6366F1"
               strokeWidth={2}
-              dot={({ payload }: any) =>
-                payload.isAnomaly
-                  ? { fill: '#EF4444', r: 6 }
-                  : { fill: '#6366F1', r: 3 }
-              }
+              dot={(props: any) => {
+                const { cx, cy, payload } = props;
+                const fill = payload?.isAnomaly ? '#EF4444' : '#6366F1';
+                const radius = payload?.isAnomaly ? 6 : 3;
+                return (
+                  <circle
+                    cx={cx}
+                    cy={cy}
+                    r={radius}
+                    fill={fill}
+                  />
+                );
+              }}
               activeDot={{ r: 7 }}
               isAnimationActive={true}
             />

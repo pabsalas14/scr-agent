@@ -556,6 +556,20 @@ class ApiService {
     return data;
   }
 
+  /**
+   * Guardar configuración de IA
+   */
+  async guardarConfiguracionIA(config: {
+    claudeApiKey?: string;
+    selectedModel: string;
+    temperature: number;
+    maxTokens: number;
+    webhookUrl?: string;
+  }): Promise<any> {
+    const { data } = await this.client.post('/settings/ai-config', config);
+    return data;
+  }
+
   // ==================== EQUIPO ====================
 
   async listarUsuarios(): Promise<any[]> {

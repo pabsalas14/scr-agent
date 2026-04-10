@@ -26,11 +26,16 @@ export function OnboardingGuide({
   autoStart = false,
   className = '',
 }: OnboardingGuideProps) {
+  // Return null if no steps provided
+  if (!steps || steps.length === 0) {
+    return null;
+  }
+
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const [isVisible, setIsVisible] = useState(autoStart);
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
-  const currentStep = steps[currentStepIndex];
+  const currentStep = steps[currentStepIndex] as OnboardingStep;
   const progress = ((currentStepIndex + 1) / steps.length) * 100;
 
   const handleNext = useCallback(() => {
@@ -136,14 +141,14 @@ export function OnboardingGuide({
 
               {/* Step Indicators */}
               <div className="flex gap-1 justify-center pt-2">
-                {steps.map((_, index) => (
+                {steps.map((step, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentStepIndex(index)}
                     className={`w-2 h-2 rounded-full transition-all ${
                       index === currentStepIndex
                         ? 'bg-[#F97316] w-6'
-                        : completedSteps.has(steps[index].id)
+                        : completedSteps.has(step.id)
                           ? 'bg-[#22C55E]'
                           : 'bg-[#2D2D2D]'
                     }`}
