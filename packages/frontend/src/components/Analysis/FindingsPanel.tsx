@@ -3,8 +3,11 @@ import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, AlertOctagon, Info, ShieldAlert, FileCode, CheckCircle2, ChevronRight, ChevronLeft, Terminal, ChevronDown, AlertTriangle, Lightbulb, type LucideIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../services/api.service';
+import { useToast } from '../../hooks/useToast';
 import type { Hallazgo } from '../../types/api';
 import FindingStatePanel from './FindingStatePanel';
+import SkeletonLoader from '../ui/SkeletonLoader';
+import EmptyState from '../ui/EmptyState';
 
 interface FindingsPanelProps {
   analysisId: string;
@@ -65,6 +68,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
   const [page, setPage] = useState(1);
   const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set());
   const [selectedFindingForState, setSelectedFindingForState] = useState<string | null>(null);
+  const toast = useToast();
 
   const { data: findings, isLoading, error } = useQuery({
     queryKey: ['findings', analysisId],
@@ -83,34 +87,31 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 space-y-4">
-        <div className="w-8 h-8 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />
-        <span className="text-sm text-[#6B7280]">Cargando hallazgos...</span>
-      </div>
-    );
+    return <SkeletonLoader type="card" count={3} className="mb-6" />;
   }
 
   if (error) {
     return (
-      <div className="rounded-xl border border-[#EF4444]/30 bg-[#EF4444]/5 p-8 text-center flex flex-col items-center space-y-3">
-        <AlertOctagon className="w-8 h-8 text-[#EF4444]" />
-        <p className="text-sm text-[#EF4444]">Error al cargar hallazgos</p>
-      </div>
+      <EmptyState
+        type="error"
+        title="Error al cargar hallazgos"
+        description="No se pudo cargar la información de los hallazgos. Por favor, intenta nuevamente."
+        action={{
+          label: 'Reintentar',
+          onClick: () => window.location.reload(),
+        }}
+      />
     );
   }
 
   if (!findings || findings.length === 0) {
     return (
-      <div className="rounded-xl border border-[#22C55E]/30 bg-[#22C55E]/5 p-12 text-center flex flex-col items-center space-y-4">
-        <div className="w-14 h-14 rounded-xl bg-[#22C55E]/10 flex items-center justify-center border border-[#22C55E]/20">
-          <CheckCircle2 className="text-[#22C55E] w-7 h-7" />
-        </div>
-        <h3 className="text-white text-xl font-semibold">Perímetro asegurado</h3>
-        <p className="text-[#6B7280] text-sm max-w-sm mx-auto">
-          No se han detectado vectores de ataque conocidos.
-        </p>
-      </div>
+      <EmptyState
+        type="no-data"
+        title="Perímetro asegurado"
+        description="No se han detectado vectores de ataque conocidos en este análisis."
+        icon={<CheckCircle2 className="w-16 h-16 text-[#22C55E]" />}
+      />
     );
   }
 
