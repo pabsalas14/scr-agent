@@ -92,49 +92,17 @@ export default function MainDashboard() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
-      {/* Tab Navigation */}
-      <div className="sticky top-0 z-40 bg-[#111111]/95 backdrop-blur-md -mx-6 px-6 pt-4 pb-4 border-b border-[#2D2D2D]">
-        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            const Icon = tab.icon;
-            return (
-              <motion.button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                whileTap={{ scale: 0.97 }}
-                className={`
-                  relative flex items-center gap-2 px-3.5 py-2 rounded-lg transition-all duration-200 flex-shrink-0
-                  ${isActive
-                    ? 'bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/25'
-                    : 'text-[#6B7280] hover:text-[#A0A0A0] hover:bg-[#1C1C1E] border border-transparent'
-                  }
-                `}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <span className="text-sm font-medium whitespace-nowrap">{tab.label}</span>
-                {isActive && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#F97316] animate-pulse ml-0.5" />
-                )}
-              </motion.button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Content Area */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab + agentView + selectedAgentId}
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -10 }}
-          transition={{ duration: 0.25, ease: 'easeOut' }}
-        >
-          {renderContent()}
-        </motion.div>
-      </AnimatePresence>
-    </div>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={activeTab + agentView + selectedAgentId}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.25, ease: 'easeOut' }}
+        className="animate-in fade-in duration-500"
+      >
+        {renderContent()}
+      </motion.div>
+    </AnimatePresence>
   );
 }
