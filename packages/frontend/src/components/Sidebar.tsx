@@ -36,31 +36,31 @@ const MENU_SECTIONS = [
   {
     section: 'INICIO',
     items: [
-      { id: 'dashboard', label: 'Monitor Central', icon: LayoutDashboard, path: '/dashboard?tab=projects' },
+      { id: 'dashboard', label: 'Monitor Central', icon: LayoutDashboard, path: '/dashboard/projects' },
     ],
   },
   {
     section: 'ANÁLISIS',
     items: [
-      { id: 'projects', label: 'Proyectos', icon: Folder, path: '/projects' },
-      { id: 'analyses', label: 'Reportes', icon: FileText, path: '/dashboard?tab=analyses' },
-      { id: 'analytics', label: 'Analíticas', icon: BarChart3, path: '/dashboard?tab=analytics' },
+      { id: 'projects', label: 'Proyectos', icon: Folder, path: '/dashboard/projects' },
+      { id: 'analyses', label: 'Reportes', icon: FileText, path: '/dashboard/analyses' },
+      { id: 'analytics', label: 'Analíticas', icon: BarChart3, path: '/dashboard/analytics' },
     ],
   },
   {
     section: 'SEGURIDAD',
     items: [
-      { id: 'incidents', label: 'Incidentes', icon: Radio, path: '/dashboard?tab=incidents' },
-      { id: 'forensics', label: 'Investigaciones', icon: FileText, path: '/dashboard?tab=forensics' },
-      { id: 'alerts', label: 'Alertas', icon: ShieldAlert, path: '/dashboard?tab=system' },
+      { id: 'incidents', label: 'Incidentes', icon: Radio, path: '/dashboard/incidents' },
+      { id: 'forensics', label: 'Investigaciones', icon: FileText, path: '/dashboard/forensics' },
+      { id: 'alerts', label: 'Alertas', icon: ShieldAlert, path: '/dashboard/system' },
     ],
   },
   {
     section: 'OPERACIONES',
     items: [
-      { id: 'agents', label: 'Agentes IA', icon: Wand2, path: '/dashboard?tab=agents' },
-      { id: 'system', label: 'Sistema', icon: Zap, path: '/dashboard?tab=system' },
-      { id: 'costs', label: 'Costos', icon: DollarSign, path: '/dashboard?tab=costs' },
+      { id: 'agents', label: 'Agentes IA', icon: Wand2, path: '/dashboard/agents' },
+      { id: 'system', label: 'Sistema', icon: Zap, path: '/dashboard/system' },
+      { id: 'costs', label: 'Costos', icon: DollarSign, path: '/dashboard/costs' },
     ],
   },
 ];
@@ -94,12 +94,7 @@ export default function Sidebar({ onSettingsClick = () => {} }: SidebarProps) {
   };
 
   const isMenuItemActive = (path: string) => {
-    const currentUrl = location.pathname + location.search;
-    if (path.includes('?')) {
-      const [pathPart, queryPart] = path.split('?');
-      return currentUrl.includes(queryPart.split('=')[1]);
-    }
-    return currentUrl === path || location.pathname === path;
+    return location.pathname === path || location.pathname.startsWith(path);
   };
 
   return (
