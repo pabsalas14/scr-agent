@@ -7,6 +7,8 @@
  * Clave de almacenamiento: 'auth_token'
  */
 
+import { socketClientService } from '../services/socket.service';
+
 const TOKEN_KEY = 'auth_token';
 
 export function useAuth() {
@@ -16,6 +18,8 @@ export function useAuth() {
 
   function setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
+    // BUG FIX #1: Notify WebSocket of token renewal to prevent silent disconnections
+    socketClientService.updateToken(token);
   }
 
   function clearToken(): void {

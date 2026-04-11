@@ -1,5 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -29,6 +29,16 @@ export default class ErrorBoundary extends Component<Props, State> {
     this.setState({ hasError: false, error: null });
   };
 
+  // BUG FIX #4: Add page reload option for recovery
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  // BUG FIX #4: Add navigation back option
+  handleGoBack = () => {
+    window.history.back();
+  };
+
   override render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
@@ -42,13 +52,33 @@ export default class ErrorBoundary extends Component<Props, State> {
           <p className="text-sm text-[#6B7280] max-w-sm mb-6">
             {this.state.error?.message ?? 'Error inesperado en este módulo.'}
           </p>
-          <button
-            onClick={this.handleReset}
-            className="flex items-center gap-2 px-4 py-2 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg text-sm text-[#A0A0A0] hover:border-[#404040] transition-all"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reintentar
-          </button>
+          {/* BUG FIX #4: Multiple recovery options */}
+          <div className="flex gap-3 flex-wrap justify-center">
+            <button
+              onClick={this.handleReset}
+              className="flex items-center gap-2 px-4 py-2 bg-[#F97316]/10 border border-[#F97316]/20 rounded-lg text-sm text-[#F97316] hover:border-[#F97316]/40 transition-all"
+              title="Reintentar cargar este módulo"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Reintentar
+            </button>
+            <button
+              onClick={this.handleGoBack}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg text-sm text-[#A0A0A0] hover:border-[#404040] transition-all"
+              title="Volver a la página anterior"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              Atrás
+            </button>
+            <button
+              onClick={this.handleReload}
+              className="flex items-center gap-2 px-4 py-2 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg text-sm text-[#A0A0A0] hover:border-[#404040] transition-all"
+              title="Recargar página completamente"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Recargar
+            </button>
+          </div>
         </div>
       );
     }

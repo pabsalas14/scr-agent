@@ -79,6 +79,17 @@ class SocketClientService {
   }
 
   /**
+   * BUG FIX #1: Update token when JWT is refreshed
+   * Called by AuthProvider when token is renewed to prevent silent disconnections
+   */
+  updateToken(newToken: string): void {
+    if (!this.socket || !this.userId) return;
+
+    // Send updated token to backend for re-validation
+    this.socket.emit('auth:refresh', { userId: this.userId, token: newToken });
+  }
+
+  /**
    * Helper method to register a listener with proper cleanup tracking
    * BUG FIX #16: Prevents memory leaks by removing old listeners before registering new ones
    */

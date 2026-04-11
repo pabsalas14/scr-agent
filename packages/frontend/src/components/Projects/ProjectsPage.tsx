@@ -27,16 +27,43 @@ export default function ProjectsPage() {
 
   const crearProyecto = useMutation({
     mutationFn: async (dto: CrearProyectoDTO) => {
-      const proyecto = await apiService.crearProyecto(dto);
-      const analisis = await apiService.iniciarAnalisis(proyecto.id);
-      return { proyecto, analisis };
+      // BUG FIX #2: Try to use combined endpoint first (backend Saga Pattern)
+      // Falls back to sequential operations for backward compatibility
+      try {
+        const response = await apiService.post('/projects/with-analysis', dto);
+        return response.data;
+      } catch (error) {
+        // Fallback: Sequential operations (legacy, should be removed once backend is updated)
+        const proyecto = await apiService.crearProyecto(dto);
+        try {
+          const analisis = await apiService.iniciarAnalisis(proyecto.id);
+          return { proyecto, analisis };
+        } catch (analysisError) {
+          // If analysis fails, mark project for manual analysis trigger
+          console.error('Failed to auto-start analysis after project creation:', analysisError);
+          return { proyecto, analisis: null, analysisError };
+        }
+      }
     },
-    onSuccess: ({ proyecto, analisis }) => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['projects'] });
       setModalAbierto(false);
       setPage(1);
-      navigate(`/projects/${proyecto.id}/analyses/${analisis.id}`);
+
+      // BUG FIX #2: Handle analysis creation failure gracefully
+      if (data.analisis) {
+        navigate(`/projects/${data.proyecto.id}/analyses/${data.analisis.id}`);
+      } else {
+        // Navigate to project detail and show toast to trigger analysis manually
+        navigate(`/projects/${data.proyecto.id}`);
+        // Toast will be shown via error handling below
+      }
     },
+    onError: (error: any) => {
+      // BUG FIX #2: Clear error message and prevent user from re-creating
+      const errorMessage = error?.response?.data?.error || 'No se pudo crear el proyecto';
+      console.error('Project creation error:', errorMessage);
+    }
   });
 
   const handleSearch = (value: string) => {

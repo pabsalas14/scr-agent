@@ -65,6 +65,24 @@ export default function SettingsModule() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
 
+  // BUG FIX #3: Local validation functions for tokens
+  const validateGithubToken = (token: string): boolean => {
+    return /^ghp_[A-Za-z0-9_]{36,255}$/.test(token);
+  };
+
+  const validateClaudeToken = (token: string): boolean => {
+    return /^sk-ant-[A-Za-z0-9_\-]{20,}$/.test(token);
+  };
+
+  const validateWebhookUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return url.startsWith('http://') || url.startsWith('https://');
+    } catch {
+      return false;
+    }
+  };
+
   const AI_MODELS = [
     { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Recomendado)' },
     { value: 'claude-3-opus', label: 'Claude 3 Opus' },
@@ -114,21 +132,36 @@ export default function SettingsModule() {
   }, [perfil]);
 
   const guardarTokenMutation = useMutation({
-    mutationFn: (token: string) => apiService.guardarTokenGithub(token),
+    mutationFn: (token: string) => {
+      // BUG FIX #3: Validate token format before sending
+      if (!validateGithubToken(token)) {
+        throw new Error('Token de GitHub debe empezar con "ghp_" y tener el formato correcto');
+      }
+      return apiService.guardarTokenGithub(token);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
       setStatus({ type: 'success', message: 'Token de GitHub actualizado.' });
       setTimeout(() => setStatus(null), 5000);
     },
-    onError: () => {
-      setStatus({ type: 'error', message: 'Error al procesar el token.' });
+    onError: (error: any) => {
+      const message = error?.message || 'Error al procesar el token. Verifica el formato.';
+      setStatus({ type: 'error', message });
       setTimeout(() => setStatus(null), 5000);
     },
   });
 
   const guardarConfiguracionIAMutation = useMutation({
-    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string }) =>
-      apiService.guardarConfiguracionIA(config),
+    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string }) => {
+      // BUG FIX #3: Validate before sending network request
+      if (config.claudeApiKey && !validateClaudeToken(config.claudeApiKey)) {
+        throw new Error('API Key debe empezar con "sk-ant-"');
+      }
+      if (config.webhookUrl && !validateWebhookUrl(config.webhookUrl)) {
+        throw new Error('URL del webhook debe ser una URL válida (http:// o https://)');
+      }
+      return apiService.guardarConfiguracionIA(config);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
       setStatus({ type: 'success', message: 'Configuración de IA actualizada correctamente.' });
@@ -163,7 +196,37 @@ export default function SettingsModule() {
   const cambiarRolMutation = useMutation({
     mutationFn: ({ userId, role }: { userId: string; role: string }) =>
       apiService.cambiarRolUsuario(userId, role),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['team-users'] }),
+    // BUG FIX #3: Optimistic update to prevent UI flicker
+    onMutate: async ({ userId, role }) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['team-users'] });
+
+      // Snapshot old data
+      const previousUsers = queryClient.getQueryData(['team-users']);
+
+      // Optimistically update cache
+      queryClient.setQueryData(['team-users'], (old: any) => {
+        if (!old?.data) return old;
+        return {
+          ...old,
+          data: old.data.map((user: any) =>
+            user.id === userId ? { ...user, role } : user
+          ),
+        };
+      });
+
+      return { previousUsers };
+    },
+    onError: (_, __, context) => {
+      // Revert to previous state if mutation fails
+      if (context?.previousUsers) {
+        queryClient.setQueryData(['team-users'], context.previousUsers);
+      }
+    },
+    onSuccess: () => {
+      // Optionally refetch to ensure data is fresh
+      queryClient.invalidateQueries({ queryKey: ['team-users'] });
+    },
   });
 
   const handleGuardarPerfil = () => {
