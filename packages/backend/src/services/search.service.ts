@@ -1,4 +1,4 @@
-import { prisma } from '../db';
+import { prisma } from './prisma.service';
 
 export interface SearchResult {
   id: string;
@@ -41,43 +41,45 @@ export class SearchService {
 
     // Search findings - only from user's projects
     if (!filters?.type || filters.type === 'finding') {
-      const findings = await prisma.$queryRaw`
-        SELECT
-          f.id,
-          f.title,
-          f.description,
-          f.severity,
-          a."status" as analysisStatus,
-          p.id as projectId,
-          COUNT(*) OVER() as total_count
-        FROM "Finding" f
-        JOIN "Analysis" a ON f."analysisId" = a.id
-        JOIN "Project" p ON a."projectId" = p.id
-        WHERE p."userId" = ${userId}
-          AND (LOWER(f.title) LIKE ${searchTerm}
-               OR LOWER(f.description) LIKE ${searchTerm})
-          AND f."deletedAt" IS NULL
-          AND (${filters?.severity ? `f.severity = ${filters.severity}` : 'true'})
-        ORDER BY
-          CASE WHEN LOWER(f.title) LIKE ${`${query.toLowerCase()}%`} THEN 1 ELSE 2 END,
-          f."createdAt" DESC
-        LIMIT ${limit}
-        OFFSET ${offset}
-      ` as any[];
+      const findings = await prisma.finding.findMany({
+        where: {
+          deletedAt: null,
+          analysis: {
+            project: {
+              userId,
+            },
+          },
+          OR: [
+            { file: { contains: query, mode: 'insensitive' } },
+            { whySuspicious: { contains: query, mode: 'insensitive' } },
+          ],
+          ...(filters?.severity && { severity: filters.severity as any }),
+        },
+        include: {
+          analysis: {
+            select: {
+              status: true,
+              projectId: true,
+            },
+          },
+        },
+        take: limit,
+        skip: offset,
+      });
 
       for (const f of findings) {
         results.push({
           id: f.id,
           type: 'finding',
-          title: f.title,
-          description: f.description,
+          title: f.file,
+          description: f.whySuspicious,
           icon: this.getSeverityIcon(f.severity),
           href: `/findings/${f.id}`,
-          relevance: this.calculateRelevance(query, f.title, 'finding'),
+          relevance: this.calculateRelevance(query, f.file, 'finding'),
           metadata: {
             severity: f.severity,
-            status: f.analysisStatus,
-            projectId: f.projectId,
+            status: f.analysis.status,
+            projectId: f.analysis.projectId,
           },
         });
       }
@@ -110,15 +112,14 @@ export class SearchService {
       }
     }
 
-    // Search analyses
+    // Search analyses by project name (since analyses don't have name/description)
     if (!filters?.type || filters.type === 'analysis') {
       const analyses = await prisma.analysis.findMany({
         where: {
-          project: { userId },
-          OR: [
-            { name: { contains: query, mode: 'insensitive' } },
-            { description: { contains: query, mode: 'insensitive' } },
-          ],
+          project: {
+            userId,
+            name: { contains: query, mode: 'insensitive' },
+          },
           ...(filters?.status && { status: filters.status }),
         },
         include: { project: true },
@@ -130,11 +131,11 @@ export class SearchService {
         results.push({
           id: a.id,
           type: 'analysis',
-          title: a.name,
-          description: a.description,
+          title: `Analysis of ${a.project.name}`,
+          description: `Status: ${a.status}, Progress: ${a.progress}%`,
           icon: '🔍',
           href: `/projects/${a.projectId}/analyses/${a.id}`,
-          relevance: this.calculateRelevance(query, a.name, 'analysis'),
+          relevance: this.calculateRelevance(query, a.project.name, 'analysis'),
           metadata: {
             status: a.status,
             projectId: a.projectId,
@@ -165,13 +166,13 @@ export class SearchService {
     const searchTerm = `${query.toLowerCase()}%`;
 
     // Get suggestions from findings
-    const findingSuggestions = await prisma.$queryRaw<{ title: string }[]>`
-      SELECT DISTINCT f.title
-      FROM "Finding" f
-      JOIN "Analysis" a ON f."analysisId" = a.id
-      JOIN "Project" p ON a."projectId" = p.id
+    const findingSuggestions = await prisma.$queryRaw<{ file: string }[]>`
+      SELECT DISTINCT f.file
+      FROM findings f
+      JOIN analyses a ON f."analysisId" = a.id
+      JOIN projects p ON a."projectId" = p.id
       WHERE p."userId" = ${userId}
-        AND LOWER(f.title) LIKE ${searchTerm}
+        AND LOWER(f.file) LIKE ${searchTerm}
         AND f."deletedAt" IS NULL
       LIMIT ${Math.ceil(limit / 2)}
     `;
@@ -179,14 +180,14 @@ export class SearchService {
     // Get suggestions from projects
     const projectSuggestions = await prisma.$queryRaw<{ name: string }[]>`
       SELECT DISTINCT name
-      FROM "Project"
+      FROM projects
       WHERE "userId" = ${userId}
         AND LOWER(name) LIKE ${searchTerm}
       LIMIT ${Math.ceil(limit / 2)}
     `;
 
     const suggestions = [
-      ...findingSuggestions.map((f) => f.title),
+      ...findingSuggestions.map((f) => f.file),
       ...projectSuggestions.map((p) => p.name),
     ];
 

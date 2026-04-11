@@ -1,8 +1,11 @@
 import { Router, Request, Response } from 'express';
 import { searchService } from '../services/search.service';
-import { verifyToken } from '../middleware/auth.middleware';
+import { authMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
+
+// Apply auth middleware to all search routes
+router.use(authMiddleware);
 
 /**
  * GET /api/v1/search
@@ -15,9 +18,9 @@ const router = Router();
  *   - severity: filter by severity (CRITICAL, HIGH, MEDIUM, LOW)
  *   - status: filter by status (PENDING, IN_PROGRESS, COMPLETED, etc)
  */
-router.get('/search', verifyToken, async (req: Request, res: Response) => {
+router.get('/search', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as any).user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
@@ -79,9 +82,9 @@ router.get('/search', verifyToken, async (req: Request, res: Response) => {
  *   - q: search query (required, min 2 chars)
  *   - limit: number of suggestions (default: 10, max: 50)
  */
-router.get('/search/suggestions', verifyToken, async (req: Request, res: Response) => {
+router.get('/search/suggestions', async (req: Request, res: Response) => {
   try {
-    const userId = (req as any).userId;
+    const userId = (req as any).user?.id;
     if (!userId) {
       return res.status(401).json({ error: 'Authentication required' });
     }
