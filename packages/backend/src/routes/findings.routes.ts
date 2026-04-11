@@ -154,7 +154,8 @@ router.get('/:findingId', async (req: Request, res: Response) => {
 router.put('/:findingId/status', async (req: Request, res: Response) => {
   try {
     const { findingId } = req.params;
-    const { status, note } = req.body;
+    const { status, note, notes } = req.body;
+    const resolvedNote = note ?? notes; // Accept both 'note' and 'notes' from frontend
     const userId = req.user?.id;
 
     if (!userId) {
@@ -165,11 +166,22 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'status (string) es requerido' });
     }
 
-    if (note !== undefined && typeof note !== 'string') {
+    if (resolvedNote !== undefined && typeof resolvedNote !== 'string') {
       return res.status(400).json({ success: false, error: 'note debe ser string' });
     }
 
-    // Validate status
+    // Map frontend status labels to backend enum values
+    const STATUS_MAP: Record<string, string> = {
+      'OPEN': 'DETECTED',
+      'IN_PROGRESS': 'IN_CORRECTION',
+      'RESOLVED': 'CORRECTED',
+      'CLOSED': 'CLOSED',
+    };
+
+    // Resolve mapped status or use raw value if already valid
+    const resolvedStatus = STATUS_MAP[status] ?? status;
+
+    // Validate resolved status
     const validStatuses = [
       'DETECTED',
       'IN_REVIEW',
@@ -180,18 +192,18 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
       'CLOSED',
     ];
 
-    if (!validStatuses.includes(status)) {
+    if (!validStatuses.includes(resolvedStatus)) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid status',
+        error: `Invalid status: "${status}". Valid values: ${validStatuses.join(', ')} (or frontend aliases: OPEN, IN_PROGRESS, RESOLVED, CLOSED)`,
       });
     }
 
     const updated = await findingsService.updateFindingStatus(
       findingId!,
-      status as any,
+      resolvedStatus as any,
       userId!,
-      note
+      resolvedNote
     );
 
     // Get user info for notification
@@ -202,7 +214,7 @@ router.put('/:findingId/status', async (req: Request, res: Response) => {
       await notificationsService.notifyFindingStatusChange(
         (updated as any).assignment.assignedTo,
         findingId!,
-        status as any,
+        resolvedStatus as any,
         (user as any)?.name || (user as any)?.email || 'Sistema'
       );
 

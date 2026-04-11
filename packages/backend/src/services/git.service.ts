@@ -122,7 +122,10 @@ export class GitService {
 
         try {
           // Use simpleGit without options to clone
-          const cloneOptions = branch ? ['--branch', branch] : [];
+          // BUGFIX: Only force branch if it's not the default 'main'.
+          // Many repos use 'master' as default — passing --branch main causes fatal error.
+          // Let git clone the repo's default branch automatically.
+          const cloneOptions = (branch && branch !== 'main') ? ['--branch', branch] : [];
           await simpleGit().clone(urlToUse, localPath, cloneOptions);
           logger.info(`✓ Repository cloned successfully`);
         } catch (cloneError: any) {

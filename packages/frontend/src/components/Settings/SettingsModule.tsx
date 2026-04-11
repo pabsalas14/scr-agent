@@ -18,7 +18,7 @@ import {
   Zap,
   Bell,
   Lock,
-  Github,
+  GitBranch,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useAuth } from '../../hooks/useAuth';
@@ -43,7 +43,7 @@ type SettingsTab = 'profile' | 'integrations' | 'security' | 'notifications' | '
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Settings; description: string }> = [
   { id: 'profile', label: 'Perfil', icon: Shield, description: 'Información personal' },
-  { id: 'integrations', label: 'Integraciones', icon: Github, description: 'APIs y webhooks' },
+  { id: 'integrations', label: 'Integraciones', icon: GitBranch, description: 'APIs y webhooks' },
   { id: 'security', label: 'Seguridad', icon: Lock, description: 'Configuración de seguridad' },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, description: 'Alertas y eventos' },
 ];
@@ -94,7 +94,7 @@ export default function SettingsModule() {
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
-    select: (data: { data?: { githubToken?: string } }) => data?.data,
+    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string } }) => data?.data,
   });
 
   const { data: perfil, isLoading: perfilLoading } = useQuery<UserProfile>({
@@ -478,7 +478,7 @@ export default function SettingsModule() {
             <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-8 space-y-6">
               <div className="flex items-center gap-4 pb-6 border-b border-[#2D2D2D]">
                 <div className="w-12 h-12 rounded-lg bg-[#242424] border border-[#2D2D2D] flex items-center justify-center">
-                  <Github className="w-6 h-6 text-[#A0A0A0]" />
+                  <GitBranch className="w-6 h-6 text-[#A0A0A0]" />
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-white">Integración GitHub</h3>

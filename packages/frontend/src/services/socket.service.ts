@@ -78,6 +78,7 @@ class SocketClientService {
     }
   }
 
+
   /**
    * BUG FIX #1: Update token when JWT is refreshed
    * Called by AuthProvider when token is renewed to prevent silent disconnections

@@ -9,13 +9,13 @@ import {
 
 /** Transiciones de estado permitidas */
 const VALID_TRANSITIONS: Record<FindingStatus, FindingStatus[]> = {
-  DETECTED:      ['IN_REVIEW', 'FALSE_POSITIVE'],
-  IN_REVIEW:     ['IN_CORRECTION', 'DETECTED', 'FALSE_POSITIVE'],
-  IN_CORRECTION: ['CORRECTED', 'IN_REVIEW'],
-  CORRECTED:     ['VERIFIED', 'IN_CORRECTION'],
-  VERIFIED:      ['CLOSED'],
-  FALSE_POSITIVE:['DETECTED'],
-  CLOSED:        [],
+  DETECTED:      ['IN_REVIEW', 'FALSE_POSITIVE', 'IN_CORRECTION', 'CORRECTED'],
+  IN_REVIEW:     ['IN_CORRECTION', 'DETECTED', 'FALSE_POSITIVE', 'CORRECTED'],
+  IN_CORRECTION: ['CORRECTED', 'IN_REVIEW', 'CLOSED'],
+  CORRECTED:     ['VERIFIED', 'IN_CORRECTION', 'CLOSED'],
+  VERIFIED:      ['CLOSED', 'CORRECTED'],
+  FALSE_POSITIVE:['DETECTED', 'CLOSED'],
+  CLOSED:        ['DETECTED'],
 };
 
 export class FindingsService {
