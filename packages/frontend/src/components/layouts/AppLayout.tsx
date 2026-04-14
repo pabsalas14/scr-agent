@@ -23,6 +23,17 @@ export default function AppLayout() {
 
   // Map route paths to TabIds
   const getActiveTabFromPath = (pathname: string): TabId => {
+    // Check nested routes first (most specific)
+    if (pathname.includes('/incidents/findings')) return 'hallazgos';
+    if (pathname.includes('/analyses/comparison')) return 'comparacion';
+    if (pathname.includes('/analyses/historical')) return 'historico';
+    if (pathname.includes('/settings/integrations')) return 'integraciones';
+    if (pathname.includes('/settings/webhooks')) return 'webhooks';
+    if (pathname.includes('/settings/users')) return 'usuarios';
+    if (pathname.includes('/settings/preferences')) return 'preferencias';
+    if (pathname.includes('/settings/library')) return 'biblioteca';
+
+    // Then check parent routes
     if (pathname.includes('/incidents')) return 'incidentes';
     if (pathname.includes('/projects')) return 'proyectos';
     if (pathname.includes('/analyses')) return 'reportes';
@@ -43,10 +54,10 @@ export default function AppLayout() {
       'monitor-central': '/dashboard',
       'proyectos': '/dashboard/projects',
       'reportes': '/dashboard/analyses',
-      'comparacion': '/dashboard/analyses',
-      'historico': '/dashboard/analyses',
+      'comparacion': '/dashboard/analyses/comparison',
+      'historico': '/dashboard/analyses/historical',
       'incidentes': '/dashboard/incidents',
-      'hallazgos': '/dashboard/incidents',
+      'hallazgos': '/dashboard/incidents/findings',
       'alertas': '/dashboard/alerts',
       'investigaciones': '/dashboard/forensics',
       'anomalias': '/dashboard/incidents',
@@ -54,11 +65,11 @@ export default function AppLayout() {
       'sistema': '/dashboard/system',
       'costos': '/dashboard/costs',
       'analytics': '/dashboard/analytics',
-      'integraciones': '/dashboard/settings',
-      'webhooks': '/dashboard/settings',
-      'usuarios': '/dashboard/settings',
-      'preferencias': '/dashboard/settings',
-      'biblioteca': '/dashboard/settings',
+      'integraciones': '/dashboard/settings/integrations',
+      'webhooks': '/dashboard/settings/webhooks',
+      'usuarios': '/dashboard/settings/users',
+      'preferencias': '/dashboard/settings/preferences',
+      'biblioteca': '/dashboard/settings/library',
     };
 
     const path = routeMap[tabId] || '/dashboard';
