@@ -10,7 +10,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ChevronDown, Home, TrendingUp, Shield, Zap, Settings,
-  Activity, FolderOpen, Comparison, History, Radio, AlertOctagon,
+  Activity, FolderOpen, BarChart2, History, Radio, AlertOctagon,
   Terminal, Wand2, Server, DollarSign, BarChart3, Webhook,
   Users, Bell, BookOpen, LogOut, User as UserIcon
 } from 'lucide-react';
@@ -71,7 +71,7 @@ const getNavigationGroups = (): TabGroup[] => [
       {
         id: 'comparacion',
         label: 'Comparación',
-        icon: Comparison,
+        icon: BarChart2,
         description: 'Comparar dos análisis',
         component: null as any,
         requiresAuth: true,
