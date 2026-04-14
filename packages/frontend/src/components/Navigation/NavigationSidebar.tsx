@@ -100,7 +100,8 @@ const getNavigationGroups = (): TabGroup[] => [
         description: 'Hallazgos críticos',
         component: null as any,
         requiresAuth: true,
-        badge: 3,
+        // Badge will be set dynamically by MainDashboard based on actual incident count
+        badge: undefined,
       },
       {
         id: 'hallazgos',
