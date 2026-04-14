@@ -4,7 +4,7 @@
  * ============================================================================
  */
 
-import { ApiClient } from './api-client';
+import { apiService } from './api.service';
 
 export interface UserComparison {
   users: Array<{
@@ -51,7 +51,7 @@ export const comparisonService = {
    * Comparar dos usuarios
    */
   compareUsers: async (userId1: string, userId2: string): Promise<UserComparison> => {
-    const response = await ApiClient.get(`/comparison/users/${userId1}/${userId2}`);
+    const response = await apiService.get(`/comparison/users/${userId1}/${userId2}`);
     return response.data;
   },
 
@@ -59,7 +59,7 @@ export const comparisonService = {
    * Comparar dos análisis
    */
   compareAnalyses: async (analysisId1: string, analysisId2: string): Promise<AnalysisComparison> => {
-    const response = await ApiClient.get(`/comparison/analyses/${analysisId1}/${analysisId2}`);
+    const response = await apiService.get(`/comparison/analyses/${analysisId1}/${analysisId2}`);
     return response.data;
   },
 
@@ -76,7 +76,7 @@ export const comparisonService = {
     if (days1) params.append('days1', days1.toString());
     if (days2) params.append('days2', days2.toString());
 
-    const response = await ApiClient.get(`/comparison/periods?${params.toString()}`);
+    const response = await apiService.get(`/comparison/periods?${params.toString()}`);
     return response.data;
   },
 
@@ -84,7 +84,7 @@ export const comparisonService = {
    * Comparar proyectos
    */
   compareProjects: async (projectId1: string, projectId2: string): Promise<any> => {
-    const response = await ApiClient.get(`/comparison/projects/${projectId1}/${projectId2}`);
+    const response = await apiService.get(`/comparison/projects/${projectId1}/${projectId2}`);
     return response.data;
   },
 };
