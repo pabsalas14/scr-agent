@@ -10,13 +10,15 @@ export default function FindingsPanelPage() {
   const [selectedSeverity, setSelectedSeverity] = useState<string>('');
   const toast = useToast();
 
-  const { data: findings, isLoading } = useQuery<Hallazgo[]>({
+  const { data: findingsResponse, isLoading } = useQuery({
     queryKey: ['findings-all'],
     queryFn: async () => {
-      return apiService.obtenerHallazgos();
+      return apiService.obtenerHallazgosGlobales({ limit: 200 });
     },
     staleTime: 60 * 1000,
   });
+
+  const findings = findingsResponse?.data || [];
 
   const filteredFindings = findings?.filter((finding) => {
     const matchesSearch = !searchTerm ||

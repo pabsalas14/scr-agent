@@ -9,11 +9,13 @@ export default function AnalysisComparisonPage() {
   const [selectedId1, setSelectedId1] = useState<string>('');
   const [selectedId2, setSelectedId2] = useState<string>('');
 
-  const { data: analyses } = useQuery<Analisis[]>({
+  const { data: analysesResponse } = useQuery({
     queryKey: ['analyses-list'],
-    queryFn: () => apiService.obtenerAnalisis(),
+    queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     staleTime: 5 * 60 * 1000,
   });
+
+  const analyses = analysesResponse?.data || [];
 
   const canCompare = selectedId1 && selectedId2 && selectedId1 !== selectedId2;
 

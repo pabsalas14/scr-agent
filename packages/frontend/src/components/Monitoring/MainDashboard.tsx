@@ -17,6 +17,15 @@ import NavigationSidebar from '../Navigation/NavigationSidebar';
 import { OnboardingGuide } from '../Help/OnboardingGuide';
 import type { TabId } from '../../types/navigation';
 import { useAuth } from '../../hooks/useAuth';
+import FindingsPanelPage from '../../pages/FindingsPanelPage';
+import AnalysisComparisonPage from '../../pages/AnalysisComparisonPage';
+import AnalysisHistoricalPage from '../../pages/AnalysisHistoricalPage';
+import IntegrationsPage from '../../pages/IntegrationsPage';
+import WebhooksPage from '../../pages/WebhooksPage';
+import UsersPage from '../../pages/UsersPage';
+import PreferencesPage from '../../pages/PreferencesPage';
+import LibraryPage from '../../pages/LibraryPage';
+import ProjectsPage from '../Projects/ProjectsPage';
 
 type AgentView = 'list' | 'detail';
 
@@ -117,16 +126,7 @@ export default function MainDashboard() {
           />
         );
       case 'proyectos':
-        return (
-          <Dashboard
-            onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
-            onVerLogs={() => handleTabChange('sistema' as TabId)}
-            onCambiarTab={(tab: string) => {
-              const mappedTab = mapOldTabToNew(tab);
-              handleTabChange(mappedTab);
-            }}
-          />
-        );
+        return <ProjectsPage />;
       case 'reportes':   return <AnalysisMonitor />;
       case 'incidentes': return <IncidentMonitor />;
       case 'investigaciones': return <ForensicsInvestigations />;
@@ -136,18 +136,18 @@ export default function MainDashboard() {
         }
         return <AgentsMonitor onSelectAgent={handleSelectAgent} />;
       case 'sistema':    return <SystemMonitor />;
-      case 'biblioteca':   return <ScrManualView />;
+      case 'biblioteca':   return <LibraryPage />;
       case 'costos':     return <CostsMonitor />;
       case 'analytics':  return <AnalyticsDashboard />;
-      case 'hallazgos':  return <IncidentMonitor />; // Use IncidentMonitor for detailed findings
-      case 'alertas':    return <AnalyticsDashboard />; // Could be dedicated alerts component
-      case 'anomalias':  return <AnalyticsDashboard />; // Could be dedicated anomaly component
-      case 'comparacion': return <AnalysisMonitor />; // Could be dedicated comparison component
-      case 'historico':  return <AnalysisMonitor />; // Could be dedicated history component
-      case 'integraciones': return <SettingsModule />; // Settings for integrations
-      case 'webhooks':   return <SettingsModule />; // Settings for webhooks
-      case 'usuarios':   return <SettingsModule />; // Settings for users
-      case 'preferencias': return <SettingsModule />; // User preferences
+      case 'hallazgos':  return <FindingsPanelPage />;
+      case 'alertas':    return <AnalyticsDashboard />;
+      case 'anomalias':  return <AnalyticsDashboard />;
+      case 'comparacion': return <AnalysisComparisonPage />;
+      case 'historico':  return <AnalysisHistoricalPage />;
+      case 'integraciones': return <IntegrationsPage />;
+      case 'webhooks':   return <WebhooksPage />;
+      case 'usuarios':   return <UsersPage />;
+      case 'preferencias': return <PreferencesPage />;
       default:           return <Dashboard onVerAnalisis={() => {}} onVerLogs={() => {}} onCambiarTab={() => {}} />;
     }
   };

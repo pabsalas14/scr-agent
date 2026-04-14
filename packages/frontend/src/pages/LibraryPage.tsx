@@ -1,36 +1,73 @@
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Search, Plus, BookOpen, Tag } from 'lucide-react';
 import Button from '../components/ui/Button';
+import { apiService } from '../services/api.service';
 
-const LIBRARY_ITEMS = [
+const SECURITY_RULE_CATEGORIES = [
   {
-    id: '1',
-    title: 'SQL Injection',
-    category: 'OWASP',
-    description: 'Detección y prevención de inyecciones SQL',
-    severity: 'CRITICAL',
+    id: 'owasp',
+    title: 'OWASP Top 10',
+    description: 'Las vulnerabilidades web más críticas',
+    rules: [
+      { title: 'SQL Injection', severity: 'CRITICAL' },
+      { title: 'Cross-Site Scripting (XSS)', severity: 'HIGH' },
+      { title: 'Broken Authentication', severity: 'CRITICAL' },
+      { title: 'Sensitive Data Exposure', severity: 'HIGH' },
+    ]
   },
   {
-    id: '2',
-    title: 'Cross-Site Scripting (XSS)',
-    category: 'OWASP',
-    description: 'Identificación de vulnerabilidades XSS',
-    severity: 'HIGH',
+    id: 'cwe',
+    title: 'Common Weakness Enumeration',
+    description: 'Lista estándar de debilidades de software',
+    rules: []
   },
   {
-    id: '3',
-    title: 'Broken Authentication',
-    category: 'OWASP',
-    description: 'Validación de mecanismos de autenticación',
-    severity: 'CRITICAL',
-  },
+    id: 'custom',
+    title: 'Reglas Personalizadas',
+    description: 'Reglas configuradas para tu organización',
+    rules: []
+  }
 ];
 
 export default function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
 
-  const filteredItems = LIBRARY_ITEMS.filter((item) => {
+  // Cargar hallazgos para crear una "biblioteca" basada en datos reales
+  const { data: findingsData, isLoading } = useQuery({
+    queryKey: ['library-findings'],
+    queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 100 }),
+  });
+
+  // Mapear hallazgos a elementos de biblioteca por tipo de riesgo
+  const libraryItems = (findingsData?.data || [])
+    .reduce((acc: any[], finding: any) => {
+      const existing = acc.find(item => item.riskType === finding.riskType);
+      if (!existing) {
+        acc.push({
+          id: finding.riskType,
+          title: finding.riskType?.replace(/_/g, ' ') || 'Unknown Risk',
+          category: 'DETECTED',
+          description: `Patrón de riesgo detectado en análisis`,
+          severity: finding.severity,
+          instances: 1,
+        });
+      } else {
+        existing.instances += 1;
+      }
+      return acc;
+    }, [])
+    .concat(SECURITY_RULE_CATEGORIES[0].rules.map((rule, idx) => ({
+      id: `owasp-${idx}`,
+      title: rule.title,
+      category: 'OWASP',
+      description: 'Vulnerabilidad web crítica',
+      severity: rule.severity,
+      instances: 0,
+    })));
+
+  const filteredItems = libraryItems.filter((item) => {
     const matchesSearch = !searchTerm ||
       item.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.description.toLowerCase().includes(searchTerm.toLowerCase());
@@ -40,7 +77,7 @@ export default function LibraryPage() {
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['OWASP', 'CWE', 'CVSS', 'Custom'];
+  const categories = Array.from(new Set(libraryItems.map(item => item.category)));
 
   const getSeverityColor = (severity?: string) => {
     switch (severity) {

@@ -121,7 +121,7 @@ export default function GlobalSearchBar({
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1C1C1E] border border-[#2D2D2D] text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:bg-[#242424] focus:outline-none transition-all shadow-lg"
+            className="w-full pl-12 pr-4 py-2.5 rounded-xl bg-[#1C1C1E] border border-[#2D2D2D] text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:bg-[#242424] focus:outline-none transition-all shadow-lg"
           />
           {query && (
             <button

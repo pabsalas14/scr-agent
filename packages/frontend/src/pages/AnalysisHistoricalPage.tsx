@@ -4,11 +4,13 @@ import { apiService } from '../services/api.service';
 import type { Analisis } from '../types/api';
 
 export default function AnalysisHistoricalPage() {
-  const { data: analyses, isLoading } = useQuery<Analisis[]>({
+  const { data: analysesResponse, isLoading } = useQuery({
     queryKey: ['analyses-historical'],
-    queryFn: () => apiService.obtenerAnalisis(),
+    queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     staleTime: 5 * 60 * 1000,
   });
+
+  const analyses = analysesResponse?.data || [];
 
   const sortedAnalyses = analyses ? [...analyses].sort((a, b) => {
     const dateA = new Date(a.completedAt || a.createdAt).getTime();
