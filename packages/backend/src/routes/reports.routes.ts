@@ -13,6 +13,8 @@ import { Router, type Router as ExpressRouter, Request, Response } from 'express
 import { logger } from '../services/logger.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
+  generateExecutiveReport,
+  generateTechnicalReport,
   generateRemediationReport,
   generateCSVReport,
   generatePDFReport,
