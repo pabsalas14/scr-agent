@@ -2,9 +2,11 @@
  * AdvancedFilters - Advanced filter UI for search
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, X, Filter, Sliders } from 'lucide-react';
+import { useModal } from '../../contexts/ModalContext';
+import { useZIndex, useIsTopModal } from '../../hooks/useZIndex';
 
 export interface FilterOptions {
   type?: string;
@@ -43,13 +45,42 @@ const STATUS_OPTIONS = [
   { value: 'CLOSED', label: 'Cerrado' },
 ];
 
+const FILTER_MODAL_ID = 'advanced-filters';
+
 export default function AdvancedFilters({
   onFilterChange,
   isOpen = false,
   onToggle,
 }: AdvancedFiltersProps) {
+  const { openModal, closeModal } = useModal();
+  const filterZIndex = useZIndex(FILTER_MODAL_ID);
+  const isTopModal = useIsTopModal(FILTER_MODAL_ID);
   const [filters, setFilters] = useState<FilterOptions>({});
   const [localIsOpen, setLocalIsOpen] = useState(isOpen);
+
+  // Sync with ModalContext
+  useEffect(() => {
+    if (localIsOpen) {
+      openModal(FILTER_MODAL_ID, 'panel');
+    } else {
+      closeModal(FILTER_MODAL_ID);
+    }
+  }, [localIsOpen, openModal, closeModal]);
+
+  // Handle ESC key to close filters (only if this is the top modal)
+  useEffect(() => {
+    if (!localIsOpen || !isTopModal) return;
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setLocalIsOpen(false);
+        onToggle?.();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [localIsOpen, isTopModal, onToggle]);
 
   const handleToggle = () => {
     const newState = !localIsOpen;
@@ -101,114 +132,123 @@ export default function AdvancedFilters({
 
       <AnimatePresence>
         {localIsOpen && (
-          <motion.div
-            initial={{ opacity: 0, y: -10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}
-            className="absolute left-0 top-full mt-2 w-96 bg-[#1E1E20] border border-[#2D2D2D] rounded-lg shadow-lg z-50 p-4 space-y-4"
-          >
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                <Filter className="w-4 h-4" />
-                Filtros Avanzados
-              </h3>
-              <button
-                onClick={handleToggle}
-                className="p-1 hover:bg-[#242424] rounded transition-colors"
-              >
-                <X className="w-4 h-4 text-[#6B7280]" />
-              </button>
-            </div>
+          <>
+            {/* Backdrop - Click outside to close */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={handleToggle}
+              className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+              style={{ zIndex: filterZIndex - 10 }}
+              aria-label="Cerrar filtros (click aquí)"
+            />
 
-            <div>
-              <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
-                Tipo
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {TYPE_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() =>
-                      handleFilterChange('type', filters.type === option.value ? undefined : option.value)
-                    }
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                      filters.type === option.value
-                        ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
-                        : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+            {/* Filter Panel */}
+            <motion.div
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -10, scale: 0.95 }}
+              className="absolute left-0 top-full mt-2 w-96 bg-[#1E1E20] border border-[#F97316]/30 rounded-lg shadow-2xl p-4 space-y-4"
+              style={{ zIndex: filterZIndex }}
+            >
+              <div className="flex items-center justify-between pb-2 border-b border-[#2D2D2D]">
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-[#F97316]" />
+                  Filtros Avanzados
+                </h3>
+                <button
+                  onClick={handleToggle}
+                  title="Cerrar (ESC)"
+                  className="p-2 hover:bg-[#2D2D2D] rounded-lg transition-all text-[#A0A0A0] hover:text-red-400 group"
+                >
+                  <X className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                </button>
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
-                Severidad
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {SEVERITY_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() =>
-                      handleFilterChange('severity', filters.severity === option.value ? undefined : option.value)
-                    }
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                      filters.severity === option.value
-                        ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
-                        : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div>
+                <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
+                  Tipo
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {TYPE_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() =>
+                        handleFilterChange('type', filters.type === option.value ? undefined : option.value)
+                      }
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                        filters.type === option.value
+                          ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
+                          : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
-                Estado
-              </label>
-              <div className="grid grid-cols-2 gap-2">
-                {STATUS_OPTIONS.map((option) => (
-                  <button
-                    key={option.value}
-                    onClick={() =>
-                      handleFilterChange('status', filters.status === option.value ? undefined : option.value)
-                    }
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
-                      filters.status === option.value
-                        ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
-                        : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
-                    }`}
-                  >
-                    {option.label}
-                  </button>
-                ))}
+              <div>
+                <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
+                  Severidad
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {SEVERITY_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() =>
+                        handleFilterChange('severity', filters.severity === option.value ? undefined : option.value)
+                      }
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                        filters.severity === option.value
+                          ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
+                          : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {hasActiveFilters && (
-              <motion.button
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                onClick={handleClear}
-                className="w-full px-3 py-2 rounded-lg bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444]/20 transition-colors text-xs font-medium"
-              >
-                Limpiar Filtros
-              </motion.button>
-            )}
-          </motion.div>
+              <div>
+                <label className="text-xs font-semibold text-[#A0A0A0] uppercase tracking-wider block mb-2">
+                  Estado
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {STATUS_OPTIONS.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() =>
+                        handleFilterChange('status', filters.status === option.value ? undefined : option.value)
+                      }
+                      className={`px-3 py-2 rounded-lg text-xs font-medium transition-all border ${
+                        filters.status === option.value
+                          ? 'bg-[#F97316]/20 border-[#F97316] text-[#F97316]'
+                          : 'bg-[#242424] border-[#2D2D2D] text-[#A0A0A0] hover:border-[#F97316]'
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  onClick={handleClear}
+                  className="w-full px-3 py-2 rounded-lg bg-[#EF4444]/10 text-[#EF4444] hover:bg-[#EF4444]/20 transition-colors text-xs font-medium"
+                >
+                  Limpiar Filtros
+                </motion.button>
+              )}
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
-
-      {localIsOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={handleToggle}
-        />
-      )}
     </div>
   );
 }

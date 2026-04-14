@@ -34,6 +34,29 @@ export default {
         // Acento secundario
         indigo: '#6366F1',
       },
+      zIndex: {
+        // Standard tailwind zIndex extended for ModalContext
+        0: '0',
+        10: '10',
+        20: '20',
+        30: '30',
+        40: '40',
+        50: '50',
+        60: '60',
+        70: '70',
+        80: '80',
+        90: '90',
+        100: '100',
+        // ModalContext levels (1000 + level * 100)
+        1000: '1000',
+        1100: '1100',
+        1200: '1200',
+        1300: '1300',
+        1400: '1400',
+        1500: '1500',
+        1600: '1600',
+        1700: '1700',
+      },
       spacing: {
         128: '32rem',
         144: '36rem',

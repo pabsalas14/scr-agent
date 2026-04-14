@@ -91,25 +91,28 @@ export default function AppLayout() {
           {/* Sidebar Navigation */}
           <Sidebar />
 
-          {/* Main Content Area */}
-          <div className="flex-1 flex flex-col min-w-0 pl-20 lg:pl-64 transition-all duration-300">
+          {/* Main Content Area - Uses margin-left to account for fixed sidebar */}
+          <div className="flex-1 flex flex-col min-w-0 ml-20 lg:ml-64 transition-all duration-300">
             {/* Search Header */}
             <SearchHeader />
 
-            <main className="flex-1 relative z-10 p-6 sm:p-8 lg:p-10">
-              <AnimatePresence mode="wait">
-                <Outlet />
-              </AnimatePresence>
+            {/* Main Content */}
+            <main className="flex-1 relative z-10 overflow-auto">
+              <div className="p-6 sm:p-8 lg:p-10">
+                <AnimatePresence mode="wait">
+                  <Outlet />
+                </AnimatePresence>
+              </div>
             </main>
 
-            <footer className="relative z-10 px-10 py-6 border-t border-[#2D2D2D] text-center">
+            {/* Footer */}
+            <footer className="relative z-10 px-6 sm:px-8 lg:px-10 py-6 border-t border-[#2D2D2D] text-center flex-shrink-0">
               <p className="text-[11px] text-[#4B5563]">
                 SCR Agent — Code Observability & Defense
               </p>
             </footer>
           </div>
         </div>
-
 
         <ToastContainer />
       </ProtectedRoute>

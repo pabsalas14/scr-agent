@@ -1,16 +1,18 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Send, 
-  Bot, 
-  User, 
-  X, 
-  Loader2, 
+import {
+  Send,
+  Bot,
+  User,
+  X,
+  Loader2,
   MessageSquare,
   Sparkles,
   ChevronDown
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
+import { useModal } from '../../contexts/ModalContext';
+import { useZIndex, useIsTopModal } from '../../hooks/useZIndex';
 
 interface Message {
   role: 'agent' | 'user';
@@ -23,22 +25,48 @@ interface ExplainerChatProps {
   onClose: () => void;
 }
 
+const EXPLAINER_CHAT_ID = 'explainer-chat-panel';
+
 export default function ExplainerChat({ findingId, findingType, onClose }: ExplainerChatProps) {
+  const { openModal, closeModal } = useModal();
+  const chatZIndex = useZIndex(EXPLAINER_CHAT_ID);
+  const isTopModal = useIsTopModal(EXPLAINER_CHAT_ID);
   const [messages, setMessages] = useState<Message[]>([
-    { 
-      role: 'agent', 
-      content: `Hola. Soy el Agente Fiscal. He analizado el hallazgo de tipo **${findingType}**. ¿Tienes alguna duda técnica sobre el riesgo detectado o cómo corregirlo?` 
+    {
+      role: 'agent',
+      content: `Hola. Soy el Agente Fiscal. He analizado el hallazgo de tipo **${findingType}**. ¿Tienes alguna duda técnica sobre el riesgo detectado o cómo corregirlo?`
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Sync with ModalContext
+  useEffect(() => {
+    openModal(EXPLAINER_CHAT_ID, 'panel');
+    return () => closeModal(EXPLAINER_CHAT_ID);
+  }, [openModal, closeModal]);
+
+  // Auto-scroll to latest message
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  // Handle ESC key to close (only if this is the top modal)
+  useEffect(() => {
+    if (!isTopModal) return;
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [isTopModal, onClose]);
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -63,7 +91,8 @@ export default function ExplainerChat({ findingId, findingType, onClose }: Expla
       initial={{ x: 300, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 300, opacity: 0 }}
-      className="fixed right-0 top-0 bottom-0 w-full md:w-[450px] bg-[#1E1E20] border-l border-[#2D2D2D] shadow-2xl z-50 flex flex-col"
+      className="fixed right-0 top-0 bottom-0 w-full md:w-[450px] bg-[#1E1E20] border-l border-[#2D2D2D] shadow-2xl flex flex-col"
+      style={{ zIndex: chatZIndex }}
     >
       {/* Header */}
       <div className="p-6 border-b border-[#2D2D2D] bg-[#242424] flex items-center justify-between">

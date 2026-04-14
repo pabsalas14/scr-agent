@@ -1,7 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle } from 'lucide-react';
 import Button from './Button';
+import { useModal } from '../../contexts/ModalContext';
+import { useZIndex } from '../../hooks/useZIndex';
+
+const CONFIRM_DIALOG_ID = 'confirm-dialog';
 
 export interface ConfirmDialogProps {
   isOpen: boolean;
@@ -26,6 +30,17 @@ export default function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const { openModal, closeModal } = useModal();
+  const dialogZIndex = useZIndex(CONFIRM_DIALOG_ID);
+
+  // Sync with ModalContext
+  useEffect(() => {
+    if (isOpen) {
+      openModal(CONFIRM_DIALOG_ID, 'dialog');
+    } else {
+      closeModal(CONFIRM_DIALOG_ID);
+    }
+  }, [isOpen, openModal, closeModal]);
   const handleConfirm = async () => {
     try {
       await onConfirm();
@@ -45,7 +60,8 @@ export default function ConfirmDialog({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onCancel}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50"
+            style={{ zIndex: dialogZIndex - 10 }}
           />
 
           {/* Dialog */}
@@ -54,7 +70,8 @@ export default function ConfirmDialog({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
+            style={{ zIndex: dialogZIndex }}
           >
             <div className="bg-[#1E1E20] rounded-xl shadow-2xl border border-[#2D2D2D] overflow-hidden flex flex-col w-full max-w-sm">
               {/* Header with icon */}

@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Zap, CheckCircle2, AlertCircle, Clock, X } from 'lucide-react';
 import { useConfirm } from '../../hooks/useConfirm';
+import { useSocketEvents } from '../../hooks/useSocketEvents';
 
 interface AnalysisProgressProps {
   analysisId: string;
@@ -12,22 +13,73 @@ interface AnalysisProgressProps {
   startTime?: Date;
   estimatedTime?: number;
   onCancel?: (analysisId: string) => Promise<void>;
+  onStatusChange?: (status: 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED', progress: number) => void;
 }
 
 export default function AnalysisProgress({
   analysisId,
   projectName = 'Análisis',
-  isActive = false,
-  progress = 0,
-  status = 'RUNNING',
-  startTime,
-  estimatedTime,
+  isActive: initialIsActive = false,
+  progress: initialProgress = 0,
+  status: initialStatus = 'RUNNING',
+  startTime: initialStartTime,
+  estimatedTime: initialEstimatedTime,
   onCancel,
+  onStatusChange,
 }: AnalysisProgressProps) {
   const [elapsedTime, setElapsedTime] = useState(0);
   const [isCancelling, setIsCancelling] = useState(false);
+  const [progress, setProgress] = useState(initialProgress);
+  const [status, setStatus] = useState<'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'>(initialStatus);
+  const [isActive, setIsActive] = useState(initialIsActive);
+  const [estimatedTime, setEstimatedTime] = useState(initialEstimatedTime);
+  const [startTime, setStartTime] = useState(initialStartTime ? new Date(initialStartTime) : undefined);
+
+  const progressHistoryRef = useRef<Array<{ time: number; progress: number }>>([]);
   const confirm = useConfirm();
 
+  // Listen to real-time WebSocket progress updates
+  useSocketEvents({
+    onAnalysisStatusChanged: (data) => {
+      // Only process events for this specific analysis
+      if (data.analysisId !== analysisId) return;
+
+      setProgress(data.progress);
+      setStatus(data.newStatus as any);
+
+      // Determine if still active based on status
+      const isStillActive = !['COMPLETED', 'FAILED', 'CANCELLED'].includes(data.newStatus);
+      setIsActive(isStillActive);
+
+      // Set start time if not already set
+      if (!startTime && isStillActive) {
+        setStartTime(new Date());
+      }
+
+      // Calculate estimated time based on progress velocity
+      if (isStillActive && data.progress > 0 && data.progress < 100) {
+        const currentTime = elapsedTime || 1; // Avoid division by zero
+        const estimatedTotal = Math.ceil((currentTime / data.progress) * 100);
+        setEstimatedTime(estimatedTotal);
+      }
+
+      // Notify parent component
+      onStatusChange?.(data.newStatus as any, data.progress);
+
+      // Track progress history for velocity calculation
+      progressHistoryRef.current.push({
+        time: elapsedTime,
+        progress: data.progress,
+      });
+
+      // Keep history limited to last 10 entries
+      if (progressHistoryRef.current.length > 10) {
+        progressHistoryRef.current.shift();
+      }
+    },
+  });
+
+  // Timer for elapsed time
   useEffect(() => {
     if (!startTime || !isActive) return;
 
@@ -39,7 +91,9 @@ export default function AnalysisProgress({
     return () => clearInterval(interval);
   }, [startTime, isActive]);
 
-  const estimatedRemaining = estimatedTime ? Math.max(0, estimatedTime - elapsedTime) : null;
+  const estimatedRemaining = estimatedTime && estimatedTime > elapsedTime
+    ? Math.max(0, estimatedTime - elapsedTime)
+    : null;
 
   const handleCancel = async () => {
     await confirm.confirm({

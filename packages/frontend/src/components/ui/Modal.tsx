@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
+import { useModal } from '../../contexts/ModalContext';
+import { useZIndex, useIsTopModal } from '../../hooks/useZIndex';
 
 interface ModalProps {
   isOpen: boolean;
@@ -8,6 +10,7 @@ interface ModalProps {
   title?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
+  modalId?: string;
 }
 
 export default function Modal({
@@ -16,7 +19,34 @@ export default function Modal({
   title,
   children,
   size = 'md',
+  modalId = 'default-modal',
 }: ModalProps) {
+  const { openModal, closeModal } = useModal();
+  const modalZIndex = useZIndex(modalId);
+  const isTopModal = useIsTopModal(modalId);
+
+  // Sync with ModalContext
+  useEffect(() => {
+    if (isOpen) {
+      openModal(modalId, 'modal');
+    } else {
+      closeModal(modalId);
+    }
+  }, [isOpen, modalId, openModal, closeModal]);
+
+  // Handle ESC key to close (only if this is the top modal)
+  useEffect(() => {
+    if (!isOpen || !isTopModal) return;
+
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [isOpen, isTopModal, onClose]);
   const sizeClasses = {
     sm: 'max-w-sm',
     md: 'max-w-2xl',
@@ -33,7 +63,8 @@ export default function Modal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-black/50"
+            style={{ zIndex: modalZIndex - 10 }}
           />
 
           {/* Modal - Professional Design */}
@@ -42,7 +73,8 @@ export default function Modal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6`}
+            className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
+            style={{ zIndex: modalZIndex }}
           >
             <div className={`bg-[#1E1E20] rounded-xl shadow-2xl border border-[#2D2D2D] overflow-hidden flex flex-col w-full max-h-full ${sizeClasses[size]}`}>
               {/* Header */}
