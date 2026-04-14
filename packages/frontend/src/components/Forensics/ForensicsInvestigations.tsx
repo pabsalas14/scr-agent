@@ -428,9 +428,9 @@ export default function ForensicsInvestigations() {
               )}
             </div>
           )}
-         </motion.div>
-       </AnimatePresence>
-     </div>
-     <>
-   );
+        </motion.div>
+      </AnimatePresence>
+    </div>
+     </>
+  );
 }
