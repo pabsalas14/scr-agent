@@ -1,21 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  FileText,
-  Zap,
-  Wand2,
-  DollarSign,
-  Cog,
-  Shield,
-  TrendingUp,
-  Radio,
-  History,
-  Activity,
-  BookOpen,
-  FileText,
-  type LucideIcon,
-} from 'lucide-react';
 import Dashboard from '../Dashboard/Dashboard';
 import AnalysisMonitor from './AnalysisMonitor';
 import IncidentMonitor from './IncidentMonitor';
@@ -28,29 +13,38 @@ import SettingsModule from '../Settings/SettingsModule';
 import ForensicsInvestigations from '../Forensics/ForensicsInvestigations';
 import AuditLogsView from '../Audit/AuditLogsView';
 import ScrManualView from '../Docs/ScrManualView';
+import NavigationSidebar from '../Navigation/NavigationSidebar';
 import { OnboardingGuide } from '../Help/OnboardingGuide';
+import type { TabId } from '../../types/navigation';
+import { useAuth } from '../../hooks/useAuth';
 
-type Tab = 'projects' | 'analyses' | 'agents' | 'system' | 'costs' | 'analytics' | 'incidents' | 'forensics' | 'audit' | 'manual';
 type AgentView = 'list' | 'detail';
-
-const TABS: Array<{ id: Tab; label: string; icon: LucideIcon; description: string }> = [
-  { id: 'dashboard',  label: 'Monitor Central', icon: Activity,  description: 'Vista general' },
-  { id: 'projects',   label: 'Proyectos',       icon: Shield,    description: 'Gestión de repositorios' },
-  { id: 'incidents',  label: 'Incidentes',      icon: Radio,     description: 'Alertas críticas' },
-  { id: 'forensics',  label: 'Investigaciones', icon: FileText,  description: 'Análisis forense' },
-  { id: 'audit',      label: 'Seguridad',       icon: History,   description: 'Audit Trail' },
-  { id: 'manual',     label: 'Biblioteca',      icon: BookOpen,  description: 'Manual SCR' },
-  { id: 'analyses',   label: 'Reportes',        icon: FileText,  description: 'Histórico' },
-  { id: 'agents',     label: 'Agentes IA',      icon: Wand2,     description: 'Autómatas' },
-  { id: 'system',     label: 'Sistema',         icon: Zap,       description: 'Estado HW' },
-  { id: 'costs',      label: 'Costos',          icon: DollarSign,description: 'Gasto Real' },
-  { id: 'analytics',  label: 'Estadísticas',    icon: TrendingUp,description: 'Deep Analytics' },
-];
 
 export default function MainDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>((searchParams.get('tab') as Tab) || 'projects');
+  const { user, clearToken } = useAuth();
+
+  // Map old tab names to new TabIds for backwards compatibility
+  const mapOldTabToNew = (tab: string): TabId => {
+    const mapping: Record<string, TabId> = {
+      'dashboard': 'monitor-central',
+      'projects': 'proyectos',
+      'analyses': 'reportes',
+      'incidents': 'incidentes',
+      'forensics': 'investigaciones',
+      'manual': 'biblioteca',
+      'agents': 'agentes',
+      'system': 'sistema',
+      'costs': 'costos',
+      'analytics': 'analytics',
+      'audit': 'incidentes', // audit merged into incidentes
+    };
+    return mapping[tab] || 'monitor-central';
+  };
+
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState<TabId>(tabFromUrl ? mapOldTabToNew(tabFromUrl) : 'monitor-central');
   const [agentView, setAgentView] = useState<AgentView>('list');
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('scr_onboarding_completed'));
@@ -87,13 +81,14 @@ export default function MainDashboard() {
   ];
 
   useEffect(() => {
-    const tabFromUrl = searchParams.get('tab') as Tab;
-    if (tabFromUrl && tabFromUrl !== activeTab && TABS.some(t => t.id === tabFromUrl)) {
-      setActiveTab(tabFromUrl);
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      const mappedTab = mapOldTabToNew(tabFromUrl);
+      setActiveTab(mappedTab);
     }
   }, [searchParams]);
 
-  const handleTabChange = (tab: Tab) => {
+  const handleTabChange = (tab: TabId) => {
     setActiveTab(tab);
     setSearchParams({ tab });
   };
@@ -110,47 +105,90 @@ export default function MainDashboard() {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'projects':
+      case 'monitor-central':
         return (
           <Dashboard
             onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
-            onVerLogs={() => handleTabChange('system')}
-            onCambiarTab={(tab: string) => handleTabChange(tab as Tab)}
+            onVerLogs={() => handleTabChange('sistema')}
+            onCambiarTab={(tab: string) => {
+              const mappedTab = mapOldTabToNew(tab);
+              handleTabChange(mappedTab);
+            }}
           />
         );
-      case 'incidents':  return <IncidentMonitor />;
-      case 'forensics':  return <ForensicsInvestigations />;
-      case 'analyses':   return <AnalysisMonitor />;
-      case 'agents':
+      case 'proyectos':
+        return (
+          <Dashboard
+            onVerAnalisis={(projectId: string, analysisId: string) => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
+            onVerLogs={() => handleTabChange('sistema' as TabId)}
+            onCambiarTab={(tab: string) => {
+              const mappedTab = mapOldTabToNew(tab);
+              handleTabChange(mappedTab);
+            }}
+          />
+        );
+      case 'reportes':   return <AnalysisMonitor />;
+      case 'incidentes': return <IncidentMonitor />;
+      case 'investigaciones': return <ForensicsInvestigations />;
+      case 'agentes':
         if (agentView === 'detail' && selectedAgentId) {
           return <AgentDetail agentId={selectedAgentId} onBack={handleBackFromDetail} />;
         }
         return <AgentsMonitor onSelectAgent={handleSelectAgent} />;
-      case 'system':     return <SystemMonitor />;
-      case 'audit':      return <AuditLogsView />;
-      case 'manual':     return <ScrManualView />;
-      case 'costs':      return <CostsMonitor />;
+      case 'sistema':    return <SystemMonitor />;
+      case 'biblioteca':   return <ScrManualView />;
+      case 'costos':     return <CostsMonitor />;
       case 'analytics':  return <AnalyticsDashboard />;
-      default:           return null;
+      case 'hallazgos':  return <IncidentMonitor />; // Use IncidentMonitor for detailed findings
+      case 'alertas':    return <AnalyticsDashboard />; // Could be dedicated alerts component
+      case 'anomalias':  return <AnalyticsDashboard />; // Could be dedicated anomaly component
+      case 'comparacion': return <AnalysisMonitor />; // Could be dedicated comparison component
+      case 'historico':  return <AnalysisMonitor />; // Could be dedicated history component
+      case 'integraciones': return <SettingsModule />; // Settings for integrations
+      case 'webhooks':   return <SettingsModule />; // Settings for webhooks
+      case 'usuarios':   return <SettingsModule />; // Settings for users
+      case 'preferencias': return <SettingsModule />; // User preferences
+      default:           return <Dashboard onVerAnalisis={() => {}} onVerLogs={() => {}} onCambiarTab={() => {}} />;
     }
   };
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={activeTab + agentView + selectedAgentId}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        transition={{ duration: 0.25, ease: 'easeOut' }}
-        className="animate-in fade-in duration-500"
-      >
-        {renderContent()}
-      </motion.div>
+    <div className="flex h-screen bg-[#0A0A0F]">
+      {/* Navigation Sidebar */}
+      <NavigationSidebar
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        userName={user?.name || 'Usuario'}
+        onLogout={() => {
+          clearToken();
+          navigate('/login');
+        }}
+      />
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeTab + agentView + selectedAgentId}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="animate-in fade-in duration-500"
+            >
+              <div className="p-8">
+                {renderContent()}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
 
       {showOnboarding && (
-        <OnboardingGuide 
-          steps={onboardingSteps} 
+        <OnboardingGuide
+          steps={onboardingSteps}
           autoStart={true}
           onComplete={() => {
             localStorage.setItem('scr_onboarding_completed', 'true');
@@ -162,6 +200,6 @@ export default function MainDashboard() {
           }}
         />
       )}
-    </AnimatePresence>
+    </div>
   );
 }
