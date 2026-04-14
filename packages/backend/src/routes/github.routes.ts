@@ -9,13 +9,15 @@
  * Autenticación: Requiere GitHub token configurado en UserSettings
  */
 
-import { Router, type Router as ExpressRouter, Response } from 'express';
+import { Router, type Router as ExpressRouter, Response, Request } from 'express';
 import { AuthenticatedRequest, authMiddleware } from '../middleware/auth.middleware';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { gitService } from '../services/git.service';
-import { decrypt } from '../services/crypto.service';
+import { decrypt, encrypt } from '../services/crypto.service';
 import axios from 'axios';
+import crypto from 'crypto';
+import { analysisQueue } from '../services/analysis-queue';
 
 /** Obtiene y descifra el GitHub token del usuario, o lanza respuesta 400 si no está configurado */
 async function resolveGithubToken(userId: string, res: Response): Promise<string | null> {
@@ -316,6 +318,397 @@ router.post(
         error: 'Error validating repository',
         message: msg,
       });
+    }
+  }
+);
+
+/**
+ * ============================================================================
+ * GITHUB WEBHOOK INTEGRATION
+ * ============================================================================
+ * Recibe eventos de GitHub y dispara análisis automáticos
+ */
+
+/**
+ * Validar firma HMAC-SHA256 de webhook de GitHub
+ * GitHub calcula: sha256(payload, secret) y lo envía en X-Hub-Signature-256
+ */
+function verifyGithubWebhookSignature(payload: string, signature: string | undefined, secret: string): boolean {
+  if (!signature) {
+    logger.warn('No X-Hub-Signature-256 header found');
+    return false;
+  }
+
+  const expectedSignature = 'sha256=' + crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  const isValid = crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature));
+
+  if (!isValid) {
+    logger.warn(`Webhook signature mismatch. Expected: ${expectedSignature}, Got: ${signature}`);
+  }
+
+  return isValid;
+}
+
+/**
+ * POST /api/v1/github/webhook
+ * Recibe eventos de GitHub (push, pull_request, etc.)
+ * No requiere autenticación - GitHub lo envía directamente
+ */
+router.post('/webhook', async (req: Request, res: Response) => {
+  try {
+    const signature = req.headers['x-hub-signature-256'] as string;
+    const event = req.headers['x-github-event'] as string;
+    const deliveryId = req.headers['x-github-delivery'] as string;
+    const payload = JSON.stringify(req.body);
+
+    logger.info(`Received GitHub webhook: ${event} (delivery: ${deliveryId})`);
+
+    // Obtener el proyecto asociado a este repositorio
+    const repoFullName = req.body.repository?.full_name;
+    if (!repoFullName) {
+      logger.warn('No repository full_name in webhook payload');
+      res.status(400).json({ error: 'Invalid payload' });
+      return;
+    }
+
+    // Buscar proyecto por URL de repositorio
+    const project = await prisma.project.findFirst({
+      where: {
+        repositoryUrl: {
+          contains: repoFullName,
+        },
+      },
+    });
+
+    if (!project) {
+      logger.warn(`No project found for repository: ${repoFullName}`);
+      res.status(404).json({ error: 'Project not found' });
+      return;
+    }
+
+    // Validar firma del webhook
+    const webhookSecret = project.githubToken || process.env['GITHUB_WEBHOOK_SECRET'] || '';
+    if (!webhookSecret) {
+      logger.warn(`No webhook secret configured for project ${project.id}`);
+      res.status(401).json({ error: 'Webhook secret not configured' });
+      return;
+    }
+
+    if (!verifyGithubWebhookSignature(payload, signature, webhookSecret)) {
+      logger.warn(`Invalid webhook signature for ${repoFullName}`);
+      res.status(401).json({ error: 'Invalid signature' });
+      return;
+    }
+
+    // Procesar evento
+    let shouldTriggerAnalysis = false;
+    let analysisType = 'COMPLETE';
+    let ref = 'main';
+
+    switch (event) {
+      case 'push': {
+        // Trigger en push
+        const pushRef = req.body.ref as string; // refs/heads/main
+        ref = pushRef.replace('refs/heads/', '');
+        shouldTriggerAnalysis = true;
+        analysisType = 'INCREMENTAL'; // Push es análisis incremental
+        logger.info(`Push event on ${ref}`);
+        break;
+      }
+
+      case 'pull_request': {
+        // Trigger en PR (solo en actions que importan)
+        const action = req.body.action as string;
+        if (['opened', 'reopened', 'synchronize'].includes(action)) {
+          const prRef = req.body.pull_request?.head?.ref;
+          ref = prRef || project.branch || 'main';
+          shouldTriggerAnalysis = true;
+          analysisType = 'INCREMENTAL';
+          logger.info(`Pull request ${action} on ${ref}`);
+        }
+        break;
+      }
+
+      case 'ping': {
+        // GitHub envía ping al configurar webhook
+        logger.info('Webhook ping from GitHub - configuration successful');
+        res.status(200).json({ message: 'Webhook configured successfully' });
+        return;
+      }
+
+      default:
+        logger.info(`Ignoring GitHub event: ${event}`);
+        res.status(200).json({ message: 'Event ignored' });
+        return;
+    }
+
+    if (shouldTriggerAnalysis) {
+      try {
+        // Disparar análisis automáticamente
+        logger.info(`Triggering ${analysisType} analysis for project ${project.id}`);
+
+        // Crear registro de análisis
+        const analysis = await prisma.analysis.create({
+          data: {
+            projectId: project.id,
+            status: 'QUEUED',
+            progress: 0,
+            analysisType: analysisType as any,
+            gitRef: ref,
+            isIncremental: analysisType === 'INCREMENTAL',
+          },
+        });
+
+        // Encolar job
+        const analysisJob = await analysisQueue.add(
+          'analyze',
+          { analysisId: analysis.id, projectId: project.id },
+          { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
+        );
+
+        logger.info(`Analysis queued: ${analysis.id} (job: ${analysisJob.id})`);
+
+        res.status(202).json({
+          success: true,
+          message: 'Analysis triggered',
+          analysisId: analysis.id,
+          projectId: project.id,
+          ref,
+        });
+      } catch (error) {
+        logger.error(`Error triggering analysis: ${error instanceof Error ? error.message : String(error)}`);
+        res.status(500).json({ error: 'Failed to trigger analysis' });
+      }
+    } else {
+      res.status(200).json({ message: 'Event processed but no analysis triggered' });
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error(`Error in /github/webhook: ${msg}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * POST /api/v1/github/webhooks/configure
+ * Configurar webhook en GitHub para un proyecto
+ * Requiere token de GitHub del usuario
+ */
+router.post(
+  '/webhooks/configure',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      const { projectId, webhookUrl } = req.body;
+
+      if (!userId || !projectId || !webhookUrl) {
+        res.status(400).json({ error: 'Missing required fields' });
+        return;
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project || project.userId !== userId) {
+        res.status(403).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      // Obtener GitHub token del usuario
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId },
+      });
+
+      if (!userSettings?.githubToken) {
+        res.status(400).json({ error: 'GitHub token not configured' });
+        return;
+      }
+
+      const githubToken = decrypt(userSettings.githubToken);
+      const [owner, repo] = project.repositoryUrl.split('/').slice(-2);
+
+      try {
+        // Crear webhook en GitHub
+        const webhookResponse = await axios.post(
+          `https://api.github.com/repos/${owner}/${repo}/hooks`,
+          {
+            name: 'web',
+            active: true,
+            events: ['push', 'pull_request'],
+            config: {
+              url: webhookUrl,
+              content_type: 'json',
+              secret: encrypt(webhookUrl), // Simple secret based on URL
+              insecure_ssl: '0',
+            },
+          },
+          {
+            headers: {
+              Authorization: `token ${githubToken}`,
+              Accept: 'application/vnd.github.v3+json',
+            },
+          }
+        );
+
+        logger.info(`Webhook created for ${owner}/${repo}: ${webhookResponse.data.id}`);
+
+        res.json({
+          success: true,
+          message: 'Webhook configured successfully',
+          hookId: webhookResponse.data.id,
+          url: webhookResponse.data.config.url,
+        });
+      } catch (error: any) {
+        if (error.response?.status === 422) {
+          // Webhook ya existe
+          res.status(409).json({ error: 'Webhook already exists for this repository' });
+        } else {
+          logger.error(`Error creating GitHub webhook: ${error.message}`);
+          res.status(500).json({ error: 'Failed to create webhook' });
+        }
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error(`Error in /github/webhooks/configure: ${msg}`);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  }
+);
+
+/**
+ * GET /api/v1/github/webhooks/:projectId
+ * Listar webhooks configurados para un proyecto
+ */
+router.get(
+  '/webhooks/:projectId',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      const { projectId } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project || project.userId !== userId) {
+        res.status(403).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      // Obtener GitHub token
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId },
+      });
+
+      if (!userSettings?.githubToken) {
+        res.status(400).json({ error: 'GitHub token not configured' });
+        return;
+      }
+
+      const githubToken = decrypt(userSettings.githubToken);
+      const [owner, repo] = project.repositoryUrl.split('/').slice(-2);
+
+      const webhooksResponse = await axios.get(
+        `https://api.github.com/repos/${owner}/${repo}/hooks`,
+        {
+          headers: {
+            Authorization: `token ${githubToken}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+
+      const webhooks = webhooksResponse.data.map((hook: any) => ({
+        id: hook.id,
+        url: hook.config.url,
+        events: hook.events,
+        active: hook.active,
+        createdAt: hook.created_at,
+        updatedAt: hook.updated_at,
+      }));
+
+      res.json({
+        success: true,
+        webhooks,
+        total: webhooks.length,
+      });
+    } catch (error: any) {
+      logger.error(`Error fetching webhooks: ${error.message}`);
+      res.status(500).json({ error: 'Failed to fetch webhooks' });
+    }
+  }
+);
+
+/**
+ * DELETE /api/v1/github/webhooks/:projectId/:hookId
+ * Eliminar webhook de un proyecto
+ */
+router.delete(
+  '/webhooks/:projectId/:hookId',
+  authMiddleware,
+  async (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      const { projectId, hookId } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      const project = await prisma.project.findUnique({
+        where: { id: projectId },
+      });
+
+      if (!project || project.userId !== userId) {
+        res.status(403).json({ error: 'Unauthorized' });
+        return;
+      }
+
+      // Obtener GitHub token
+      const userSettings = await prisma.userSettings.findUnique({
+        where: { userId },
+      });
+
+      if (!userSettings?.githubToken) {
+        res.status(400).json({ error: 'GitHub token not configured' });
+        return;
+      }
+
+      const githubToken = decrypt(userSettings.githubToken);
+      const [owner, repo] = project.repositoryUrl.split('/').slice(-2);
+
+      await axios.delete(
+        `https://api.github.com/repos/${owner}/${repo}/hooks/${hookId}`,
+        {
+          headers: {
+            Authorization: `token ${githubToken}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+        }
+      );
+
+      logger.info(`Webhook deleted: ${hookId} for ${owner}/${repo}`);
+
+      res.json({
+        success: true,
+        message: 'Webhook deleted successfully',
+      });
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        res.status(404).json({ error: 'Webhook not found' });
+      } else {
+        logger.error(`Error deleting webhook: ${error.message}`);
+        res.status(500).json({ error: 'Failed to delete webhook' });
+      }
     }
   }
 );
