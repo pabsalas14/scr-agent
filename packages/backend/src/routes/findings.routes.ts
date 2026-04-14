@@ -599,4 +599,319 @@ router.post('/:findingId/chat', async (req: Request, res: Response) => {
   }
 });
 
+/**
+ * ============================================================================
+ * COMMENTS ENDPOINTS - Collaboration on Findings
+ * ============================================================================
+ */
+
+/**
+ * GET /api/v1/findings/:findingId/comments
+ * Get all comments on a finding (for collaboration/discussion)
+ */
+router.get('/:findingId/comments', async (req: Request, res: Response) => {
+  try {
+    const { findingId } = req.params;
+
+    const comments = await prisma.comment.findMany({
+      where: { findingId },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    res.json({
+      success: true,
+      data: comments.map((c) => ({
+        id: c.id,
+        findingId: c.findingId,
+        userId: c.userId,
+        userName: c.user?.name || c.user?.email,
+        content: c.content,
+        mentions: c.mentions,
+        createdAt: c.createdAt,
+        updatedAt: c.updatedAt,
+      })),
+      total: comments.length,
+    });
+  } catch (error) {
+    logger.error('Error fetching comments:', error);
+    res.status(500).json({ success: false, error: 'Error fetching comments' });
+  }
+});
+
+/**
+ * POST /api/v1/findings/:findingId/comments
+ * Add a comment to a finding
+ * Supports @mentions for user notifications
+ */
+router.post('/:findingId/comments', async (req: Request, res: Response) => {
+  try {
+    const { findingId } = req.params;
+    const { content } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ error: 'Comment content is required' });
+    }
+
+    // Parse mentions (@username patterns)
+    const mentions: string[] = [];
+    const mentionRegex = /@(\w+)/g;
+    let match;
+    while ((match = mentionRegex.exec(content)) !== null) {
+      mentions.push(match[1]);
+    }
+
+    // Create comment
+    const comment = await prisma.comment.create({
+      data: {
+        findingId,
+        userId,
+        content: content.trim(),
+        mentions,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    // Create mention notifications
+    if (mentions.length > 0) {
+      const mentionedUsers = await prisma.user.findMany({
+        where: {
+          name: {
+            in: mentions,
+          },
+        },
+      });
+
+      for (const mentionedUser of mentionedUsers) {
+        await prisma.commentMention.create({
+          data: {
+            commentId: comment.id,
+            mentionedUserId: mentionedUser.id,
+          },
+        });
+      }
+    }
+
+    // Emit WebSocket event for real-time updates
+    socketService.emitCommentAdded(
+      findingId,
+      comment.id,
+      userId,
+      comment.user?.name || comment.user?.email || 'Unknown',
+      content,
+      mentions
+    );
+
+    res.status(201).json({
+      success: true,
+      data: {
+        id: comment.id,
+        findingId: comment.findingId,
+        userId: comment.userId,
+        userName: comment.user?.name || comment.user?.email,
+        content: comment.content,
+        mentions: comment.mentions,
+        createdAt: comment.createdAt,
+      },
+    });
+  } catch (error) {
+    logger.error('Error creating comment:', error);
+    res.status(500).json({ success: false, error: 'Error creating comment' });
+  }
+});
+
+/**
+ * DELETE /api/v1/findings/:findingId/comments/:commentId
+ * Delete a comment (only by author or admin)
+ */
+router.delete('/:findingId/comments/:commentId', async (req: Request, res: Response) => {
+  try {
+    const { findingId, commentId } = req.params;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const comment = await prisma.comment.findUnique({
+      where: { id: commentId },
+    });
+
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    if (comment.userId !== userId) {
+      return res.status(403).json({ error: 'Cannot delete other users comments' });
+    }
+
+    await prisma.comment.delete({
+      where: { id: commentId },
+    });
+
+    // Emit WebSocket event
+    socketService.emitCommentDeleted(findingId, commentId);
+
+    res.json({ success: true, message: 'Comment deleted successfully' });
+  } catch (error) {
+    logger.error('Error deleting comment:', error);
+    res.status(500).json({ success: false, error: 'Error deleting comment' });
+  }
+});
+
+/**
+ * ============================================================================
+ * SLA (SERVICE LEVEL AGREEMENT) ENDPOINTS - Track Resolution Targets
+ * ============================================================================
+ */
+
+/**
+ * GET /api/v1/findings/:findingId/sla
+ * Get SLA information for a finding
+ */
+router.get('/:findingId/sla', async (req: Request, res: Response) => {
+  try {
+    const { findingId } = req.params;
+
+    const finding = await prisma.finding.findUnique({
+      where: { id: findingId },
+      include: {
+        remediation: true,
+        statusHistory: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
+    });
+
+    if (!finding) {
+      return res.status(404).json({ error: 'Finding not found' });
+    }
+
+    // Calculate SLA metrics
+    const severity = finding.severity;
+    const slaHoursByType: Record<string, number> = {
+      CRITICAL: 4,   // 4 hours
+      HIGH: 24,      // 1 day
+      MEDIUM: 72,    // 3 days
+      LOW: 168,      // 7 days
+    };
+
+    const slaHours = slaHoursByType[severity] || 168;
+    const createdAt = finding.createdAt;
+    const targetDate = new Date(createdAt.getTime() + slaHours * 60 * 60 * 1000);
+    const now = new Date();
+    const isOverdue = now > targetDate;
+
+    let resolvedAt: Date | null = null;
+    if (finding.remediation?.verifiedAt) {
+      resolvedAt = finding.remediation.verifiedAt;
+    } else if (finding.statusHistory.length > 0 && finding.statusHistory[0].status === 'RESOLVED') {
+      resolvedAt = finding.statusHistory[0].createdAt;
+    }
+
+    const actualResolutionTime = resolvedAt ? resolvedAt.getTime() - createdAt.getTime() : null;
+    const timeToTargetMs = targetDate.getTime() - now.getTime();
+
+    res.json({
+      success: true,
+      data: {
+        findingId,
+        severity,
+        createdAt,
+        targetDate,
+        resolvedAt: resolvedAt || null,
+        slaHours,
+        isOverdue,
+        timeRemainingMs: Math.max(0, timeToTargetMs),
+        timeRemainingHours: Math.max(0, timeToTargetMs / (60 * 60 * 1000)),
+        actualResolutionTimeMs: actualResolutionTime,
+        actualResolutionTimeHours: actualResolutionTime ? actualResolutionTime / (60 * 60 * 1000) : null,
+        metSLA: resolvedAt ? resolvedAt <= targetDate : null,
+        status: finding.statusHistory[0]?.status || 'DETECTED',
+      },
+    });
+  } catch (error) {
+    logger.error('Error fetching SLA info:', error);
+    res.status(500).json({ success: false, error: 'Error fetching SLA information' });
+  }
+});
+
+/**
+ * PUT /api/v1/findings/:findingId/sla
+ * Update SLA target date for a finding (custom SLA)
+ */
+router.put('/:findingId/sla', async (req: Request, res: Response) => {
+  try {
+    const { findingId } = req.params;
+    const { targetDate } = req.body;
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    if (!targetDate) {
+      return res.status(400).json({ error: 'targetDate is required' });
+    }
+
+    const parsedDate = new Date(targetDate);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({ error: 'Invalid date format' });
+    }
+
+    // Store custom SLA in remediation action or finding metadata
+    // For now, we'll use FindingStatusChange with metadata
+    const finding = await prisma.finding.findUnique({
+      where: { id: findingId },
+      include: {
+        remediation: true,
+      },
+    });
+
+    if (!finding) {
+      return res.status(404).json({ error: 'Finding not found' });
+    }
+
+    // Log SLA update as status change
+    await prisma.findingStatusChange.create({
+      data: {
+        findingId,
+        status: finding.statusHistory?.[0]?.status || 'DETECTED',
+        changedBy: userId,
+        note: `SLA target updated to ${parsedDate.toISOString()}`,
+      },
+    });
+
+    // Emit event
+    socketService.emitFindingStatusChanged(
+      findingId,
+      finding.statusHistory?.[0]?.status || 'DETECTED',
+      userId
+    );
+
+    res.json({
+      success: true,
+      message: 'SLA target date updated',
+      targetDate: parsedDate,
+    });
+  } catch (error) {
+    logger.error('Error updating SLA:', error);
+    res.status(500).json({ success: false, error: 'Error updating SLA' });
+  }
+});
+
 export default router;
