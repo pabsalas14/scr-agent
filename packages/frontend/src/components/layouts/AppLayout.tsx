@@ -1,7 +1,7 @@
 import { useState, useEffect, Suspense, lazy } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
-import Sidebar from '../Sidebar';
+import NavigationSidebar from '../Navigation/NavigationSidebar';
 import SearchHeader from '../Search/SearchHeader';
 import ProtectedRoute from '../ProtectedRoute';
 import { useAuth } from '../../hooks/useAuth';
@@ -10,13 +10,71 @@ import LoadingBar from '../ui/LoadingBar';
 import { socketClientService } from '../../services/socket.service';
 import { SocketProvider } from '../../contexts/SocketContext';
 import { useToast } from '../../hooks/useToast';
+import type { TabId } from '../../types/navigation';
 
 
 
 export default function AppLayout() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, clearToken } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [socketConnected, setSocketConnected] = useState(false);
   const toast = useToast();
+
+  // Map route paths to TabIds
+  const getActiveTabFromPath = (pathname: string): TabId => {
+    // Check nested routes first (most specific)
+    if (pathname.includes('/incidents/findings')) return 'hallazgos';
+    if (pathname.includes('/analyses/comparison')) return 'comparacion';
+    if (pathname.includes('/analyses/historical')) return 'historico';
+    if (pathname.includes('/settings/integrations')) return 'integraciones';
+    if (pathname.includes('/settings/webhooks')) return 'webhooks';
+    if (pathname.includes('/settings/users')) return 'usuarios';
+    if (pathname.includes('/settings/preferences')) return 'preferencias';
+    if (pathname.includes('/settings/library')) return 'biblioteca';
+
+    // Then check parent routes
+    if (pathname.includes('/incidents')) return 'incidentes';
+    if (pathname.includes('/projects')) return 'proyectos';
+    if (pathname.includes('/analyses')) return 'reportes';
+    if (pathname.includes('/analytics')) return 'analytics';
+    if (pathname.includes('/alerts')) return 'alertas';
+    if (pathname.includes('/forensics')) return 'investigaciones';
+    if (pathname.includes('/agents')) return 'agentes';
+    if (pathname.includes('/system')) return 'sistema';
+    if (pathname.includes('/costs')) return 'costos';
+    return 'monitor-central';
+  };
+
+  const activeTab = getActiveTabFromPath(location.pathname);
+
+  const handleTabChange = (tabId: TabId) => {
+    // Map TabId to route path
+    const routeMap: Record<TabId, string> = {
+      'monitor-central': '/dashboard',
+      'proyectos': '/dashboard/projects',
+      'reportes': '/dashboard/analyses',
+      'comparacion': '/dashboard/analyses/comparison',
+      'historico': '/dashboard/analyses/historical',
+      'incidentes': '/dashboard/incidents',
+      'hallazgos': '/dashboard/incidents/findings',
+      'alertas': '/dashboard/alerts',
+      'investigaciones': '/dashboard/forensics',
+      'anomalias': '/dashboard/incidents',
+      'agentes': '/dashboard/agents',
+      'sistema': '/dashboard/system',
+      'costos': '/dashboard/costs',
+      'analytics': '/dashboard/analytics',
+      'integraciones': '/dashboard/settings/integrations',
+      'webhooks': '/dashboard/settings/webhooks',
+      'usuarios': '/dashboard/settings/users',
+      'preferencias': '/dashboard/settings/preferences',
+      'biblioteca': '/dashboard/settings/library',
+    };
+
+    const path = routeMap[tabId] || '/dashboard';
+    navigate(path);
+  };
 
   // Initialize Socket.io connection when authenticated (non-blocking, optional)
   useEffect(() => {
@@ -89,10 +147,18 @@ export default function AppLayout() {
         <LoadingBar />
         <div className="min-h-screen bg-[#111111] flex text-[#A0A0A0]">
           {/* Sidebar Navigation */}
-          <Sidebar />
+          <NavigationSidebar
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+            userName={user?.name || 'Usuario'}
+            onLogout={() => {
+              clearToken();
+              navigate('/login');
+            }}
+          />
 
-          {/* Main Content Area - Uses margin-left to account for fixed sidebar */}
-          <div className="flex-1 flex flex-col min-w-0 ml-20 lg:ml-64 transition-all duration-300">
+          {/* Main Content Area - Uses margin-left to account for fixed sidebar (w-64 = 256px) */}
+          <div className="flex-1 flex flex-col min-w-0 ml-64 transition-all duration-300">
             {/* Search Header */}
             <SearchHeader />
 

@@ -18,6 +18,16 @@ const SystemMonitor = lazy(() => import('../components/Monitoring/SystemMonitor'
 const CostsMonitor = lazy(() => import('../components/Monitoring/CostsMonitor'));
 const AlertsMonitor = lazy(() => import('../components/Monitoring/AlertsMonitor'));
 
+// Lazy load new pages for nested routes
+const AnalysisComparisonPage = lazy(() => import('../pages/AnalysisComparisonPage'));
+const AnalysisHistoricalPage = lazy(() => import('../pages/AnalysisHistoricalPage'));
+const FindingsPanelPage = lazy(() => import('../pages/FindingsPanelPage'));
+const IntegrationsPage = lazy(() => import('../pages/IntegrationsPage'));
+const WebhooksPage = lazy(() => import('../pages/WebhooksPage'));
+const UsersPage = lazy(() => import('../pages/UsersPage'));
+const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
+const LibraryPage = lazy(() => import('../pages/LibraryPage'));
+
 // Loading fallback
 const LoadingFallback = () => (
   <div className="flex flex-col items-center justify-center py-24 space-y-4 animate-in fade-in duration-500">
@@ -174,6 +184,92 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <SettingsModule />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+
+      // ANALYSIS GROUP - Nested routes
+      {
+        path: 'dashboard/analyses/comparison',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AnalysisComparisonPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/analyses/historical',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AnalysisHistoricalPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+
+      // INCIDENTS GROUP - Nested routes
+      {
+        path: 'dashboard/incidents/findings',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <FindingsPanelPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+
+      // SETTINGS GROUP - Nested routes
+      {
+        path: 'dashboard/settings/integrations',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <IntegrationsPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/webhooks',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <WebhooksPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/users',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <UsersPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/preferences',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <PreferencesPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/library',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <LibraryPage />
             </Suspense>
           </ErrorBoundary>
         ),

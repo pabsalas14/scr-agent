@@ -1,4 +1,5 @@
 import GlobalSearchBar from './GlobalSearchBar';
+import NotificationBell from '../Notifications/NotificationBell';
 import { motion } from 'framer-motion';
 
 export default function SearchHeader() {
@@ -14,6 +15,9 @@ export default function SearchHeader() {
           onSearch={(query) => console.log('Search:', query)}
           onSelectResult={(result) => console.log('Selected:', result)}
         />
+      </div>
+      <div className="ml-6">
+        <NotificationBell />
       </div>
     </motion.div>
   );
