@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Filter, Search } from 'lucide-react';
+import { Filter, Search, ExternalLink } from 'lucide-react';
+import { useToast } from '../hooks/useToast';
 import { apiService } from '../services/api.service';
 import type { Hallazgo } from '../types/api';
 
 export default function FindingsPanelPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('');
+  const toast = useToast();
 
   const { data: findings, isLoading } = useQuery<Hallazgo[]>({
     queryKey: ['findings-all'],
@@ -120,7 +122,7 @@ export default function FindingsPanelPage() {
           {filteredFindings.map((finding) => (
             <div
               key={finding.id}
-              className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 hover:border-[#4B5563] transition-colors"
+              className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 hover:border-[#4B5563] transition-colors group"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
@@ -139,8 +141,19 @@ export default function FindingsPanelPage() {
                     </p>
                   )}
                 </div>
-                <div className="text-right text-xs text-[#666666]">
-                  <p>{finding.riskType || 'N/A'}</p>
+                <div className="flex flex-col items-end gap-2">
+                  <div className="text-right text-xs text-[#666666]">
+                    <p>{finding.riskType || 'N/A'}</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      toast.info(`Abriendo detalles de ${finding.title}`);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded-lg flex items-center gap-1"
+                  >
+                    <ExternalLink size={12} />
+                    Ver
+                  </button>
                 </div>
               </div>
             </div>

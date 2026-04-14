@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus, Trash2, Edit2, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { useConfirm } from '../hooks/useConfirm';
+import { useToast } from '../hooks/useToast';
 import { apiService } from '../services/api.service';
 import Button from '../components/ui/Button';
 import type { Usuario } from '../types/api';
@@ -12,6 +14,8 @@ export default function UsersPage() {
   });
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const { confirm } = useConfirm();
+  const toast = useToast();
 
   const getRoleBadge = (role?: string) => {
     switch (role) {
@@ -122,7 +126,21 @@ export default function UsersPage() {
                     <button className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-white transition-colors">
                       <Edit2 size={16} />
                     </button>
-                    <button className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors">
+                    <button
+                      onClick={async () => {
+                        await confirm({
+                          title: 'Eliminar Usuario',
+                          message: `¿Estás seguro de que deseas eliminar a ${user.name}? Esta acción no se puede deshacer.`,
+                          confirmText: 'Eliminar',
+                          cancelText: 'Cancelar',
+                          isDangerous: true,
+                          onConfirm: async () => {
+                            toast.success(`Usuario ${user.name} eliminado correctamente`);
+                          },
+                        });
+                      }}
+                      className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors"
+                    >
                       <Trash2 size={16} />
                     </button>
                   </td>

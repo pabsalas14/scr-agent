@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Plus, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useConfirm } from '../hooks/useConfirm';
+import { useToast } from '../hooks/useToast';
 import Button from '../components/ui/Button';
 
 const SAMPLE_WEBHOOKS = [
@@ -13,8 +15,10 @@ const SAMPLE_WEBHOOKS = [
 ];
 
 export default function WebhooksPage() {
-  const [webhooks] = useState(SAMPLE_WEBHOOKS);
+  const [webhooks, setWebhooks] = useState(SAMPLE_WEBHOOKS);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const { confirm } = useConfirm();
+  const toast = useToast();
 
   return (
     <div className="space-y-6">
@@ -99,7 +103,22 @@ export default function WebhooksPage() {
                   Última entrega: {webhook.lastDelivery.toLocaleString('es-ES')}
                 </div>
               </div>
-              <button className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors">
+              <button
+                onClick={async () => {
+                  const confirmed = await confirm({
+                    title: 'Eliminar Webhook',
+                    message: `¿Estás seguro de que deseas eliminar este webhook? Esta acción no se puede deshacer.`,
+                    confirmText: 'Eliminar',
+                    cancelText: 'Cancelar',
+                    isDangerous: true,
+                    onConfirm: async () => {
+                      setWebhooks(webhooks.filter(w => w.id !== webhook.id));
+                      toast.success('Webhook eliminado correctamente');
+                    },
+                  });
+                }}
+                className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors"
+              >
                 <Trash2 size={18} />
               </button>
             </div>
