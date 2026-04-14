@@ -32,9 +32,9 @@ export function createLogger(): winston.Logger {
         format: winston.format.combine(
           winston.format.colorize(),
           winston.format.printf(({ timestamp, level, message, ...meta }) => {
-            return `${timestamp} [${level}]: ${message} ${
-              Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
-            }`;
+            const msg = typeof message === 'object' ? JSON.stringify(message, null, 2) : message;
+            const metaStr = Object.keys(meta).length ? JSON.stringify(meta, null, 2) : '';
+            return `${timestamp} [${level}]: ${msg || ''} ${metaStr}`;
           })
         ),
       }),

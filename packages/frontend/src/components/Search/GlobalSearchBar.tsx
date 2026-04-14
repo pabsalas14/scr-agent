@@ -113,15 +113,15 @@ export default function GlobalSearchBar({
   return (
     <div className="relative flex-1 max-w-2xl space-y-2">
       <div className="flex items-center gap-2">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B7280] pointer-events-none" />
+        <div className="relative flex-1 group">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#4B5563] group-focus-within:text-[#F97316] transition-colors pointer-events-none z-10" />
           <input
             type="text"
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             onFocus={() => setIsOpen(true)}
             placeholder={placeholder}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none transition-colors"
+            className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-[#1C1C1E] border border-[#2D2D2D] text-sm text-white placeholder-[#4B5563] focus:border-[#F97316]/50 focus:bg-[#242424] focus:outline-none transition-all shadow-lg"
           />
           {query && (
             <button

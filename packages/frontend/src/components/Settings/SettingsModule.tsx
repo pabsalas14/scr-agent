@@ -65,13 +65,15 @@ export default function SettingsModule() {
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
 
-  // BUG FIX #3: Local validation functions for tokens
+  // Local validation functions for tokens (flexible - backend validates actual format)
   const validateGithubToken = (token: string): boolean => {
-    return /^ghp_[A-Za-z0-9_]{36,255}$/.test(token);
+    // Accept any token with minimum length - backend will validate actual format
+    return token.length >= 10;
   };
 
   const validateClaudeToken = (token: string): boolean => {
-    return /^sk-ant-[A-Za-z0-9_\-]{20,}$/.test(token);
+    // Accept any token with minimum length - backend will validate actual format
+    return token.length >= 10;
   };
 
   const validateWebhookUrl = (url: string): boolean => {

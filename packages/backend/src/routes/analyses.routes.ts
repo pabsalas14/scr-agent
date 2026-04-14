@@ -30,7 +30,8 @@ router.get('/', async (req: Request, res: Response) => {
     const limit = Math.min(100, Math.max(1, parseInt(req.query['limit'] as string) || 20));
     const skip = (page - 1) * limit;
 
-    const where = userId ? { project: { userId } } : {};
+    // Show all analyses to all authenticated users (public data)
+    const where = {};
 
     const [analyses, total] = await Promise.all([
       prisma.analysis.findMany({

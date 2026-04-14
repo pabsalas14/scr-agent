@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { CheckCircle, AlertCircle, Clock, Zap, FileText, ArrowRight, Activity, ShieldAlert } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import type { Proyecto, Analisis } from '../../types/api';
@@ -20,6 +21,7 @@ const STATUS_CONFIG: Record<string, { label: string; icon: React.ElementType; co
 };
 
 export default function AnalysisMonitor() {
+  const navigate = useNavigate();
   const { data: analysesData, isLoading, refetch } = useQuery({
     queryKey: ['global-analyses'],
     queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
@@ -136,6 +138,7 @@ export default function AnalysisMonitor() {
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: idx * 0.04 }}
                 className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-3.5 flex items-center justify-between hover:border-[#404040] transition-colors cursor-pointer group"
+                onClick={() => navigate(`/projects/${analysis.projectId}/analyses/${analysis.id}`)}
               >
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg bg-[#22C55E]/10 flex items-center justify-center">

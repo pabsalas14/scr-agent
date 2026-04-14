@@ -35,8 +35,10 @@ async function main() {
       create: {
         email: 'admin@scr.com',
         name: 'Admin Usuario',
-        password: await bcrypt.hash('admin123', 10),
-        role: 'ADMIN',
+        passwordHash: await bcrypt.hash('admin123', 10),
+        roles: {
+          create: { role: 'ADMIN' }
+        }
       },
     }),
     prisma.user.upsert({
@@ -45,8 +47,10 @@ async function main() {
       create: {
         email: 'analyst@scr.com',
         name: 'Ana Lyst',
-        password: await bcrypt.hash('analyst123', 10),
-        role: 'ANALYST',
+        passwordHash: await bcrypt.hash('analyst123', 10),
+        roles: {
+          create: { role: 'ANALYST' }
+        }
       },
     }),
     prisma.user.upsert({
@@ -55,8 +59,10 @@ async function main() {
       create: {
         email: 'developer@scr.com',
         name: 'Dev Eloper',
-        password: await bcrypt.hash('dev123', 10),
-        role: 'DEVELOPER',
+        passwordHash: await bcrypt.hash('dev123', 10),
+        roles: {
+          create: { role: 'DEVELOPER' }
+        }
       },
     }),
     prisma.user.upsert({
@@ -65,8 +71,10 @@ async function main() {
       create: {
         email: 'viewer@scr.com',
         name: 'View Only',
-        password: await bcrypt.hash('viewer123', 10),
-        role: 'VIEWER',
+        passwordHash: await bcrypt.hash('viewer123', 10),
+        roles: {
+          create: { role: 'VIEWER' }
+        }
       },
     }),
     prisma.user.upsert({
@@ -75,8 +83,10 @@ async function main() {
       create: {
         email: 'reviewer@scr.com',
         name: 'Rev Iewer',
-        password: await bcrypt.hash('reviewer123', 10),
-        role: 'REVIEWER',
+        passwordHash: await bcrypt.hash('reviewer123', 10),
+        roles: {
+          create: { role: 'VIEWER' }
+        }
       },
     }),
   ]);
@@ -92,7 +102,7 @@ async function main() {
         id: 'proj-1',
         name: 'API Backend',
         description: 'API REST crítica de producción',
-        repoUrl: 'https://github.com/company/api-backend',
+        repositoryUrl: 'https://github.com/company/api-backend',
         userId: users[0].id,
       },
     }),
@@ -103,7 +113,7 @@ async function main() {
         id: 'proj-2',
         name: 'Frontend Dashboard',
         description: 'Dashboard React con TypeScript',
-        repoUrl: 'https://github.com/company/frontend-dashboard',
+        repositoryUrl: 'https://github.com/company/frontend-dashboard',
         userId: users[0].id,
       },
     }),
@@ -114,7 +124,7 @@ async function main() {
         id: 'proj-3',
         name: 'Mobile App',
         description: 'Aplicación móvil React Native',
-        repoUrl: 'https://github.com/company/mobile-app',
+        repositoryUrl: 'https://github.com/company/mobile-app',
         userId: users[0].id,
       },
     }),
@@ -125,7 +135,7 @@ async function main() {
         id: 'proj-4',
         name: 'DevOps Infrastructure',
         description: 'Infraestructura como código Terraform',
-        repoUrl: 'https://github.com/company/devops-infra',
+        repositoryUrl: 'https://github.com/company/devops-infra',
         userId: users[0].id,
       },
     }),
@@ -136,7 +146,7 @@ async function main() {
         id: 'proj-5',
         name: 'Security Utils',
         description: 'Librería de utilidades de seguridad',
-        repoUrl: 'https://github.com/company/security-utils',
+        repositoryUrl: 'https://github.com/company/security-utils',
         userId: users[0].id,
       },
     }),

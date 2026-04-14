@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Eye, Play, Settings as SettingsIcon, Server, Box, GitPullRequest, Laptop,
   Activity, AlertTriangle, CheckCircle2, Clock, GitBranch, ExternalLink,
+  ChevronDown, Zap, ShieldAlert, DollarSign, Loader2, Sparkles,
   type LucideIcon,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
@@ -33,18 +35,26 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string;
 };
 
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
-  const [detalleAbierto, setDetalleAbierto] = useState(false);
+   const [detalleAbierto, setDetalleAbierto] = useState(false);
+   const [mostrarMenuAnalisis, setMostrarMenuAnalisis] = useState(false);
 
-  const { data: analisisData } = useQuery({
-    queryKey: ['analyses', proyecto.id],
-    queryFn: () => apiService.obtenerAnalisisDeProyecto(proyecto.id),
-    refetchInterval: 5_000,
-  });
+   const { data: analisisData } = useQuery({
+     queryKey: ['analyses', proyecto.id],
+     queryFn: () => apiService.obtenerAnalisisDeProyecto(proyecto.id),
+     refetchInterval: 5_000,
+   });
 
-  const iniciar = useMutation({
-    mutationFn: () => apiService.iniciarAnalisis(proyecto.id),
-    onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
-  });
+   const { data: costEstimate, isLoading: loadingEstimate } = useQuery({
+     queryKey: ['project_estimate', proyecto.id],
+     queryFn: () => apiService.obtenerEstimadoCosto(proyecto.id),
+     enabled: mostrarMenuAnalisis, // Solo cargar cuando el menu se abre
+     staleTime: 5 * 60 * 1000,
+   });
+
+   const iniciar = useMutation({
+     mutationFn: (isIncremental: boolean = false) => apiService.iniciarAnalisis(proyecto.id, isIncremental),
+     onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
+   });
 
   const analisisList = analisisData || [];
   const ultimoAnalisis = analisisList[0];
@@ -114,22 +124,109 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => iniciar.mutate()}
-              disabled={enProceso || iniciar.isPending}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
-                enProceso || iniciar.isPending
-                  ? 'bg-[#242424] text-[#4B5563] cursor-not-allowed'
-                  : 'bg-[#F97316] text-white hover:bg-[#EA6D00] shadow-sm hover:shadow-[0_4px_12px_rgba(249,115,22,0.25)]'
-              }`}
-            >
-              {enProceso || iniciar.isPending
-                ? <Activity className="w-3.5 h-3.5 animate-spin" />
-                : <Play className="w-3.5 h-3.5" />
-              }
-              {enProceso || iniciar.isPending ? 'Analizando...' : 'Iniciar auditoría'}
-            </button>
+          <div className="flex items-center gap-2 relative">
+            <div className="flex-1 flex items-stretch">
+              <button
+                onClick={() => iniciar.mutate(false)} // Por defecto Completo si se da click al principal
+                disabled={enProceso || iniciar.isPending}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-l-lg text-sm font-medium transition-all ${
+                  enProceso || iniciar.isPending
+                    ? 'bg-[#242424] text-[#4B5563] cursor-not-allowed border-r border-[#2D2D2D]'
+                    : 'bg-[#F97316] text-white hover:bg-[#EA6D00] shadow-sm border-r border-[#EA6D00]'
+                }`}
+              >
+                {enProceso || iniciar.isPending ? (
+                  <Activity className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Play className="w-3.5 h-3.5" />
+                )}
+                {enProceso || iniciar.isPending ? 'Analizando...' : 'Auditoría'}
+              </button>
+              
+              <button
+                onClick={() => !enProceso && !iniciar.isPending && setMostrarMenuAnalisis(!mostrarMenuAnalisis)}
+                disabled={enProceso || iniciar.isPending}
+                className={`px-2 rounded-r-lg transition-all border-l border-white/10 ${
+                  enProceso || iniciar.isPending
+                    ? 'bg-[#242424] text-[#4B5563] cursor-not-allowed'
+                    : 'bg-[#F97316] text-white hover:bg-[#EA6D00]'
+                }`}
+              >
+                <ChevronDown className={`w-4 h-4 transition-transform ${mostrarMenuAnalisis ? 'rotate-180' : ''}`} />
+              </button>
+            </div>
+
+            {/* Dropdown Menu para Modo de Análisis */}
+            <AnimatePresence>
+              {mostrarMenuAnalisis && (
+                <>
+                  <div className="fixed inset-0 z-10" onClick={() => setMostrarMenuAnalisis(false)} />
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute bottom-full left-0 right-0 mb-2 p-1.5 bg-[#1C1C1E] border border-[#2D2D2D] rounded-xl shadow-2xl z-20 space-y-1"
+                  >
+                    <button
+                      onClick={() => {
+                        iniciar.mutate(false);
+                        setMostrarMenuAnalisis(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#242424] text-left group transition-colors"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500 group-hover:bg-blue-500 group-hover:text-white transition-all">
+                        <ShieldAlert className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">Auditoría Completa</p>
+                        <p className="text-[10px] text-[#6B7280]">Escaneo profundo de todo el código</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        iniciar.mutate(true);
+                        setMostrarMenuAnalisis(false);
+                      }}
+                      disabled={!ultimoAnalisis}
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left group transition-colors ${
+                        !ultimoAnalisis ? 'opacity-50 cursor-not-allowed' : 'hover:bg-[#242424]'
+                      }`}
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center text-orange-500 group-hover:bg-orange-500 group-hover:text-white transition-all">
+                        <Zap className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white">Auditoría Incremental</p>
+                        <p className="text-[10px] text-[#6B7280]">
+                          {ultimoAnalisis ? 'Analizar solo cambios recientes' : 'Requiere un análisis previo'}
+                        </p>
+                      </div>
+                    </button>
+                    <div className="px-3 py-2 border-t border-[#2D2D2D] mt-1 bg-[#242424]/50 rounded-b-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <DollarSign className="w-3 h-3 text-[#22C55E]" />
+                          <span className="text-[10px] font-bold text-[#A0A0A0] uppercase tracking-wider">Presupuesto Estimado</span>
+                        </div>
+                        {loadingEstimate ? (
+                          <Loader2 className="w-3 h-3 text-[#6B7280] animate-spin" />
+                        ) : (
+                          <span className="text-xs font-mono font-bold text-white">${costEstimate?.costUsd?.toFixed(2) || '0.00'} <span className="text-[9px] text-[#6B7280] font-normal">USD</span></span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[9px] text-[#6B7280]">Tokens: {costEstimate?.tokens?.toLocaleString() || '---'}</span>
+                        <div className="flex items-center gap-1">
+                           <Sparkles className="w-2.5 h-2.5 text-[#EAB308]" />
+                           <span className="text-[9px] text-[#22C55E] font-medium">Ahorra -80% con Incremental</span>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
 
             {ultimoAnalisis?.status === 'COMPLETED' && (
               <button
@@ -157,6 +254,7 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
         isOpen={detalleAbierto}
         onClose={() => setDetalleAbierto(false)}
         onProjectDeleted={() => setDetalleAbierto(false)}
+        onVerAnalisis={onVerAnalisis}
       />
     </>
   );

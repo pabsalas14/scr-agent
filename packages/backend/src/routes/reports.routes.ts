@@ -13,10 +13,9 @@ import { Router, type Router as ExpressRouter, Request, Response } from 'express
 import { logger } from '../services/logger.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
-  generateExecutiveReport,
-  generateTechnicalReport,
   generateRemediationReport,
   generateCSVReport,
+  generatePDFReport,
   getReportUrl,
 } from '../services/report-generator.service';
 
@@ -176,6 +175,36 @@ router.get('/:analysisId/export', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: 'Error exporting report',
+    });
+  }
+});
+
+/**
+ * GET /api/reports/:analysisId/pdf
+ * Descargar reporte en formato PDF profesional
+ */
+router.get('/:analysisId/pdf', async (req: Request, res: Response) => {
+  try {
+    const { analysisId } = req.params;
+    
+    logger.info(`Generando PDF para análisis ${analysisId}...`);
+    const pdfBuffer = await generatePDFReport(analysisId);
+
+    if (!pdfBuffer) {
+      return res.status(404).json({
+        success: false,
+        error: 'No se pudo generar el PDF. Asegúrese de que el análisis existe y ha terminado.',
+      });
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="SCR-Report-${analysisId.substring(0, 8)}.pdf"`);
+    res.send(pdfBuffer);
+  } catch (error) {
+    logger.error(`Error en descarga de PDF: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Error interno generando el reporte PDF',
     });
   }
 });

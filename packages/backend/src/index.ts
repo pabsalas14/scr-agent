@@ -17,6 +17,7 @@
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { createServer } from 'http';
@@ -94,6 +95,9 @@ app.use(limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// BUG FIX #12: Cookie Parser - Parse HttpOnly cookies for authentication
+app.use(cookieParser());
+
 /**
  * Middleware de Logging
  * Registra todas las solicitudes HTTP
@@ -105,9 +109,10 @@ app.use((req, res, next) => {
     const duration = Date.now() - start;
     logger.info({
       method: req.method,
-      path: req.path,
+      path: req.originalUrl,
       status: res.statusCode,
       duration: `${duration}ms`,
+      userId: (req as any).user?.id,
     });
   });
 

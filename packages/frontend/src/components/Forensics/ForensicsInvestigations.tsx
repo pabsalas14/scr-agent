@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,18 +26,32 @@ export default function ForensicsInvestigations() {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [tab, setTab] = useState<'timeline' | 'usuarios' | 'repos' | 'sospechosos'>('timeline');
 
-  // Mock data - en producción vendría del backend
-  const { data: allEventos = [] } = useQuery({
-    queryKey: ['forensics-all'],
-    queryFn: async () => {
-      try {
-        // Aquí iría la llamada real al backend
-        return [] as EventoForense[];
-      } catch {
-        return [];
-      }
-    },
+  // State for selected analysis in global view
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
+
+  // Fetch recent analyses to populate selector
+  const { data: analysesData } = useQuery({
+    queryKey: ['analyses-list-forensics'],
+    queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 20 }),
   });
+
+  const { data: allEventos = [], isLoading } = useQuery({
+    queryKey: ['forensics', selectedAnalysisId],
+    queryFn: async () => {
+      if (!selectedAnalysisId) return [] as EventoForense[];
+      return apiService.obtenerEventosForenses(selectedAnalysisId);
+    },
+    enabled: !!selectedAnalysisId,
+  });
+
+  const completedAnalyses = (analysesData?.data || []).filter((a: any) => a.status === 'COMPLETED');
+
+  // Set first analysis as default if none selected
+  useEffect(() => {
+    if (!selectedAnalysisId && completedAnalyses.length > 0) {
+      setSelectedAnalysisId(completedAnalyses[0].id);
+    }
+  }, [completedAnalyses, selectedAnalysisId]);
 
   // Filtrar eventos
   const filteredEventos = allEventos.filter((e) => {
@@ -61,9 +75,9 @@ export default function ForensicsInvestigations() {
     }
 
     if (filterRisk === 'alto') {
-      matches = matches && ['ALTO', 'CRÍTICO'].includes(e.riskLevel || '');
+      matches = matches && ['ALTO', 'CRÍTICO', 'HIGH', 'CRITICAL'].includes((e.riskLevel || '').toUpperCase());
     } else if (filterRisk === 'critico') {
-      matches = matches && e.riskLevel === 'CRITICAL';
+      matches = matches && ['CRÍTICO', 'CRITICAL'].includes((e.riskLevel || '').toUpperCase());
     }
 
     return matches;
@@ -96,16 +110,35 @@ export default function ForensicsInvestigations() {
     (e) => e.suspicionIndicators && e.suspicionIndicators.length > 0
   );
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold text-white mb-2">Investigaciones Forenses</h2>
-          <p className="text-sm text-[#6B7280]">
-            Analiza la línea de tiempo completa, investiga usuarios y repositorios
-          </p>
+   return (
+     <>
+     <div className="space-y-6">
+       {/* Header */}
+       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+         <div>
+           <h2 className="text-2xl font-bold text-white mb-2">Investigaciones Forenses</h2>
+           <p className="text-sm text-[#6B7280]">
+             Analiza la línea de tiempo completa, investiga usuarios y repositorios por análisis
+           </p>
+         </div>
+
+        <div className="flex items-center gap-3">
+          <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">Sessión:</span>
+          <select 
+            className="bg-[#1E1E20] border border-[#2D2D2D] text-white text-xs rounded-lg px-3 py-2 outline-none focus:border-[#F97316]/50 transition-all min-w-[220px]"
+            value={selectedAnalysisId || ''}
+            onChange={(e) => setSelectedAnalysisId(e.target.value)}
+          >
+            {completedAnalyses.length === 0 ? (
+              <option value="">Sin registros completados</option>
+            ) : completedAnalyses.map((a: any) => (
+              <option key={a.id} value={a.id}>
+                {a.projectName || 'Análisis'} - {new Date(a.createdAt).toLocaleDateString()}
+              </option>
+            ))}
+          </select>
         </div>
+      </div>
 
         {/* Search */}
         <div className="relative">
@@ -119,44 +152,43 @@ export default function ForensicsInvestigations() {
           />
         </div>
 
-        {/* Filters */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Usuario</label>
-            <input
-              type="text"
-              placeholder="Filtrar por usuario..."
-              value={filterUser}
-              onChange={(e) => setFilterUser(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Repositorio</label>
-            <input
-              type="text"
-              placeholder="Filtrar por repo..."
-              value={filterRepo}
-              onChange={(e) => setFilterRepo(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Riesgo</label>
-            <select
-              value={filterRisk}
-              onChange={(e) => setFilterRisk(e.target.value as any)}
-              className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white focus:border-[#F97316] focus:outline-none text-sm"
-            >
-              <option value="todos">Todos</option>
-              <option value="alto">Alto/Crítico</option>
-              <option value="critico">Crítico</option>
-            </select>
-          </div>
-        </div>
+       {/* Filters */}
+       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+         <div>
+           <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Usuario</label>
+           <input
+             type="text"
+             placeholder="Filtrar por usuario..."
+             value={filterUser}
+             onChange={(e) => setFilterUser(e.target.value)}
+             className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none text-sm"
+           />
+         </div>
+         <div>
+           <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Repositorio</label>
+           <input
+             type="text"
+             placeholder="Filtrar por repo..."
+             value={filterRepo}
+             onChange={(e) => setFilterRepo(e.target.value)}
+             className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white placeholder-[#6B7280] focus:border-[#F97316] focus:outline-none text-sm"
+           />
+         </div>
+         <div>
+           <label className="text-xs font-semibold text-[#6B7280] uppercase block mb-2">Riesgo</label>
+           <select
+             value={filterRisk}
+             onChange={(e) => setFilterRisk(e.target.value as any)}
+             className="w-full px-3 py-2 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-white focus:border-[#F97316] focus:outline-none text-sm"
+           >
+             <option value="todos">Todos</option>
+             <option value="alto">Alto/Crítico</option>
+             <option value="critico">Crítico</option>
+           </select>
+         </div>
+       </div>
       </div>
-
-      {/* Tabs */}
+    
       <div className="flex gap-1 border-b border-[#2D2D2D]">
         {[
           { id: 'timeline', label: '📅 Timeline', icon: Calendar },
@@ -188,10 +220,17 @@ export default function ForensicsInvestigations() {
         >
           {/* TIMELINE TAB */}
           {tab === 'timeline' && (
-            <div className="space-y-3 max-h-[600px] overflow-y-auto">
-              {filteredEventos.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-[#6B7280]">No hay eventos que mostrar</p>
+            <div className="space-y-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+              {isLoading ? (
+                <div className="py-20 flex flex-col items-center justify-center space-y-4">
+                  <div className="w-8 h-8 border-2 border-[#F97316]/20 border-t-[#F97316] rounded-full animate-spin" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-[#475569]">Rastreando vectores...</span>
+                </div>
+              ) : filteredEventos.length === 0 ? (
+                <div className="text-center py-20 border border-dashed border-[#2D2D2D] rounded-xl bg-[#1E1E20]/30 mr-6">
+                  <AlertTriangle className="w-8 h-8 text-[#2D2D2D] mx-auto mb-3" />
+                  <p className="text-white text-sm font-medium">No hay eventos técnicos en esta sesión</p>
+                  <p className="text-[#475569] text-xs">Selecciona un análisis diferente o ajusta los filtros de búsqueda.</p>
                 </div>
               ) : (
                 filteredEventos.map((evento, idx) => (
@@ -220,9 +259,11 @@ export default function ForensicsInvestigations() {
                           </span>
                         </div>
                       </div>
-                      {evento.suspicionIndicators && evento.suspicionIndicators.length > 0 && (
-                        <AlertTriangle className="w-5 h-5 text-[#EF4444] flex-shrink-0" />
-                      )}
+                      {(() => {
+                        const level = (evento.riskLevel || 'BAJO').toUpperCase();
+                        const isHigh = ['ALTO', 'CRÍTICO', 'HIGH', 'CRITICAL'].includes(level);
+                        return isHigh ? <AlertTriangle className="w-5 h-5 text-[#EF4444] flex-shrink-0" /> : null;
+                      })()}
                     </div>
                   </motion.div>
                 ))
@@ -387,8 +428,9 @@ export default function ForensicsInvestigations() {
               )}
             </div>
           )}
-        </motion.div>
-      </AnimatePresence>
-    </div>
-  );
+         </motion.div>
+       </AnimatePresence>
+     </div>
+     <>
+   );
 }

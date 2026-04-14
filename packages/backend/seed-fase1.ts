@@ -94,6 +94,7 @@ async function main() {
   console.log('\n🔍 Creando análisis y hallazgos...');
   let totalFindings = 0;
   const allFindings: any[] = [];
+  const allAnalyses: any[] = [];
   const criticalFindings: any[] = [];
 
   for (const project of projects) {
@@ -110,6 +111,7 @@ async function main() {
           completedAt,
         },
       });
+      allAnalyses.push(analysis);
 
       // 5-10 hallazgos por análisis
       const findingCount = Math.floor(Math.random() * 6) + 5;
@@ -182,6 +184,45 @@ async function main() {
     remediationCount++;
   }
   console.log(`✓ ${remediationCount} remediaciones creadas`);
+
+  // 6. CREAR EVENTOS FORENSES
+  console.log('\n🔍 Creando eventos forenses...');
+  let forensicCount = 0;
+  const commits = [
+    { hash: 'a1b2c3d4e5f6g7h8i9j0k1l2', author: 'dev1@company.com', message: 'Add authentication middleware' },
+    { hash: 'b2c3d4e5f6g7h8i9j0k1l2m3', author: 'dev2@company.com', message: 'Update database schema' },
+    { hash: 'c3d4e5f6g7h8i9j0k1l2m3n4', author: 'dev1@company.com', message: 'Fix security vulnerability in SQL' },
+    { hash: 'd4e5f6g7h8i9j0k1l2m3n4o5', author: 'dev3@company.com', message: 'Remove hardcoded credentials' },
+    { hash: 'e5f6g7h8i9j0k1l2m3n4o5p6', author: 'dev2@company.com', message: 'Add input validation' },
+  ];
+
+  for (const analysis of allAnalyses) {
+    const analysisDate = analysis.startedAt;
+
+    // 8 eventos por análisis
+    for (let i = 0; i < 8; i++) {
+      const commit = commits[i % commits.length];
+      const eventTime = new Date(analysisDate.getTime() + i * 300000); // 5 min apart
+
+      try {
+        await prisma.forensicEvent.create({
+          data: {
+            analysisId: analysis.id,
+            commitHash: commit.hash,
+            author: commit.author,
+            message: commit.message,
+            file: `src/${Math.random() > 0.5 ? 'api' : 'utils'}/file-${i}.ts`,
+            lineNumber: Math.floor(Math.random() * 500) + 1,
+            timestamp: eventTime,
+          },
+        });
+        forensicCount++;
+      } catch (e) {
+        // Ignore duplicates
+      }
+    }
+  }
+  console.log(`✓ ${forensicCount} eventos forenses creados`);
 
   console.log('\n' + '='.repeat(60));
   console.log('✅ FASE 1: DATOS REALISTAS CREADOS');

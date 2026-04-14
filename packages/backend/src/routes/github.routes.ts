@@ -46,50 +46,53 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
       return;
     }
 
-    const githubToken = await resolveGithubToken(userId, res);
-    if (!githubToken) return;
+      const githubToken = await resolveGithubToken(userId, res);
+      if (!githubToken) {
+        logger.warn(`No GitHub token found for user ${userId}`);
+        return;
+      }
 
-    const pageNum = Math.max(1, parseInt(page as string) || 1);
-    const perPageNum = Math.min(100, Math.max(1, parseInt(per_page as string) || 20));
+      const pageNum = Math.max(1, parseInt(page as string) || 1);
+      const perPageNum = Math.min(100, Math.max(1, parseInt(per_page as string) || 20));
 
-    /**
-     * Obtener repos de GitHub API
-     * 1. Repos del usuario
-     * 2. Repos de organizaciones donde es miembro
-     */
-    try {
-      // Obtener info del usuario
-      const userResp = await axios.get('https://api.github.com/user', {
+      try {
+      /**
+       * Obtener repos de GitHub API usando /user/repos
+       * NOTA: Usamos prefijo 'token' por retrocompatibilidad con tokens Classic
+       * aunque 'Bearer' es el estándar moderno.
+       */
+      const reposResp = await axios.get('https://api.github.com/user/repos', {
         headers: {
           Authorization: `token ${githubToken}`,
           Accept: 'application/vnd.github.v3+json',
         },
-        timeout: 10000,
-      });
-
-      const username = userResp.data.login;
-
-      // Construir query de búsqueda
-      // Busca en: nombre del repo, descripción, owner
-      const q = search ? `user:${username} ${search}` : `user:${username}`;
-
-      // Buscar repos
-      const searchResp = await axios.get('https://api.github.com/search/repositories', {
         params: {
-          q,
-          sort: 'stars',
-          order: 'desc',
-          per_page: perPageNum,
-          page: pageNum,
+          sort: 'updated',
+          direction: 'desc',
+          per_page: search ? 100 : perPageNum, // Pedir más si vamos a filtrar localmente
+          page: search ? 1 : pageNum,
+          affiliation: 'owner,collaborator,organization_member',
         },
-        headers: {
-          Authorization: `token ${githubToken}`,
-          Accept: 'application/vnd.github.v3+json',
-        },
-        timeout: 10000,
+        timeout: 15000,
       });
 
-      const repos = searchResp.data.items.map((repo: any) => ({
+      let reposData = reposResp.data;
+
+      // Filtrado local si hay búsqueda
+      if (search) {
+        const searchLower = (search as string).toLowerCase();
+        reposData = reposData.filter((repo: any) =>
+          repo.name.toLowerCase().includes(searchLower) ||
+          repo.full_name.toLowerCase().includes(searchLower) ||
+          (repo.description && repo.description.toLowerCase().includes(searchLower))
+        );
+
+        // Paginar resultados filtrados
+        const start = (pageNum - 1) * perPageNum;
+        reposData = reposData.slice(start, start + perPageNum);
+      }
+
+      const repos = reposData.map((repo: any) => ({
         id: repo.id,
         name: repo.name,
         fullName: repo.full_name,
@@ -105,17 +108,25 @@ router.get('/repos', authMiddleware, async (req: AuthenticatedRequest, res: Resp
         success: true,
         data: {
           repos,
-          total: searchResp.data.total_count,
+          total: search ? repos.length : repos.length, // /user/repos no siempre trae total count
           page: pageNum,
           per_page: perPageNum,
-          hasMore: repos.length === perPageNum,
+          hasMore: reposData.length === perPageNum,
         },
       });
     } catch (error: any) {
-      logger.error(`Error fetching repos from GitHub: ${error.message}`);
-      res.status(500).json({
+      const status = error.response?.status;
+      const errorData = error.response?.data;
+      logger.error(`Error fetching repos from GitHub:`, {
+        status,
+        message: error.message,
+        data: errorData,
+        userId
+      });
+
+      res.status(status || 500).json({
         error: 'Error obteniendo repos de GitHub',
-        message: error.response?.data?.message || error.message,
+        message: errorData?.message || error.message,
       });
     }
   } catch (error) {

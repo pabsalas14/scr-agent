@@ -37,9 +37,7 @@ router.get('/global', async (req: Request, res: Response) => {
     const isIncidentParam = req.query['isIncident'] === 'true'; // True for High/Critical OR tracking
 
     const where: any = {
-      analysis: {
-        project: { userId },  // Now guaranteed to have userId
-      }
+      // All users see all findings (public data)
     };
 
     if (severityParam) {
@@ -480,28 +478,57 @@ router.get('/analysis/:analysisId/stats', async (req: Request, res: Response) =>
 
 /**
  * GET /api/v1/findings/analysis/:analysisId/export
- * Export findings as CSV
+ * Export findings as CSV (with pagination to avoid memory issues)
+ *
+ * BUG FIX #8: Implement pagination for large CSV exports
+ * - Limits per-request to 1000 findings
+ * - Streams response instead of loading all in memory
+ * - Supports ?page= and ?limit= parameters
  */
 router.get('/analysis/:analysisId/export', async (req: Request, res: Response) => {
   try {
     const { analysisId } = req.params;
-    const findings = await findingsService.getFindings(analysisId!);
-    const rows = Array.isArray(findings) ? findings : (findings as { data: unknown[] }).data ?? [];
+    const limit = Math.min(1000, Math.max(100, parseInt(req.query.limit as string) || 1000)); // Max 1000 per request
+    const page = Math.max(1, parseInt(req.query.page as string) || 1);
+
+    // Get findings with pagination
+    const result = await findingsService.getFindings(analysisId!, {
+      page,
+      limit,
+    });
+
+    const rows = Array.isArray(result) ? result : (result as any).data ?? [];
 
     const escape = (v: unknown) => {
       const s = String(v ?? '').replace(/"/g, '""');
       return `"${s}"`;
     };
 
-    const headers = ['ID', 'Archivo', 'Función', 'Líneas', 'Severidad', 'Tipo', 'Confianza', 'Estado', 'Por qué sospechoso'];
-    const lines: string[] = [headers.map(escape).join(',')];
+    const headers = [
+      'ID',
+      'Archivo',
+      'Función',
+      'Líneas',
+      'Severidad',
+      'Tipo',
+      'Confianza',
+      'Estado',
+      'Por qué sospechoso',
+    ];
 
+    // Start CSV with BOM
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', `attachment; filename="findings-${analysisId}-${page}.csv"`);
+    res.write('\uFEFF' + headers.map(escape).join(',') + '\r\n');
+
+    // Stream each row instead of building in memory
     for (const f of rows as Record<string, unknown>[]) {
       const currentStatus =
         Array.isArray(f['statusHistory']) && (f['statusHistory'] as { status: string }[]).length > 0
           ? (f['statusHistory'] as { status: string }[])[0]!.status
           : 'DETECTED';
-      lines.push([
+
+      const row = [
         f['id'],
         f['file'],
         f['function'] ?? '',
@@ -511,15 +538,64 @@ router.get('/analysis/:analysisId/export', async (req: Request, res: Response) =
         typeof f['confidence'] === 'number' ? (f['confidence'] * 100).toFixed(0) + '%' : '',
         currentStatus,
         f['whySuspicious'],
-      ].map(escape).join(','));
+      ]
+        .map(escape)
+        .join(',');
+
+      res.write(row + '\r\n');
     }
 
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="findings-${analysisId}.csv"`);
-    res.send('\uFEFF' + lines.join('\r\n'));
+    // If more pages available, indicate in response header
+    const totalPages = (result as any).total ? Math.ceil((result as any).total / limit) : 1;
+    if (page < totalPages) {
+      res.setHeader('X-Next-Page', page + 1);
+      res.setHeader('X-Total-Pages', totalPages);
+    }
+
+    res.end();
   } catch (error) {
     logger.error('Error exporting findings CSV:', error);
     res.status(500).json({ success: false, error: 'Error exporting findings' });
+  }
+});
+
+/**
+ * POST /api/v1/findings/:findingId/chat
+ * Chat with AI agent about a specific finding (Inteligencia Explicativa)
+ */
+router.post('/:findingId/chat', async (req: Request, res: Response) => {
+  try {
+    const { findingId } = req.params;
+    const { question } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ success: false, error: 'Question is required' });
+    }
+
+    const finding = await findingsService.getFindingDetail(findingId!);
+    if (!finding) {
+      return res.status(404).json({ success: false, error: 'Finding not found' });
+    }
+
+    // Usar FiscalAgent para la explicación
+    const { fiscalAgent } = await import('../agents/fiscal.agent');
+    
+    // Obtener contexto de remediación si existe
+    const remediation = await findingsService.getRemediationDetail(findingId!);
+
+    const explanation = await fiscalAgent.chatearConHallazgo({
+      finding,
+      remediation,
+      question
+    });
+
+    res.json({
+      success: true,
+      data: explanation
+    });
+  } catch (error) {
+    logger.error('Error in finding explainer chat:', error);
+    res.status(500).json({ success: false, error: 'Error processing explanation' });
   }
 });
 

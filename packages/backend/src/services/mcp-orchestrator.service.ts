@@ -26,6 +26,7 @@ import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
 import { prisma } from './prisma.service';
 import { cancelAnalysis } from './analysis-queue';
+import { socketService } from './socket.service';
 import {
   ResultadoAnalisisCompleto,
   AnalisisCompleto,
@@ -60,9 +61,25 @@ export class MCPOrchestratorService {
 
     try {
       /**
-       * PASO 1: Validar repositorio
+       * PASO 1: Validar repositorio y Cargar configuración
        */
       logger.info(`Iniciando análisis: ${analisis.id}`);
+      
+      // Obtener proyecto y configuración de usuario para API Keys dinámicas
+      const project = await prisma.project.findUnique({
+        where: { id: analisis.proyecto_id },
+        include: { user: { include: { settings: true } } }
+      });
+
+      if (project?.user?.settings?.claudeApiKey) {
+        const userKey = project.user.settings.claudeApiKey;
+        inspectorAgent.updateConfig(userKey);
+        detectiveAgent.updateConfig(userKey);
+        fiscalAgent.updateConfig(userKey);
+        logger.info(`Usando API Key de usuario para análisis ${analisis.id}`);
+      }
+
+      socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'INICIANDO', 5, project?.userId || undefined);
       resultado.status = 'MALICIA_EJECUTANDO';
 
       if (!gitService.validateRepositoryUrl(analisis.url_repositorio)) {
@@ -73,9 +90,15 @@ export class MCPOrchestratorService {
        * PASO 2: Clonar/Pullear repositorio
        */
       logger.info('Obteniendo repositorio');
+      socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'CLONANDO', 15, project?.userId || undefined);
+      
+      // Usar token del proyecto o del usuario
+      const gitToken = project?.githubToken || project?.user?.settings?.githubToken || process.env['GITHUB_TOKEN'];
+      
       const localPath = await gitService.cloneOrPullRepository(
         analisis.url_repositorio,
-        process.env['GITHUB_TOKEN']
+        gitToken,
+        project?.branch || undefined
       );
 
       /**
@@ -83,16 +106,28 @@ export class MCPOrchestratorService {
        * Lee recursivamente los archivos de código del repositorio clonado
        */
       logger.info('Extrayendo código fuente');
-      const repoFiles = gitService.readRepositoryFiles(localPath);
+      socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'LEYENDO_ARCHIVOS', 30, project?.userId || undefined);
+      
+      // Usar límites del proyecto si existen
+      const repoFiles = gitService.readRepositoryFiles(localPath, undefined, {
+        maxFileSizeKb: project?.maxFileSizeKb,
+        maxTotalSizeMb: project?.maxTotalSizeMb,
+        maxDirectoryDepth: project?.maxDirectoryDepth
+      });
+
       const codigoFuente = repoFiles.files
         .map((f) => `// === ${f.path} ===\n${f.content}`)
         .join('\n\n');
       logger.info(`Archivos extraídos: ${repoFiles.fileCount}, tamaño: ${repoFiles.totalSize} bytes`);
+      
+      // Emitir reporte de cobertura (archivos excluidos)
+      socketService.emitCoverageReport(analisis.id, analisis.proyecto_id, repoFiles.coverage);
 
       /**
        * PASO 4: Ejecutar Agente Malicia
        */
       logger.info('Ejecutando Agente Inspector');
+      socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'INSPECTOR_EJECUTANDO', 40, project?.userId || undefined);
       resultado.status = 'MALICIA_EJECUTANDO';
 
       const maliciaInput: MaliciaInput = {
@@ -102,6 +137,8 @@ export class MCPOrchestratorService {
 
       const maliciaOutput = await inspectorAgent.analizarCodigo(maliciaInput);
       resultado.malicia_output = maliciaOutput;
+      
+      socketService.emitAnalysisFindingsDiscovered(analisis.id, analisis.proyecto_id, maliciaOutput.cantidad_hallazgos, project?.userId || '');
 
       auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
         analisis_id: analisis.id,
@@ -114,12 +151,13 @@ export class MCPOrchestratorService {
        */
       if (maliciaOutput.cantidad_hallazgos > 0) {
         logger.info('Ejecutando Agente Detective');
+        socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'DETECTIVE_EJECUTANDO', 65, project?.userId || undefined);
         resultado.status = 'FORENSES_EJECUTANDO';
 
         // Obtener historial de Git
         const historialGit = await gitService.getCommitHistory(
           analisis.url_repositorio,
-          50
+          project?.maxCommits || 50
         );
 
         const forensesInput: ForensesInput = {
@@ -142,11 +180,12 @@ export class MCPOrchestratorService {
        * PASO 6: Ejecutar Agente Síntesis
        */
       logger.info('Ejecutando Agente Fiscal');
+      socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'FISCAL_EJECUTANDO', 85, project?.userId || undefined);
       resultado.status = 'SINTESIS_EJECUTANDO';
 
       const sintesisInput: SintesisInput = {
         hallazgos_malicia: resultado.malicia_output?.hallazgos || [],
-        linea_tiempo_forenses: resultado.forenses_output?.linea_tiempo || [],
+        linea_timeline_forenses: resultado.forenses_output?.linea_tiempo || [], // Corregido nombre de campo segun tipos si fuera necesario
         contexto_repo: `Repositorio: ${analisis.url_repositorio}`,
       };
 
@@ -163,6 +202,8 @@ export class MCPOrchestratorService {
        */
       resultado.status = 'COMPLETADO';
       resultado.timestamp_fin = new Date().toISOString();
+      
+      socketService.emitAnalysisCompleted(analisis.id, analisis.proyecto_id, sintesisOutput, project?.userId || '');
 
       auditLog(AuditEventType.ANALYSIS_COMPLETED, 'Análisis completo completado', {
         analisis_id: analisis.id,
@@ -180,6 +221,8 @@ export class MCPOrchestratorService {
       resultado.status = 'ERROR';
       resultado.error = errorMsg;
       resultado.timestamp_fin = new Date().toISOString();
+      
+      socketService.emitAnalysisError(analisis.id, analisis.proyecto_id, errorMsg, project?.userId || '');
 
       auditLog(AuditEventType.ANALYSIS_FAILED, 'Análisis falló', {
         analisis_id: analisis.id,

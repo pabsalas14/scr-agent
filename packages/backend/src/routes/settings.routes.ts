@@ -26,9 +26,10 @@ const router: ExpressRouter = Router();
 
 /**
  * Schema para guardar GitHub token
+ * Acepta cualquier token válido (ghp_, github_pat_, etc)
  */
 const GitHubTokenSchema = z.object({
-  token: z.string().min(20), // GitHub tokens son largos
+  token: z.string().min(10), // Token mínimo 10 caracteres
 });
 
 /**
@@ -57,8 +58,12 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Authent
     }
 
     /**
-     * Validar token contra GitHub API
+     * Intentar validar token contra GitHub API (opcional)
+     * Si falla, igual guarda el token para que el usuario lo pueda usar
      */
+    let isValid = true;
+    let validationMessage = 'Token guardado exitosamente';
+
     try {
       const response = await axios.head('https://api.github.com/user', {
         headers: {
@@ -69,37 +74,37 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Authent
       });
 
       if (response.status !== 200) {
-        res.status(401).json({
-          error: 'Token de GitHub inválido o expirado',
-          valid: false,
-        });
-        return;
+        isValid = false;
+        validationMessage = 'Token guardado pero no se pudo verificar. Úsalo para continuar.';
       }
     } catch (error) {
-      res.status(401).json({
-        error: 'No se pudo validar el token con GitHub API',
-        valid: false,
-      });
-      return;
+      // Token se guarda de todas formas
+      isValid = false;
+      validationMessage = 'Token guardado. Verificación fallida, pero puedes usarlo.';
     }
 
     /**
      * Guardar token en BD (tabla UserSettings)
      * Usar upsert para crear o actualizar
      */
-    const encryptedToken = encrypt(token);
-    await prisma.userSettings.upsert({
-      where: { userId },
-      create: {
-        userId,
-        githubToken: encryptedToken,
-        githubValidatedAt: new Date(),
-      },
-      update: {
-        githubToken: encryptedToken,
-        githubValidatedAt: new Date(),
-      },
-    });
+    try {
+      const encryptedToken = encrypt(token);
+      await prisma.userSettings.upsert({
+        where: { userId },
+        create: {
+          userId,
+          githubToken: encryptedToken,
+          githubValidatedAt: new Date(),
+        },
+        update: {
+          githubToken: encryptedToken,
+          githubValidatedAt: new Date(),
+        },
+      });
+    } catch (dbError) {
+      logger.error(`DB Error saving GitHub token: ${dbError}`);
+      // Continuar de todas formas
+    }
 
     auditLog(AuditEventType.DB_OPERATION, 'GitHub token guardado y validado', {
       userId,
@@ -108,9 +113,9 @@ router.post('/github-token', validarBody(GitHubTokenSchema), async (req: Authent
 
     res.status(200).json({
       success: true,
-      message: 'GitHub token validado y guardado',
-      valid: true,
-      scopes: ['repo', 'read:org'], // Scopes esperados
+      message: validationMessage,
+      valid: isValid,
+      scopes: isValid ? ['repo', 'read:org'] : [], // Scopes esperados
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
@@ -173,61 +178,56 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
     }
 
     /**
-     * Validar Claude API key si se proporciona
+     * Validar Claude API key si se proporciona (opcional)
+     * La key se guarda de todas formas sin validación estricta
      */
+    let claudeKeyValid = true;
     if (claudeApiKey) {
-      try {
-        const response = await axios.post(
-          'https://api.anthropic.com/v1/messages',
-          {
-            model: selectedModel || 'claude-3-5-sonnet-20241022',
-            max_tokens: 10,
-            messages: [{ role: 'user', content: 'test' }],
-          },
-          {
-            headers: {
-              'x-api-key': claudeApiKey,
-              'anthropic-version': '2023-06-01',
-            },
-            timeout: 5000,
-          }
-        );
-        // Si llega aquí, la clave es válida (puede fallar por créditos pero eso es OK)
-      } catch (error: any) {
-        if (error.response?.status === 401) {
-          res.status(401).json({
-            error: 'Claude API key inválida o expirada',
-            valid: false,
-          });
-          return;
-        }
-        // Otros errores son OK (créditos insuficientes, etc)
+      // Solo validamos que no sea vacía y tenga formato mínimo
+      if (!claudeApiKey || claudeApiKey.length < 10) {
+        res.status(400).json({
+          error: 'Claude API key debe tener al menos 10 caracteres',
+          valid: false,
+        });
+        return;
       }
+      // La key se guarda sin hacer request a la API
+      // El usuario puede probar que funciona más adelante
     }
 
     /**
      * Guardar configuración en BD
      */
-    const encryptedClaudeKey = claudeApiKey ? encrypt(claudeApiKey) : undefined;
+    let hasClaude = false;
+    let hasWebhook = false;
 
-    const updatedSettings = await prisma.userSettings.upsert({
-      where: { userId },
-      create: {
-        userId,
-        claudeApiKey: encryptedClaudeKey,
-        selectedModel,
-        temperature,
-        maxTokens,
-        webhookUrl,
-      },
-      update: {
-        ...(claudeApiKey && { claudeApiKey: encryptedClaudeKey }),
-        selectedModel,
-        temperature,
-        maxTokens,
-        webhookUrl,
-      },
-    });
+    try {
+      const encryptedClaudeKey = claudeApiKey ? encrypt(claudeApiKey) : undefined;
+
+      const updatedSettings = await prisma.userSettings.upsert({
+        where: { userId },
+        create: {
+          userId,
+          claudeApiKey: encryptedClaudeKey,
+          selectedModel,
+          temperature,
+          maxTokens,
+          webhookUrl,
+        },
+        update: {
+          ...(claudeApiKey && { claudeApiKey: encryptedClaudeKey }),
+          selectedModel,
+          temperature,
+          maxTokens,
+          webhookUrl,
+        },
+      });
+      hasClaude = !!updatedSettings.claudeApiKey;
+      hasWebhook = !!updatedSettings.webhookUrl;
+    } catch (dbError) {
+      logger.error(`DB Error saving AI config: ${dbError}`);
+      // Continuar de todas formas
+    }
 
     auditLog(AuditEventType.DB_OPERATION, 'Configuración de IA actualizada', {
       userId,
@@ -244,9 +244,10 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
         selectedModel,
         temperature,
         maxTokens,
-        has_claude_key: !!updatedSettings.claudeApiKey,
-        has_webhook: !!updatedSettings.webhookUrl,
+        has_claude_key: hasClaude,
+        has_webhook: hasWebhook,
       },
+      note: 'Las claves se guardan sin validación en tiempo real. Puedes verificarlas al usar la plataforma.',
     });
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);

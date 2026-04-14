@@ -56,7 +56,11 @@ const redisConnection = parseRedisUrl(REDIS_URL);
  * Ejecuta Detective → Inspector → Fiscal secuencialmente
  */
 async function processAnalysisJob(job: Job) {
-  const { analysisId, projectId } = job.data as { analysisId: string; projectId: string };
+  const { analysisId, projectId, isIncremental: requestedIncremental } = job.data as { 
+    analysisId: string; 
+    projectId: string; 
+    isIncremental?: boolean 
+  };
 
   let ownerId = '';
 
@@ -106,15 +110,41 @@ async function processAnalysisJob(job: Job) {
       project.branch || undefined
     );
 
-    // Leer código fuente
+    // Leer código fuente (Híbrido: Incremental vs Completo)
     logger.info(`Leyendo código fuente...`);
-    const repoFiles = gitService.readRepositoryFiles(localPath, undefined, {
-      maxFileSizeKb: (project as any).maxFileSizeKb ?? 150,
-      maxTotalSizeMb: (project as any).maxTotalSizeMb ?? 2,
-      maxDirectoryDepth: (project as any).maxDirectoryDepth ?? 6,
-    });
+    
+    // Obtener última posición para posible incremental
+    const lastCommitSha = await getLastAnalysisPosition(projectId);
+    let repoFiles: any;
+    let isActuallyIncremental = false;
 
-    logger.info(`Analizando código (${repoFiles.fileCount} archivos, ${repoFiles.totalSize} bytes)...`);
+    if (requestedIncremental && lastCommitSha) {
+      logger.info(`📊 Ejecutando modo INCREMENTAL desde ${lastCommitSha.substring(0, 7)}`);
+      repoFiles = await gitService.readFilesChangedSince(localPath, lastCommitSha, 'HEAD', {
+        maxFileSizeKb: (project as any).maxFileSizeKb ?? 150,
+        maxTotalSizeMb: (project as any).maxTotalSizeMb ?? 2,
+      });
+      isActuallyIncremental = true;
+      
+      // Si no han habido cambios, podemos terminar temprano
+      if (repoFiles.files.length === 0 && repoFiles.deletedFiles.length === 0) {
+        logger.info(`✓ No se detectaron cambios desde el último análisis. Finalizando.`);
+        await prisma.analysis.update({
+          where: { id: analysisId },
+          data: { status: 'COMPLETED', progress: 100, completedAt: new Date(), errorMessage: 'Sin cambios detectados' },
+        });
+        return { success: true, analysisId, message: 'No changes' };
+      }
+    } else {
+      logger.info(`📊 Ejecutando modo COMPLETO del repositorio`);
+      repoFiles = gitService.readRepositoryFiles(localPath, undefined, {
+        maxFileSizeKb: (project as any).maxFileSizeKb ?? 150,
+        maxTotalSizeMb: (project as any).maxTotalSizeMb ?? 2,
+        maxDirectoryDepth: (project as any).maxDirectoryDepth ?? 6,
+      });
+    }
+
+    logger.info(`Analizando código (${repoFiles.fileCount} archivos activos, ${repoFiles.totalSize} bytes)...`);
 
     // Ejecutar Inspector Agent con timeout
     const maliciaOutput: any = await Promise.race([
@@ -212,17 +242,9 @@ async function processAnalysisJob(job: Job) {
 
     // Determinar si análisis debe ser incremental
     const isIncremental = await shouldBeIncremental(projectId);
-    const lastCommitSha = isIncremental ? await getLastAnalysisPosition(projectId) : undefined;
-
-    if (isIncremental && lastCommitSha) {
-      logger.info(`📊 Usando análisis incremental desde ${lastCommitSha.substring(0, 7)}`);
-    } else {
-      logger.info(`📊 Realizando análisis completo del repositorio`);
-    }
-
     const historialGit = await getNewCommits(
       project.repositoryUrl,
-      lastCommitSha,
+      lastCommitSha ?? undefined,
       (project as any).maxCommits ?? 50
     );
 

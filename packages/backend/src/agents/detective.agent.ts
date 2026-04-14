@@ -40,6 +40,17 @@ export class DetectiveAgentService {
   }
 
   /**
+   * Actualizar configuración dinámicamente
+   */
+  updateConfig(apiKey: string): void {
+    if (this.apiKey !== apiKey) {
+      this.apiKey = apiKey;
+      this.anthropic = null; // Forzar re-inicialización
+      logger.info('DetectiveAgent: API Key actualizada');
+    }
+  }
+
+  /**
    * Obtener cliente de Anthropic (lazy init)
    */
   private getAnthropicClient(): Anthropic {

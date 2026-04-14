@@ -20,6 +20,7 @@ interface ProjectDetailViewProps {
   isOpen: boolean;
   onClose: () => void;
   onProjectDeleted?: () => void;
+  onVerAnalisis?: (projectId: string, analysisId: string) => void;
 }
 
 const SCOPE_LABELS: Record<string, string> = {
@@ -262,8 +263,21 @@ export default function ProjectDetailView({
                           {new Date(analysis.createdAt).toLocaleString()}
                         </p>
                       </div>
-                      <div className="text-right">
-                        <span className="text-xs text-[#6B7280]">{analysis.progress || 0}%</span>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right mr-3">
+                          <span className="text-xs text-[#6B7280]">{analysis.progress || 0}%</span>
+                        </div>
+                        {analysis.status === 'COMPLETED' && (
+                          <button
+                            onClick={() => {
+                              onClose();
+                              onVerAnalisis?.(projectId, analysis.id);
+                            }}
+                            className="bg-[#F97316]/10 text-[#F97316] border border-[#F97316]/20 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-[#F97316] hover:text-white transition-all"
+                          >
+                            Ver Reporte
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))

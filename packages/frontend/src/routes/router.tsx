@@ -1,4 +1,4 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, useNavigate } from 'react-router-dom';
 import { Suspense, lazy } from 'react';
 import LoginPage from '../pages/LoginPage';
 import AppLayout from '../components/layouts/AppLayout';
@@ -16,6 +16,7 @@ const ForensicsInvestigations = lazy(() => import('../components/Forensics/Foren
 const AgentsMonitor = lazy(() => import('../components/Monitoring/AgentsMonitor'));
 const SystemMonitor = lazy(() => import('../components/Monitoring/SystemMonitor'));
 const CostsMonitor = lazy(() => import('../components/Monitoring/CostsMonitor'));
+const AlertsMonitor = lazy(() => import('../components/Monitoring/AlertsMonitor'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -25,11 +26,19 @@ const LoadingFallback = () => (
   </div>
 );
 
+// Helper wrapper to provide navigation to lazy-loaded Dashboard
+function DashboardWrapper() {
+  const navigate = useNavigate();
+  return (
+    <Dashboard 
+      onVerAnalisis={(projId, analId) => navigate(`/projects/${projId}/analyses/${analId}`)}
+      onCambiarTab={(tab) => navigate(`/dashboard/${tab}`)}
+      onVerLogs={() => navigate('/dashboard/system')}
+    />
+  );
+}
+
 export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Navigate to="/dashboard" replace />,
-  },
   {
     path: '/login',
     element: <LoginPage />,
@@ -38,10 +47,20 @@ export const router = createBrowserRouter([
     path: '/',
     element: <AppLayout />,
     children: [
-      // Default dashboard route
+      // Default redirect to projects when accessing /dashboard
+      {
+        path: '',
+        element: <Navigate to="/dashboard" replace />,
+      },
       {
         path: 'dashboard',
-        element: <Navigate to="/dashboard/projects" replace />,
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <DashboardWrapper />
+            </Suspense>
+          </ErrorBoundary>
+        ),
       },
 
       // Dashboard sections with proper routing
@@ -50,7 +69,7 @@ export const router = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <Dashboard onVerAnalisis={(projectId, analysisId) => undefined} onVerLogs={() => {}} onCambiarTab={() => {}} />
+              <ProjectsPage />
             </Suspense>
           </ErrorBoundary>
         ),
@@ -61,6 +80,16 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <IncidentMonitor />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/alerts',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AlertsMonitor />
             </Suspense>
           </ErrorBoundary>
         ),
@@ -126,17 +155,7 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Projects detail route
-      {
-        path: 'projects',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <ProjectsPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
+      // Projects detail route - removed, using dashboard/projects instead
       {
         path: 'projects/:projectId/analyses/:analysisId',
         element: (

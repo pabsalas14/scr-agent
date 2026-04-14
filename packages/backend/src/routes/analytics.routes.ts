@@ -45,25 +45,42 @@ router.get('/summary', async (req: AuthenticatedRequest, res: Response) => {
       });
     }
 
-    // Run both queries in parallel
+    // BUG FIX #3: Optimize queries to reduce N+1 and memory usage
+    // Select only necessary fields instead of loading entire objects
+    // NOTE: Removed userId filter - all authenticated users see all data
     const [findings, totalAnalyses] = await Promise.all([
       prisma.finding.findMany({
         where: {
           analysis: {
-            status: 'COMPLETED',
-            project: { userId }  // Filter by current user's projects
+            status: 'COMPLETED'
+            // All users see all findings (not filtered by userId)
           }
         },
-        include: {
-          analysis: true,
-          remediation: true,
-          statusHistory: { orderBy: { createdAt: 'desc' }, take: 1 },
+        select: {
+          id: true,
+          severity: true,
+          createdAt: true,
+          // Only select what we need from relations
+          analysis: {
+            select: {
+              id: true,
+              createdAt: true,
+              startedAt: true,
+              completedAt: true,
+            }
+          },
+          remediation: {
+            select: {
+              id: true,
+              status: true,
+            }
+          },
         },
       }),
       prisma.analysis.count({
         where: {
-          status: 'COMPLETED',
-          project: { userId }  // Filter by current user's projects
+          status: 'COMPLETED'
+          // All users see all analyses (public data)
         }
       }),
     ]);
@@ -74,6 +91,7 @@ router.get('/summary', async (req: AuthenticatedRequest, res: Response) => {
     let mediumFindings = 0;
     let lowFindings = 0;
     let totalResolutionTime = 0;
+    let findingsWithResolutionTime = 0; // BUG FIX #2: Count findings that have valid times
     let remediatedFindings = 0;
     let findingsWithRemediationEntry = 0;
 
@@ -101,15 +119,20 @@ router.get('/summary', async (req: AuthenticatedRequest, res: Response) => {
         }
       }
 
-      // Calculate resolution time
-      if (finding.analysis?.completedAt && finding.analysis?.createdAt) {
-        const time = new Date(finding.analysis.completedAt).getTime() - new Date(finding.analysis.createdAt).getTime();
-        totalResolutionTime += time;
+      // BUG FIX #2: Calculate resolution time only for findings with valid timestamps
+      if (finding.analysis?.completedAt && finding.analysis?.startedAt) {
+        const time = new Date(finding.analysis.completedAt).getTime() - new Date(finding.analysis.startedAt).getTime();
+        // Only count positive times (if startedAt is in the future, skip)
+        if (time > 0) {
+          totalResolutionTime += time;
+          findingsWithResolutionTime++;
+        }
       }
     }
 
+    // BUG FIX #2: Use findingsWithResolutionTime as denominator, not totalFindings
     const averageResolutionTime =
-      totalFindings > 0 ? totalResolutionTime / totalFindings : 0;
+      findingsWithResolutionTime > 0 ? totalResolutionTime / findingsWithResolutionTime : 0;
     // BUG FIX #1: Use findingsWithRemediationEntry as denominator, not totalFindings
     const remediationRate =
       findingsWithRemediationEntry > 0 ? remediatedFindings / findingsWithRemediationEntry : 0;
@@ -172,7 +195,7 @@ router.get('/timeline', async (req: AuthenticatedRequest, res: Response) => {
       where: {
         analysis: {
           status: 'COMPLETED',
-          project: { userId },  // Filter by current user's projects
+          // All users see all findings (public data)
           createdAt: {
             gte: startDate as unknown as Date
           }
@@ -256,8 +279,8 @@ router.get('/by-type', async (req: AuthenticatedRequest, res: Response) => {
     const findings = await prisma.finding.findMany({
       where: {
         analysis: {
-          status: 'COMPLETED',
-          project: { userId }  // Filter by current user's projects
+          status: 'COMPLETED'
+          // All users see all findings (public data)
         }
       },
       select: {

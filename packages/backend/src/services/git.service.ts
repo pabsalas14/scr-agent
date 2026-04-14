@@ -121,13 +121,13 @@ export class GitService {
         logger.info(`Clonando repositorio: ${repoUrl}${githubToken ? ' [con GitHub token]' : ''}`);
 
         try {
-          // Use simpleGit without options to clone
-          // BUGFIX: Only force branch if it's not the default 'main'.
-          // Many repos use 'master' as default — passing --branch main causes fatal error.
-          // Let git clone the repo's default branch automatically.
-          const cloneOptions = (branch && branch !== 'main') ? ['--branch', branch] : [];
+          // Use simpleGit with shallow clone for performance
+          const cloneOptions = ['--depth', '1'];
+          if (branch && branch !== 'main') {
+            cloneOptions.push('--branch', branch);
+          }
           await simpleGit().clone(urlToUse, localPath, cloneOptions);
-          logger.info(`✓ Repository cloned successfully`);
+          logger.info(`✓ Repository cloned successfully with depth 1`);
         } catch (cloneError: any) {
           const errorMsg = cloneError?.message || String(cloneError);
           logger.error(`Git clone failed: ${errorMsg}`);
@@ -152,7 +152,8 @@ export class GitService {
         if (githubToken) {
           await git.addConfig('user.token', githubToken, false, 'local');
         }
-        await git.pull();
+        // Pull shallow too
+        await git.pull('origin', branch || undefined, { '--depth': '1' });
         auditLog(AuditEventType.DB_OPERATION, `Repositorio actualizado`, {
           repoUrl,
           hasToken: !!githubToken,
@@ -444,6 +445,77 @@ export class GitService {
   }
 
   /**
+   * Leer solo los archivos que han cambiado entre dos puntos (Incremental).
+   * @param localPath - Path local del repo
+   * @param sinceSha - SHA desde el cual comparar (exclusivo)
+   * @param untilSha - SHA hasta el cual comparar (inclusivo, default HEAD)
+   */
+  async readFilesChangedSince(
+    localPath: string,
+    sinceSha: string,
+    untilSha: string = 'HEAD',
+    limits: { maxFileSizeKb?: number; maxTotalSizeMb?: number } = {}
+  ): Promise<{
+    files: Array<{ path: string; content: string; size: number }>;
+    totalSize: number;
+    fileCount: number;
+    deletedFiles: string[];
+  }> {
+    const git = simpleGit(localPath);
+    const MAX_FILE_SIZE = (limits.maxFileSizeKb ?? 150) * 1024;
+    const MAX_TOTAL_SIZE = (limits.maxTotalSizeMb ?? 2) * 1024 * 1024;
+
+    // Obtener lista de archivos cambiados (A, M, R)
+    // --name-status nos da: M path/to/file
+    const statusResult = await git.raw(['diff', '--name-status', `${sinceSha}..${untilSha}`]);
+    const lines = statusResult.split('\n').filter(l => l.trim());
+
+    const files: Array<{ path: string; content: string; size: number }> = [];
+    const deletedFiles: string[] = [];
+    let totalSize = 0;
+
+    for (const line of lines) {
+      if (totalSize >= MAX_TOTAL_SIZE) break;
+
+      const [status, filePath] = line.split(/\s+/);
+      if (!status || !filePath) continue;
+
+      if (status === 'D') {
+        deletedFiles.push(filePath);
+        continue;
+      }
+
+      // Filtrar por extensiones de código relevantes
+      const ext = path.extname(filePath).toLowerCase();
+      const codeExtensions = ['.ts', '.js', '.py', '.java', '.go', '.rb', '.php', '.cs', '.json', '.yaml', '.yml', '.sh', '.env'];
+      
+      if (!codeExtensions.includes(ext)) continue;
+
+      const fullPath = path.join(localPath, filePath);
+      if (!fs.existsSync(fullPath)) continue;
+
+      try {
+        const stat = fs.statSync(fullPath);
+        if (stat.size > MAX_FILE_SIZE) continue;
+        if (totalSize + stat.size > MAX_TOTAL_SIZE) break;
+
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        files.push({ path: filePath, content, size: stat.size });
+        totalSize += stat.size;
+      } catch {
+        // Ignorar si no se puede leer
+      }
+    }
+
+    return {
+      files,
+      totalSize,
+      fileCount: files.length,
+      deletedFiles,
+    };
+  }
+
+  /**
    * Validar que la URL es un repositorio válido (previene SSRF)
    */
   validateRepositoryUrl(url: string): boolean {
@@ -511,9 +583,8 @@ export class GitService {
             Accept: 'application/vnd.github.v3+json',
           };
 
-          // Agregar token si disponible
           if (githubToken) {
-            headers['Authorization'] = `token ${githubToken}`;
+            headers['Authorization'] = `Bearer ${githubToken}`;
           }
 
           const response = await axios.get(apiUrl, { headers, timeout: 5000 });

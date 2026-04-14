@@ -135,6 +135,58 @@ async function main() {
 
   console.log(`✅ Creados ${analyses.length} análisis\n`);
 
+  // 3.5 Crear reportes para cada análisis
+  console.log('📋 Creando reportes...');
+
+  for (const analysis of analyses) {
+    try {
+      await prisma.report.create({
+        data: {
+          analysisId: analysis.id,
+          executiveSummary: `Security analysis report for analysis ${analysis.id}. This report contains findings from comprehensive static code analysis.`,
+          riskScore: Math.floor(Math.random() * 80) + 20, // 20-100
+          findingsCount: 5, // Will be updated after findings are created
+          severityBreakdown: {
+            CRITICAL: 2,
+            HIGH: 2,
+            MEDIUM: 1,
+            LOW: 0
+          },
+          compromisedFunctions: ['authenticate()', 'validateInput()', 'processUserData()'],
+          affectedAuthors: ['developer1@company.com', 'developer2@company.com'],
+          remediationSteps: [
+            {
+              step: 1,
+              title: 'Apply Security Patches',
+              description: 'Update dependencies to patched versions',
+              priority: 'CRITICAL'
+            },
+            {
+              step: 2,
+              title: 'Code Review',
+              description: 'Perform comprehensive security code review',
+              priority: 'HIGH'
+            },
+            {
+              step: 3,
+              title: 'Testing',
+              description: 'Execute security testing suite',
+              priority: 'HIGH'
+            }
+          ],
+          generalRecommendation: 'Implement immediate security fixes for critical findings. Schedule follow-up analysis after remediation.',
+          inputTokens: Math.floor(Math.random() * 5000) + 1000,
+          outputTokens: Math.floor(Math.random() * 3000) + 500,
+          model: 'claude-3-5-sonnet'
+        }
+      });
+    } catch(e) {
+      console.log(`⚠️ Error creating report for analysis ${analysis.id}: ${e.message}`);
+    }
+  }
+
+  console.log(`✅ Creados ${analyses.length} reportes\n`);
+
   // 4. Crear findings (50 totales distribuidos)
   console.log('🔍 Creando hallazgos...');
 
@@ -238,6 +290,7 @@ async function main() {
   console.log('  👥 Usuarios: 3');
   console.log('  📁 Proyectos: 5');
   console.log('  📊 Análisis: 10');
+  console.log('  📋 Reportes: 10');
   console.log('  🔍 Hallazgos: 50 (24 CRITICAL, 15 HIGH, 8 MEDIUM, 3 LOW)');
   console.log('  🔧 Remediaciones: 8');
   console.log('  💬 Comentarios: 12');

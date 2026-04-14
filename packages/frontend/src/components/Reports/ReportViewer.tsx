@@ -67,22 +67,10 @@ export default function ReportViewer() {
   const toast = useToast();
   const [seccionActiva, setSeccionActiva] = useState<SeccionConfig['id']>('resumen');
 
-  if (!analysisId) {
-    return (
-      <div className="min-h-screen bg-[#111111] flex items-center justify-center p-6">
-        <div className="bg-[#1E1E20] border border-[#EF4444]/30 p-8 rounded-xl text-center space-y-4">
-          <ShieldAlert className="w-10 h-10 text-[#EF4444] mx-auto opacity-60" />
-          <h2 className="text-white text-lg font-semibold">ID de análisis inválido</h2>
-          <p className="text-[#6B7280] text-sm">El identificador de análisis no es válido o ha expirado.</p>
-          <Button onClick={() => navigate('/dashboard')} variant="secondary" className="mt-2">Regresar</Button>
-        </div>
-      </div>
-    );
-  }
-
   const { data: reporte } = useQuery<Reporte, Error>({
     queryKey: ['report', analysisId],
-    queryFn: () => apiService.obtenerReporte(analysisId),
+    queryFn: () => apiService.obtenerReporte(analysisId!),
+    enabled: !!analysisId,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -99,7 +87,8 @@ export default function ReportViewer() {
 
   const { data: hallazgos, isLoading: isLoadingHallazgos } = useQuery<Hallazgo[], Error>({
     queryKey: ['findings', analysisId],
-    queryFn: () => apiService.obtenerHallazgos(analysisId),
+    queryFn: () => apiService.obtenerHallazgos(analysisId!),
+    enabled: !!analysisId,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
@@ -107,11 +96,25 @@ export default function ReportViewer() {
 
   const { data: eventosForenses } = useQuery<EventoForense[], Error>({
     queryKey: ['forensics', analysisId],
-    queryFn: () => apiService.obtenerEventosForenses(analysisId),
+    queryFn: () => apiService.obtenerEventosForenses(analysisId!),
+    enabled: !!analysisId,
     staleTime: 0,
     refetchOnMount: true,
     refetchOnWindowFocus: true,
   });
+
+  if (!analysisId) {
+    return (
+      <div className="min-h-screen bg-[#111111] flex items-center justify-center p-6">
+        <div className="bg-[#1E1E20] border border-[#EF4444]/30 p-8 rounded-xl text-center space-y-4">
+          <ShieldAlert className="w-10 h-10 text-[#EF4444] mx-auto opacity-60" />
+          <h2 className="text-white text-lg font-semibold">ID de análisis inválido</h2>
+          <p className="text-[#6B7280] text-sm">El identificador de análisis no es válido o ha expirado.</p>
+          <Button onClick={() => navigate('/dashboard')} variant="secondary" className="mt-2">Regresar</Button>
+        </div>
+      </div>
+    );
+  }
 
   const eventosTimeline: EventoTimeline[] = (eventosForenses || []).map((e) => ({
     id: e.id,
@@ -128,12 +131,19 @@ export default function ReportViewer() {
     hallazgo_id: e.findingId,
   }));
 
-  const descargarPDF = () => {
-    if (!proyecto || !reporte || !hallazgos || !analysisId) {
-      toast.warning('Datos incompletos para exportar');
-      return;
+  const [descargandoPDF, setDescargandoPDF] = useState(false);
+  const descargarPDF = async () => {
+    if (!analysisId) return;
+    setDescargandoPDF(true);
+    try {
+      await apiService.descargarReportePDF(analysisId, proyecto?.name);
+      toast.success('Reporte PDF descargado correctamente');
+    } catch (err) {
+      console.error('Error descargando PDF:', err);
+      toast.error('Error al generar el PDF profesional');
+    } finally {
+      setDescargandoPDF(false);
     }
-    exportToPdf({ proyecto, reporte, hallazgos, analisisId: analysisId });
   };
 
   const [exportingCSV, setExportingCSV] = useState(false);
@@ -213,11 +223,11 @@ export default function ReportViewer() {
           </button>
           <button
             onClick={descargarPDF}
-            disabled={isExporting}
+            disabled={descargandoPDF}
             className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-[#1E1E20] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/40 hover:text-[#F97316] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isExporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            {isExporting ? 'Generando...' : 'PDF'}
+            {descargandoPDF ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+            {descargandoPDF ? 'Generando...' : 'PDF'}
           </button>
         </div>
       </div>

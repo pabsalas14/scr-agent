@@ -21,14 +21,14 @@ let analysisWorker: any = null;
 /**
  * Encola un análisis para procesamiento via Bull
  */
-export async function enqueueAnalysis(analysisId: string, projectId: string) {
+export async function enqueueAnalysis(analysisId: string, projectId: string, isIncremental: boolean = false) {
   try {
     const queue = getAnalysisQueue();
 
     // Crear job en Bull queue
     const job = await queue.add(
       'analyze',
-      { analysisId, projectId },
+      { analysisId, projectId, isIncremental },
       {
         attempts: 3, // Reintentos automáticos
         backoff: {
@@ -40,7 +40,7 @@ export async function enqueueAnalysis(analysisId: string, projectId: string) {
       }
     );
 
-    logger.info(`📥 Análisis ${analysisId} encolado (Job ID: ${job.id})`);
+    logger.info(`📥 Análisis ${analysisId} encolado (Modo: ${isIncremental ? 'Incremental' : 'Completo'}, Job ID: ${job.id})`);
 
     // Registrar job en BD
     await prisma.analysisJob.upsert({

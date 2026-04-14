@@ -43,6 +43,17 @@ export class FiscalAgentService {
   }
 
   /**
+   * Actualizar configuración dinámicamente
+   */
+  updateConfig(apiKey: string): void {
+    if (this.apiKey !== apiKey) {
+      this.apiKey = apiKey;
+      this.anthropic = null; // Forzar re-inicialización
+      logger.info('FiscalAgent: API Key actualizada');
+    }
+  }
+
+  /**
    * Obtener cliente de Anthropic (lazy init)
    */
   private getAnthropicClient(): Anthropic {
@@ -280,6 +291,74 @@ ${input.contexto_repo ? `\n## Contexto del Repositorio\n${input.contexto_repo}` 
         puntuacion_riesgo: 0,
         recomendacion_general: 'Ver logs para detalles del error',
       };
+    }
+  }
+
+  /**
+   * Chat explicativo sobre un hallazgo específico (Inteligencia Explicativa)
+   */
+  async chatearConHallazgo(params: {
+    finding: any;
+    remediation?: any;
+    question: string;
+  }): Promise<{ answer: string; usage: any }> {
+    try {
+      const { finding, remediation, question } = params;
+
+      const prompt = `
+# INTELIGENCIA EXPLICATIVA - SCR AGENT
+Actúa como un experto sénior en ciberseguridad y auditoría de código. Tu objetivo es explicar de forma pedagógica y técnica un hallazgo detectado por SCR Agent.
+
+## Hallazgo Detectado
+- **Tipo**: ${finding.riskType}
+- **Archivo**: ${finding.file}
+- **Severidad**: ${finding.severity}
+- **Descripción Inicial**: ${finding.whySuspicious}
+- **Código Relacionado**:
+\`\`\`
+${finding.codeSnippet || 'No disponible'}
+\`\`\`
+
+${remediation ? `
+## Remediación Sugerida
+- **Notas**: ${remediation.correctionNotes || 'No disponible'}
+` : ''}
+
+## Pregunta del Usuario
+"${question}"
+
+## Instrucciones para tu respuesta:
+1. Sé técnico pero claro.
+2. Explica el **vector de ataque** específico en este contexto de código.
+3. Si el usuario pregunta por qué se identifica así, menciona los patrones de SCR (intención, ofuscación, lógica inusual).
+4. Proporciona ejemplos si es necesario para ilustrar el riesgo.
+5. Usa un tono profesional y directo.
+
+Responde directamente a la pregunta. No incluyas JSON, solo texto plano o markdown.
+`;
+
+      const response = await this.getAnthropicClient().messages.create({
+        model: this.model,
+        max_tokens: 2048,
+        messages: [{ role: 'user', content: prompt }],
+      });
+
+      const answer = response.content
+        .filter((block: any) => block.type === 'text')
+        .map((block: any) => block.text)
+        .join('\n')
+        .trim();
+
+      const usage = {
+        input_tokens: response.usage.input_tokens,
+        output_tokens: response.usage.output_tokens,
+        model: response.model,
+      };
+
+      return { answer, usage };
+    } catch (error) {
+      logger.error(`Error en chat de hallazgo: ${error}`);
+      throw error;
     }
   }
 

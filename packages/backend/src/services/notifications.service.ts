@@ -88,6 +88,126 @@ export class NotificationsService {
     return notification;
   }
 
+  /**
+   * Crear alertas por hallazgos críticos
+   */
+  async notifyAboutCriticalFinding(
+    findingId: string,
+    adminIds: string[]
+  ): Promise<Notification[]> {
+    try {
+      const finding = await prisma.finding.findUnique({
+        where: { id: findingId },
+        include: {
+          analysis: { select: { project: { select: { name: true } } } },
+        },
+      });
+
+      if (!finding) return [];
+
+      const notifications = await Promise.all(
+        adminIds.map((userId) =>
+          prisma.notification.create({
+            data: {
+              userId,
+              type: NotificationType.SYSTEM,
+              title: '🚨 Hallazgo Crítico Detectado',
+              message: `${finding.riskType} en ${finding.analysis?.project?.name} - Archivo: ${finding.file}`,
+              severity: NotificationSeverity.ERROR,
+              findingId,
+              metadata: { 
+                subType: 'CRITICAL_FINDING',
+                severity: finding.severity,
+                riskType: finding.riskType,
+                file: finding.file 
+              },
+              read: false,
+            },
+          })
+        )
+      );
+      return notifications;
+    } catch (error) {
+      logger.error(`Error notificando hallazgo crítico: ${error}`);
+      return [];
+    }
+  }
+
+  /**
+   * Crear alertas por amenaza APT
+   */
+  async notifyAboutAPTThreat(
+    userId: string,
+    threatLevel: string,
+    threatType: string,
+    adminIds: string[]
+  ): Promise<Notification[]> {
+    try {
+      const notifications = await Promise.all(
+        adminIds.map((adminId) =>
+          prisma.notification.create({
+            data: {
+              userId: adminId,
+              type: NotificationType.SYSTEM,
+              title: '⚠️ Amenaza APT Detectada',
+              message: `Amenaza ${threatType} (${threatLevel}) detectada para el usuario ${userId}`,
+              severity: threatLevel === 'CRITICAL' ? NotificationSeverity.ERROR : NotificationSeverity.WARNING,
+              metadata: { subType: 'APT_DETECTED', threatType, threatLevel, targetUserId: userId },
+              read: false,
+            },
+          })
+        )
+      );
+      return notifications;
+    } catch (error) {
+      logger.error(`Error notificando amenaza APT: ${error}`);
+      return [];
+    }
+  }
+
+  /**
+   * Crear alerta por análisis completado
+   */
+  async notifyAnalysisComplete(
+    analysisId: string,
+    projectName: string,
+    findingsCount: number
+  ): Promise<Notification[]> {
+    try {
+      // Obtener todos los admins/analistas
+      const analysts = await prisma.user.findMany({
+        where: {
+          roles: {
+            some: {
+              role: { in: ['ADMIN', 'ANALYST'] },
+            },
+          },
+        },
+        select: { id: true },
+      });
+
+      const notifications = await Promise.all(
+        analysts.map((a) =>
+          prisma.notification.create({
+            data: {
+              userId: a.id,
+              type: NotificationType.SYSTEM,
+              title: '✅ Análisis Completado',
+              message: `El análisis de ${projectName} finalizó con ${findingsCount} hallazgos`,
+              severity: findingsCount > 0 ? NotificationSeverity.WARNING : NotificationSeverity.INFO,
+              metadata: { subType: 'ANALYSIS_COMPLETE', analysisId, projectName, findingsCount },
+              read: false,
+            },
+          })
+        )
+      );
+      return notifications;
+    } catch (error) {
+      logger.error(`Error notificando análisis completado: ${error}`);
+      return [];
+    }
+  }
+
   async getUserNotifications(userId: string, limit = 20): Promise<Notification[]> {
     return prisma.notification.findMany({
       where: { userId },

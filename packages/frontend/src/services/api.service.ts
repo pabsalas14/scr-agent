@@ -52,18 +52,22 @@ class ApiService {
      * Interceptor de request
      * Agrega token JWT si existe
      *
-     * BUG FIX #12: Token security improvement
-     * Changed from localStorage to sessionStorage:
-     * - sessionStorage is cleared when browser closes (less persistent)
-     * - Still not ideal, long-term solution is HttpOnly cookies
-     * TODO: Migrate to HttpOnly cookies + CSRF tokens in future
+     * BUG FIX #12: Token security improvement with HttpOnly cookies
+     * - Token is sent as HttpOnly cookie from backend (automatically by browser)
+     * - As fallback, also tries localStorage for backward compatibility
+     * - Frontend no longer stores token in localStorage when using cookies
      */
     this.client.interceptors.request.use(
       (config) => {
+        // With HttpOnly cookies, the browser automatically sends the token
+        // No need to manually add it to headers
+        // BUT we still support localStorage as fallback for backward compatibility
         const token = localStorage.getItem('auth_token');
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
         }
+        // Ensure credentials (cookies) are sent with requests
+        config.withCredentials = true;
         return config;
       },
       (error) => Promise.reject(error)
@@ -138,9 +142,10 @@ class ApiService {
   /**
    * Iniciar análisis de seguridad
    */
-  async iniciarAnalisis(projectId: string): Promise<Analisis> {
+  async iniciarAnalisis(projectId: string, isIncremental: boolean = false): Promise<Analisis> {
     const { data } = await this.client.post<ApiResponse<Analisis>>(
-      `/projects/${projectId}/analyses`
+      `/projects/${projectId}/analyses`,
+      { isIncremental }
     );
     return data.data;
   }
@@ -511,6 +516,25 @@ class ApiService {
   }
 
   /**
+   * Descargar reporte profesional en PDF (vía Backend)
+   */
+  async descargarReportePDF(analysisId: string, projectName: string = 'Report'): Promise<void> {
+    const response = await this.client.get(
+      `/reports/${analysisId}/pdf`,
+      { responseType: 'blob' }
+    );
+    
+    const url = URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SCR-Report-${projectName.replace(/\s+/g, '-')}-${new Date().getTime()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
    * Exportar hallazgos como CSV (descarga directa)
    */
   async exportarHallazgosCSV(analysisId: string): Promise<void> {
@@ -576,6 +600,27 @@ class ApiService {
     return data;
   }
 
+  /**
+   * Chatear con la IA sobre un hallazgo específico
+   */
+  async chatearConHallazgo(findingId: string, question: string): Promise<string> {
+    const { data } = await this.client.post<ApiResponse<string>>(
+      `/findings/${findingId}/chat`,
+      { question }
+    );
+    return data.data;
+  }
+
+  /**
+   * Obtener estimado de tokens y costo para un proyecto
+   */
+  async obtenerEstimadoCosto(projectId: string): Promise<{ tokens: number; costUsd: number; fileCount: number }> {
+    const { data } = await this.client.get<ApiResponse<{ tokens: number; costUsd: number; fileCount: number }>>(
+      `/projects/${projectId}/estimate`
+    );
+    return data.data;
+  }
+
   // ==================== EQUIPO ====================
 
   async listarUsuarios(): Promise<any[]> {
@@ -585,6 +630,34 @@ class ApiService {
 
   async cambiarRolUsuario(userId: string, role: string): Promise<void> {
     await this.client.patch(`/users/${userId}/role`, { role });
+  }
+
+  // ==================== AUDIT ====================
+  /**
+   * Obtener logs de auditoría del usuario
+   */
+  async obtenerAuditLogs(params?: { 
+    limit?: number; 
+    offset?: number; 
+    action?: string; 
+    resourceType?: string 
+  }): Promise<PaginatedResponse<any>> {
+    const { data } = await this.client.get<any>('/audit', { params });
+    return {
+      data: data.data || [],
+      total: data.total ?? 0,
+      page: Math.floor((data.offset || 0) / (data.limit || 50)) + 1,
+      limit: data.limit ?? 50,
+      hasMore: data.hasMore ?? false,
+    };
+  }
+
+  /**
+   * Obtener resumen de actividad (solo admin)
+   */
+  async obtenerAuditSummary(days: number = 7): Promise<any> {
+    const { data } = await this.client.get<ApiResponse<any>>('/audit/summary', { params: { days } });
+    return data.data;
   }
 
   // ==================== HEALTH ====================

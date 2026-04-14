@@ -69,6 +69,9 @@ export default function FindingDetailModal({
     finding.assignment?.assignedTo || null
   );
   const [copiedCode, setCopiedCode] = useState(false);
+  const [localAssignment, setLocalAssignment] = useState<string | null>(
+    finding.assignment?.assignedTo || null
+  );
   const toast = useToast();
   const { user: currentUser } = useAuth();
   const { confirm } = useConfirm();
@@ -131,6 +134,7 @@ export default function FindingDetailModal({
       cancelText: 'Cancelar',
       isDangerous: selectedStatus === 'FALSE_POSITIVE' || selectedStatus === 'CLOSED',
       onConfirm: async () => {
+        const previousStatus = currentStatus;
         await statusUpdateOperation.execute(async () => {
           await findingsService.updateFindingStatus(
             finding.id,
@@ -138,6 +142,30 @@ export default function FindingDetailModal({
             statusNote
           );
         });
+
+        // After successful status change, show undo action
+        setTimeout(() => {
+          toast.successWithAction(
+            `Estado cambió a ${STATUS_COLORS[selectedStatus].label}`,
+            {
+              label: 'Deshacer',
+              onClick: async () => {
+                try {
+                  await findingsService.updateFindingStatus(
+                    finding.id,
+                    previousStatus,
+                    `Deshacer cambio a ${STATUS_COLORS[selectedStatus].label}`
+                  );
+                  onStatusChange();
+                  toast.success(`Estado revertido a ${STATUS_COLORS[previousStatus].label}`);
+                } catch (error) {
+                  toast.error('Error al deshacer el cambio');
+                }
+              },
+            },
+            6000
+          );
+        }, 100);
       },
     });
   };
@@ -154,8 +182,21 @@ export default function FindingDetailModal({
       confirmText: 'Asignar',
       cancelText: 'Cancelar',
       onConfirm: async () => {
+        // Store the assignment before executing API call
+        const previousAssignment = localAssignment;
+
         await assignOperation.execute(async () => {
-          await findingsService.assignFinding(finding.id, selectedAnalyst);
+          try {
+            await findingsService.assignFinding(finding.id, selectedAnalyst);
+            // Persist the assignment locally immediately after successful API call
+            setLocalAssignment(selectedAnalyst);
+            toast.success(`Hallazgo asignado a ${selectedAnalystName}`);
+          } catch (error) {
+            // Revert to previous assignment on error
+            setLocalAssignment(previousAssignment);
+            toast.error('Error al asignar el hallazgo');
+            throw error;
+          }
         });
       },
     });
@@ -364,27 +405,30 @@ export default function FindingDetailModal({
         {/* Assignment */}
         <ExpandableSection title="Asignación" icon={User} id="assignment">
           <div className="space-y-3">
-            <select
-              value={selectedAnalyst || ''}
-              onChange={(e) => setSelectedAnalyst(e.target.value || null)}
-              disabled={isViewer}
-              className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <option value="">Sin asignar</option>
-              {analysts.map((analyst) => (
-                <option key={analyst.id} value={analyst.id}>
-                  {analyst.name || analyst.email}
-                </option>
-              ))}
-            </select>
+            <div>
+              <p className="text-xs font-medium text-gray-400 mb-2">Asignado actualmente: {localAssignment ? analysts.find(a => a.id === localAssignment)?.name || localAssignment : 'Sin asignar'}</p>
+              <select
+                value={selectedAnalyst || ''}
+                onChange={(e) => setSelectedAnalyst(e.target.value || null)}
+                disabled={isViewer}
+                className="w-full px-3 py-2 bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg text-sm text-white focus:outline-none focus:border-[#F97316]/50 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <option value="">Sin asignar</option>
+                {analysts.map((analyst) => (
+                  <option key={analyst.id} value={analyst.id}>
+                    {analyst.name || analyst.email}
+                  </option>
+                ))}
+              </select>
+            </div>
             <Button
               onClick={handleAssign}
-              disabled={assignOperation.isLoading || !selectedAnalyst || isViewer}
+              disabled={assignOperation.isLoading || !selectedAnalyst || isViewer || selectedAnalyst === localAssignment}
               isLoading={assignOperation.isLoading}
               className="w-full"
-              title={isViewer ? 'Solo lectura — rol VIEWER' : undefined}
+              title={isViewer ? 'Solo lectura — rol VIEWER' : (selectedAnalyst === localAssignment ? 'Ya asignado a este usuario' : undefined)}
             >
-              Asignar
+              {assignOperation.isLoading ? 'Asignando...' : 'Asignar'}
             </Button>
           </div>
         </ExpandableSection>

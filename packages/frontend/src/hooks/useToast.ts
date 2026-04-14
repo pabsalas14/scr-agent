@@ -2,11 +2,17 @@ import { create } from 'zustand';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
+export interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 export interface Toast {
   id: string;
   type: ToastType;
   message: string;
   duration?: number;
+  action?: ToastAction;
 }
 
 interface ToastStore {
@@ -24,12 +30,15 @@ const useToastStore = create<ToastStore>((set) => ({
       toasts: [...state.toasts, { ...toast, id }],
     }));
 
+    // If action exists, don't auto-dismiss (or extend duration)
+    const duration = toast.action ? (toast.duration || 6000) : (toast.duration || 3000);
+
     if (toast.duration !== 0) {
       setTimeout(() => {
         set((state) => ({
           toasts: state.toasts.filter((t) => t.id !== id),
         }));
-      }, toast.duration || 3000);
+      }, duration);
     }
   },
   removeToast: (id) => {
@@ -43,7 +52,7 @@ const useToastStore = create<ToastStore>((set) => ({
 }));
 
 export function useToast() {
-  const { addToast } = useToastStore();
+  const { addToast, removeToast } = useToastStore();
 
   return {
     success: (message: string, duration?: number) => {
@@ -57,6 +66,12 @@ export function useToast() {
     },
     info: (message: string, duration?: number) => {
       addToast({ type: 'info', message, duration });
+    },
+    successWithAction: (message: string, action: ToastAction, duration?: number) => {
+      addToast({ type: 'success', message, action, duration });
+    },
+    errorWithAction: (message: string, action: ToastAction, duration?: number) => {
+      addToast({ type: 'error', message, action, duration });
     },
   };
 }

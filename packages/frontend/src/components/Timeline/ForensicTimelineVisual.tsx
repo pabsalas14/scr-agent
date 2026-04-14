@@ -22,13 +22,12 @@ export default function ForensicTimelineVisual({ eventos }: ForensicTimelineVisu
   }, [eventos, filterRisk]);
 
   const getRiskColor = (nivel: string) => {
-    switch (nivel) {
-      case 'CRÍTICO': return { bg: 'bg-[#EF4444]', text: 'text-[#EF4444]', border: 'border-[#EF4444]' };
-      case 'ALTO': return { bg: 'bg-[#F97316]', text: 'text-[#F97316]', border: 'border-[#F97316]' };
-      case 'MEDIO': return { bg: 'bg-[#EAB308]', text: 'text-[#EAB308]', border: 'border-[#EAB308]' };
-      case 'BAJO': return { bg: 'bg-[#22C55E]', text: 'text-[#22C55E]', border: 'border-[#22C55E]' };
-      default: return { bg: 'bg-[#6B7280]', text: 'text-[#6B7280]', border: 'border-[#6B7280]' };
-    }
+    const n = (nivel || '').toUpperCase();
+    if (n === 'CRÍTICO' || n === 'CRITICAL') return { bg: 'bg-[#EF4444]', text: 'text-[#EF4444]', border: 'border-[#EF4444]' };
+    if (n === 'ALTO' || n === 'HIGH') return { bg: 'bg-[#F97316]', text: 'text-[#F97316]', border: 'border-[#F97316]' };
+    if (n === 'MEDIO' || n === 'MEDIUM') return { bg: 'bg-[#EAB308]', text: 'text-[#EAB308]', border: 'border-[#EAB308]' };
+    if (n === 'BAJO' || n === 'LOW') return { bg: 'bg-[#22C55E]', text: 'text-[#22C55E]', border: 'border-[#22C55E]' };
+    return { bg: 'bg-[#6B7280]', text: 'text-[#6B7280]', border: 'border-[#6B7280]' };
   };
 
   const getActionIcon = (accion: string) => {

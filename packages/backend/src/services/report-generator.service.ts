@@ -11,6 +11,15 @@
 
 import { logger } from './logger.service';
 import { prisma } from './prisma.service';
+import { jsPDF } from 'jspdf';
+import 'jspdf-autotable';
+
+// Requerido para que TypeScript reconozca autotable en jsPDF
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 export interface ReportData {
   type: 'executive' | 'technical' | 'remediation';
@@ -250,6 +259,136 @@ export async function generateRemediationReport(analysisId: string) {
     };
   } catch (error) {
     logger.error(`Error generating remediation report: ${error}`);
+    return null;
+  }
+}
+
+/**
+ * Generar reporte PDF profesional
+ */
+export async function generatePDFReport(analysisId: string): Promise<Buffer | null> {
+  try {
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: {
+        project: true,
+        findings: {
+          orderBy: { severity: 'desc' }
+        },
+        report: true
+      }
+    });
+
+    if (!analysis) return null;
+
+    const doc = new jsPDF();
+    const findings = analysis.findings;
+    const project = analysis.project;
+
+    // --- Header Estilizado ---
+    doc.setFillColor(30, 30, 32); // Fondo oscuro #1E1E20
+    doc.rect(0, 0, 210, 40, 'F');
+    
+    doc.setTextColor(249, 115, 22); // Color Naranja #F97316
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SCR-AGENT', 20, 25);
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('SECURITY ANALYSIS REPORT', 20, 32);
+    doc.text(new Date().toLocaleDateString(), 170, 32);
+
+    // --- Información General ---
+    doc.setTextColor(0, 0, 0);
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen Ejecutivo', 20, 60);
+
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const introText = [
+      `Proyecto: ${project.name}`,
+      `Repositorio: ${project.repositoryUrl}`,
+      `Fecha de Análisis: ${analysis.createdAt.toLocaleString()}`,
+      `Estado: ${analysis.status}`,
+      `ID Análisis: ${analysis.id.substring(0, 12)}...`
+    ];
+    doc.text(introText, 20, 75);
+
+    // --- Score de Riesgo ---
+    const riskScore = analysis.report?.riskScore ?? 0;
+    const scoreColor = riskScore > 70 ? [239, 68, 68] : riskScore > 40 ? [249, 115, 22] : [34, 197, 94];
+    
+    doc.setDrawColor(200, 200, 200);
+    doc.rect(140, 55, 50, 40);
+    doc.setFontSize(10);
+    doc.text('Risk Score', 155, 65);
+    doc.setFontSize(24);
+    doc.setTextColor(scoreColor[0]!, scoreColor[1]!, scoreColor[2]!);
+    doc.text(`${riskScore}/100`, 150, 85);
+    doc.setTextColor(0, 0, 0);
+
+    // --- Resumen de Severidad ---
+    const counts = {
+      CRITICAL: findings.filter(f => f.severity === 'CRITICAL').length,
+      HIGH: findings.filter(f => f.severity === 'HIGH').length,
+      MEDIUM: findings.filter(f => f.severity === 'MEDIUM').length,
+      LOW: findings.filter(f => f.severity === 'LOW').length,
+    };
+
+    doc.autoTable({
+      startY: 110,
+      head: [['Severidad', 'Cantidad']],
+      body: [
+        ['CRITICAL', counts.CRITICAL],
+        ['HIGH', counts.HIGH],
+        ['MEDIUM', counts.MEDIUM],
+        ['LOW', counts.LOW],
+      ],
+      headStyles: { fillColor: [249, 115, 22] },
+      margin: { left: 20, right: 20 },
+    });
+
+    // --- Tabla de Hallazgos ---
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Hallazgos', 20, (doc as any).lastAutoTable.finalY + 20);
+
+    const findingsBody = findings.map(f => [
+      f.severity,
+      f.riskType,
+      f.file.split('/').pop() || f.file,
+      f.whySuspicious.substring(0, 100) + (f.whySuspicious.length > 100 ? '...' : '')
+    ]);
+
+    doc.autoTable({
+      startY: (doc as any).lastAutoTable.finalY + 30,
+      head: [['Severidad', 'Tipo', 'Archivo', 'Descripción']],
+      body: findingsBody,
+      headStyles: { fillColor: [40, 40, 40] },
+      columnStyles: {
+        0: { cellWidth: 25 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 'auto' }
+      },
+      margin: { left: 20, right: 20 },
+    });
+
+    // --- Pie de página ---
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Generado por SCR-Agent - Página ${i} de ${pageCount}`, 105, 285, { align: 'center' });
+    }
+
+    return Buffer.from(doc.output('arraybuffer'));
+  } catch (error) {
+    logger.error(`Error generating PDF: ${error}`);
     return null;
   }
 }

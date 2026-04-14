@@ -15,6 +15,9 @@ import { apiService } from '../../services/api.service';
 import { useNavigate } from 'react-router-dom';
 import KPICard from './KPICard';
 import type { Proyecto, Analisis } from '../../types/api';
+import { useEffect } from 'react';
+import { socketClientService } from '../../services/socket.service';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DashboardProps {
   onVerAnalisis: (projectId: string, analysisId: string) => void;
@@ -27,32 +30,59 @@ const ACTIVE_STATUSES = ['PENDING', 'RUNNING', 'INSPECTOR_RUNNING', 'DETECTIVE_R
 export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: DashboardProps) {
   const navigate = useNavigate();
 
+  const queryClient = useQueryClient();
+
   const { data: analyticsData, isLoading: isLoadingAnalytics } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: () => apiService.obtenerAnalyticsSummary(),
-    refetchInterval: 15_000,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchInterval: 30_000, // Aumentado polling ya que sockets avisarán
+    staleTime: 5000,
   });
 
   const { data: proyectosData, isLoading: isLoadingProyectos } = useQuery({
     queryKey: ['projects'],
     queryFn: () => apiService.obtenerProyectos(),
-    refetchInterval: 10_000,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchInterval: 60_000, // Aumentado polling drásticamente
+    staleTime: 5000,
   });
 
   const { data: alertsData, isLoading: isLoadingAlerts } = useQuery({
     queryKey: ['recent-alerts'],
     queryFn: () => apiService.obtenerHallazgosGlobales({ limit: 5, isIncident: true }),
-    refetchInterval: 15_000,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchInterval: 30_000,
+    staleTime: 5000,
   });
+
+  // Suscriptores de Sockets para interactividad real
+  useEffect(() => {
+    // Escuchar cambios de estado de análisis
+    socketClientService.onAnalysisStatusChanged(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+    });
+
+    // Escuchar nuevos hallazgos
+    socketClientService.onFindingsDiscovered(() => {
+      queryClient.invalidateQueries({ queryKey: ['recent-alerts'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+    });
+
+    // Escuchar finalización
+    socketClientService.onAnalysisCompleted(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-alerts'] });
+    });
+
+    // Escuchar errores
+    socketClientService.onAnalysisError(() => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+    });
+
+    return () => {
+      // socketClientService limpia listeners en su propio disconnect o podemos agregar off aquí
+    };
+  }, [queryClient]);
 
   const proyectos: Proyecto[] = proyectosData?.data || [];
   const scansActivos = proyectos.filter((p) =>

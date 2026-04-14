@@ -1,7 +1,7 @@
-import { useState, type ComponentType } from 'react';
+import React, { useState, useEffect, type ComponentType } from 'react';
 import { useForm } from 'react-hook-form';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronRight, ChevronLeft, Zap, GitBranch, Building2, X, Shield, Terminal, Settings2 } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Zap, GitBranch, Building2, X, Shield, Terminal, Settings2, CheckCircle2, Loader } from 'lucide-react';
 import type { CrearProyectoDTO } from '../../types/api';
 import Button from '../ui/Button';
 import RepositorySelector from '../GitHub/RepositorySelector';
@@ -35,6 +35,19 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
   const [repoValidationError, setRepoValidationError] = useState<string>('');
   const [isRepoValid, setIsRepoValid] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(1);
+
+  // Simulate loading progress
+  useEffect(() => {
+    if (!cargando) {
+      setLoadingStep(1);
+      return;
+    }
+    const interval = setInterval(() => {
+      setLoadingStep((prev) => (prev < 3 ? prev + 1 : prev));
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [cargando]);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<CrearProyectoDTO>({
     defaultValues: { scope: 'REPOSITORY' },
@@ -109,7 +122,59 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
           {/* Modal Body */}
           <div className="p-6 flex flex-col min-h-[380px]">
             <AnimatePresence mode="wait">
-              {step === 1 && (
+              {cargando && (
+                <motion.div key="loading" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} className="space-y-6">
+                  <div className="flex flex-col items-center space-y-3 text-center pt-4">
+                    <div className="w-14 h-14 rounded-full bg-[#F97316]/10 flex items-center justify-center border border-[#F97316]/20">
+                      <Zap className="w-7 h-7 text-[#F97316] animate-pulse" />
+                    </div>
+                    <div>
+                      <h2 className="text-base font-semibold text-white">Creando auditoría...</h2>
+                      <p className="text-sm text-[#6B7280] mt-1">Esto puede tomar unos momentos</p>
+                    </div>
+                  </div>
+
+                  {/* Progress Steps */}
+                  <div className="space-y-3">
+                    {[
+                      { num: 1, label: 'Creando proyecto', desc: 'Registrando en base de datos' },
+                      { num: 2, label: 'Iniciando análisis', desc: 'Configurando escaneo' },
+                      { num: 3, label: 'Analizando código', desc: 'Procesando archivos' },
+                    ].map(({ num, label, desc }) => (
+                      <div key={num} className="flex items-start gap-3">
+                        <div className="flex-shrink-0 pt-1">
+                          {loadingStep > num ? (
+                            <CheckCircle2 className="w-5 h-5 text-[#22C55E]" />
+                          ) : loadingStep === num ? (
+                            <Loader className="w-5 h-5 text-[#F97316] animate-spin" />
+                          ) : (
+                            <div className="w-5 h-5 rounded-full border-2 border-[#2D2D2D]" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${loadingStep >= num ? 'text-white' : 'text-[#6B7280]'}`}>{label}</p>
+                          <p className="text-xs text-[#4B5563]">{desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <div className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-full h-2 overflow-hidden">
+                      <motion.div
+                        initial={{ width: '0%' }}
+                        animate={{ width: `${(loadingStep / 3) * 100}%` }}
+                        transition={{ duration: 0.5 }}
+                        className="h-full bg-gradient-to-r from-[#F97316] to-[#FB923C] rounded-full"
+                      />
+                    </div>
+                    <p className="text-xs text-center text-[#6B7280]">{Math.round((loadingStep / 3) * 100)}% completado</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {!cargando && step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="space-y-4">
                   <div>
                     <h2 className="text-base font-semibold text-white">Selecciona el tipo de análisis</h2>
@@ -142,7 +207,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
                 </motion.div>
               )}
 
-              {step === 2 && (
+              {!cargando && step === 2 && (
                 <motion.div key="step2" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="space-y-4">
                   <div>
                     <h2 className="text-base font-semibold text-white">Nombre del proyecto</h2>
@@ -161,7 +226,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
                 </motion.div>
               )}
 
-              {step === 3 && (
+              {!cargando && step === 3 && (
                 <motion.div key="step3" initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -12 }} className="space-y-4">
                   <div>
                     <h2 className="text-base font-semibold text-white">Enlace de repositorio</h2>
@@ -199,7 +264,7 @@ export default function NuevoProyectoModerno({ onCrear, onCerrar, cargando, erro
                 </motion.div>
               )}
 
-              {step === 4 && (
+              {!cargando && step === 4 && (
                 <motion.div key="step4" initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} className="space-y-5">
                   <div className="flex flex-col items-center space-y-3 text-center pt-4">
                     <div className="w-14 h-14 rounded-full bg-[#F97316]/10 flex items-center justify-center border border-[#F97316]/20">

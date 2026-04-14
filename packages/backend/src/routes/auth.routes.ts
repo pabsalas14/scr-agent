@@ -78,7 +78,21 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
     const token = generateToken(user.id, user.email);
     logger.info({ message: 'Usuario registrado', userId: user.id });
 
-    res.status(201).json({ token, user });
+    // BUG FIX #12: Send token as HttpOnly cookie for security
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('auth_token', token, {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+      path: '/',
+    });
+
+    res.status(201).json({
+      success: true,
+      token,
+      user
+    });
   } catch (err) {
     logger.error({ message: 'Error en register', error: err });
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -121,7 +135,23 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const token = generateToken(user.id, user.email, role);
     logger.info({ message: 'Login exitoso', userId: user.id, role });
 
-    res.json({ token, user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt, role } });
+    // BUG FIX #12: Send token as HttpOnly cookie for security
+    // This prevents XSS attacks from accessing the token via localStorage
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.cookie('auth_token', token, {
+      httpOnly: true,        // JavaScript cannot access this cookie
+      secure: isProduction,  // Only send over HTTPS in production
+      sameSite: 'lax',       // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/',
+    });
+
+    // Also return token in response for backward compatibility (clients can choose to use cookie or localStorage)
+    res.json({
+      success: true,
+      token,
+      user: { id: user.id, email: user.email, name: user.name ?? null, createdAt: user.createdAt, role }
+    });
   } catch (err) {
     logger.error({ message: 'Error en login', error: err });
     res.status(500).json({ error: 'Error interno del servidor' });

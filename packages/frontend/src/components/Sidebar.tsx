@@ -36,7 +36,7 @@ const MENU_SECTIONS = [
   {
     section: 'INICIO',
     items: [
-      { id: 'dashboard', label: 'Monitor Central', icon: LayoutDashboard, path: '/dashboard/projects' },
+      { id: 'dashboard', label: 'Monitor Central', icon: LayoutDashboard, path: '/dashboard' },
     ],
   },
   {
@@ -52,7 +52,7 @@ const MENU_SECTIONS = [
     items: [
       { id: 'incidents', label: 'Incidentes', icon: Radio, path: '/dashboard/incidents' },
       { id: 'forensics', label: 'Investigaciones', icon: FileText, path: '/dashboard/forensics' },
-      { id: 'alerts', label: 'Alertas', icon: ShieldAlert, path: '/dashboard/system' },
+      { id: 'alerts', label: 'Alertas', icon: ShieldAlert, path: '/dashboard/alerts' },
     ],
   },
   {

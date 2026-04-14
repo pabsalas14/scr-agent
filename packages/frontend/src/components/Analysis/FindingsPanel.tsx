@@ -5,9 +5,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { apiService } from '../../services/api.service';
 import { useToast } from '../../hooks/useToast';
 import type { Hallazgo } from '../../types/api';
-import FindingStatePanel from './FindingStatePanel';
 import SkeletonLoader from '../ui/SkeletonLoader';
 import EmptyState from '../ui/EmptyState';
+import ExplainerChat from './ExplainerChat';
+import { MessageSquare } from 'lucide-react';
 
 interface FindingsPanelProps {
   analysisId: string;
@@ -68,6 +69,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
   const [page, setPage] = useState(1);
   const [expandedFindings, setExpandedFindings] = useState<Set<string>>(new Set());
   const [selectedFindingForState, setSelectedFindingForState] = useState<string | null>(null);
+  const [activeChatFinding, setActiveChatFinding] = useState<{ id: string; riskType: string } | null>(null);
   const toast = useToast();
 
   const { data: findings, isLoading, error } = useQuery({
@@ -139,6 +141,17 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
             hallazgoId={selectedFindingForState}
             riskType={selectedFinding.riskType}
             onClose={() => setSelectedFindingForState(null)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* AI Explainer Chat Sidebar */}
+      <AnimatePresence>
+        {activeChatFinding && (
+          <ExplainerChat
+            findingId={activeChatFinding.id}
+            findingType={activeChatFinding.riskType}
+            onClose={() => setActiveChatFinding(null)}
           />
         )}
       </AnimatePresence>
@@ -367,13 +380,22 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                )}
 
                                {/* State Button */}
-                               <button
-                                  onClick={() => setSelectedFindingForState(finding.id)}
-                                  className="w-full px-4 py-3 rounded-lg bg-[#F97316]/10 border border-[#F97316]/30 text-sm font-semibold text-[#F97316] hover:bg-[#F97316]/20 hover:border-[#F97316]/50 transition-all flex items-center justify-center gap-2"
-                               >
-                                  <AlertCircle className="w-4 h-4" />
-                                  Cambiar estado del hallazgo
-                               </button>
+                               <div className="flex flex-col md:flex-row gap-3">
+                                  <button
+                                     onClick={() => setSelectedFindingForState(finding.id)}
+                                     className="flex-1 px-4 py-3 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm font-semibold text-[#6B7280] hover:text-white hover:bg-[#2D2D2D] transition-all flex items-center justify-center gap-2"
+                                  >
+                                     <AlertCircle className="w-4 h-4" />
+                                     Cambiar estado
+                                  </button>
+                                  <button
+                                     onClick={() => setActiveChatFinding({ id: finding.id, riskType: finding.riskType })}
+                                     className="flex-1 px-4 py-3 rounded-lg bg-[#F97316]/10 border border-[#F97316]/30 text-sm font-semibold text-[#F97316] hover:bg-[#F97316]/20 hover:border-[#F97316]/50 transition-all flex items-center justify-center gap-2"
+                                  >
+                                     <MessageSquare className="w-4 h-4" />
+                                     Explicar con IA
+                                  </button>
+                               </div>
                             </div>
                          </div>
                       </motion.div>

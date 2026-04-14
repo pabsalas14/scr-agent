@@ -225,6 +225,101 @@ export default function FindingsTracker({ analysisId }: FindingsTrackerProps) {
         </div>
       </div>
 
+      {/* ── Active Filters Chips ──────────────────────────────────── */}
+      {(filterStatus !== 'ALL' || filterSeverity !== 'ALL' || searchTerm !== '') && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+          style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}
+        >
+          <span style={{ fontSize: 11, color: '#6B7280', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            Filtros activos:
+          </span>
+          <AnimatePresence>
+            {searchTerm && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.3)',
+                  borderRadius: 8, padding: '4px 10px', fontSize: 11, color: '#F97316',
+                }}
+              >
+                Búsqueda: "{searchTerm}"
+                <button
+                  onClick={() => { setSearchTerm(''); setPage(1); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: '#F97316', fontSize: 14 }}
+                >
+                  ×
+                </button>
+              </motion.div>
+            )}
+            {filterStatus !== 'ALL' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: `${STATUS_CONFIG[filterStatus as FindingStatus].color}20`,
+                  border: `1px solid ${STATUS_CONFIG[filterStatus as FindingStatus].color}40`,
+                  borderRadius: 8, padding: '4px 10px', fontSize: 11,
+                  color: STATUS_CONFIG[filterStatus as FindingStatus].color,
+                }}
+              >
+                Estado: {STATUS_CONFIG[filterStatus as FindingStatus].label}
+                <button
+                  onClick={() => { setFilterStatus('ALL'); setPage(1); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', fontSize: 14 }}
+                >
+                  ×
+                </button>
+              </motion.div>
+            )}
+            {filterSeverity !== 'ALL' && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 6,
+                  background: `${SEV_CONFIG[filterSeverity as Severity].color}20`,
+                  border: `1px solid ${SEV_CONFIG[filterSeverity as Severity].color}40`,
+                  borderRadius: 8, padding: '4px 10px', fontSize: 11,
+                  color: SEV_CONFIG[filterSeverity as Severity].color,
+                }}
+              >
+                Severidad: {SEV_CONFIG[filterSeverity as Severity].label}
+                <button
+                  onClick={() => { setFilterSev('ALL'); setPage(1); }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, color: 'inherit', fontSize: 14 }}
+                >
+                  ×
+                </button>
+              </motion.div>
+            )}
+            {(filterStatus !== 'ALL' || filterSeverity !== 'ALL' || searchTerm !== '') && (
+              <motion.button
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.8 }}
+                onClick={() => { setFilterStatus('ALL'); setFilterSev('ALL'); setSearchTerm(''); setPage(1); }}
+                style={{
+                  background: 'rgba(107,114,128,0.2)', border: '1px solid rgba(107,114,128,0.3)',
+                  borderRadius: 8, padding: '4px 10px', fontSize: 11, color: '#6B7280',
+                  cursor: 'pointer', fontWeight: 600,
+                }}
+              >
+                Limpiar todo
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
       {/* ── Findings list ────────────────────────────────────────── */}
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '48px 0' }}>

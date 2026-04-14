@@ -35,13 +35,32 @@ export default function ToastContainer() {
             animate={{ opacity: 1, y: 0, x: 0 }}
             exit={{ opacity: 0, y: -8, x: 8 }}
             transition={{ duration: 0.2 }}
-            className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${getColors(toast.type)}`}
+            className={`flex items-center gap-3 px-4 py-3 rounded-xl border shadow-lg ${getColors(toast.type)} ${
+              toast.action ? 'flex-col sm:flex-row' : ''
+            }`}
           >
-            {getIcon(toast.type)}
-            <span className="text-sm flex-1">{toast.message}</span>
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              {getIcon(toast.type)}
+              <span className="text-sm flex-1">{toast.message}</span>
+            </div>
+
+            {toast.action && (
+              <button
+                onClick={() => {
+                  toast.action!.onClick();
+                  removeToast(toast.id);
+                }}
+                className="ml-auto sm:ml-2 px-3 py-1 text-xs font-semibold rounded-lg bg-[#F97316]/20 text-[#F97316] hover:bg-[#F97316]/30 transition-colors whitespace-nowrap"
+              >
+                {toast.action.label}
+              </button>
+            )}
+
             <button
               onClick={() => removeToast(toast.id)}
-              className="ml-1 p-0.5 hover:bg-[#404040] rounded transition-colors text-[#6B7280] hover:text-white"
+              className={`p-0.5 hover:bg-[#404040] rounded transition-colors text-[#6B7280] hover:text-white ${
+                toast.action ? 'sm:ml-1' : 'ml-1'
+              }`}
             >
               <X className="w-3.5 h-3.5" />
             </button>

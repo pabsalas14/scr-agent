@@ -38,14 +38,23 @@ export function authMiddleware(
     return next();
   }
 
-  const authHeader = req.headers.authorization;
+  // BUG FIX #12: Try to get token from:
+  // 1. Authorization header (Bearer token)
+  // 2. Cookies (HttpOnly cookie - more secure)
+  let token: string | undefined;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if ((req.cookies as any)?.auth_token) {
+    // Read from HttpOnly cookie (automatically sent by browser)
+    token = (req.cookies as any).auth_token;
+  }
+
+  if (!token) {
     res.status(401).json({ error: 'Token de autenticación requerido' });
     return;
   }
-
-  const token = authHeader.split(' ')[1]!;
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET!) as unknown as { id: string; email: string; role?: string };

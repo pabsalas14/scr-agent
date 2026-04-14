@@ -1,0 +1,173 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e5]:
+      - img "SCR" [ref=e7]
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - heading "SCR Agent" [level=1] [ref=e10]
+          - generic [ref=e13]: Live
+        - paragraph [ref=e14]: v0.1.0
+    - navigation [ref=e15]:
+      - generic [ref=e16]:
+        - button "INICIO" [ref=e17] [cursor=pointer]:
+          - generic [ref=e18]: INICIO
+          - img [ref=e19]
+        - button "Monitor Central" [ref=e22] [cursor=pointer]:
+          - img [ref=e24]
+          - generic [ref=e29]: Monitor Central
+      - generic [ref=e30]:
+        - button "ANÁLISIS" [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]: ANÁLISIS
+          - img [ref=e33]
+        - generic [ref=e35]:
+          - button "Proyectos" [ref=e36] [cursor=pointer]:
+            - img [ref=e37]
+            - generic [ref=e39]: Proyectos
+          - button "Reportes" [ref=e40] [cursor=pointer]:
+            - img [ref=e41]
+            - generic [ref=e44]: Reportes
+          - button "Analíticas" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+            - generic [ref=e48]: Analíticas
+      - generic [ref=e49]:
+        - button "SEGURIDAD" [ref=e50] [cursor=pointer]:
+          - generic [ref=e51]: SEGURIDAD
+          - img [ref=e52]
+        - generic [ref=e54]:
+          - button "Incidentes" [ref=e55] [cursor=pointer]:
+            - img [ref=e56]
+            - generic [ref=e62]: Incidentes
+          - button "Investigaciones" [ref=e63] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e67]: Investigaciones
+          - button "Alertas" [ref=e68] [cursor=pointer]:
+            - img [ref=e69]
+            - generic [ref=e71]: Alertas
+      - generic [ref=e72]:
+        - button "OPERACIONES" [ref=e73] [cursor=pointer]:
+          - generic [ref=e74]: OPERACIONES
+          - img [ref=e75]
+        - generic:
+          - button "Agentes IA" [ref=e77] [cursor=pointer]:
+            - img [ref=e78]
+            - generic [ref=e81]: Agentes IA
+          - button "Sistema" [ref=e82] [cursor=pointer]:
+            - img [ref=e83]
+            - generic [ref=e85]: Sistema
+          - button "Costos" [ref=e86] [cursor=pointer]:
+            - img [ref=e87]
+            - generic [ref=e89]: Costos
+    - generic [ref=e90]:
+      - button "Configuración" [ref=e91] [cursor=pointer]:
+        - img [ref=e92]
+        - generic [ref=e95]: Configuración
+      - button "TE test_1775929930394 Analyst" [ref=e97] [cursor=pointer]:
+        - generic [ref=e98]: TE
+        - generic [ref=e99]:
+          - paragraph [ref=e100]: test_1775929930394
+          - paragraph [ref=e101]: Analyst
+        - img [ref=e102]
+    - button [ref=e105] [cursor=pointer]:
+      - img [ref=e106]
+  - generic [ref=e108]:
+    - generic [ref=e112]:
+      - generic [ref=e113]:
+        - img
+        - textbox "Buscar proyectos, hallazgos, reportes..." [ref=e114]
+      - button "Filtros" [ref=e116] [cursor=pointer]:
+        - img [ref=e117]
+        - generic [ref=e118]: Filtros
+    - main [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - generic [ref=e125]: Monitorización activa
+            - heading "Monitor Central" [level=1] [ref=e126]
+          - generic [ref=e127]:
+            - button "Logs de agente" [ref=e128] [cursor=pointer]:
+              - img [ref=e129]
+              - text: Logs de agente
+            - generic [ref=e131]:
+              - generic [ref=e132]: Health Index
+              - generic [ref=e134]: 100%
+        - generic [ref=e137]:
+          - generic [ref=e138] [cursor=pointer]:
+            - img [ref=e141]
+            - paragraph [ref=e143]: "0"
+            - paragraph [ref=e144]: Assets Protegidos
+            - paragraph [ref=e145]: repositorios en vigilancia
+          - generic [ref=e146] [cursor=pointer]:
+            - img [ref=e149]
+            - paragraph [ref=e151]: "1"
+            - paragraph [ref=e152]: Scans Ejecutados
+            - paragraph [ref=e153]: auditorías finalizadas
+          - generic [ref=e154] [cursor=pointer]:
+            - generic [ref=e155]:
+              - img [ref=e157]
+              - generic [ref=e159]: 5%
+            - paragraph [ref=e160]: "2"
+            - paragraph [ref=e161]: Alerta de Riesgo
+            - paragraph [ref=e162]: vulnerabilidades críticas
+          - generic [ref=e163] [cursor=pointer]:
+            - img [ref=e166]
+            - paragraph [ref=e169]: 94%
+            - paragraph [ref=e170]: Eficiencia
+            - paragraph [ref=e171]: optimización de tokens
+        - generic [ref=e172]:
+          - generic [ref=e173]:
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - generic [ref=e176]:
+                  - heading "Orquestación en vivo" [level=3] [ref=e177]
+                  - paragraph [ref=e178]: Procesamiento de agentes IA
+                - generic [ref=e179]: 0 activos
+              - generic [ref=e180]:
+                - img [ref=e181]
+                - paragraph [ref=e185]: Sin procesos activos
+            - generic [ref=e186]:
+              - generic [ref=e187]:
+                - heading "Alertas recientes" [level=3] [ref=e188]
+                - button "Ver todas" [ref=e189] [cursor=pointer]
+              - generic [ref=e190]:
+                - generic [ref=e191] [cursor=pointer]:
+                  - generic [ref=e193]:
+                    - paragraph [ref=e194]: SUSPICIOUS en src/credit_limit_service.rb
+                    - paragraph [ref=e195]: "Proyecto: Escaneo 01"
+                  - generic [ref=e196]: 10:51 AM
+                - generic [ref=e197] [cursor=pointer]:
+                  - generic [ref=e199]:
+                    - paragraph [ref=e200]: BACKDOOR en src/credit_limit_service.rb
+                    - paragraph [ref=e201]: "Proyecto: Escaneo 01"
+                  - generic [ref=e202]: 10:51 AM
+                - generic [ref=e203] [cursor=pointer]:
+                  - generic [ref=e205]:
+                    - paragraph [ref=e206]: BACKDOOR en src/credit_limit_service.rb
+                    - paragraph [ref=e207]: "Proyecto: Escaneo 01"
+                  - generic [ref=e208]: 10:51 AM
+          - generic [ref=e209]:
+            - generic [ref=e210]:
+              - generic [ref=e211]:
+                - heading "Últimos reportes" [level=3] [ref=e212]
+                - img [ref=e213]
+              - paragraph [ref=e217]: Sin reportes aún
+              - button "Ver todos los assets" [ref=e218] [cursor=pointer]
+            - generic [ref=e219]:
+              - generic [ref=e220]:
+                - heading "Resumen de flujo" [level=4] [ref=e221]
+                - img [ref=e222]
+              - generic [ref=e225]:
+                - generic [ref=e226] [cursor=pointer]:
+                  - generic [ref=e227]: Tasa de remediación
+                  - generic [ref=e228]: 0%
+                - generic [ref=e229] [cursor=pointer]:
+                  - generic [ref=e230]: Incidentes cerrados
+                  - generic [ref=e231]: "0"
+                - generic [ref=e232] [cursor=pointer]:
+                  - generic [ref=e233]: Media de respuesta
+                  - generic [ref=e234]: 0.0h
+    - contentinfo [ref=e235]:
+      - paragraph [ref=e236]: SCR Agent — Code Observability & Defense
+```

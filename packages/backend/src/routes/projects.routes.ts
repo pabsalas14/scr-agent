@@ -30,8 +30,7 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const isAdmin = userRole === 'ADMIN';
 
     const where: any = {
-      // Admins ven todos, otros usuarios ven solo los suyos
-      ...(isAdmin ? {} : (userId ? { userId } : {})),
+      // Monitoreo Colectivo: Todos los usuarios ven todos los proyectos
       ...(search ? {
         OR: [
           { name: { contains: search, mode: 'insensitive' } },
@@ -121,9 +120,7 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    if (userId && project.userId && project.userId !== userId) {
-      return res.status(403).json({ success: false, error: 'Acceso denegado' });
-    }
+    // Accesso global habilitado
 
     // Convertir a JSON plain
     const plainProject = JSON.parse(JSON.stringify(project));
@@ -148,9 +145,7 @@ router.get('/:projectId/analyses', async (req: Request, res: Response, next: Nex
 
     const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
     if (!project) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
-    if (userId && project.userId && project.userId !== userId) {
-      return res.status(403).json({ success: false, error: 'Acceso denegado' });
-    }
+    // Accesso global habilitado
 
     const analyses = await prisma.analysis.findMany({
       where: { projectId },
@@ -272,14 +267,15 @@ router.put('/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
     const { name, description, branch, maxFileSizeKb, maxTotalSizeMb, maxDirectoryDepth, maxCommits } = req.body;
 
     const project = await prisma.project.findUnique({ where: { id } });
     if (!project) {
       return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
     }
-    if (project.userId && project.userId !== userId) {
-      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    if (project.userId && project.userId !== userId && userRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado (Solo el propietario o ADMIN puede editar)' });
     }
 
     const updated = await prisma.project.update({
@@ -309,13 +305,14 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
   try {
     const { id } = req.params;
     const userId = (req as any).user?.id;
+    const userRole = (req as any).user?.role;
 
     const project = await prisma.project.findUnique({ where: { id } });
     if (!project) {
       return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
     }
-    if (project.userId && project.userId !== userId) {
-      return res.status(403).json({ success: false, error: 'Acceso denegado' });
+    if (project.userId && project.userId !== userId && userRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Acceso denegado (Solo el propietario o ADMIN puede eliminar)' });
     }
 
     await prisma.project.delete({ where: { id } });
@@ -346,11 +343,11 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
       });
     }
 
-    if (userId && project.userId && project.userId !== userId) {
-      return res.status(403).json({ success: false, error: 'Acceso denegado' });
-    }
+    // Accesso global habilitado
 
     // Crear análisis
+    const { isIncremental } = req.body;
+    
     const analysis = await prisma.analysis.create({
       data: {
         projectId: projectId!,
@@ -360,7 +357,7 @@ router.post('/:projectId/analyses', async (req: Request, res: Response, next: Ne
     });
 
     // Encolar análisis en background para procesamiento
-    enqueueAnalysis(analysis.id, projectId!);
+    enqueueAnalysis(analysis.id, projectId!, !!isIncremental);
 
     logger.info(`Analysis ${analysis.id} enqueued for processing`);
 
@@ -415,6 +412,61 @@ router.post('/:projectId/analyses/:analysisId/cancel', async (req: Request, res:
     logger.info(`Analysis ${analysisId} cancelled by user`);
 
     res.json({ success: true, message: 'Análisis cancelado exitosamente' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
+ * GET /api/v1/projects/:id/estimate
+ * Obtener estimado de tokens y costo antes de un análisis
+ */
+router.get('/:id/estimate', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const userId = (req as any).user?.id;
+
+    const project = await prisma.project.findUnique({ where: { id } });
+    if (!project) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
+    // Accesso global habilitado
+
+    // Obtener GitHub token si existe para evitar rate limits
+    let githubToken: string | undefined;
+    if (userId) {
+      const userSettings = await prisma.userSettings.findUnique({ where: { userId } });
+      githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
+    }
+
+    // Realizar un clone ligero (shallow) para contar archivos y bytes
+    const localPath = await gitService.cloneOrPullRepository(project.repositoryUrl, githubToken, project.branch);
+    const repoData = gitService.readRepositoryFiles(localPath, undefined, {
+      maxFileSizeKb: project.maxFileSizeKb || 150,
+      maxTotalSizeMb: project.maxTotalSizeMb || 2,
+    });
+
+    // Estimación técnica:
+    // 1 token approx 4 caracteres (bytes)
+    // Agregamos un 20% de overhead por prompts y contexto de agentes
+    const estimatedInputTokens = Math.ceil((repoData.totalSize / 4) * 1.2);
+    
+    // Output tokens estimado: asumimos que por cada archivo Claude genera ~300 tokens de hallazgos
+    const estimatedOutputTokens = repoData.fileCount * 300;
+
+    // Precios Claude 3.5 Sonnet (USD per 1M tokens)
+    // Input: $3.00, Output: $15.00
+    const inputCost = (estimatedInputTokens / 1_000_000) * 3;
+    const outputCost = (estimatedOutputTokens / 1_000_000) * 15;
+    const totalCostUsd = inputCost + outputCost;
+
+    res.json({
+      success: true,
+      data: {
+        tokens: estimatedInputTokens + estimatedOutputTokens,
+        costUsd: parseFloat(totalCostUsd.toFixed(4)),
+        fileCount: repoData.fileCount,
+        totalSizeKb: Math.round(repoData.totalSize / 1024),
+      }
+    });
   } catch (error) {
     next(error);
   }
