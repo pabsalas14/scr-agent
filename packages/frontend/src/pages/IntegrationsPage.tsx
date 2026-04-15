@@ -114,41 +114,59 @@ export default function IntegrationsPage() {
 
     setIsTestingToken(true);
 
-    // Intentar validar contra GitHub API
-    let username = 'github-user';
     try {
-      const response = await fetch('/api/v1/user-settings/validate-github-token', {
+      // Primero, guardar el token en la base de datos
+      const saveResponse = await fetch('/api/v1/user-settings/github-token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
         body: JSON.stringify({ token: githubToken }),
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        username = data.username;
+      if (!saveResponse.ok) {
+        const error = await saveResponse.json();
+        toast.error(`Error al guardar token: ${error.error || 'Unknown error'}`);
+        setIsTestingToken(false);
+        return;
       }
+
+      const saveData = await saveResponse.json();
+      const username = saveData.username || 'github-user';
+
+      // Actualizar estado local
+      setGithubConfig({
+        token: githubToken,
+        username: username,
+        connected: true,
+      });
+
+      toast.success(`✅ GitHub conectado. Token guardado en base de datos.`);
+      setShowGitHubModal(false);
+      setGithubToken('');
     } catch (error) {
-      // Si la validación falla, continuamos de todas formas con un nombre genérico
-      console.log('Validación contra GitHub falló, usando nombre genérico');
+      console.error('Error saving GitHub token:', error);
+      toast.error('Error al guardar el token en la base de datos');
+    } finally {
+      setIsTestingToken(false);
     }
-
-    // Guardar token de todas formas (aunque la validación falle)
-    setGithubConfig({
-      token: githubToken,
-      username: username,
-      connected: true,
-    });
-
-    toast.success(`✅ GitHub conectado. Token guardado correctamente.`);
-    setShowGitHubModal(false);
-    setGithubToken('');
-    setIsTestingToken(false);
   };
 
-  const disconnectGitHub = () => {
+  const disconnectGitHub = async () => {
+    try {
+      // Remove token from database
+      await fetch('/api/v1/user-settings/github-token', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+      });
+    } catch (error) {
+      console.error('Error disconnecting GitHub:', error);
+    }
+
+    // Update local state
     setGithubConfig({
       token: '',
       username: undefined,

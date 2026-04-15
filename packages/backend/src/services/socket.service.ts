@@ -46,38 +46,45 @@ class SocketService {
       // Listen for user authentication — validate JWT token to prevent spoofing
       socket.on('auth:user', (payload: { userId: string; token: string } | string) => {
         try {
-          // Support both legacy string format and new { userId, token } format
+          // SECURITY FIX: JWT_SECRET is now MANDATORY (fail-fast if not configured)
+          if (!JWT_SECRET) {
+            logger.error('CRITICAL: JWT_SECRET environment variable not configured! Socket authentication cannot proceed.');
+            socket.emit('auth:error', { message: 'Server configuration error: JWT_SECRET not set' });
+            socket.disconnect(true);
+            return;
+          }
+
+          // Only accept new format with token (legacy string format is no longer supported)
           if (typeof payload === 'string') {
-            // Legacy: no token provided — only register if JWT_SECRET is not configured
-            if (!JWT_SECRET) {
-              this.registerUserSocket(payload, socket.id);
-              socket.join(`user:${payload}`);
-              logger.warn(`User ${payload} authenticated without JWT verification`);
-            } else {
-              logger.warn(`Socket auth:user rejected — token required (socketId: ${socket.id})`);
-            }
+            logger.warn(`Socket auth:user rejected — legacy format not supported, token required (socketId: ${socket.id})`);
+            socket.emit('auth:error', { message: 'Invalid authentication format. Token is required.' });
             return;
           }
 
           const { userId, token } = payload;
           if (!userId || !token) {
             logger.warn(`Socket auth:user rejected — missing fields (socketId: ${socket.id})`);
+            socket.emit('auth:error', { message: 'Missing userId or token' });
             return;
           }
 
+          // Validate JWT token
           const decoded = jwt.verify(token, JWT_SECRET) as { id?: string; sub?: string };
           const tokenUserId = decoded.id || decoded.sub;
 
           if (tokenUserId !== userId) {
             logger.warn(`Socket auth:user rejected — userId mismatch (claimed: ${userId}, token: ${tokenUserId})`);
+            socket.emit('auth:error', { message: 'UserId does not match token' });
             return;
           }
 
           this.registerUserSocket(userId, socket.id);
           socket.join(`user:${userId}`);
           logger.info(`User ${userId} authenticated on socket ${socket.id}`);
+          socket.emit('auth:success', { userId });
         } catch (err) {
           logger.warn(`Socket auth:user rejected — invalid token (socketId: ${socket.id}): ${err}`);
+          socket.emit('auth:error', { message: 'Invalid or expired token' });
         }
       });
 

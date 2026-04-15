@@ -7,6 +7,8 @@ import { Router, type Request, type Response, type Router as ExpressRouter } fro
 import { prisma } from '../services/prisma.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { logger } from '../services/logger.service';
+import { encrypt, decrypt } from '../services/crypto.service';
+import axios from 'axios';
 
 const router: ExpressRouter = Router();
 
@@ -283,6 +285,119 @@ router.post('/validate-github-token', authMiddleware, async (req: Request, res: 
   } catch (error) {
     logger.error(`Error validating GitHub token: ${error}`);
     res.status(500).json({ error: 'Failed to validate token' });
+  }
+});
+
+/**
+ * POST /api/v1/user-settings/github-token
+ * Save GitHub token to user settings (encrypted in database)
+ */
+router.post('/github-token', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { token } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    try {
+      // Validate token format
+      const isValidFormat = token.startsWith('ghp_') || token.startsWith('github_pat_');
+      if (!isValidFormat) {
+        return res.status(400).json({ error: 'Invalid token format' });
+      }
+
+      // Get username from GitHub API
+      let username = 'github-user';
+      try {
+        const response = await axios.get('https://api.github.com/user', {
+          headers: {
+            Authorization: `token ${token}`,
+            Accept: 'application/vnd.github.v3+json',
+          },
+          timeout: 5000,
+        });
+        username = response.data.login || 'github-user';
+      } catch (error) {
+        logger.warn(`Could not retrieve GitHub username: ${error}`);
+      }
+
+      // Encrypt and save to database
+      const encryptedToken = encrypt(token);
+
+      const userSettings = await prisma.userSettings.upsert({
+        where: { userId },
+        update: {
+          githubToken: encryptedToken,
+          updatedAt: new Date(),
+        },
+        create: {
+          userId,
+          githubToken: encryptedToken,
+        },
+      });
+
+      logger.info(`GitHub token saved for user ${userId}`);
+
+      return res.json({
+        success: true,
+        message: 'GitHub token saved successfully',
+        username,
+        userId,
+      });
+    } catch (error) {
+      logger.error(`Error saving GitHub token: ${error}`);
+      return res.status(500).json({ error: 'Failed to save GitHub token' });
+    }
+  } catch (error) {
+    logger.error(`Error in /github-token endpoint: ${error}`);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * DELETE /api/v1/user-settings/github-token
+ * Remove GitHub token from user settings
+ */
+router.delete('/github-token', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userSettings = await prisma.userSettings.findUnique({
+      where: { userId },
+    });
+
+    if (!userSettings) {
+      return res.status(404).json({ error: 'No GitHub token found' });
+    }
+
+    // Update to remove token
+    await prisma.userSettings.update({
+      where: { userId },
+      data: {
+        githubToken: null,
+        updatedAt: new Date(),
+      },
+    });
+
+    logger.info(`GitHub token removed for user ${userId}`);
+
+    return res.json({
+      success: true,
+      message: 'GitHub token removed successfully',
+    });
+  } catch (error) {
+    logger.error(`Error removing GitHub token: ${error}`);
+    res.status(500).json({ error: 'Failed to remove GitHub token' });
   }
 });
 

@@ -106,6 +106,17 @@ export default function ProjectDetailView({
     });
   };
 
+  // Inicializar formulario cuando entra en modo edición
+  useEffect(() => {
+    if (editando && project) {
+      setFormData({
+        name: project.name,
+        description: project.description || '',
+        scope: project.scope,
+      });
+    }
+  }, [editando, project]);
+
   if (!isOpen) return null;
 
   if (isLoading) {
@@ -127,17 +138,6 @@ export default function ProjectDetailView({
       </Modal>
     );
   }
-
-  // Inicializar formulario cuando entra en modo edición
-  useEffect(() => {
-    if (editando && project) {
-      setFormData({
-        name: project.name,
-        description: project.description || '',
-        scope: project.scope,
-      });
-    }
-  }, [editando, project]);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={editando ? '✏️ Editar Proyecto' : project.name} size="lg" >

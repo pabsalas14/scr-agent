@@ -3,17 +3,26 @@
  *
  * This script validates that all key endpoints return consistent data
  * from the database.
+ *
+ * SECURITY FIX: Credentials now loaded from environment variables
  */
 
 import axios from 'axios';
+import dotenv from 'dotenv';
 
-const API_BASE_URL = 'http://localhost:3001/api/v1';
+dotenv.config();
 
-// Test credentials
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001/api/v1';
+
+// Load credentials from environment variables (NOT hardcoded)
 const credentials = {
-  email: 'admin@scr.com',
-  password: 'admin123',
+  email: process.env.TEST_USER_EMAIL || '',
+  password: process.env.TEST_USER_PASSWORD || '',
 };
+
+if (!credentials.email || !credentials.password) {
+  throw new Error('TEST_USER_EMAIL and TEST_USER_PASSWORD environment variables are required');
+}
 
 let token = '';
 

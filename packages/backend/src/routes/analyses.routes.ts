@@ -209,92 +209,17 @@ router.get('/:id/forensics', async (req: Request, res: Response) => {
   try {
     const analysisId = req.params['id'];
 
-    // Intentar obtener eventos forenses creados
-    let events = await prisma.forensicEvent.findMany({
+    // Obtener eventos forenses reales del agente Detective
+    const events = await prisma.forensicEvent.findMany({
       where: { analysisId },
       orderBy: { timestamp: 'asc' },
     });
 
-    // Si no hay eventos reales, generar eventos simulados desde el análisis
+    // Si no hay eventos, retornar array vacío (no generar simulados)
+    // Los eventos forenses deben ser generados ÚNICAMENTE por el agente Detective
+    // a partir de datos reales de Git commit history
     if (events.length === 0) {
-      logger.info(`No forensic events found for analysis ${analysisId}, generating simulated events...`);
-
-      const findings = await prisma.finding.findMany({
-        where: { analysisId },
-        orderBy: { createdAt: 'asc' },
-        take: 10,
-      });
-
-      const analysis = await prisma.analysis.findUnique({
-        where: { id: analysisId },
-        include: { project: true },
-      });
-
-      // Generar eventos simulados basados en los hallazgos encontrados
-      if (findings.length > 0 && analysis) {
-        const simulatedEvents: any[] = [];
-
-        // Evento inicial: inicio del análisis
-        simulatedEvents.push({
-          id: `forensic-${analysisId}-0`,
-          analysisId,
-          findingId: null,
-          commitHash: 'initial-scan',
-          commitMessage: 'Analysis started',
-          author: 'system',
-          action: 'SCANNED',
-          file: analysis.project?.name || 'repository',
-          function: null,
-          changesSummary: `Initial scan of repository: ${analysis.project?.name}`,
-          timestamp: analysis.createdAt,
-          riskLevel: 'MEDIUM',
-          suspicionIndicators: [],
-          createdAt: analysis.createdAt,
-          updatedAt: analysis.createdAt,
-        });
-
-        // Un evento por cada hallazgo encontrado
-        findings.forEach((finding, index) => {
-          simulatedEvents.push({
-            id: `forensic-${analysisId}-${index + 1}`,
-            analysisId,
-            findingId: finding.id,
-            commitHash: `finding-${finding.riskScore?.toFixed(1) || 'unknown'}`,
-            commitMessage: `${finding.title}`,
-            author: finding.filePath?.split('/')[0] || 'unknown',
-            action: 'DETECTED',
-            file: finding.filePath || 'unknown',
-            function: finding.functionName || null,
-            changesSummary: `${finding.title} - ${finding.description?.substring(0, 100)}...`,
-            timestamp: finding.createdAt,
-            riskLevel: finding.severity || 'MEDIUM',
-            suspicionIndicators: [finding.patternName || 'vulnerability_pattern'],
-            createdAt: finding.createdAt,
-            updatedAt: finding.createdAt,
-          });
-        });
-
-        // Evento final: análisis completado
-        simulatedEvents.push({
-          id: `forensic-${analysisId}-final`,
-          analysisId,
-          findingId: null,
-          commitHash: 'analysis-complete',
-          commitMessage: 'Analysis completed',
-          author: 'system',
-          action: 'COMPLETED',
-          file: 'repository',
-          function: null,
-          changesSummary: `Análisis completado. Se detectaron ${findings.length} hallazgos de seguridad.`,
-          timestamp: analysis.updatedAt,
-          riskLevel: 'MEDIUM',
-          suspicionIndicators: [],
-          createdAt: analysis.updatedAt,
-          updatedAt: analysis.updatedAt,
-        });
-
-        events = simulatedEvents;
-      }
+      logger.info(`No forensic events found for analysis ${analysisId} - Detective agent may not have generated them yet or repository has no Git history`);
     }
 
     res.json({ success: true, data: events });
