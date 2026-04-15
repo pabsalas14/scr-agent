@@ -69,7 +69,11 @@ export default function IntegrationsPage() {
 
         if (response.ok) {
           const data = await response.json();
-          setApiKeys(data.keys || []);
+          // Only update if backend has actual keys (non-empty array)
+          // Otherwise keep the local keys from localStorage
+          if (data.keys && data.keys.length > 0) {
+            setApiKeys(data.keys);
+          }
         }
       } catch (error) {
         console.log('No se pueden cargar claves del backend, usando valor por defecto');
