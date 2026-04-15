@@ -189,6 +189,7 @@ app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/github', githubRoutes);
 app.use('/api/v1/findings', findingsRoutes);
 app.use('/api/v1/users', userSettingsRoutes);
+app.use('/api/v1/user-settings', userSettingsRoutes);
 app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/findings', commentsRoutes);

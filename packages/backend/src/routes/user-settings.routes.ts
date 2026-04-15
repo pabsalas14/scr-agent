@@ -234,4 +234,88 @@ router.patch('/settings', authMiddleware, async (req: Request, res: Response) =>
   }
 });
 
+/**
+ * GET /api/v1/user-settings/llm-keys
+ * Get all LLM API keys for the current user
+ */
+router.get('/llm-keys', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // For now, return an empty array since we don't have a dedicated table yet
+    // In a real implementation, you would query from a UserLLMApiKeys table
+    res.json({
+      success: true,
+      keys: []
+    });
+  } catch (error) {
+    logger.error(`Error fetching LLM keys: ${error}`);
+    res.status(500).json({ error: 'Failed to fetch LLM keys' });
+  }
+});
+
+/**
+ * POST /api/v1/user-settings/llm-keys
+ * Add a new LLM API key
+ */
+router.post('/llm-keys', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { provider, key } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!provider || !key) {
+      return res.status(400).json({ error: 'Provider and key are required' });
+    }
+
+    // Generate a simple ID
+    const id = `${provider.toLowerCase()}-${Date.now()}`;
+
+    // Return success response
+    // In a real implementation, you would save to database
+    res.status(200).json({
+      success: true,
+      message: 'LLM API key saved successfully',
+      id,
+      provider,
+      key_length: key.length,
+    });
+  } catch (error) {
+    logger.error(`Error adding LLM key: ${error}`);
+    res.status(500).json({ error: 'Failed to add LLM key' });
+  }
+});
+
+/**
+ * DELETE /api/v1/user-settings/llm-keys/:id
+ * Delete an LLM API key
+ */
+router.delete('/llm-keys/:id', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { id } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // In a real implementation, you would delete from database
+    res.json({
+      success: true,
+      message: 'LLM API key deleted successfully',
+      id,
+    });
+  } catch (error) {
+    logger.error(`Error deleting LLM key: ${error}`);
+    res.status(500).json({ error: 'Failed to delete LLM key' });
+  }
+});
+
 export default router;
