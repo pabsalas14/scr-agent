@@ -22,6 +22,7 @@ interface NavigationSidebarProps {
   userName?: string;
   onLogout?: () => void;
   collapsed?: boolean;
+  badgeOverrides?: Record<TabId, number | string>; // Dynamic badge data from parent
 }
 
 /**
@@ -235,6 +236,7 @@ export default function NavigationSidebar({
   userName = 'Usuario',
   onLogout,
   collapsed = false,
+  badgeOverrides = {},
 }: NavigationSidebarProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<GroupId>>(() => {
     const groups = getNavigationGroups();
@@ -309,6 +311,8 @@ export default function NavigationSidebar({
                       {group.tabs.map((tab) => {
                         const TabIcon = tab.icon;
                         const isActive = activeTab === tab.id;
+                        // Use badge override if provided, otherwise use tab.badge
+                        const displayBadge = badgeOverrides[tab.id] ?? tab.badge;
 
                         return (
                           <motion.button
@@ -323,9 +327,9 @@ export default function NavigationSidebar({
                           >
                             <TabIcon className="w-4 h-4 flex-shrink-0" />
                             <span className="truncate">{tab.label}</span>
-                            {tab.badge && (
+                            {displayBadge && (
                               <span className="ml-auto text-xs bg-[#EF4444] text-white rounded-full px-2 py-0.5 flex-shrink-0">
-                                {tab.badge}
+                                {displayBadge}
                               </span>
                             )}
                           </motion.button>

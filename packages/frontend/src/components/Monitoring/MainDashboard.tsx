@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import Dashboard from '../Dashboard/Dashboard';
 import AnalysisMonitor from './AnalysisMonitor';
@@ -17,6 +18,7 @@ import NavigationSidebar from '../Navigation/NavigationSidebar';
 import { OnboardingGuide } from '../Help/OnboardingGuide';
 import type { TabId } from '../../types/navigation';
 import { useAuth } from '../../hooks/useAuth';
+import { apiService } from '../../services/api.service';
 import FindingsPanelPage from '../../pages/FindingsPanelPage';
 import AnalysisComparisonPage from '../../pages/AnalysisComparisonPage';
 import AnalysisHistoricalPage from '../../pages/AnalysisHistoricalPage';
@@ -33,6 +35,15 @@ export default function MainDashboard() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user, clearToken } = useAuth();
+
+  // Fetch incident count for badge
+  const { data: incidentsData } = useQuery({
+    queryKey: ['incident-badge-count'],
+    queryFn: () => apiService.obtenerHallazgosGlobales({ isIncident: true, limit: 100 }),
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const incidentCount = incidentsData?.total || 0;
 
   // Map old tab names to new TabIds for backwards compatibility
   const mapOldTabToNew = (tab: string): TabId => {
@@ -162,6 +173,9 @@ export default function MainDashboard() {
         onLogout={() => {
           clearToken();
           navigate('/login');
+        }}
+        badgeOverrides={{
+          'incidentes': incidentCount > 0 ? incidentCount : undefined,
         }}
       />
 
