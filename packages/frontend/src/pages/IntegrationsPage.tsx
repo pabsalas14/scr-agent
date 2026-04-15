@@ -1,37 +1,96 @@
 import { useState } from 'react';
-import { GitBranch, Key, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { GitBranch, Key, Eye, EyeOff, Trash2, ExternalLink, Check, X } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 
-const INTEGRATIONS = [
+interface GitHubConfig {
+  token: string;
+  username?: string;
+  connected: boolean;
+}
+
+const LLM_PROVIDERS = ['Claude', 'OpenAI', 'Google'];
+
+const getIntegrations = (githubConnected: boolean) => [
   {
     name: 'GitHub',
     icon: GitBranch,
     description: 'Integra repositorios de GitHub para análisis automatizado',
-    status: 'connected',
+    status: githubConnected ? 'connected' : 'disconnected',
     color: 'text-gray-400',
   },
 ];
 
-const LLM_PROVIDERS = ['Claude', 'OpenAI', 'Google'];
-
 export default function IntegrationsPage() {
   const [configuring, setConfiguring] = useState<string | null>(null);
-  const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>([]);
+  const [showGitHubModal, setShowGitHubModal] = useState(false);
+  const [githubToken, setGithubToken] = useState('');
+  const [githubConfig, setGithubConfig] = useState<GitHubConfig>({
+    token: '',
+    username: undefined,
+    connected: false,
+  });
+  const [isTestingToken, setIsTestingToken] = useState(false);
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>([
+    { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
+  ]);
   const [showNewApiKeyForm, setShowNewApiKeyForm] = useState(false);
   const [newApiKeyProvider, setNewApiKeyProvider] = useState('Claude');
   const [newApiKey, setNewApiKey] = useState('');
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const toast = useToast();
 
-  const handleConfigure = (integrationName: string) => {
-    setConfiguring(integrationName);
-    toast.info(`Configurando ${integrationName}... Esta funcionalidad será añadida en la siguiente versión.`);
-    setTimeout(() => setConfiguring(null), 2000);
+  const testGitHubToken = async () => {
+    if (!githubToken.trim()) {
+      toast.error('Por favor ingresa un token de GitHub');
+      return;
+    }
+
+    setIsTestingToken(true);
+    try {
+      // Test token by calling GitHub API
+      const response = await fetch('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${githubToken}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setGithubConfig({
+          token: githubToken,
+          username: data.login,
+          connected: true,
+        });
+        toast.success(`✅ GitHub conectado como @${data.login}`);
+        setShowGitHubModal(false);
+        setGithubToken('');
+      } else if (response.status === 401) {
+        toast.error('Token inválido. Verifica tu token de GitHub.');
+      } else {
+        toast.error('Error al validar token. Intenta de nuevo.');
+      }
+    } catch (error) {
+      toast.error('Error de conexión. Verifica tu token e intenta de nuevo.');
+    } finally {
+      setIsTestingToken(false);
+    }
   };
 
-  const handleConnect = (integrationName: string) => {
-    toast.info(`Conectando ${integrationName}... Redirigiendo a página de autorización...`);
+  const disconnectGitHub = () => {
+    setGithubConfig({
+      token: '',
+      username: undefined,
+      connected: false,
+    });
+    toast.info('GitHub desconectado');
+  };
+
+  const handleConfigure = (integrationName: string) => {
+    if (integrationName === 'GitHub') {
+      setShowGitHubModal(true);
+    }
   };
 
   const addAPIKey = () => {
@@ -85,7 +144,7 @@ export default function IntegrationsPage() {
       <div className="space-y-4">
         <h2 className="text-lg font-semibold text-white">Herramientas Externas</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {INTEGRATIONS.map((integration) => {
+          {getIntegrations(githubConfig.connected).map((integration) => {
             const Icon = integration.icon;
             return (
               <div
@@ -102,30 +161,54 @@ export default function IntegrationsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      integration.status === 'connected'
-                        ? 'bg-green-500/20 text-green-400'
-                        : 'bg-gray-500/20 text-gray-400'
-                    }`}
-                  >
-                    {integration.status === 'connected' ? 'Conectado' : 'Desconectado'}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    disabled={configuring === integration.name}
-                    onClick={() => {
-                      if (integration.status === 'connected') {
-                        handleConfigure(integration.name);
-                      } else {
-                        handleConnect(integration.name);
-                      }
-                    }}
-                  >
-                    {configuring === integration.name ? 'Cargando...' : (integration.status === 'connected' ? 'Configurar' : 'Conectar')}
-                  </Button>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
+                        integration.status === 'connected'
+                          ? 'bg-green-500/20 text-green-400'
+                          : 'bg-gray-500/20 text-gray-400'
+                      }`}
+                    >
+                      {integration.status === 'connected' ? (
+                        <>
+                          <Check size={14} /> Conectado
+                        </>
+                      ) : (
+                        <>
+                          <X size={14} /> Desconectado
+                        </>
+                      )}
+                    </span>
+                    {integration.name === 'GitHub' && githubConfig.username && (
+                      <span className="text-xs text-[#6B7280]">@{githubConfig.username}</span>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      disabled={configuring === integration.name}
+                      onClick={() => {
+                        if (integration.status === 'connected') {
+                          handleConfigure(integration.name);
+                        } else {
+                          setShowGitHubModal(true);
+                        }
+                      }}
+                    >
+                      {configuring === integration.name ? 'Cargando...' : (integration.status === 'connected' ? 'Configurar' : 'Conectar')}
+                    </Button>
+                    {integration.status === 'connected' && integration.name === 'GitHub' && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={disconnectGitHub}
+                      >
+                        <X size={14} />
+                      </Button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -244,6 +327,70 @@ export default function IntegrationsPage() {
           </div>
         )}
       </div>
+
+      {/* GitHub Modal */}
+      {showGitHubModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-2 mb-4">
+              <GitBranch size={24} className="text-gray-400" />
+              <h2 className="text-lg font-semibold text-white">Conectar GitHub</h2>
+            </div>
+
+            <p className="text-sm text-[#A0A0A0] mb-4">
+              Ingresa tu token de GitHub para conectar repositorios.
+              <a
+                href="https://github.com/settings/tokens"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#F97316] hover:text-[#FF6B6B] ml-1 inline-flex items-center gap-1"
+              >
+                Crear token <ExternalLink size={12} />
+              </a>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-[#A0A0A0] block mb-2">Token de GitHub</label>
+                <input
+                  type="password"
+                  value={githubToken}
+                  onChange={(e) => setGithubToken(e.target.value)}
+                  placeholder="ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setShowGitHubModal(false);
+                    setGithubToken('');
+                  }}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={testGitHubToken}
+                  disabled={isTestingToken || !githubToken.trim()}
+                  className="flex-1"
+                >
+                  {isTestingToken ? 'Validando...' : 'Conectar'}
+                </Button>
+              </div>
+
+              <p className="text-xs text-[#6B7280] text-center">
+                Tu token se valida contra la API de GitHub pero no se almacena en el servidor
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
