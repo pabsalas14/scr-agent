@@ -15,7 +15,11 @@ export default function WebhooksPage() {
 
   const { data: webhooks = [], isLoading, refetch } = useQuery({
     queryKey: ['webhooks'],
-    queryFn: () => apiService.get('/webhooks').then(res => res.data || []),
+    queryFn: async () => {
+      const res = await apiService.get('/webhooks');
+      const data = res.data?.data || res.data?.webhooks || res.data || [];
+      return Array.isArray(data) ? data : [];
+    },
   });
 
   return (

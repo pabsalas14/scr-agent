@@ -1,10 +1,10 @@
-import { ExternalLink, Github, Zap, MessageSquare } from 'lucide-react';
+import { ExternalLink, GitBranch, Zap, MessageSquare } from 'lucide-react';
 import Button from '../components/ui/Button';
 
 const INTEGRATIONS = [
   {
     name: 'GitHub',
-    icon: Github,
+    icon: GitBranch,
     description: 'Integra repositorios de GitHub para análisis automatizado',
     status: 'connected',
     color: 'text-gray-400',
