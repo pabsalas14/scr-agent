@@ -185,7 +185,7 @@ export default function IntegrationsPage() {
         setApiKeys([...apiKeys, newKey]);
         setNewApiKey('');
         setShowNewApiKeyForm(false);
-        toast.success(`Clave API de ${newApiKeyProvider} agregada (sincronización pendiente)`);
+        toast.success(`Clave API de ${newApiKeyProvider} guardada correctamente`);
       }
     } catch (error) {
       toast.error('Error al guardar la clave API');
