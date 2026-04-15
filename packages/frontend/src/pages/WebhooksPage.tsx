@@ -1,24 +1,22 @@
 import { useState } from 'react';
 import { Plus, Trash2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useConfirm } from '../hooks/useConfirm';
 import { useToast } from '../hooks/useToast';
+import { apiService } from '../services/api.service';
 import Button from '../components/ui/Button';
 
-const SAMPLE_WEBHOOKS = [
-  {
-    id: '1',
-    url: 'https://api.example.com/webhooks/scr-agent',
-    events: ['finding.created', 'finding.verified'],
-    status: 'active',
-    lastDelivery: new Date(Date.now() - 3600000),
-  },
-];
-
 export default function WebhooksPage() {
-  const [webhooks, setWebhooks] = useState(SAMPLE_WEBHOOKS);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
   const { confirm } = useConfirm();
   const toast = useToast();
+
+  const { data: webhooks = [], isLoading, refetch } = useQuery({
+    queryKey: ['webhooks'],
+    queryFn: () => apiService.get('/webhooks').then(res => res.data || []),
+  });
 
   return (
     <div className="space-y-6">
@@ -45,6 +43,8 @@ export default function WebhooksPage() {
               <input
                 type="url"
                 placeholder="https://api.example.com/webhook"
+                value={webhookUrl}
+                onChange={(e) => setWebhookUrl(e.target.value)}
                 className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500"
               />
             </div>
@@ -54,7 +54,18 @@ export default function WebhooksPage() {
               <div className="space-y-2">
                 {['finding.created', 'finding.updated', 'finding.verified', 'incident.created'].map((event) => (
                   <label key={event} className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded" />
+                    <input
+                      type="checkbox"
+                      className="rounded"
+                      checked={selectedEvents.includes(event)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedEvents([...selectedEvents, event]);
+                        } else {
+                          setSelectedEvents(selectedEvents.filter(e => e !== event));
+                        }
+                      }}
+                    />
                     <span className="text-sm text-[#A0A0A0]">{event}</span>
                   </label>
                 ))}
@@ -62,82 +73,119 @@ export default function WebhooksPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="primary" size="sm">Crear</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={async () => {
+                  if (!webhookUrl) {
+                    toast.error('URL es requerida');
+                    return;
+                  }
+                  try {
+                    await apiService.post('/webhooks', {
+                      url: webhookUrl,
+                      events: selectedEvents,
+                    });
+                    toast.success('Webhook creado correctamente');
+                    setWebhookUrl('');
+                    setSelectedEvents([]);
+                    setShowCreateForm(false);
+                    refetch();
+                  } catch (error) {
+                    toast.error('Error creando webhook');
+                  }
+                }}
+              >
+                Crear
+              </Button>
               <Button variant="secondary" size="sm" onClick={() => setShowCreateForm(false)}>Cancelar</Button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="space-y-3">
-        {webhooks.map((webhook) => (
-          <div
-            key={webhook.id}
-            className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4"
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <code className="text-xs bg-[#111111] px-2 py-1 rounded text-[#A0A0A0]">
-                    {webhook.url}
-                  </code>
-                  <span
-                    className={`flex items-center gap-1 text-xs font-medium ${
-                      webhook.status === 'active'
-                        ? 'text-green-400'
-                        : 'text-red-400'
-                    }`}
+      {isLoading ? (
+        <div className="flex items-center justify-center py-12">
+          <div className="w-8 h-8 border-4 border-white/10 border-t-white rounded-full animate-spin" />
+        </div>
+      ) : (
+        <>
+          <div className="space-y-3">
+            {webhooks.map((webhook: any) => (
+              <div
+                key={webhook.id}
+                className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <code className="text-xs bg-[#111111] px-2 py-1 rounded text-[#A0A0A0]">
+                        {webhook.url}
+                      </code>
+                      <span
+                        className={`flex items-center gap-1 text-xs font-medium ${
+                          webhook.status === 'active'
+                            ? 'text-green-400'
+                            : 'text-red-400'
+                        }`}
+                      >
+                        {webhook.status === 'active' ? (
+                          <CheckCircle2 size={14} />
+                        ) : (
+                          <AlertCircle size={14} />
+                        )}
+                        {webhook.status === 'active' ? 'Activo' : 'Inactivo'}
+                      </span>
+                    </div>
+                    <div className="mt-2 text-xs text-[#666666]">
+                      Eventos: {webhook.events?.join(', ') || 'N/A'}
+                    </div>
+                    <div className="mt-1 text-xs text-[#666666]">
+                      Última entrega: {webhook.lastDelivery ? new Date(webhook.lastDelivery).toLocaleString('es-ES') : 'N/A'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      await confirm({
+                        title: 'Eliminar Webhook',
+                        message: `¿Estás seguro de que deseas eliminar este webhook? Esta acción no se puede deshacer.`,
+                        confirmText: 'Eliminar',
+                        cancelText: 'Cancelar',
+                        isDangerous: true,
+                        onConfirm: async () => {
+                          try {
+                            await apiService.delete(`/webhooks/${webhook.id}`);
+                            toast.success('Webhook eliminado correctamente');
+                            refetch();
+                          } catch (error) {
+                            toast.error('Error eliminando webhook');
+                          }
+                        },
+                      });
+                    }}
+                    className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors"
                   >
-                    {webhook.status === 'active' ? (
-                      <CheckCircle2 size={14} />
-                    ) : (
-                      <AlertCircle size={14} />
-                    )}
-                    {webhook.status === 'active' ? 'Activo' : 'Inactivo'}
-                  </span>
-                </div>
-                <div className="mt-2 text-xs text-[#666666]">
-                  Eventos: {webhook.events.join(', ')}
-                </div>
-                <div className="mt-1 text-xs text-[#666666]">
-                  Última entrega: {webhook.lastDelivery.toLocaleString('es-ES')}
+                    <Trash2 size={18} />
+                  </button>
                 </div>
               </div>
-              <button
-                onClick={async () => {
-                  const confirmed = await confirm({
-                    title: 'Eliminar Webhook',
-                    message: `¿Estás seguro de que deseas eliminar este webhook? Esta acción no se puede deshacer.`,
-                    confirmText: 'Eliminar',
-                    cancelText: 'Cancelar',
-                    isDangerous: true,
-                    onConfirm: async () => {
-                      setWebhooks(webhooks.filter(w => w.id !== webhook.id));
-                      toast.success('Webhook eliminado correctamente');
-                    },
-                  });
-                }}
-                className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
 
-      {webhooks.length === 0 && !showCreateForm && (
-        <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-8 text-center">
-          <p className="text-[#A0A0A0]">No hay webhooks configurados</p>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="mt-4"
-            onClick={() => setShowCreateForm(true)}
-          >
-            Crear el primero
-          </Button>
-        </div>
+          {webhooks.length === 0 && !showCreateForm && (
+            <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-8 text-center">
+              <p className="text-[#A0A0A0]">No hay webhooks configurados</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="mt-4"
+                onClick={() => setShowCreateForm(true)}
+              >
+                Crear el primero
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );

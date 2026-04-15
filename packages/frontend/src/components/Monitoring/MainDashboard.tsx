@@ -28,6 +28,7 @@ import UsersPage from '../../pages/UsersPage';
 import PreferencesPage from '../../pages/PreferencesPage';
 import LibraryPage from '../../pages/LibraryPage';
 import ProjectsPage from '../Projects/ProjectsPage';
+import AnomaliesPage from '../../pages/AnomaliesPage';
 
 type AgentView = 'list' | 'detail';
 
@@ -152,7 +153,7 @@ export default function MainDashboard() {
       case 'analytics':  return <AnalyticsDashboard />;
       case 'hallazgos':  return <FindingsPanelPage />;
       case 'alertas':    return <AnalyticsDashboard />;
-      case 'anomalias':  return <AnalyticsDashboard />;
+      case 'anomalias':  return <AnomaliesPage />;
       case 'comparacion': return <AnalysisComparisonPage />;
       case 'historico':  return <AnalysisHistoricalPage />;
       case 'integraciones': return <IntegrationsPage />;

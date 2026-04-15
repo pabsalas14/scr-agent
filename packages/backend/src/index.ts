@@ -169,6 +169,7 @@ import codeAnalysisRoutes from './routes/code-analysis.routes';
 import reportsRoutes from './routes/reports.routes';
 import comparisonRoutes from './routes/comparison.routes';
 import searchRoutes from './routes/search.routes';
+import webhooksRoutes from './routes/webhooks.routes';
 import { authMiddleware } from './middleware/auth.middleware';
 import { auditMiddleware } from './middleware/audit.middleware';
 
@@ -201,6 +202,7 @@ app.use('/api/v1/visualizations', visualizationsRoutes);
 app.use('/api/v1/code-analysis', codeAnalysisRoutes);
 app.use('/api/v1/reports', reportsRoutes);
 app.use('/api/v1/comparison', comparisonRoutes);
+app.use('/api/v1/webhooks', webhooksRoutes);
 app.use('/api/v1', searchRoutes);
 
 // ==================== MANEJO DE ERRORES ====================

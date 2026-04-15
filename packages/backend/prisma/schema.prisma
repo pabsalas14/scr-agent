@@ -658,6 +658,43 @@ model AnalysisJob {
   @@map("analysis_jobs")
 }
 
+// ==================== WEBHOOKS ====================
+
+model Webhook {
+  id           String   @id @default(cuid())
+  url          String   @db.VarChar(500)
+  events       String[] // JSON array stored as text: ['finding.created', 'finding.updated']
+  status       String   @default("active") // 'active' or 'inactive'
+  secret       String?  @db.VarChar(255)
+  headers      String?  @db.Text // Custom headers as JSON
+
+  // Timing
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastDelivery DateTime?
+
+  @@index([status, createdAt])
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id           String   @id @default(cuid())
+  webhookId    String   @db.VarChar(255)
+  event        String   @db.VarChar(100)
+  payload      String   @db.Text
+  status       String   // 'pending', 'success', 'failed'
+  statusCode   Int?
+  error        String?  @db.Text
+  attempts     Int      @default(0)
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([webhookId, createdAt])
+  @@index([status, createdAt])
+  @@map("webhook_deliveries")
+}
+
 // ==================== ENUMS: PHASE 4 ====================
 
 /// Tipo de notificación

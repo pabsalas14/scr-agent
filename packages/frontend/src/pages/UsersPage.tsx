@@ -8,9 +8,9 @@ import Button from '../components/ui/Button';
 import type { Usuario } from '../types/api';
 
 export default function UsersPage() {
-  const { data: users, isLoading } = useQuery<Usuario[]>({
+  const { data: users, isLoading, refetch } = useQuery<Usuario[]>({
     queryKey: ['users-list'],
-    queryFn: () => apiService.obtenerUsuarios(),
+    queryFn: () => apiService.listarUsuarios(),
   });
 
   const [showCreateForm, setShowCreateForm] = useState(false);
