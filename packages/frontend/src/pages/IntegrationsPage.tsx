@@ -52,7 +52,29 @@ export default function IntegrationsPage() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const toast = useToast();
 
-  // Persist API keys to localStorage when they change
+  // Load API keys from backend on mount
+  useEffect(() => {
+    const loadApiKeys = async () => {
+      try {
+        const response = await fetch('/api/v1/user-settings/llm-keys', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setApiKeys(data.keys || []);
+        }
+      } catch (error) {
+        console.log('No se pueden cargar claves del backend, usando valor por defecto');
+      }
+    };
+
+    loadApiKeys();
+  }, []);
+
+  // Persist API keys to localStorage as backup
   useEffect(() => {
     localStorage.setItem('llm_api_keys', JSON.stringify(apiKeys));
   }, [apiKeys]);
@@ -111,22 +133,53 @@ export default function IntegrationsPage() {
     }
   };
 
-  const addAPIKey = () => {
+  const addAPIKey = async () => {
     if (!newApiKey.trim()) {
       toast.error('Por favor ingresa una clave API');
       return;
     }
 
-    const newKey = {
-      id: Date.now().toString(),
-      provider: newApiKeyProvider,
-      key: newApiKey,
-    };
+    try {
+      // Guardar en backend
+      const response = await fetch('/api/v1/user-settings/llm-keys', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify({
+          provider: newApiKeyProvider,
+          key: newApiKey,
+        }),
+      });
 
-    setApiKeys([...apiKeys, newKey]);
-    setNewApiKey('');
-    setShowNewApiKeyForm(false);
-    toast.success(`Clave API de ${newApiKeyProvider} agregada correctamente`);
+      if (response.ok) {
+        const result = await response.json();
+        const newKey = {
+          id: result.id || Date.now().toString(),
+          provider: newApiKeyProvider,
+          key: newApiKey,
+        };
+
+        setApiKeys([...apiKeys, newKey]);
+        setNewApiKey('');
+        setShowNewApiKeyForm(false);
+        toast.success(`Clave API de ${newApiKeyProvider} guardada en la base de datos`);
+      } else {
+        // Fallback: guardar localmente si el backend no responde
+        const newKey = {
+          id: Date.now().toString(),
+          provider: newApiKeyProvider,
+          key: newApiKey,
+        };
+        setApiKeys([...apiKeys, newKey]);
+        setNewApiKey('');
+        setShowNewApiKeyForm(false);
+        toast.success(`Clave API de ${newApiKeyProvider} agregada (sincronización pendiente)`);
+      }
+    } catch (error) {
+      toast.error('Error al guardar la clave API');
+    }
   };
 
   const toggleKeyVisibility = (keyId: string) => {
@@ -139,7 +192,20 @@ export default function IntegrationsPage() {
     setVisibleKeys(newVisibleKeys);
   };
 
-  const deleteAPIKey = (keyId: string) => {
+  const deleteAPIKey = async (keyId: string) => {
+    try {
+      // Intentar eliminar del backend
+      await fetch(`/api/v1/user-settings/llm-keys/${keyId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+      });
+    } catch (error) {
+      console.log('Error eliminando de BD, eliminando localmente');
+    }
+
+    // Eliminar localmente
     setApiKeys(apiKeys.filter((k) => k.id !== keyId));
     toast.info('Clave API eliminada');
   };
