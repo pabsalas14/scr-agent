@@ -25,11 +25,6 @@ export default function IntegrationsPage() {
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [showGitHubModal, setShowGitHubModal] = useState(false);
   const [githubToken, setGithubToken] = useState('');
-  const [githubConfig, setGithubConfig] = useState<GitHubConfig>({
-    token: '',
-    username: undefined,
-    connected: false,
-  });
   const [isTestingToken, setIsTestingToken] = useState(false);
 
   // Load API keys from localStorage
@@ -43,6 +38,16 @@ export default function IntegrationsPage() {
       return [
         { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
       ];
+    }
+  });
+
+  // Load GitHub config from localStorage
+  const [githubConfig, setGithubConfig] = useState<GitHubConfig>(() => {
+    try {
+      const stored = localStorage.getItem('github_config');
+      return stored ? JSON.parse(stored) : { token: '', username: undefined, connected: false };
+    } catch {
+      return { token: '', username: undefined, connected: false };
     }
   });
 
@@ -78,6 +83,11 @@ export default function IntegrationsPage() {
   useEffect(() => {
     localStorage.setItem('llm_api_keys', JSON.stringify(apiKeys));
   }, [apiKeys]);
+
+  // Persist GitHub config to localStorage
+  useEffect(() => {
+    localStorage.setItem('github_config', JSON.stringify(githubConfig));
+  }, [githubConfig]);
 
   const testGitHubToken = async () => {
     if (!githubToken.trim()) {
