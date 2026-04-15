@@ -31,31 +31,70 @@ export default function AnomaliesPage() {
     },
   });
 
-  // Detect anomalies from timeline data (simplified detection)
+  // Detect anomalies from timeline data (improved detection)
   const detectedAnomalies: DetectedAnomaly[] = useMemo(() => {
     if (!timeline || timeline.length === 0) return [];
 
     const anomalies: DetectedAnomaly[] = [];
     const criticalValues = timeline.map((d: any) => d.critical || 0);
+    const totalValues = timeline.map((d: any) => (d.critical || 0) + (d.high || 0));
 
-    // Simple anomaly detection: values > mean + 2*stddev
     if (criticalValues.length > 1) {
+      // Calculate statistics for critical findings
       const mean = criticalValues.reduce((a: number, b: number) => a + b, 0) / criticalValues.length;
       const variance = criticalValues.reduce((sum: number, val: number) => sum + Math.pow(val - mean, 2), 0) / criticalValues.length;
       const stdDev = Math.sqrt(variance);
-      const threshold = mean + 2 * stdDev;
 
+      // More sensitive detection: use mean + 1.5*stddev OR 50% increase from baseline
+      const threshold1 = mean + 1.5 * stdDev;
+      const threshold2 = mean * 1.5; // 50% increase
+      const threshold = Math.min(threshold1, threshold2);
+
+      // Also detect sudden spikes (day-to-day increase of 50%+)
       timeline.forEach((point: any, idx: number) => {
-        if (point.critical > threshold) {
+        let isAnomaly = false;
+        let severity: 'low' | 'medium' | 'high' | 'critical' = 'medium';
+        let reason = '';
+
+        // Check if exceeds threshold
+        if (point.critical > threshold && threshold > 0) {
+          isAnomaly = true;
+          severity = point.critical > mean + 2 * stdDev ? 'critical' : point.critical > mean + 1 * stdDev ? 'high' : 'medium';
+          reason = `Aumento estadístico en hallazgos críticos. Valor: ${point.critical}, Esperado: ${mean.toFixed(1)}`;
+        }
+
+        // Check for day-to-day spike (sudden increase)
+        if (idx > 0) {
+          const prevCritical = timeline[idx - 1].critical || 0;
+          const increase = prevCritical > 0 ? ((point.critical - prevCritical) / prevCritical) : 0;
+
+          if (increase >= 0.5 && point.critical > 0) {
+            isAnomaly = true;
+            severity = increase > 1 ? 'critical' : 'high';
+            reason = `Spike súbito en hallazgos críticos. Aumentó de ${prevCritical} a ${point.critical} (+${(increase * 100).toFixed(0)}%)`;
+          }
+        }
+
+        // Check for sustained high values
+        const isHighValue = point.critical > mean + 0.5 * stdDev;
+        const allHighValuesAhead = timeline.slice(idx, Math.min(idx + 3, timeline.length)).every((p: any) => (p.critical || 0) > mean);
+
+        if (isHighValue && allHighValuesAhead && criticalValues.filter(v => v > mean).length > 0) {
+          isAnomaly = true;
+          severity = 'medium';
+          if (!reason) reason = `Valores consistentemente altos en hallazgos críticos`;
+        }
+
+        if (isAnomaly) {
           anomalies.push({
             id: `anomaly-critical-${idx}`,
             metric: 'critical_findings',
             value: point.critical,
-            expectedRange: [Math.max(0, mean - 2 * stdDev), threshold],
-            severity: point.critical > mean + 3 * stdDev ? 'critical' : 'high',
-            confidence: 0.85,
+            expectedRange: [Math.max(0, mean - stdDev), threshold],
+            severity,
+            confidence: 0.75,
             timestamp: new Date(point.date),
-            description: `Aumento anómalo en hallazgos críticos. Valor: ${point.critical}, Esperado: ${mean.toFixed(1)} ± ${stdDev.toFixed(1)}`,
+            description: reason || `Anomalía detectada en hallazgos críticos`,
           });
         }
       });

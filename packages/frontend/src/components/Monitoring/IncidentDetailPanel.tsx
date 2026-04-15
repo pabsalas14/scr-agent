@@ -47,35 +47,45 @@ export default function IncidentDetailPanel({
   if (!incident) return null;
 
   const handleSave = async () => {
-    // If changing to CLOSED, require confirmation
-    if (status === 'CLOSED' && incident.status !== 'CLOSED') {
-      const confirmed = await confirm({
-        title: 'Cerrar Incidente',
-        message: '¿Estás seguro de que deseas cerrar este incidente? Esta acción marcará el incidente como completamente resuelto y verificado.',
-        confirmText: 'Cerrar',
-        cancelText: 'Cancelar',
-        isDangerous: true,
-        onConfirm: async () => {
-          await saveOperation.execute(async () => {
-            await apiService.cambiarEstadoHallazgo(incident.id, {
-              status,
-              notes,
-              assignedTo: assignedTo || undefined,
-            });
-            onStatusChange?.();
-          });
-        },
-      });
-    } else {
-      // For other status changes, save directly
-      await saveOperation.execute(async () => {
+    try {
+      // If changing to CLOSED, require confirmation
+      if (status === 'CLOSED' && incident.status !== 'CLOSED') {
+        await confirm({
+          title: 'Cerrar Incidente',
+          message: '¿Estás seguro de que deseas cerrar este incidente? Esta acción marcará el incidente como completamente resuelto y verificado.',
+          confirmText: 'Cerrar',
+          cancelText: 'Cancelar',
+          isDangerous: true,
+          onConfirm: async () => {
+            try {
+              await apiService.cambiarEstadoHallazgo(incident.id, {
+                status,
+                notes,
+                assignedTo: assignedTo || undefined,
+              });
+              toast.success('Incidente cerrado correctamente');
+              onStatusChange?.();
+              onClose();
+            } catch (error) {
+              console.error('Error cerrando incidente:', error);
+              toast.error('Error al cerrar el incidente');
+            }
+          },
+        });
+      } else {
+        // For other status changes, save directly
         await apiService.cambiarEstadoHallazgo(incident.id, {
           status,
           notes,
           assignedTo: assignedTo || undefined,
         });
+        toast.success('Cambios guardados correctamente');
         onStatusChange?.();
-      });
+        onClose();
+      }
+    } catch (error) {
+      console.error('Error guardando cambios:', error);
+      toast.error('Error al guardar los cambios');
     }
   };
 

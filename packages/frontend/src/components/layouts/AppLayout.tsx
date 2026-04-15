@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import NavigationSidebar from '../Navigation/NavigationSidebar';
 import SearchHeader from '../Search/SearchHeader';
 import ProtectedRoute from '../ProtectedRoute';
+import HelpSystem from '../Help/HelpSystem';
 import { useAuth } from '../../hooks/useAuth';
 import ToastContainer from '../ui/Toast';
 import LoadingBar from '../ui/LoadingBar';
@@ -28,7 +29,6 @@ export default function AppLayout() {
     if (pathname.includes('/analyses/comparison')) return 'comparacion';
     if (pathname.includes('/analyses/historical')) return 'historico';
     if (pathname.includes('/settings/integrations')) return 'integraciones';
-    if (pathname.includes('/settings/webhooks')) return 'webhooks';
     if (pathname.includes('/settings/users')) return 'usuarios';
     if (pathname.includes('/settings/preferences')) return 'preferencias';
     if (pathname.includes('/settings/library')) return 'biblioteca';
@@ -67,7 +67,6 @@ export default function AppLayout() {
       'costos': '/dashboard/costs',
       'analytics': '/dashboard/analytics',
       'integraciones': '/dashboard/settings/integrations',
-      'webhooks': '/dashboard/settings/webhooks',
       'usuarios': '/dashboard/settings/users',
       'preferencias': '/dashboard/settings/preferences',
       'biblioteca': '/dashboard/settings/library',
@@ -181,6 +180,7 @@ export default function AppLayout() {
           </div>
         </div>
 
+        <HelpSystem />
         <ToastContainer />
       </ProtectedRoute>
     </SocketProvider>

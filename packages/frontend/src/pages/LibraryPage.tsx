@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Search, Plus, BookOpen, Tag } from 'lucide-react';
+import { Search, Plus, BookOpen, Tag, X } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { apiService } from '../services/api.service';
+import { useToast } from '../hooks/useToast';
 
 const SECURITY_RULE_CATEGORIES = [
   {
@@ -33,6 +34,10 @@ const SECURITY_RULE_CATEGORIES = [
 export default function LibraryPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [isEditingMode, setIsEditingMode] = useState(false);
+  const [showNewRuleDialog, setShowNewRuleDialog] = useState(false);
+  const toast = useToast();
 
   // Cargar hallazgos para crear una "biblioteca" basada en datos reales
   const { data: findingsData, isLoading } = useQuery({
@@ -97,7 +102,7 @@ export default function LibraryPage() {
             Reglas y patrones de detección de seguridad
           </p>
         </div>
-        <Button size="sm">
+        <Button size="sm" onClick={() => setShowNewRuleDialog(true)}>
           <Plus size={18} className="mr-2" />
           Nueva Regla
         </Button>
@@ -173,10 +178,22 @@ export default function LibraryPage() {
               </div>
 
               <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition-colors">
+                <button
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setIsEditingMode(false);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-xs font-medium text-white transition-colors"
+                >
                   Ver
                 </button>
-                <button className="px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] rounded-lg text-xs font-medium text-[#A0A0A0] transition-colors">
+                <button
+                  onClick={() => {
+                    setSelectedItem(item);
+                    setIsEditingMode(true);
+                  }}
+                  className="px-4 py-2 bg-[#2D2D2D] hover:bg-[#3D3D3D] rounded-lg text-xs font-medium text-[#A0A0A0] transition-colors"
+                >
                   Editar
                 </button>
               </div>
@@ -188,6 +205,148 @@ export default function LibraryPage() {
       {filteredItems.length === 0 && (
         <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-8 text-center">
           <p className="text-[#A0A0A0]">No se encontraron elementos en la biblioteca</p>
+        </div>
+      )}
+
+      {/* Detail/Edit Modal */}
+      {selectedItem && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-[#111111] border-b border-[#2D2D2D] p-6 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">{isEditingMode ? 'Editar' : 'Ver'} Regla</h2>
+              <button
+                onClick={() => {
+                  setSelectedItem(null);
+                  setIsEditingMode(false);
+                }}
+                className="p-2 hover:bg-[#2D2D2D] rounded-lg"
+              >
+                <X className="text-[#A0A0A0]" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Nombre de la Regla</label>
+                <div className={`px-4 py-2 rounded-lg border ${isEditingMode ? 'bg-[#111111] border-[#2D2D2D]' : 'bg-[#0F0F0F] border-[#1A1A1A]'} text-white`}>
+                  {selectedItem.title}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Descripción</label>
+                <div className={`px-4 py-2 rounded-lg border ${isEditingMode ? 'bg-[#111111] border-[#2D2D2D]' : 'bg-[#0F0F0F] border-[#1A1A1A]'} text-white`}>
+                  {selectedItem.description}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Severidad</label>
+                  <div className={`px-4 py-2 rounded-lg border ${isEditingMode ? 'bg-[#111111] border-[#2D2D2D]' : 'bg-[#0F0F0F] border-[#1A1A1A]'} text-white`}>
+                    {selectedItem.severity}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Categoría</label>
+                  <div className={`px-4 py-2 rounded-lg border ${isEditingMode ? 'bg-[#111111] border-[#2D2D2D]' : 'bg-[#0F0F0F] border-[#1A1A1A]'} text-white`}>
+                    {selectedItem.category}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Instancias Detectadas</label>
+                <div className={`px-4 py-2 rounded-lg border ${isEditingMode ? 'bg-[#111111] border-[#2D2D2D]' : 'bg-[#0F0F0F] border-[#1A1A1A]'} text-white`}>
+                  {selectedItem.instances}
+                </div>
+              </div>
+
+              {isEditingMode && (
+                <button
+                  onClick={() => {
+                    toast.success('Regla actualizada correctamente');
+                    setSelectedItem(null);
+                    setIsEditingMode(false);
+                  }}
+                  className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
+                >
+                  Guardar Cambios
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Rule Dialog */}
+      {showNewRuleDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 bg-[#111111] border-b border-[#2D2D2D] p-6 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-white">Nueva Regla de Seguridad</h2>
+              <button
+                onClick={() => setShowNewRuleDialog(false)}
+                className="p-2 hover:bg-[#2D2D2D] rounded-lg"
+              >
+                <X className="text-[#A0A0A0]" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Nombre de la Regla</label>
+                <input
+                  type="text"
+                  placeholder="Ej: SQL Injection Detection"
+                  className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Descripción</label>
+                <textarea
+                  placeholder="Describe qué busca esta regla..."
+                  rows={4}
+                  className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:border-blue-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Severidad</label>
+                  <select className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                    <option>LOW</option>
+                    <option>MEDIUM</option>
+                    <option>HIGH</option>
+                    <option>CRITICAL</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#A0A0A0] mb-2">Categoría</label>
+                  <select className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:border-blue-500 focus:outline-none">
+                    <option>CUSTOM</option>
+                    <option>OWASP</option>
+                    <option>CWE</option>
+                  </select>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  toast.success('Regla creada correctamente');
+                  setShowNewRuleDialog(false);
+                }}
+                className="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-medium transition-colors"
+              >
+                Crear Regla
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

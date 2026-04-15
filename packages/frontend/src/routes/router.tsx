@@ -23,7 +23,6 @@ const AnalysisComparisonPage = lazy(() => import('../pages/AnalysisComparisonPag
 const AnalysisHistoricalPage = lazy(() => import('../pages/AnalysisHistoricalPage'));
 const FindingsPanelPage = lazy(() => import('../pages/FindingsPanelPage'));
 const IntegrationsPage = lazy(() => import('../pages/IntegrationsPage'));
-const WebhooksPage = lazy(() => import('../pages/WebhooksPage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
 const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
 const LibraryPage = lazy(() => import('../pages/LibraryPage'));
@@ -241,16 +240,6 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <IntegrationsPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/webhooks',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <WebhooksPage />
             </Suspense>
           </ErrorBoundary>
         ),

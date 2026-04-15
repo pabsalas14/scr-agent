@@ -90,15 +90,19 @@ export default function AnalysisHistoricalPage() {
                     <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-[#2D2D2D]">
                       <div>
                         <p className="text-xs text-[#A0A0A0] mb-1">Hallazgos Críticos</p>
-                        <p className="text-lg font-semibold text-red-400">{analysis.criticalFindingsCount || 0}</p>
+                        <p className="text-lg font-semibold text-red-400">
+                          {analysis.report?.severityBreakdown?.['CRITICAL'] || analysis.findings?.filter(f => f.severity === 'CRITICAL').length || 0}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-[#A0A0A0] mb-1">Total Hallazgos</p>
-                        <p className="text-lg font-semibold text-white">{analysis.totalFindingsCount || 0}</p>
+                        <p className="text-lg font-semibold text-white">
+                          {analysis.report?.findingsCount || analysis.findings?.length || 0}
+                        </p>
                       </div>
                       <div>
                         <p className="text-xs text-[#A0A0A0] mb-1">Risk Score</p>
-                        <p className="text-lg font-semibold text-blue-400">{analysis.riskScore || 0}</p>
+                        <p className="text-lg font-semibold text-blue-400">{analysis.report?.riskScore || 0}</p>
                       </div>
                     </div>
                   </div>

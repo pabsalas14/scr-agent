@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Save, Bell, Eye, Language } from 'lucide-react';
+import { Save, Bell } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { apiService } from '../services/api.service';
 import { useToast } from '../hooks/useToast';
@@ -116,6 +116,7 @@ export default function PreferencesPage() {
                 />
               </div>
             )}
+
           </div>
 
           {/* Save Button */}

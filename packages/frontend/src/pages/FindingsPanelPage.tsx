@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { Filter, Search, ExternalLink } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { apiService } from '../services/api.service';
@@ -8,6 +9,7 @@ import type { Hallazgo } from '../types/api';
 export default function FindingsPanelPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('');
+  const navigate = useNavigate();
   const toast = useToast();
 
   const { data: findingsResponse, isLoading } = useQuery({
@@ -149,7 +151,11 @@ export default function FindingsPanelPage() {
                   </div>
                   <button
                     onClick={() => {
-                      toast.info(`Abriendo detalles de ${finding.title}`);
+                      if (finding.analysis?.projectId) {
+                        navigate(`/projects/${finding.analysis.projectId}/analyses/${finding.analysis.id}`);
+                      } else {
+                        toast.info(`Abriendo detalles de ${finding.title}`);
+                      }
                     }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded-lg flex items-center gap-1"
                   >

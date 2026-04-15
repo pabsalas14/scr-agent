@@ -2,13 +2,41 @@ import { Bell, AlertCircle, TrendingUp, Settings, Activity } from 'lucide-react'
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
 import { apiService } from '../../services/api.service';
+import { useToast } from '../../hooks/useToast';
 
 export default function AlertsMonitor() {
-  const { data: alertsData, isLoading } = useQuery({
+  const toast = useToast();
+  const { data: alertsData, isLoading, refetch } = useQuery({
     queryKey: ['global-alerts'],
     queryFn: () => apiService.obtenerHallazgosGlobales({ isIncident: true, limit: 100 }),
     refetchInterval: 10000,
   });
+
+  const handleAcknowledge = async (alertId: string, alertTitle: string) => {
+    try {
+      await apiService.cambiarEstadoHallazgo(alertId, {
+        status: 'IN_PROGRESS',
+      });
+      toast.success(`Alerta reconocida: ${alertTitle}`);
+      refetch();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al reconocer la alerta');
+    }
+  };
+
+  const handleResolve = async (alertId: string, alertTitle: string) => {
+    try {
+      await apiService.cambiarEstadoHallazgo(alertId, {
+        status: 'RESOLVED',
+      });
+      toast.success(`Alerta resuelta: ${alertTitle}`);
+      refetch();
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Error al resolver la alerta');
+    }
+  };
 
   const alerts = (alertsData?.data || []).map((f: any) => ({
     id: f.id,
@@ -167,12 +195,18 @@ export default function AlertsMonitor() {
               </div>
               <div className="flex gap-2">
                 {alert.status === 'ACTIVE' && (
-                  <button className="px-3 py-1 bg-orange-500/10 text-orange-400 rounded text-xs hover:bg-orange-500/20 transition-all">
+                  <button
+                    onClick={() => handleAcknowledge(alert.id, alert.title)}
+                    className="px-3 py-1 bg-orange-500/10 text-orange-400 rounded text-xs hover:bg-orange-500/20 transition-all"
+                  >
                     Reconocer
                   </button>
                 )}
                 {alert.status !== 'RESOLVED' && (
-                  <button className="px-3 py-1 bg-green-500/10 text-green-400 rounded text-xs hover:bg-green-500/20 transition-all">
+                  <button
+                    onClick={() => handleResolve(alert.id, alert.title)}
+                    className="px-3 py-1 bg-green-500/10 text-green-400 rounded text-xs hover:bg-green-500/20 transition-all"
+                  >
                     Resolver
                   </button>
                 )}

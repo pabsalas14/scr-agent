@@ -37,7 +37,6 @@ export type TabId =
 
   // CONFIGURACIÓN (Settings & Admin)
   | 'integraciones'
-  | 'webhooks'
   | 'usuarios'
   | 'preferencias'
   | 'biblioteca';
