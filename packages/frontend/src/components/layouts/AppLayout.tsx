@@ -34,6 +34,7 @@ export default function AppLayout() {
     if (pathname.includes('/settings/library')) return 'biblioteca';
 
     // Then check parent routes
+    if (pathname.includes('/anomalias')) return 'anomalias';
     if (pathname.includes('/incidents')) return 'incidentes';
     if (pathname.includes('/projects')) return 'proyectos';
     if (pathname.includes('/analyses')) return 'reportes';
@@ -60,7 +61,7 @@ export default function AppLayout() {
       'hallazgos': '/dashboard/incidents/findings',
       'alertas': '/dashboard/alerts',
       'investigaciones': '/dashboard/forensics',
-      'anomalias': '/dashboard/incidents',
+      'anomalias': '/dashboard/anomalias',
       'agentes': '/dashboard/agents',
       'sistema': '/dashboard/system',
       'costos': '/dashboard/costs',
