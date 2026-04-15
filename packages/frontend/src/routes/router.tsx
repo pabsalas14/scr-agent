@@ -27,6 +27,7 @@ const WebhooksPage = lazy(() => import('../pages/WebhooksPage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
 const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
 const LibraryPage = lazy(() => import('../pages/LibraryPage'));
+const AnomaliesPage = lazy(() => import('../pages/AnomaliesPage'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -160,6 +161,16 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <AnalyticsDashboard />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/anomalias',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AnomaliesPage />
             </Suspense>
           </ErrorBoundary>
         ),
