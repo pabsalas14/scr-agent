@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { GitBranch, Key, Eye, EyeOff, Trash2, ExternalLink, Check, X } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
@@ -31,14 +31,31 @@ export default function IntegrationsPage() {
     connected: false,
   });
   const [isTestingToken, setIsTestingToken] = useState(false);
-  const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>([
-    { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
-  ]);
+
+  // Load API keys from localStorage
+  const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>(() => {
+    try {
+      const stored = localStorage.getItem('llm_api_keys');
+      return stored ? JSON.parse(stored) : [
+        { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
+      ];
+    } catch {
+      return [
+        { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
+      ];
+    }
+  });
+
   const [showNewApiKeyForm, setShowNewApiKeyForm] = useState(false);
   const [newApiKeyProvider, setNewApiKeyProvider] = useState('Claude');
   const [newApiKey, setNewApiKey] = useState('');
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const toast = useToast();
+
+  // Persist API keys to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('llm_api_keys', JSON.stringify(apiKeys));
+  }, [apiKeys]);
 
   const testGitHubToken = async () => {
     if (!githubToken.trim()) {
