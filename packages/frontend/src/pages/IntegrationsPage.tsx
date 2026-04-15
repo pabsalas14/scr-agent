@@ -114,22 +114,37 @@ export default function IntegrationsPage() {
 
     setIsTestingToken(true);
 
-    // Simular validación breve
-    setTimeout(() => {
-      // Extraer username aproximado del token (en GitHub es 36 caracteres después de ghp_)
-      const username = githubToken.startsWith('ghp_') ? 'github-user' : 'github-user';
-
-      setGithubConfig({
-        token: githubToken,
-        username: username,
-        connected: true,
+    try {
+      // Validar token contra GitHub API mediante backend
+      const response = await fetch('/api/v1/user-settings/validate-github-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify({ token: githubToken }),
       });
 
-      toast.success(`✅ GitHub conectado. Token guardado correctamente.`);
-      setShowGitHubModal(false);
-      setGithubToken('');
+      if (response.ok) {
+        const data = await response.json();
+        setGithubConfig({
+          token: githubToken,
+          username: data.username,
+          connected: true,
+        });
+
+        toast.success(`✅ GitHub conectado. Usuario: @${data.username}`);
+        setShowGitHubModal(false);
+        setGithubToken('');
+      } else {
+        const errorData = await response.json();
+        toast.error(`Error: ${errorData.error || 'No se pudo validar el token'}`);
+      }
+    } catch (error) {
+      toast.error('Error de conexión. Verifica tu token e intenta de nuevo.');
+    } finally {
       setIsTestingToken(false);
-    }, 800);
+    }
   };
 
   const disconnectGitHub = () => {

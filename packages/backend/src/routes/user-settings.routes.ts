@@ -235,6 +235,58 @@ router.patch('/settings', authMiddleware, async (req: Request, res: Response) =>
 });
 
 /**
+ * POST /api/v1/user-settings/validate-github-token
+ * Validate GitHub token and get username
+ */
+router.post('/validate-github-token', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { token } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!token) {
+      return res.status(400).json({ error: 'Token is required' });
+    }
+
+    try {
+      // Validate against GitHub API
+      const response = await axios.get('https://api.github.com/user', {
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: 'application/vnd.github.v3+json',
+        },
+        timeout: 5000,
+      });
+
+      if (response.status === 200 && response.data.login) {
+        return res.json({
+          success: true,
+          username: response.data.login,
+          message: 'Token válido',
+        });
+      }
+
+      return res.status(400).json({
+        success: false,
+        error: 'Token no válido',
+      });
+    } catch (githubError) {
+      logger.error(`GitHub API error: ${githubError}`);
+      return res.status(400).json({
+        success: false,
+        error: 'No se pudo validar el token contra GitHub',
+      });
+    }
+  } catch (error) {
+    logger.error(`Error validating GitHub token: ${error}`);
+    res.status(500).json({ error: 'Failed to validate token' });
+  }
+});
+
+/**
  * GET /api/v1/user-settings/llm-keys
  * Get all LLM API keys for the current user
  */
