@@ -195,14 +195,6 @@ const getNavigationGroups = (): TabGroup[] => [
         requiresAuth: true,
       },
       {
-        id: 'webhooks',
-        label: 'Webhooks',
-        icon: Webhook,
-        description: 'Configuración de webhooks',
-        component: null as any,
-        requiresAuth: true,
-      },
-      {
         id: 'usuarios',
         label: 'Usuarios',
         icon: Users,
