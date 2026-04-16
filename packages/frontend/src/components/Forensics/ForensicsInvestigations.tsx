@@ -12,6 +12,14 @@ const ACTION_MAP: Record<string, 'AGREGADO' | 'MODIFICADO' | 'ELIMINADO'> = {
   DELETED: 'ELIMINADO',
 };
 
+// Mapeo de niveles de riesgo ingleses a españoles
+const RISK_MAP: Record<string, 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO'> = {
+  LOW: 'BAJO',
+  MEDIUM: 'MEDIO',
+  HIGH: 'ALTO',
+  CRITICAL: 'CRÍTICO',
+};
+
 export default function ForensicsInvestigations() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'summary'>('timeline');
@@ -27,11 +35,22 @@ export default function ForensicsInvestigations() {
     enabled: !!selectedAnalysisId,
   });
 
-  // Mapear eventos: traducir acciones al español
+  // Mapear eventos: traducir acciones, niveles de riesgo y campos de autor
   const forensicEvents: EventoTimeline[] = useMemo(() => {
     return (rawForensicEvents || []).map((e: any) => ({
-      ...e,
-      accion: ACTION_MAP[e.accion] || e.accion,
+      id: e.id,
+      timestamp: e.timestamp,
+      commit: e.commitHash || e.commit,
+      autor: e.author || e.autor,
+      archivo: e.file || e.archivo,
+      funcion: e.function || e.funcion,
+      accion: ACTION_MAP[e.action] || ACTION_MAP[e.accion] || e.accion || e.action,
+      mensaje_commit: e.commitMessage || e.mensaje_commit,
+      resumen_cambios: e.changesSummary || e.resumen_cambios,
+      // Mapear nivel_riesgo si viene en inglés (riskLevel) o español (nivel_riesgo)
+      nivel_riesgo: RISK_MAP[e.riskLevel] || RISK_MAP[e.nivel_riesgo] || e.nivel_riesgo || 'BAJO',
+      indicadores_sospecha: e.suspicionIndicators || e.indicadores_sospecha || [],
+      hallazgo_id: e.findingId || e.hallazgo_id,
     }));
   }, [rawForensicEvents]);
 
@@ -44,12 +63,12 @@ export default function ForensicsInvestigations() {
     }
   }, [completedAnalyses, selectedAnalysisId]);
 
-  // Summary statistics
+  // Summary statistics - using properly mapped events
   const stats = {
     totalEvents: forensicEvents?.length || 0,
-    criticalEvents: forensicEvents?.filter((e: any) => e.nivel_riesgo === 'CRÍTICO').length || 0,
-    affectedUsers: new Set(forensicEvents?.map((e: any) => e.autor) || []).size,
-    affectedFiles: new Set(forensicEvents?.map((e: any) => e.archivo) || []).size,
+    criticalEvents: forensicEvents?.filter((e: EventoTimeline) => e.nivel_riesgo === 'CRÍTICO').length || 0,
+    affectedUsers: new Set(forensicEvents?.map((e: EventoTimeline) => e.autor).filter(Boolean) || []).size,
+    affectedFiles: new Set(forensicEvents?.map((e: EventoTimeline) => e.archivo).filter(Boolean) || []).size,
   };
 
   return (
