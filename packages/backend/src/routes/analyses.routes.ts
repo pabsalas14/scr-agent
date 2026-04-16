@@ -226,7 +226,23 @@ router.get('/:id/forensics', async (req: Request, res: Response) => {
       logger.info(`No forensic events found for analysis ${analysisId} - Detective agent may not have generated them yet or repository has no Git history`);
     }
 
-    res.json({ success: true, data: events });
+    // Mapear campos del backend (inglés) al formato esperado por el frontend (español)
+    const mappedEvents = events.map((event: any) => ({
+      id: event.id,
+      timestamp: event.timestamp.toISOString(),
+      commit: event.commitHash,
+      autor: event.author,
+      archivo: event.file,
+      funcion: event.function,
+      accion: event.action,
+      mensaje_commit: event.commitMessage,
+      resumen_cambios: event.changesSummary,
+      nivel_riesgo: event.riskLevel || 'BAJO',
+      indicadores_sospecha: event.suspicionIndicators || [],
+      hallazgo_id: event.findingId,
+    }));
+
+    res.json({ success: true, data: mappedEvents });
   } catch (error) {
     logger.error(`Error obteniendo eventos forenses: ${error}`);
     res.status(500).json({ success: false, error: 'Error al obtener eventos forenses' });
