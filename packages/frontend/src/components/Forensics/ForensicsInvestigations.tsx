@@ -1,9 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AlertTriangle, Clock, Users, GitBranch, Shield } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import ForensicTimelineVisual from '../Timeline/ForensicTimelineVisual';
 import type { EventoTimeline } from '../../types/timeline';
+
+// Mapeo de acciones inglesas a españolas
+const ACTION_MAP: Record<string, 'AGREGADO' | 'MODIFICADO' | 'ELIMINADO'> = {
+  ADDED: 'AGREGADO',
+  MODIFIED: 'MODIFICADO',
+  DELETED: 'ELIMINADO',
+};
 
 export default function ForensicsInvestigations() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
@@ -14,11 +21,19 @@ export default function ForensicsInvestigations() {
     queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 20 }),
   });
 
-  const { data: forensicEvents, isLoading: isLoadingEvents } = useQuery<EventoTimeline[]>({
+  const { data: rawForensicEvents, isLoading: isLoadingEvents } = useQuery<any[]>({
     queryKey: ['forensic-events', selectedAnalysisId],
     queryFn: () => selectedAnalysisId ? apiService.obtenerEventosForenses(selectedAnalysisId) : Promise.resolve([]),
     enabled: !!selectedAnalysisId,
   });
+
+  // Mapear eventos: traducir acciones al español
+  const forensicEvents: EventoTimeline[] = useMemo(() => {
+    return (rawForensicEvents || []).map((e: any) => ({
+      ...e,
+      accion: ACTION_MAP[e.accion] || e.accion,
+    }));
+  }, [rawForensicEvents]);
 
   const completedAnalyses = (analysesData?.data || []).filter((a: any) => a.status === 'COMPLETED');
   const selectedAnalysis = completedAnalyses.find((a: any) => a.id === selectedAnalysisId);
@@ -33,8 +48,8 @@ export default function ForensicsInvestigations() {
   const stats = {
     totalEvents: forensicEvents?.length || 0,
     criticalEvents: forensicEvents?.filter((e: any) => e.nivel_riesgo === 'CRÍTICO').length || 0,
-    affectedUsers: new Set(forensicEvents?.map((e: any) => e.author) || []).size,
-    affectedFiles: new Set(forensicEvents?.map((e: any) => e.file) || []).size,
+    affectedUsers: new Set(forensicEvents?.map((e: any) => e.autor) || []).size,
+    affectedFiles: new Set(forensicEvents?.map((e: any) => e.archivo) || []).size,
   };
 
   return (

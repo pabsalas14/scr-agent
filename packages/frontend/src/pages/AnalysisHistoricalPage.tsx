@@ -97,7 +97,7 @@ export default function AnalysisHistoricalPage() {
                       <div>
                         <p className="text-xs text-[#A0A0A0] mb-1">Total Hallazgos</p>
                         <p className="text-lg font-semibold text-white">
-                          {analysis.report?.findingsCount || analysis.findings?.length || 0}
+                          {(analysis as any).findingCount || analysis.report?.findingsCount || 0}
                         </p>
                       </div>
                       <div>

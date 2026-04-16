@@ -84,8 +84,10 @@ export default function ProjectDetailView({
       onProjectDeleted?.();
       onClose();
     },
-    onError: () => {
-      toast.error('Error al eliminar el proyecto');
+    onError: (error: any) => {
+      const errorMessage = error?.response?.data?.error || error?.response?.data?.details || error?.message || 'Error desconocido al eliminar el proyecto';
+      console.error('[ProjectDetailView] Error al eliminar:', { error, errorMessage });
+      toast.error(`Error: ${errorMessage}`);
     },
   });
 
