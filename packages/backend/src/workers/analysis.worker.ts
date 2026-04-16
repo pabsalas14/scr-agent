@@ -20,6 +20,7 @@ import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
+import { detectiveService } from '../services/detective.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
 import {
   getNewCommits,
@@ -360,6 +361,9 @@ async function processAnalysisJob(job: Job) {
       data: { status: 'COMPLETED', completedAt: new Date() },
     });
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'COMPLETED', 100);
+
+    // Generar eventos forenses para el análisis completado
+    await detectiveService.generateForensicEvents(analysisId);
 
     return { success: true, analysisId };
   } catch (error) {

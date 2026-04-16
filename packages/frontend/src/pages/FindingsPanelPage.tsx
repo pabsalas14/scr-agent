@@ -134,7 +134,7 @@ export default function FindingsPanelPage() {
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getSeverityColor(finding.severity)}`}>
                       {finding.severity || 'UNKNOWN'}
                     </span>
-                    <h3 className="font-semibold text-white">{finding.title || 'Sin título'}</h3>
+                    <h3 className="font-semibold text-white">{finding.riskType || 'UNKNOWN'}</h3>
                   </div>
                   {finding.description && (
                     <p className="text-sm text-[#A0A0A0] mt-2">{finding.description}</p>
@@ -154,7 +154,7 @@ export default function FindingsPanelPage() {
                       if (finding.analysis?.projectId) {
                         navigate(`/projects/${finding.analysis.projectId}/analyses/${finding.analysis.id}`);
                       } else {
-                        toast.info(`Abriendo detalles de ${finding.title}`);
+                        toast.info(`Abriendo detalles de ${finding.riskType}`);
                       }
                     }}
                     className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded-lg flex items-center gap-1"

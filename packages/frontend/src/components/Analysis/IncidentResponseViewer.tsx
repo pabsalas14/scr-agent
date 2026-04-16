@@ -18,6 +18,8 @@ interface Pattern {
   color: string;
   count: number;
   description: string;
+  details?: string;
+  remediation?: string;
 }
 
 export default function IncidentResponseViewer({ hallazgos = [], isLoading }: IncidentResponseViewerProps) {
@@ -68,12 +70,54 @@ export default function IncidentResponseViewer({ hallazgos = [], isLoading }: In
       return desc;
     };
 
+    // Get pattern-specific details and remediation
+    const getPatternDetails = (type: string): { details: string; remediation: string } => {
+      const detailsMap: Record<string, { details: string; remediation: string }> = {
+        'BACKDOOR': {
+          details: 'Potencial punto de acceso no autorizado o código oculto detectado',
+          remediation: 'Auditar todo el código para funciones no documentadas, rutas de acceso especiales o comandos remotos'
+        },
+        'LOGIC_BOMB': {
+          details: 'Código diseñado para ejecutarse bajo condiciones específicas y causar daño',
+          remediation: 'Eliminar condicionales sospechosos, implementar validación de permisos en tiempo de ejecución'
+        },
+        'INJECTION': {
+          details: 'Vulnerabilidad donde datos no validados se interpretan como código',
+          remediation: 'Usar parameterized queries, validar y escapar todas las entradas de usuario'
+        },
+        'ERROR_HANDLING': {
+          details: 'Manejo de errores incorrecto que expone información sensible o causa comportamiento impredecible',
+          remediation: 'Implementar try-catch adecuado, registrar errores de forma segura sin revelar detalles internos'
+        },
+        'HARDCODED_VALUES': {
+          details: 'Valores sensibles (contraseñas, claves, URLs) codificados directamente en el código',
+          remediation: 'Mover a variables de entorno o gestor de secretos, nunca commitear secretos'
+        },
+        'OBFUSCATION': {
+          details: 'Código ofuscado o compilado que impide el análisis y auditoría',
+          remediation: 'Usar código fuente legible, documentar lógica compleja, mantener mapas de símbolos'
+        },
+        'SUSPICIOUS': {
+          details: 'Patrones de código inusuales o comportamientos sospechosos detectados',
+          remediation: 'Revisar contexto, documentar intención del código, considerar refactorización'
+        }
+      };
+      return detailsMap[type] || {
+        details: `Potencial problema de seguridad detectado en el patrón ${type}`,
+        remediation: 'Revisar el código y consultar con el equipo de seguridad'
+      };
+    };
+
+    const patternInfo = getPatternDetails(riskType);
+
     return {
       name: `${riskType}${hasCritical ? ' ⚠️ CRÍTICO' : hasHigh ? ' ⚠️ ALTO' : ''}`,
       icon: hasCritical ? AlertOctagon : AlertTriangle,
       color: getColorByRisk(),
       count: items.length,
       description: getDescription(riskType, items),
+      details: patternInfo.details,
+      remediation: patternInfo.remediation,
     };
   }).sort((a, b) => {
     // Sort by count first, then by severity (critical first)
@@ -170,26 +214,44 @@ export default function IncidentResponseViewer({ hallazgos = [], isLoading }: In
               return (
                 <div
                   key={pattern.name}
-                  className="flex items-start justify-between p-4 bg-[#242424]/50 rounded-lg border border-[#2D2D2D]"
+                  className="p-4 bg-[#242424]/50 rounded-lg border border-[#2D2D2D] space-y-3 hover:bg-[#242424]/70 transition-colors"
                 >
-                  <div className="flex items-start gap-3 flex-1">
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${pattern.color}20` }}
-                    >
-                      <Icon className="w-5 h-5" style={{ color: pattern.color }} />
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+                        style={{ backgroundColor: `${pattern.color}20` }}
+                      >
+                        <Icon className="w-5 h-5" style={{ color: pattern.color }} />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-white">{pattern.name}</h4>
+                        <p className="text-xs text-[#6B7280] mt-1">{pattern.description}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-white">{pattern.name}</h4>
-                      <p className="text-xs text-[#6B7280] mt-1">{pattern.description}</p>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-2xl font-bold" style={{ color: pattern.color }}>
+                        {pattern.count}
+                      </p>
+                      <p className="text-xs text-[#6B7280] mt-1">ocurrencias</p>
                     </div>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <p className="text-2xl font-bold" style={{ color: pattern.color }}>
-                      {pattern.count}
-                    </p>
-                    <p className="text-xs text-[#6B7280] mt-1">ocurrencias</p>
-                  </div>
+
+                  {/* Pattern Details */}
+                  {pattern.details && (
+                    <div className="border-t border-[#2D2D2D] pt-3 space-y-2">
+                      <div>
+                        <p className="text-xs font-semibold text-[#6B7280] uppercase">¿Qué es?</p>
+                        <p className="text-xs text-white mt-1">{pattern.details}</p>
+                      </div>
+                      {pattern.remediation && (
+                        <div>
+                          <p className="text-xs font-semibold text-[#6B7280] uppercase">Remediación</p>
+                          <p className="text-xs text-white mt-1">{pattern.remediation}</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               );
             })}
