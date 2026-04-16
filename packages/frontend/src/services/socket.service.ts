@@ -18,12 +18,14 @@ class SocketClientService {
     return new Promise((resolve, reject) => {
       try {
         this.socket = io(serverUrl, {
-          transports: ['polling', 'websocket'],
+          transports: ['websocket', 'polling'], // Prefer websocket over polling
           reconnection: true,
           reconnectionDelay: 500,
           reconnectionDelayMax: 3000,
           reconnectionAttempts: 10,
           path: '/socket.io',
+          withCredentials: true, // Send cookies with request (fix for ngrok/cross-domain)
+          autoConnect: true,
         });
 
         let timeoutHandle: NodeJS.Timeout;
