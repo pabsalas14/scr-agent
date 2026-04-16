@@ -64,20 +64,35 @@ const allowedOrigins = [
   'http://localhost:5179',
   'http://localhost:5200',
 ];
+
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  if (!origin) return true; // Permitir requests sin origin (ej. Postman, health checks)
+
+  // Permitir lista predefinida
+  if (allowedOrigins.includes(origin)) return true;
+
+  // Permitir ngrok y otros servicios de tunneling (development)
+  if (NODE_ENV === 'development') {
+    if (origin.includes('ngrok-free.dev') || origin.includes('ngrok.io')) return true;
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) return true;
+  }
+
+  return false;
+};
+
 app.use(cors({
   origin: (
     origin: string | undefined,
     callback: (err: Error | null, allow?: boolean) => void
   ) => {
-    // Permitir requests sin origin (ej. Postman, health checks)
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (isOriginAllowed(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: origen ${origin} no permitido`));
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
