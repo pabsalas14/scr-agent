@@ -13,7 +13,7 @@ export default function AnalysisHistoricalPage() {
   const analyses = analysesResponse?.data || [];
   const completedAnalyses = analyses.filter((a: any) => a.status === 'COMPLETED');
 
-  // Fetch reports for completed analyses
+  // Fetch reports and findings for completed analyses
   const reportsQueries = useQueries({
     queries: completedAnalyses.map((analysis: any) => ({
       queryKey: ['report', analysis.id],
@@ -23,13 +23,29 @@ export default function AnalysisHistoricalPage() {
     })),
   });
 
-  // Combine analyses with their reports
-  const analysesWithReports = completedAnalyses.map((analysis: any, idx: number) => ({
-    ...analysis,
-    report: reportsQueries[idx]?.data,
-  }));
+  const findingsQueries = useQueries({
+    queries: completedAnalyses.map((analysis: any) => ({
+      queryKey: ['findings', analysis.id],
+      queryFn: () => apiService.obtenerHallazgos(analysis.id),
+      enabled: !!analysis.id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
 
-  const isLoading = isLoadingAnalyses || reportsQueries.some(q => q.isLoading);
+  // Combine analyses with their reports and findings
+  const analysesWithReports = completedAnalyses.map((analysis: any, idx: number) => {
+    const findings = findingsQueries[idx]?.data || [];
+    const criticalCount = findings.filter((f: any) => f.severity === 'CRITICAL').length;
+
+    return {
+      ...analysis,
+      report: reportsQueries[idx]?.data,
+      findings,
+      criticalCount,
+    };
+  });
+
+  const isLoading = isLoadingAnalyses || reportsQueries.some(q => q.isLoading) || findingsQueries.some(q => q.isLoading);
 
   const sortedAnalyses = analysesWithReports ? [...analysesWithReports].sort((a, b) => {
     const dateA = new Date(a.completedAt || a.createdAt).getTime();
@@ -110,7 +126,7 @@ export default function AnalysisHistoricalPage() {
                       <div>
                         <p className="text-xs text-[#A0A0A0] mb-1">Hallazgos Críticos</p>
                         <p className="text-lg font-semibold text-red-400">
-                          {analysis.report?.severityBreakdown?.['CRITICAL'] || analysis.findings?.filter(f => f.severity === 'CRITICAL').length || 0}
+                          {(analysis as any).criticalCount || 0}
                         </p>
                       </div>
                       <div>

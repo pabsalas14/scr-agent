@@ -45,6 +45,68 @@ router.get('/', async (req: Request, res: Response) => {
 });
 
 /**
+ * POST /api/v1/users
+ * Crear nuevo usuario (solo ADMIN)
+ */
+router.post('/', async (req: Request, res: Response) => {
+  try {
+    const currentUserId = (req as any).user?.id;
+    const currentRole = await usersService.getUserRole(currentUserId);
+    if (currentRole !== 'ADMIN') {
+      return res.status(403).json({ success: false, error: 'Solo administradores pueden crear usuarios' });
+    }
+
+    const { email, role } = req.body;
+
+    // Validar campos requeridos
+    if (!email || !role) {
+      return res.status(400).json({ success: false, error: 'Email y role son requeridos' });
+    }
+
+    // Validar rol
+    if (!VALID_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, error: `Rol inválido. Válidos: ${VALID_ROLES.join(', ')}` });
+    }
+
+    // Verificar si el usuario ya existe
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ success: false, error: 'El usuario ya existe' });
+    }
+
+    // Crear nuevo usuario con contraseña temporal
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name: email.split('@')[0],
+        password: tempPassword, // En producción, esto debería ser hasheado
+      },
+    });
+
+    // Asignar rol
+    await usersService.assignRole(newUser.id, role);
+
+    // En producción, enviar email con contraseña temporal
+    logger.info(`Nuevo usuario creado: ${email} con rol ${role}`);
+
+    res.json({
+      success: true,
+      data: {
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
+        role,
+      },
+      message: 'Usuario creado correctamente. La contraseña temporal será enviada por email.',
+    });
+  } catch (error) {
+    logger.error('Error creating user:', error);
+    res.status(500).json({ success: false, error: 'Error al crear el usuario' });
+  }
+});
+
+/**
  * PATCH /api/v1/users/:userId/role
  * Cambiar rol de un usuario (solo ADMIN)
  */

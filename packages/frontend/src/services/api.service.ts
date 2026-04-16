@@ -632,6 +632,11 @@ class ApiService {
     await this.client.patch(`/users/${userId}/role`, { role });
   }
 
+  async crearUsuario(data: { email: string; role: string }): Promise<any> {
+    const response = await this.client.post('/users', data);
+    return response.data;
+  }
+
   // ==================== AUDIT ====================
   /**
    * Obtener logs de auditoría del usuario
