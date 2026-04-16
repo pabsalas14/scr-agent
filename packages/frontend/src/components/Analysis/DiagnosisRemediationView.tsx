@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertCircle,
   CheckCircle2,
@@ -118,20 +118,54 @@ export default function DiagnosisRemediationView({ reporte, onNavigateTo }: Diag
           </div>
         </motion.div>
 
-        {/* Executive Summary */}
+        {/* Executive Summary - Enhanced */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-xl bg-gradient-to-br from-[#1E1E20] to-[#1C1C1E] border border-[#2D2D2D] p-8 space-y-4"
+          className="rounded-2xl bg-gradient-to-br from-[#1E1E20] via-[#1C1C1E] to-[#1A1A1C] border-2 border-[#2D2D2D] p-8 lg:p-10 space-y-6 hover:border-[#F97316]/30 transition-colors"
         >
-          <h3 className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
-            <BookOpen className="w-4 h-4" />
-            Síntesis Ejecutiva
-          </h3>
-          <p className="text-sm leading-relaxed text-[#94A3B8]">
-            {reporte.executiveSummary || 'No hay resumen disponible'}
-          </p>
+          {/* Header con icono mejorado */}
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center">
+                <BookOpen className="w-6 h-6 text-[#F97316]" />
+              </div>
+              <div>
+                <h3 className="text-sm font-bold text-white uppercase tracking-wide">Síntesis Ejecutiva</h3>
+                <p className="text-xs text-[#6B7280] mt-1">Hallazgos clave y recomendaciones estratégicas</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Summary Content */}
+          <div className="space-y-4">
+            <p className="text-sm leading-relaxed text-[#94A3B8] whitespace-pre-line">
+              {reporte.executiveSummary || 'No hay resumen disponible'}
+            </p>
+
+            {/* Key Metrics Summary */}
+            {reporte.severityBreakdown && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-[#2D2D2D]">
+                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EF4444]/20">
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Críticos</p>
+                  <p className="text-xl font-bold text-[#EF4444]">{reporte.severityBreakdown['CRITICAL'] || 0}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#F97316]/20">
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Altos</p>
+                  <p className="text-xl font-bold text-[#F97316]">{reporte.severityBreakdown['HIGH'] || 0}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EAB308]/20">
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Medios</p>
+                  <p className="text-xl font-bold text-[#EAB308]">{reporte.severityBreakdown['MEDIUM'] || 0}</p>
+                </div>
+                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#22C55E]/20">
+                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Bajos</p>
+                  <p className="text-xl font-bold text-[#22C55E]">{reporte.severityBreakdown['LOW'] || 0}</p>
+                </div>
+              </div>
+            )}
+          </div>
         </motion.div>
 
         {/* 3 Metric Cards - Clickable */}
@@ -200,99 +234,178 @@ export default function DiagnosisRemediationView({ reporte, onNavigateTo }: Diag
           </div>
           <div>
             <h2 className="text-3xl font-bold text-white">Plan de Remediación</h2>
-            <p className="text-sm text-[#6B7280]">Acciones prioritarias para mejorar la seguridad</p>
+            <p className="text-sm text-[#6B7280]">Estrategia estructurada para eliminar vulnerabilidades</p>
           </div>
         </div>
 
-        {/* General Recommendation - Large Card */}
+        {/* General Recommendation - Highlighted Card */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="rounded-2xl bg-gradient-to-br from-[#22C55E]/10 via-[#16A34A]/5 to-[#15803D]/5 border-2 border-[#22C55E]/30 p-8 space-y-4"
+          className="rounded-2xl bg-gradient-to-br from-[#22C55E]/10 via-[#16A34A]/5 to-[#15803D]/5 border-2 border-[#22C55E]/30 p-8 lg:p-10 space-y-5 relative overflow-hidden"
         >
-          <div className="flex items-start gap-3">
-            <Target className="w-6 h-6 text-[#22C55E] flex-shrink-0 mt-1" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#22C55E]/5 to-transparent opacity-50" />
+
+          <div className="relative z-10 flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-lg bg-[#22C55E]/20 border border-[#22C55E]/40 flex items-center justify-center">
+                <Target className="w-6 h-6 text-[#22C55E]" />
+              </div>
+            </div>
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-3">Estrategia General de Remediación</h3>
-              <p className="text-sm text-[#94A3B8] leading-relaxed">
+              <h3 className="text-lg font-bold text-white mb-2">Estrategia General de Remediación</h3>
+              <p className="text-sm text-[#94A3B8] leading-relaxed whitespace-pre-line">
                 {reporte.generalRecommendation || 'No hay recomendación general disponible'}
               </p>
             </div>
           </div>
         </motion.div>
 
-        {/* Remediation Steps - Enhanced Cards */}
+        {/* Remediation Steps - Organized by Priority */}
         {reporte.remediationSteps && Array.isArray(reporte.remediationSteps) && reporte.remediationSteps.length > 0 ? (
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-white uppercase tracking-wide">Pasos de Acción</h3>
+          <div className="space-y-6">
+            {/* Steps Summary Stats */}
+            <div className="grid grid-cols-3 gap-4">
+              <div className="rounded-xl bg-[#EF4444]/5 border border-[#EF4444]/20 p-4 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Críticas</p>
+                <p className="text-2xl font-bold text-[#EF4444]">
+                  {reporte.remediationSteps.filter((s: any) => {
+                    const urgency = (s.urgency || s.urgencia || 'MEDIUM').toUpperCase();
+                    return urgency.includes('CRITICAL') || urgency.includes('URGENTE');
+                  }).length}
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#F97316]/5 border border-[#F97316]/20 p-4 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Altas</p>
+                <p className="text-2xl font-bold text-[#F97316]">
+                  {reporte.remediationSteps.filter((s: any) => {
+                    const urgency = (s.urgency || s.urgencia || 'MEDIUM').toUpperCase();
+                    return urgency.includes('HIGH') && !urgency.includes('CRITICAL');
+                  }).length}
+                </p>
+              </div>
+              <div className="rounded-xl bg-[#22C55E]/5 border border-[#22C55E]/20 p-4 text-center">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-[#6B7280] mb-2">Totales</p>
+                <p className="text-2xl font-bold text-[#22C55E]">{reporte.remediationSteps.length}</p>
+              </div>
+            </div>
 
+            {/* Steps List - Interactive */}
             <div className="space-y-4">
-              {reporte.remediationSteps.slice(0, 10).map((step: any, idx: number) => {
-                const urgency = (step.urgency || step.urgencia || 'MEDIUM').toUpperCase();
-                const isUrgent = urgency.includes('CRITICAL') || urgency.includes('URGENTE');
-                const isHigh = urgency.includes('HIGH') || urgency.includes('ALTO');
+              <h3 className="text-sm font-bold text-white uppercase tracking-wide flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                Pasos de Acción Detallados
+              </h3>
 
-                const urgencyColor = isUrgent
-                  ? { bg: 'bg-[#EF4444]/10', border: 'border-[#EF4444]/30', text: 'text-[#EF4444]', accent: 'bg-[#EF4444]' }
-                  : isHigh
-                  ? { bg: 'bg-[#F97316]/10', border: 'border-[#F97316]/30', text: 'text-[#F97316]', accent: 'bg-[#F97316]' }
-                  : { bg: 'bg-[#22C55E]/10', border: 'border-[#22C55E]/30', text: 'text-[#22C55E]', accent: 'bg-[#22C55E]' };
+              <div className="space-y-3">
+                {reporte.remediationSteps.slice(0, 10).map((step: any, idx: number) => {
+                  const urgency = (step.urgency || step.urgencia || 'MEDIUM').toUpperCase();
+                  const isUrgent = urgency.includes('CRITICAL') || urgency.includes('URGENTE');
+                  const isHigh = urgency.includes('HIGH') || urgency.includes('ALTO');
 
-                return (
-                  <motion.button
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    onClick={() => setActiveStep(activeStep === idx ? null : idx)}
-                    className={`w-full rounded-xl border-2 transition-all p-6 text-left group ${
-                      activeStep === idx
-                        ? `${urgencyColor.border} ${urgencyColor.bg}`
-                        : `border-[#2D2D2D] hover:${urgencyColor.border} hover:${urgencyColor.bg} bg-[#1E1E20]`
-                    }`}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      {/* Step Number + Accent */}
-                      <div className="flex items-start gap-4 flex-1">
-                        <div className={`w-8 h-8 rounded-lg ${urgencyColor.accent} text-white font-bold flex items-center justify-center flex-shrink-0 ${activeStep === idx ? 'scale-110' : ''} transition-transform`}>
-                          {idx + 1}
+                  const urgencyColor = isUrgent
+                    ? { bg: 'bg-[#EF4444]/10', border: 'border-[#EF4444]/30', text: 'text-[#EF4444]', accent: 'bg-[#EF4444]', light: 'bg-[#EF4444]/5' }
+                    : isHigh
+                    ? { bg: 'bg-[#F97316]/10', border: 'border-[#F97316]/30', text: 'text-[#F97316]', accent: 'bg-[#F97316]', light: 'bg-[#F97316]/5' }
+                    : { bg: 'bg-[#22C55E]/10', border: 'border-[#22C55E]/30', text: 'text-[#22C55E]', accent: 'bg-[#22C55E]', light: 'bg-[#22C55E]/5' };
+
+                  return (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: idx * 0.05 }}
+                      className={`rounded-xl border-2 overflow-hidden transition-all ${
+                        activeStep === idx
+                          ? `${urgencyColor.border} ${urgencyColor.bg} shadow-lg`
+                          : `border-[#2D2D2D] hover:${urgencyColor.border} bg-[#1E1E20]`
+                      }`}
+                    >
+                      <button
+                        onClick={() => setActiveStep(activeStep === idx ? null : idx)}
+                        className="w-full p-4 lg:p-5 text-left hover:opacity-100 transition-opacity"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          {/* Left: Step Number and Title */}
+                          <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div className={`w-8 h-8 rounded-lg ${urgencyColor.accent} text-white font-bold flex items-center justify-center flex-shrink-0 ${activeStep === idx ? 'scale-110' : ''} transition-transform`}>
+                              {idx + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="text-base font-semibold text-white mb-1 break-words">{step.action || step.accion || 'Sin título'}</h4>
+                              <p className="text-xs text-[#6B7280]">{step.type || 'Acción de remediación'}</p>
+                            </div>
+                          </div>
+
+                          {/* Right: Priority Badge and Indicator */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className={`text-xs font-bold px-3 py-1.5 rounded-lg ${urgencyColor.text} ${urgencyColor.light} border border-current border-opacity-30 whitespace-nowrap`}>
+                              {isUrgent ? '🔴 CRÍTICA' : isHigh ? '🟠 ALTA' : '🟢 MEDIA'}
+                            </div>
+                            <ChevronRight className={`w-4 h-4 text-[#6B7280] transition-transform ${activeStep === idx ? 'rotate-90' : ''}`} />
+                          </div>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <h4 className="text-base font-bold text-white mb-2 break-words">{step.action || step.accion || 'Sin título'}</h4>
+
+                        {/* Expanded Details */}
+                        <AnimatePresence>
                           {activeStep === idx && (
                             <motion.div
                               initial={{ opacity: 0, height: 0 }}
                               animate={{ opacity: 1, height: 'auto' }}
-                              className="space-y-3 mt-3 pt-3 border-t border-[#2D2D2D]"
+                              exit={{ opacity: 0, height: 0 }}
+                              className="mt-4 pt-4 border-t border-current border-opacity-20 space-y-3"
                             >
-                              <p className="text-sm text-[#94A3B8]">
-                                {step.justification || step.justificacion || step.description || 'Sin descripción'}
-                              </p>
+                              <div>
+                                <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Descripción</p>
+                                <p className="text-sm text-[#94A3B8] leading-relaxed">
+                                  {step.justification || step.justificacion || step.description || 'Sin descripción disponible'}
+                                </p>
+                              </div>
+
+                              {step.expectedOutcome && (
+                                <div>
+                                  <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-2">Resultado Esperado</p>
+                                  <p className="text-sm text-[#94A3B8]">{step.expectedOutcome}</p>
+                                </div>
+                              )}
+
+                              {(step.estimatedEffort || step.timeframe) && (
+                                <div className="flex gap-4 pt-2">
+                                  {step.estimatedEffort && (
+                                    <div className="flex-1">
+                                      <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Esfuerzo</p>
+                                      <p className="text-sm text-white">{step.estimatedEffort}</p>
+                                    </div>
+                                  )}
+                                  {step.timeframe && (
+                                    <div className="flex-1">
+                                      <p className="text-xs font-semibold text-[#6B7280] uppercase tracking-wider mb-1">Plazo</p>
+                                      <p className="text-sm text-white">{step.timeframe}</p>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
                             </motion.div>
                           )}
-                        </div>
-                      </div>
-
-                      {/* Urgency Badge */}
-                      <div className={`text-xs font-bold px-3 py-1.5 rounded-lg ${urgencyColor.text} ${urgencyColor.bg} border border-current border-opacity-30 whitespace-nowrap flex-shrink-0`}>
-                        {urgency.substring(0, 5)}
-                      </div>
-                    </div>
-                  </motion.button>
-                );
-              })}
+                        </AnimatePresence>
+                      </button>
+                    </motion.div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         ) : (
-          <div className="p-8 rounded-xl bg-[#22C55E]/5 border-2 border-[#22C55E]/30 text-center space-y-3">
+          <div className="p-10 rounded-xl bg-[#22C55E]/5 border-2 border-[#22C55E]/30 text-center space-y-3">
             <CheckCircle2 className="w-12 h-12 text-[#22C55E] mx-auto" />
-            <p className="text-sm text-[#22C55E] font-semibold">No hay pasos adicionales de remediación</p>
+            <p className="text-sm text-[#22C55E] font-semibold">No hay pasos de remediación requeridos</p>
+            <p className="text-xs text-[#6B7280]">El análisis de seguridad no ha identificado vulnerabilidades críticas</p>
           </div>
         )}
 
         {/* CTA Buttons */}
-        <div className="flex gap-3 pt-4">
+        <div className="flex flex-col sm:flex-row gap-3 pt-6">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
