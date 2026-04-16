@@ -1,18 +1,37 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueries } from '@tanstack/react-query';
 import { Calendar, TrendingUp, TrendingDown } from 'lucide-react';
 import { apiService } from '../services/api.service';
-import type { Analisis } from '../types/api';
+import type { Analisis, Reporte } from '../types/api';
 
 export default function AnalysisHistoricalPage() {
-  const { data: analysesResponse, isLoading } = useQuery({
+  const { data: analysesResponse, isLoading: isLoadingAnalyses } = useQuery({
     queryKey: ['analyses-historical'],
     queryFn: () => apiService.obtenerAnalisisGlobales({ limit: 100 }),
     staleTime: 5 * 60 * 1000,
   });
 
   const analyses = analysesResponse?.data || [];
+  const completedAnalyses = analyses.filter((a: any) => a.status === 'COMPLETED');
 
-  const sortedAnalyses = analyses ? [...analyses].sort((a, b) => {
+  // Fetch reports for completed analyses
+  const reportsQueries = useQueries({
+    queries: completedAnalyses.map((analysis: any) => ({
+      queryKey: ['report', analysis.id],
+      queryFn: () => apiService.obtenerReporte(analysis.id),
+      enabled: !!analysis.id,
+      staleTime: 5 * 60 * 1000,
+    })),
+  });
+
+  // Combine analyses with their reports
+  const analysesWithReports = completedAnalyses.map((analysis: any, idx: number) => ({
+    ...analysis,
+    report: reportsQueries[idx]?.data,
+  }));
+
+  const isLoading = isLoadingAnalyses || reportsQueries.some(q => q.isLoading);
+
+  const sortedAnalyses = analysesWithReports ? [...analysesWithReports].sort((a, b) => {
     const dateA = new Date(a.completedAt || a.createdAt).getTime();
     const dateB = new Date(b.completedAt || b.createdAt).getTime();
     return dateB - dateA;
