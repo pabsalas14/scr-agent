@@ -37,7 +37,7 @@ export default function UsersPage() {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
   const [newUserPassword, setNewUserPassword] = useState('');
-  const [newUserRole, setNewUserRole] = useState('analyst');
+  const [newUserRole, setNewUserRole] = useState('ANALYST');
   const [isCreating, setIsCreating] = useState(false);
   const { confirm } = useConfirm();
   const toast = useToast();
@@ -70,7 +70,7 @@ export default function UsersPage() {
       toast.success(`Usuario ${newUserEmail} creado correctamente`);
       setNewUserEmail('');
       setNewUserPassword('');
-      setNewUserRole('analyst');
+      setNewUserRole('ANALYST');
       setShowCreateForm(false);
       refetch();
     } catch (error) {
@@ -82,12 +82,12 @@ export default function UsersPage() {
   };
 
   const getRoleBadge = (role?: string) => {
-    switch (role) {
-      case 'admin':
+    switch (role?.toUpperCase()) {
+      case 'ADMIN':
         return 'bg-red-500/20 text-red-400';
-      case 'analyst':
+      case 'ANALYST':
         return 'bg-blue-500/20 text-blue-400';
-      case 'developer':
+      case 'DEVELOPER':
         return 'bg-green-500/20 text-green-400';
       default:
         return 'bg-gray-500/20 text-gray-400';
@@ -95,12 +95,12 @@ export default function UsersPage() {
   };
 
   const getRoleName = (role?: string) => {
-    switch (role) {
-      case 'admin':
+    switch (role?.toUpperCase()) {
+      case 'ADMIN':
         return 'Administrador';
-      case 'analyst':
+      case 'ANALYST':
         return 'Analista';
-      case 'developer':
+      case 'DEVELOPER':
         return 'Desarrollador';
       default:
         return 'Usuario';
@@ -163,9 +163,9 @@ export default function UsersPage() {
                 onChange={(e) => setNewUserRole(e.target.value)}
                 className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-blue-500"
               >
-                <option value="developer">Desarrollador</option>
-                <option value="analyst">Analista</option>
-                <option value="admin">Administrador</option>
+                <option value="DEVELOPER">Desarrollador</option>
+                <option value="ANALYST">Analista</option>
+                <option value="ADMIN">Administrador</option>
               </select>
             </div>
 
