@@ -195,25 +195,31 @@ ${JSON.stringify(input.linea_tiempo_forenses, null, 2)}
 \`\`\`
 
 ## Tarea
-Genera un reporte ejecutivo que incluya:
+Genera un reporte ejecutivo TÉCNICO que incluya:
 
-1. **Resumen Ejecutivo**: Descripción clara del riesgo encontrado (2-3 párrafos)
+1. **Resumen Ejecutivo**: Descripción clara del riesgo técnico encontrado (2-3 párrafos, sin referencias normativas)
 2. **Desglose de Severidad**: Conteo de hallazgos por severidad (CRÍTICO, ALTO, MEDIO, BAJO)
 3. **Funciones Comprometidas**: Lista de funciones maliciosas identificadas
 4. **Línea de Ataque**: Descripción de cómo evolucionó el código malicioso en el tiempo
 5. **Prioridad de Remediación**:
-   - Paso 1-3 con acciones específicas
-   - Cada paso con justificación
+   - Paso 1-3 con acciones técnicas específicas (código a revertir, funciones a revisar, etc.)
+   - Cada paso con justificación técnica (no normativa)
    - Nivel de urgencia
 6. **Autores Afectados**: Quién fue responsable de los cambios
 7. **Puntuación de Riesgo**: 0-100 (100 = crítico)
-8. **Recomendación General**: Acciones inmediatas recomendadas
+8. **Recomendación General**: Medidas técnicas de control inmediatas (sin hablar de equipos, procesos o requisitos normativos)
 
 ## Severidades (usar siempre estos términos)
 - CRÍTICO: Riesgo inmediato de compromiso total
 - ALTO: Vulnerabilidad seria que permite acceso/manipulación
 - MEDIO: Debilidad de seguridad que puede ser explotada
 - BAJO: Problema menor de seguridad
+
+## IMPORTANTE: Restricciones de contenido
+- NO menciones requisitos normativos, regulaciones o estándares (CNBV, ISO, NIST, etc.)
+- NO sugieras formar equipos, reuniones o procesos organizacionales
+- Enfócate ÚNICAMENTE en medidas técnicas de control y remediación
+- Sé directo y técnico, sin complejidad administrativa
 
 ## Formato de Respuesta
 Responde SOLO con JSON válido:
@@ -239,7 +245,7 @@ Responde SOLO con JSON válido:
   ],
   "autores_afectados": ["usuario@ejemplo.com"],
   "puntuacion_riesgo": 92,
-  "recomendacion_general": "Investigación de seguridad inmediata. Considerar rotación de credenciales del autor."
+  "recomendacion_general": "1. Revertir commits abc123 y xyz789 inmediatamente del repositorio. 2. Ejecutar análisis completo de código para identificar cambios maliciosos similares. 3. Revisar credenciales y tokens usados por el autor durante el período afectado. 4. Implementar firmas de commit requeridas para prevenir cambios no autenticados."
 }
 \`\`\`
 
