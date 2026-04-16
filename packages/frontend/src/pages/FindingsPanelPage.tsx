@@ -151,13 +151,16 @@ export default function FindingsPanelPage() {
                   </div>
                   <button
                     onClick={() => {
-                      if (finding.analysis?.projectId) {
+                      if (finding.analysisId) {
+                        // Navigate to the analysis that contains this finding
+                        navigate(`/projects/${finding.analysis?.projectId || 'unknown'}/analyses/${finding.analysisId}`);
+                      } else if (finding.analysis?.projectId) {
                         navigate(`/projects/${finding.analysis.projectId}/analyses/${finding.analysis.id}`);
                       } else {
-                        toast.info(`Abriendo detalles de ${finding.riskType}`);
+                        toast.warning(`No se puede abrir el análisis de ${finding.riskType} - información no disponible`);
                       }
                     }}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded-lg flex items-center gap-1"
+                    className="px-3 py-1 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs rounded-lg flex items-center gap-1 transition-colors"
                   >
                     <ExternalLink size={12} />
                     Ver

@@ -35,8 +35,38 @@ export default function UsersPage() {
     : users;
 
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserRole, setNewUserRole] = useState('analyst');
+  const [isCreating, setIsCreating] = useState(false);
   const { confirm } = useConfirm();
   const toast = useToast();
+
+  const handleCreateUser = async () => {
+    if (!newUserEmail.trim()) {
+      toast.error('El email es requerido');
+      return;
+    }
+
+    try {
+      setIsCreating(true);
+      // API call to create user
+      await apiService.crearUsuario({
+        email: newUserEmail,
+        role: newUserRole,
+      });
+
+      toast.success(`Usuario ${newUserEmail} creado correctamente`);
+      setNewUserEmail('');
+      setNewUserRole('analyst');
+      setShowCreateForm(false);
+      refetch();
+    } catch (error) {
+      toast.error('Error al crear el usuario');
+      console.error(error);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   const getRoleBadge = (role?: string) => {
     switch (role) {
@@ -83,19 +113,32 @@ export default function UsersPage() {
         <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 space-y-4">
           <h3 className="font-semibold text-white">Crear Nuevo Usuario</h3>
 
+          <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex gap-2">
+            <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-blue-300">
+              La contraseña será enviada al email del usuario. Se genera automáticamente de forma segura.
+            </p>
+          </div>
+
           <div className="space-y-3">
             <div>
               <label className="block text-sm font-medium text-white mb-2">Email</label>
               <input
                 type="email"
                 placeholder="usuario@example.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
                 className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-white mb-2">Rol</label>
-              <select className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-blue-500">
+              <select
+                value={newUserRole}
+                onChange={(e) => setNewUserRole(e.target.value)}
+                className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-blue-500"
+              >
                 <option value="developer">Desarrollador</option>
                 <option value="analyst">Analista</option>
                 <option value="admin">Administrador</option>
@@ -103,8 +146,22 @@ export default function UsersPage() {
             </div>
 
             <div className="flex gap-2">
-              <Button variant="primary" size="sm">Crear</Button>
-              <Button variant="secondary" size="sm" onClick={() => setShowCreateForm(false)}>Cancelar</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={handleCreateUser}
+                disabled={isCreating}
+              >
+                {isCreating ? 'Creando...' : 'Crear'}
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowCreateForm(false)}
+                disabled={isCreating}
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </div>
