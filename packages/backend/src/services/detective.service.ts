@@ -87,6 +87,7 @@ export class DetectiveService {
         action,
         file: finding.file,
         riskLevel: finding.severity,
+        suspicionIndicators: [finding.whySuspicious || 'Automatically generated forensic indicator'],
         timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // últimos 7 días
       });
     });
@@ -106,6 +107,7 @@ export class DetectiveService {
         action,
         file: `src/${Math.random().toString(36).substring(7)}.ts`,
         riskLevel: 'LOW',
+        suspicionIndicators: ['Regular commit activity'],
         timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
       });
     }

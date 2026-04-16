@@ -281,6 +281,7 @@ async function processAnalysisJob(job: Job) {
               file: evento.archivo || '',
               function: evento.funcion,
               changesSummary: evento.resumen_cambios || evento.descripcion,
+              suspicionIndicators: evento.indicadores || [evento.resumen_cambios || 'Detected via Git history analysis'],
               timestamp: new Date(evento.timestamp || Date.now()),
             },
           });
