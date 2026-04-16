@@ -175,7 +175,7 @@ export default function AnalysisMonitor() {
               <div key={analysis.id} className="p-3 rounded-lg bg-[#EF4444]/5 border border-[#EF4444]/10 space-y-1">
                 <p className="text-sm font-medium text-white">{analysis.projectName}</p>
                 <p className="text-xs text-[#EF4444]/70 font-mono line-clamp-2">
-                  {analysis.error || 'ERROR: Motor de análisis offline'}
+                  {analysis.errorMessage || 'ERROR: Motor de análisis offline'}
                 </p>
               </div>
             )) : (

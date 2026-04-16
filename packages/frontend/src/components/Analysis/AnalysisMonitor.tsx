@@ -195,8 +195,8 @@ export default function AnalysisMonitor({
                   ? 'RUNNING'
                   : (analysis.status as 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED')
               }
-              startTime={analysis.startTime ? new Date(analysis.startTime) : undefined}
-              estimatedTime={analysis.estimatedDuration}
+              startTime={analysis.startedAt ? new Date(analysis.startedAt) : undefined}
+              estimatedTime={analysis.completedAt ? new Date(analysis.completedAt) : undefined}
               onCancel={handleCancel}
             />
           </motion.div>

@@ -175,10 +175,10 @@ export default function ExecutionHistory({ projectId, limit = 10, onRetry }: Exe
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-[#6B7280]">
                         <span>{formatDate(analysis.createdAt)}</span>
-                        {analysis.startTime && analysis.endTime && (
+                        {analysis.startedAt && analysis.completedAt && (
                           <>
                             <span>•</span>
-                            <span>{formatDuration(analysis.startTime, analysis.endTime)}</span>
+                            <span>{formatDuration(analysis.startedAt, analysis.completedAt)}</span>
                           </>
                         )}
                         {analysis.findingCount > 0 && (

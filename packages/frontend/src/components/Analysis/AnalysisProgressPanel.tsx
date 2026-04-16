@@ -5,16 +5,15 @@ import { useToast } from '../../hooks/useToast';
 
 interface AnalysisProgress {
   projectId: string;
-  analysisId: string;
+  id: string;
   projectName: string;
   progress: number;
-  status: 'scanning' | 'completed' | 'failed' | 'paused';
-  startTime: Date;
-  estimatedEndTime?: Date;
-  filesScanned: number;
-  filesTotal: number;
-  findingsDetected: number;
-  errors?: string[];
+  status: 'PENDING' | 'INSPECTOR_RUNNING' | 'DETECTIVE_RUNNING' | 'FISCAL_RUNNING' | 'COMPLETED' | 'FAILED';
+  startedAt: Date;
+  completedAt?: Date;
+  coverageSummary?: { totalFiles?: number; analyzedFiles?: number };
+  findingCount: number;
+  errorMessage?: string;
 }
 
 interface AnalysisProgressPanelProps {
@@ -38,12 +37,13 @@ export default function AnalysisProgressPanel({
 
     const interval = setInterval(() => {
       const now = new Date();
-      const elapsed = Math.floor((now.getTime() - analysis.startTime.getTime()) / 1000);
+      const startTime = new Date(analysis.startedAt);
+      const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000);
       setElapsedTime(elapsed);
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [analysis.startTime, analysis.status, isPaused]);
+  }, [analysis.startedAt, analysis.status, isPaused]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -65,7 +65,7 @@ export default function AnalysisProgressPanel({
 
   const handleCancel = () => {
     if (window.confirm('¿Estás seguro de que quieres cancelar este análisis?')) {
-      onCancel?.(analysis.analysisId);
+      onCancel?.(analysis.id);
       toast.warning('Análisis cancelado');
     }
   };
@@ -125,7 +125,7 @@ export default function AnalysisProgressPanel({
         </div>
 
         <button
-          onClick={() => onClose?.(analysis.analysisId)}
+          onClick={() => onClose?.(analysis.id)}
           className="p-1 hover:bg-[#2D2D2D] rounded transition-colors flex-shrink-0"
         >
           <X size={18} className="text-[#A0A0A0]" />
@@ -153,29 +153,22 @@ export default function AnalysisProgressPanel({
         <div className="bg-[#111111] rounded p-3 border border-[#2D2D2D]">
           <p className="text-xs text-[#6B7280] mb-1">Archivos</p>
           <p className="text-sm font-semibold text-white">
-            {analysis.filesScanned} / {analysis.filesTotal}
+            {analysis.coverageSummary?.analyzedFiles || 0} / {analysis.coverageSummary?.totalFiles || 0}
           </p>
         </div>
         <div className="bg-[#111111] rounded p-3 border border-[#2D2D2D]">
           <p className="text-xs text-[#6B7280] mb-1">Hallazgos Detectados</p>
-          <p className="text-sm font-semibold text-white">{analysis.findingsDetected}</p>
+          <p className="text-sm font-semibold text-white">{analysis.findingCount}</p>
         </div>
       </div>
 
       {/* Error Messages */}
-      {analysis.errors && analysis.errors.length > 0 && (
+      {analysis.errorMessage && (
         <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
-          <p className="text-xs font-semibold text-red-300 mb-2">Errores:</p>
-          <ul className="space-y-1">
-            {analysis.errors.slice(0, 3).map((error, idx) => (
-              <li key={idx} className="text-xs text-red-200">
-                • {error}
-              </li>
-            ))}
-            {analysis.errors.length > 3 && (
-              <li className="text-xs text-red-200">+ {analysis.errors.length - 3} más...</li>
-            )}
-          </ul>
+          <p className="text-xs font-semibold text-red-300 mb-2">Error:</p>
+          <p className="text-xs text-red-200">
+            {analysis.errorMessage}
+          </p>
         </div>
       )}
 
