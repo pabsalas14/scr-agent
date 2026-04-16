@@ -266,7 +266,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 const httpServer = createServer(app);
 
 // Inicializar Socket.io para notificaciones en tiempo real
-socketService.init(httpServer, allowedOrigins);
+// Pass the allowOriginFn so Socket.io can also validate ngrok connections in development
+socketService.init(httpServer, allowedOrigins, isOriginAllowed);
 
 // ==================== QUEUE PROCESSOR ====================
 
