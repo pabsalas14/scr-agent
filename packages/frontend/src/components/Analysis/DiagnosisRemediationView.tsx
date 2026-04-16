@@ -286,20 +286,27 @@ export default function DiagnosisRemediationView({ reporte, onNavigateTo }: Diag
               {/* Parse recommendation into actionable items */}
               <div className="space-y-3">
                 {reporte.generalRecommendation
-                  .split(/(?:^|\n)(?:\d+\)|[-•])/m)
-                  .filter((line: string) => line.trim().length > 0)
-                  .map((recommendation: string, idx: number) => (
-                    <div key={idx} className="flex gap-3 items-start">
-                      <div className="flex-shrink-0 mt-1">
-                        <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center">
-                          <span className="text-xs font-bold text-[#111111]">{idx + 1}</span>
+                  .split(/\n(?=\(?\d+\)?\.|\(?\d+\)|[-•])/)
+                  .filter((line: string) => line.trim().length > 15)
+                  .map((recommendation: string, idx: number) => {
+                    const cleanText = recommendation
+                      .replace(/^\s*\(?\d+\)?\.?\s*/, '')
+                      .replace(/^[-•]\s*/, '')
+                      .trim();
+
+                    return (
+                      <div key={idx} className="flex gap-3 items-start">
+                        <div className="flex-shrink-0 mt-1">
+                          <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center flex-shrink-0">
+                            <span className="text-xs font-bold text-[#111111]">{idx + 1}</span>
+                          </div>
                         </div>
+                        <p className="text-sm text-[#94A3B8] leading-relaxed flex-1">
+                          {cleanText}
+                        </p>
                       </div>
-                      <p className="text-sm text-[#94A3B8] leading-relaxed flex-1">
-                        {recommendation.trim()}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
               </div>
             </div>
           </motion.div>

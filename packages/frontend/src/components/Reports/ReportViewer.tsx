@@ -119,16 +119,16 @@ export default function ReportViewer() {
   const eventosTimeline: EventoTimeline[] = (eventosForenses || []).map((e) => ({
     id: e.id,
     timestamp: e.timestamp,
-    commit: e.commitHash,
-    autor: e.author,
-    archivo: e.file,
-    funcion: e.function,
-    accion: ACTION_MAP[e.action] ?? 'MODIFICADO',
-    mensaje_commit: e.commitMessage,
-    resumen_cambios: e.changesSummary,
-    nivel_riesgo: RISK_MAP[e.riskLevel] ?? 'BAJO',
-    indicadores_sospecha: e.suspicionIndicators,
-    hallazgo_id: e.findingId,
+    commit: e.commitHash || e.commit,
+    autor: e.author || e.autor,
+    archivo: e.file || e.archivo,
+    funcion: e.function || e.funcion,
+    accion: ACTION_MAP[e.action || e.accion] || e.accion || e.action || 'MODIFICADO',
+    mensaje_commit: e.commitMessage || e.mensaje_commit,
+    resumen_cambios: e.changesSummary || e.resumen_cambios,
+    nivel_riesgo: RISK_MAP[e.riskLevel] || RISK_MAP[e.nivel_riesgo] || e.nivel_riesgo || 'BAJO',
+    indicadores_sospecha: e.suspicionIndicators || e.indicadores_sospecha || [],
+    hallazgo_id: e.findingId || e.hallazgo_id,
   }));
 
   const [descargandoPDF, setDescargandoPDF] = useState(false);
