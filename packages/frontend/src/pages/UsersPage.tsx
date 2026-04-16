@@ -36,6 +36,7 @@ export default function UsersPage() {
 
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState('');
+  const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('analyst');
   const [isCreating, setIsCreating] = useState(false);
   const { confirm } = useConfirm();
@@ -47,16 +48,28 @@ export default function UsersPage() {
       return;
     }
 
+    if (!newUserPassword.trim()) {
+      toast.error('La contraseña es requerida');
+      return;
+    }
+
+    if (newUserPassword.length < 6) {
+      toast.error('La contraseña debe tener al menos 6 caracteres');
+      return;
+    }
+
     try {
       setIsCreating(true);
       // API call to create user
       await apiService.crearUsuario({
         email: newUserEmail,
         role: newUserRole,
+        password: newUserPassword,
       });
 
       toast.success(`Usuario ${newUserEmail} creado correctamente`);
       setNewUserEmail('');
+      setNewUserPassword('');
       setNewUserRole('analyst');
       setShowCreateForm(false);
       refetch();
@@ -116,7 +129,7 @@ export default function UsersPage() {
           <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex gap-2">
             <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
             <p className="text-xs text-blue-300">
-              La contraseña será enviada al email del usuario. Se genera automáticamente de forma segura.
+              Configura el email, contraseña y rol del nuevo usuario. La contraseña debe tener al menos 6 caracteres.
             </p>
           </div>
 
@@ -128,6 +141,17 @@ export default function UsersPage() {
                 placeholder="usuario@example.com"
                 value={newUserEmail}
                 onChange={(e) => setNewUserEmail(e.target.value)}
+                className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-white mb-2">Contraseña</label>
+              <input
+                type="password"
+                placeholder="Mínimo 6 caracteres"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
                 className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500"
               />
             </div>

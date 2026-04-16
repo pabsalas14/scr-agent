@@ -56,16 +56,21 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: 'Solo administradores pueden crear usuarios' });
     }
 
-    const { email, role } = req.body;
+    const { email, role, password } = req.body;
 
     // Validar campos requeridos
-    if (!email || !role) {
-      return res.status(400).json({ success: false, error: 'Email y role son requeridos' });
+    if (!email || !role || !password) {
+      return res.status(400).json({ success: false, error: 'Email, rol y contraseña son requeridos' });
     }
 
     // Validar rol
     if (!VALID_ROLES.includes(role)) {
       return res.status(400).json({ success: false, error: `Rol inválido. Válidos: ${VALID_ROLES.join(', ')}` });
+    }
+
+    // Validar contraseña
+    if (password.length < 6) {
+      return res.status(400).json({ success: false, error: 'La contraseña debe tener al menos 6 caracteres' });
     }
 
     // Verificar si el usuario ya existe
@@ -74,20 +79,18 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'El usuario ya existe' });
     }
 
-    // Crear nuevo usuario con contraseña temporal
-    const tempPassword = Math.random().toString(36).slice(-8);
+    // Crear nuevo usuario con la contraseña proporcionada
     const newUser = await prisma.user.create({
       data: {
         email,
         name: email.split('@')[0],
-        password: tempPassword, // En producción, esto debería ser hasheado
+        password, // En producción, esto debería ser hasheado con bcrypt
       },
     });
 
     // Asignar rol
     await usersService.assignRole(newUser.id, role);
 
-    // En producción, enviar email con contraseña temporal
     logger.info(`Nuevo usuario creado: ${email} con rol ${role}`);
 
     res.json({
@@ -98,7 +101,7 @@ router.post('/', async (req: Request, res: Response) => {
         name: newUser.name,
         role,
       },
-      message: 'Usuario creado correctamente. La contraseña temporal será enviada por email.',
+      message: 'Usuario creado correctamente',
     });
   } catch (error) {
     logger.error('Error creating user:', error);
