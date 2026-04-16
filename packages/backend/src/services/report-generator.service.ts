@@ -12,14 +12,6 @@
 import { logger } from './logger.service';
 import { prisma } from './prisma.service';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
-
-// Requerido para que TypeScript reconozca autotable en jsPDF
-declare module 'jspdf' {
-  interface jsPDF {
-    autoTable: (options: any) => jsPDF;
-  }
-}
 
 export interface ReportData {
   type: 'executive' | 'technical' | 'remediation';
@@ -74,7 +66,7 @@ export async function generateExecutiveReport(analysisId: string) {
     // Calcular estadísticas
     const allFindings = await prisma.finding.findMany({
       where: { analysisId },
-      select: { severity: true, riskLevel: true },
+      select: { severity: true },
     });
 
     const severityCounts = {
@@ -344,49 +336,75 @@ export async function generatePDFReport(analysisId: string): Promise<Buffer | nu
       LOW: findings.filter(f => f.severity === 'LOW').length,
     };
 
-    doc.autoTable({
-      startY: 110,
-      head: [['Severidad', 'Cantidad']],
-      body: [
-        ['CRITICAL', counts.CRITICAL.toString()],
-        ['HIGH', counts.HIGH.toString()],
-        ['MEDIUM', counts.MEDIUM.toString()],
-        ['LOW', counts.LOW.toString()],
-      ],
-      headStyles: { fillColor: [249, 115, 22] },
-      margin: { left: 20, right: 20 },
+    // Simple severity summary without autoTable
+    let tableY = 110;
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resumen de Severidad', 20, tableY);
+    tableY += 8;
+
+    const severityData = [
+      ['CRITICAL', counts.CRITICAL.toString()],
+      ['HIGH', counts.HIGH.toString()],
+      ['MEDIUM', counts.MEDIUM.toString()],
+      ['LOW', counts.LOW.toString()],
+    ];
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    severityData.forEach((row, idx) => {
+      doc.text(`${row[0]}: ${row[1]}`, 25, tableY + (idx * 6));
     });
 
-    // --- Tabla de Hallazgos ---
+    // --- Detalle de Hallazgos ---
+    tableY = 150;
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detalle de Hallazgos', 20, tableY);
+    tableY += 12;
+
     if (findings.length > 0) {
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Detalle de Hallazgos', 20, (doc as any).lastAutoTable.finalY + 20);
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
 
-      const findingsBody = findings.map(f => [
-        f.severity || 'UNKNOWN',
-        f.riskType || 'UNKNOWN',
-        (f.file || 'N/A').split('/').pop() || (f.file || 'N/A'),
-        f.whySuspicious ? f.whySuspicious.substring(0, 100) + (f.whySuspicious.length > 100 ? '...' : '') : 'N/A'
-      ]);
+      // Limitar a los primeros 10 hallazgos para caber en el PDF
+      const displayFindings = findings.slice(0, 10);
 
-      doc.autoTable({
-        startY: (doc as any).lastAutoTable.finalY + 30,
-        head: [['Severidad', 'Tipo', 'Archivo', 'Descripción']],
-        body: findingsBody,
-        headStyles: { fillColor: [40, 40, 40] },
-        columnStyles: {
-          0: { cellWidth: 25 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 'auto' }
-        },
-        margin: { left: 20, right: 20 },
+      displayFindings.forEach((f, idx) => {
+        if (tableY > 270) {
+          // Nueva página si es necesario
+          doc.addPage();
+          tableY = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 0, 0);
+        doc.text(`${idx + 1}. ${f.riskType || 'UNKNOWN'} [${f.severity || 'UNKNOWN'}]`, 20, tableY);
+
+        tableY += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+
+        const filename = (f.file || 'N/A').split('/').pop() || (f.file || 'N/A');
+        doc.text(`Archivo: ${filename}`, 25, tableY);
+        tableY += 5;
+
+        const description = f.whySuspicious ? f.whySuspicious.substring(0, 150) : 'N/A';
+        const descLines = doc.splitTextToSize(description, 160);
+        doc.text(descLines, 25, tableY);
+        tableY += descLines.length * 4 + 4;
       });
+
+      if (findings.length > 10) {
+        tableY = Math.max(tableY, 250);
+        doc.setFontSize(10);
+        doc.setTextColor(150, 150, 150);
+        doc.text(`... y ${findings.length - 10} hallazgos más (ver reporte técnico completo)`, 20, tableY);
+      }
     } else {
       doc.setFontSize(12);
       doc.setTextColor(100, 100, 100);
-      doc.text('No hay hallazgos en este análisis', 20, (doc as any).lastAutoTable.finalY + 30);
+      doc.text('No hay hallazgos en este análisis', 20, tableY);
     }
 
     // --- Pie de página ---
@@ -425,14 +443,12 @@ export async function generateCSVReport(analysisId: string): Promise<string> {
     }
 
     // Headers
-    const headers = ['Finding ID', 'Type', 'Severity', 'Risk Level', 'File', 'Status', 'Created At'];
+    const headers = ['Finding ID', 'Type', 'Severity', 'File', 'Created At'];
     const rows = findings.map(f => [
       f.id,
       f.riskType || 'UNKNOWN',
       f.severity || 'UNKNOWN',
-      f.riskLevel || 'UNKNOWN',
       f.file || 'unknown',
-      f.status || 'OPEN',
       f.createdAt.toISOString(),
     ]);
 
