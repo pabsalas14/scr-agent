@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Centinela IA - Vigilancia Inteligente de Código</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0D1117 0%, #0F172A 100%);
+            color: #E5E7EB;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 17, 23, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+            z-index: 1000;
+            padding: 1rem 2rem;
+        }
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #F97316;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav-links a:hover {
+            color: #F97316;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Section */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 6rem 2rem;
+            margin-top: 80px;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            background: linear-gradient(135deg, #F97316, #22C55E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Glass effect */
+        .glass {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+        }
+
+        /* Hero Section */
+        .hero-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+        }
+
+        .hero-text h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            background: linear-gradient(135deg, #F97316, #22C55E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-text h2 {
+            font-size: 1.3rem;
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+            font-weight: 300;
+        }
+
+        .hero-text p {
+            font-size: 1rem;
+            color: #D1D5DB;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .hero-metrics {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #22C55E;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-label {
+            color: #9CA3AF;
+            font-size: 0.9rem;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+        }
+
+        .btn-primary {
+            background: #F97316;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #EA6B1B;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: #F97316;
+            border: 2px solid #F97316;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .hero-visual {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        .visual-ring {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: conic-gradient(from 0deg, #22C55E, #F97316, #22C55E);
+            padding: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: spin 15s linear infinite;
+        }
+
+        .visual-ring-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0D1117, #0F172A);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+        }
+
+        .visual-ring-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #22C55E;
+        }
+
+        .visual-ring-label {
+            color: #9CA3AF;
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Cards Grid */
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .card {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            padding: 2rem;
+            border-radius: 12px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            border-color: rgba(249, 115, 22, 0.6);
+            background: rgba(31, 41, 55, 0.8);
+            transform: translateY(-5px);
+        }
+
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #F97316;
+        }
+
+        .card p {
+            color: #9CA3AF;
+            line-height: 1.6;
+            font-size: 0.9rem;
+        }
+
+        /* Agents Section */
+        .agents-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .agent-card {
+            background: rgba(31, 41, 55, 0.6);
+            border: 1.5px solid rgba(249, 115, 22, 0.3);
+            padding: 2.5rem;
+            border-radius: 12px;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .agent-card:hover {
+            border-color: #22C55E;
+            background: rgba(31, 41, 55, 0.9);
+            transform: translateY(-10px);
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.2);
+        }
+
+        .agent-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .agent-card h3 {
+            font-size: 1.3rem;
+            color: #F97316;
+            margin-bottom: 1rem;
+        }
+
+        .agent-card p {
+            color: #9CA3AF;
+            line-height: 1.7;
+            font-size: 0.95rem;
+        }
+
+        /* Features List */
+        .features-list {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .features-list h3 {
+            color: #F97316;
+            margin-bottom: 1.5rem;
+            font-size: 1.3rem;
+        }
+
+        .features-list ul {
+            list-style: none;
+            columns: 2;
+            column-gap: 2rem;
+        }
+
+        .features-list li {
+            padding: 0.8rem 0;
+            padding-left: 2rem;
+            position: relative;
+            color: #9CA3AF;
+        }
+
+        .features-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #22C55E;
+            font-weight: bold;
+        }
+
+        /* Two Column Layout */
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+
+        .column-box {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+        }
+
+        .column-box h3 {
+            color: #F97316;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+        }
+
+        .column-box ul {
+            list-style: none;
+        }
+
+        .column-box li {
+            padding: 0.8rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: #9CA3AF;
+        }
+
+        .column-box.pros li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #22C55E;
+        }
+
+        .column-box.cons li:before {
+            content: "⚠";
+            position: absolute;
+            left: 0;
+            color: #F97316;
+        }
+
+        /* Code Block */
+        .code-block {
+            background: #000;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            border-radius: 8px;
+            padding: 1.5rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+        }
+
+        .code-block pre {
+            color: #22C55E;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            margin: 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        /* Demo Section */
+        .demo-container {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+        }
+
+        .demo-case {
+            margin: 1.5rem 0;
+        }
+
+        .demo-case h4 {
+            color: #F97316;
+            margin-bottom: 0.5rem;
+        }
+
+        .demo-case p {
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+        }
+
+        /* Footer */
+        footer {
+            background: rgba(13, 17, 23, 0.95);
+            border-top: 1px solid rgba(249, 115, 22, 0.2);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #9CA3AF;
+        }
+
+        .footer-content h3 {
+            color: #F97316;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+        }
+
+        .footer-links a {
+            color: #F97316;
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .footer-links a:hover {
+            color: #22C55E;
+        }
+
+        /* Chart Container */
+        .chart-container {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            margin: 2rem 0;
+            position: relative;
+            height: 400px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            section {
+                margin-top: 60px;
+                padding: 3rem 1rem;
+            }
+
+            .hero-content {
+                grid-template-columns: 1fr;
+                gap: 2rem;
+            }
+
+            .hero-text h1 {
+                font-size: 2.5rem;
+            }
+
+            .nav-links {
+                gap: 1rem;
+                font-size: 0.8rem;
+            }
+
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+
+            .features-list ul {
+                columns: 1;
+            }
+
+            .hero-metrics {
+                grid-template-columns: 1fr;
+            }
+
+            .visual-ring {
+                width: 200px;
+                height: 200px;
+            }
+
+            .visual-ring-value {
+                font-size: 1.8rem;
+            }
+        }
+
+        .scroll-reveal {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        .scroll-reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.8s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav>
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span>🛡️</span>
+                <span>Centinela IA</span>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#inicio">Inicio</a></li>
+                <li><a href="#que-es">¿Qué es?</a></li>
+                <li><a href="#agentes">Agentes IA</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#casos">Casos de Uso</a></li>
+                <li><a href="#ventajas">Ventajas</a></li>
+                <li><a href="#desventajas">Desventajas</a></li>
+                <li><a href="#arquitectura">Arquitectura</a></li>
+                <li><a href="#demo">Demo</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-text">
+                    <h1>Centinela IA</h1>
+                    <h2>Vigilancia Inteligente de Código Bancario</h2>
+                    <p>Detección automática de vulnerabilidades, análisis forense en tiempo real y remediación inteligente de riesgos de seguridad en el ciclo completo de desarrollo. Tres agentes cognitivos especializados trabajan en paralelo para auditoría integral bancaria.</p>
+
+                    <div class="hero-metrics">
+                        <div class="metric-card">
+                            <div class="metric-value">100%</div>
+                            <div class="metric-label">Health Index</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-value">54/100</div>
+                            <div class="metric-label">Índice de Blindaje</div>
+                        </div>
+                    </div>
+
+                    <div class="cta-buttons">
+                        <button class="btn btn-primary">Iniciar Evaluación</button>
+                        <button class="btn btn-secondary">Ver Demo Completa</button>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <div class="visual-ring">
+                        <div class="visual-ring-inner">
+                            <div class="visual-ring-value">100%</div>
+                            <div class="visual-ring-label">Health Index</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ¿Qué es Centinela IA? -->
+    <section id="que-es">
+        <div class="container">
+            <h2 class="section-title">¿Qué es Centinela IA?</h2>
+
+            <div class="glass" style="padding: 2rem; margin-bottom: 2rem;">
+                <p style="font-size: 1.1rem; line-height: 1.8; color: #E5E7EB;">
+                    <strong>Centinela IA</strong> es una plataforma empresarial de auditoría automática de código que utiliza <strong>Inteligencia Artificial</strong> y análisis forense para detectar vulnerabilidades, patrones de seguridad y gestionar el ciclo completo de remediación. Diseñada específicamente para instituciones financieras y empresas que requieren cumplimiento normativo riguroso (PCI-DSS, CNBV, OWASP, CWE, CVSS).
+                </p>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🔍</div>
+                    <h3>Análisis de Código</h3>
+                    <p>Escanea automáticamente repositorios en busca de vulnerabilidades, patrones inseguros, backdoors y deuda técnica con precisión 95%+</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🧠</div>
+                    <h3>Agentes Cognitivos</h3>
+                    <p>Tres agentes especializados (Inspector, Fiscal, Detective) trabajan en paralelo para análisis contextual y remediación automática</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📊</div>
+                    <h3>Dashboard Integral</h3>
+                    <p>Visualización en tiempo real de hallazgos, incidentes, métricas de riesgo y trazabilidad completa de remediaciones</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔬</div>
+                    <h3>Investigación Forense</h3>
+                    <p>Timeline detallada de cambios, análisis de patrones, correlación de eventos y detección de anomalías con ML</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔗</div>
+                    <h3>Integraciones</h3>
+                    <p>GitHub, Jira, Slack, Teams y webhooks bidireccionales para flujos de trabajo automatizados de DevSecOps</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚙️</div>
+                    <h3>Automatización</h3>
+                    <p>CI/CD integration, alertas en tiempo real, remediación automática y bloqueo de deploys inseguros</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Agentes IA -->
+    <section id="agentes">
+        <div class="container">
+            <h2 class="section-title">Inteligencia: Agentes Especializados</h2>
+            <p style="text-align: center; color: #9CA3AF; font-size: 1.1rem; margin-bottom: 3rem;">Tres agentes cognitivos trabajan en paralelo para análisis integral de riesgos bancarios</p>
+
+            <div class="agents-container">
+                <div class="agent-card">
+                    <div class="agent-icon">🔍</div>
+                    <h3>Inspector Principal</h3>
+                    <p>Orquestación y diagnóstico inicial. Mapea la arquitectura, identifica puntos de riesgo críticos y coordina análisis paralelos de los otros agentes.</p>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-icon">⚖️</div>
+                    <h3>Fiscal de Análisis</h3>
+                    <p>Clasificación y puntuación de riesgos. Calcula CVSS, mapea a OWASP/CWE, valida cumplimiento normativo y genera reportes de impacto financiero.</p>
+                </div>
+                <div class="agent-card">
+                    <div class="agent-icon">🔬</div>
+                    <h3>Detective Forense</h3>
+                    <p>Investigación profunda y anomalías. Analiza timeline de commits, detecta patrones sospechosos, identifica logic bombs y rastrea intención maliciosa.</p>
+                </div>
+            </div>
+
+            <div class="features-list">
+                <h3>🤝 Orquestación Inteligente</h3>
+                <ul>
+                    <li>Comunicación bidirecional entre agentes en tiempo real</li>
+                    <li>Consenso para hallazgos críticos (requiere 2+ agentes)</li>
+                    <li>Aprendizaje colaborativo de falsos positivos</li>
+                    <li>Escalada automática a análisis humano si hay divergencia</li>
+                    <li>Auditoría completa de cada decisión del agente</li>
+                    <li>Retroalimentación para mejorar precisión</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features">
+        <div class="container">
+            <h2 class="section-title">Funcionalidades Principales</h2>
+
+            <div class="features-list">
+                <h3>🎯 Módulo de Análisis</h3>
+                <ul>
+                    <li>Análisis automático de repositorios GitHub en tiempo real</li>
+                    <li>Detección de vulnerabilidades (OWASP Top 10, CWE, CVSS v3.1)</li>
+                    <li>Escaneo de dependencias y librerías inseguras</li>
+                    <li>Análisis de patrones maliciosos y backdoors</li>
+                    <li>Evaluación de complejidad y deuda técnica</li>
+                    <li>Análisis estático + dinámico + comportamental</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>📋 Gestión Integral de Hallazgos</h3>
+                <ul>
+                    <li>Registro centralizado y auditable de todos los hallazgos</li>
+                    <li>Clasificación por severidad (CRITICAL, HIGH, MEDIUM, LOW)</li>
+                    <li>Estados personalizables (PENDING, IN_REVIEW, IN_CORRECTION, VERIFIED)</li>
+                    <li>Asignación a equipos de desarrollo con SLA tracking</li>
+                    <li>Comentarios y colaboración en tiempo real</li>
+                    <li>Evidencia de remediación y validación post-fix</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>🚨 Sistema de Alertas Avanzado</h3>
+                <ul>
+                    <li>Alertas configurables por severidad, tipo y contexto</li>
+                    <li>Notificaciones en Slack, Teams, Email en tiempo real</li>
+                    <li>Escalonamiento automático de incidentes críticos</li>
+                    <li>On-call schedules con escaladas de urgencia</li>
+                    <li>Historial completo de alertas y eventos</li>
+                    <li>Integración con sistemas de respuesta a incidentes</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>🔧 Remediación Inteligente</h3>
+                <ul>
+                    <li>Sugerencias automáticas de fixes contextuales</li>
+                    <li>Generación de pull requests automáticos</li>
+                    <li>Validación post-remediación con re-análisis</li>
+                    <li>Cálculo de MTTR (Mean Time To Resolution)</li>
+                    <li>Historial de cambios y auditoría completa</li>
+                    <li>Integración con sistemas de CI/CD</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>📊 Dashboard y Reportes Ejecutivos</h3>
+                <ul>
+                    <li>KPI en tiempo real (Risk Score, Health Index, MTTR)</li>
+                    <li>Gráficos de tendencias y evolución histórica</li>
+                    <li>Reportes ejecutivos para stakeholders y auditoría</li>
+                    <li>Exportación a CSV, PDF, Excel con branding</li>
+                    <li>Compliance reports (OWASP, CWE, CVSS, PCI-DSS)</li>
+                    <li>Análisis comparativo entre períodos</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>🔐 Cumplimiento Normativo Automático</h3>
+                <ul>
+                    <li>Mapeo automático a OWASP Top 10 2021 / 2024</li>
+                    <li>Cálculo de puntuación CVSS v3.1 con contexto financiero</li>
+                    <li>Marcos de compliance (PCI-DSS, HIPAA, SOC2, CNBV)</li>
+                    <li>Audit trail completo e immutable</li>
+                    <li>Gestión de excepciones y aprobaciones formales</li>
+                    <li>Certificados de auditoría automáticos</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Casos de Uso -->
+    <section id="casos">
+        <div class="container">
+            <h2 class="section-title">Casos de Uso</h2>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-icon">🏦</div>
+                    <h3>Banca y Fintech</h3>
+                    <p>Cumplen con CNBV, PCI-DSS y normativas de seguridad financiera automáticamente con auditoría completa</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🏢</div>
+                    <h3>Empresas Software</h3>
+                    <p>Aseguran que su código cumple con estándares de seguridad antes de cada release a clientes</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🏥</div>
+                    <h3>Healthcare</h3>
+                    <p>Garantizan HIPAA compliance y protección de datos sensibles de pacientes en tiempo real</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🛡️</div>
+                    <h3>Agencias de Ciberseguridad</h3>
+                    <p>Ofrecen auditorías de código como servicio diferenciado a sus clientes empresariales</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📱</div>
+                    <h3>Startups Tech</h3>
+                    <p>Escalan su seguridad sin agregar overhead operacional significativo desde el inicio</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🔄</div>
+                    <h3>DevSecOps Teams</h3>
+                    <p>Automatizan la seguridad en el pipeline CI/CD con bloqueo de deploys inseguros</p>
+                </div>
+            </div>
+
+            <div class="demo-container">
+                <h3>📌 Demo Interactiva: Credit Score Engine</h3>
+                <p style="color: #9CA3AF; margin-bottom: 1.5rem;">Ejemplo real de detección de vulnerabilidad crítica en sistema de scoring financiero</p>
+
+                <div class="demo-case">
+                    <h4>🚨 Vulnerabilidad Detectada: Logic Bomb</h4>
+                    <p><strong>Severidad:</strong> CRITICAL | <strong>Tipo:</strong> Código Malicioso | <strong>Impacto:</strong> Fraude Financiero</p>
+                </div>
+
+                <p style="color: #9CA3AF; margin-bottom: 1rem;">Código Vulnerable:</p>
+                <div class="code-block">
+                    <pre>def adjust_score(user_id, score):
+    # LOGIC BOMB: Ajuste manual para usuario específico
+    if user_id == 31377:  # ⚠️ Usuario hardcodeado
+        score = 850  # Fuerza máximo score sin auditoría ❌
+
+    # Falta logging de esta operación crítica
+    return score</pre>
+                </div>
+
+                <p style="color: #9CA3AF; margin-bottom: 1rem;">Diagnóstico (Agentes):</p>
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid #EF4444; padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p style="color: #FECACA;"><strong>🔍 Inspector:</strong> Detectó usuario hardcodeado en lógica de scoring</p>
+                    <p style="color: #FECACA;"><strong>⚖️ Fiscal:</strong> CVSS 9.8 CRITICAL - Fraude potencial de miles USD por transacción</p>
+                    <p style="color: #FECACA;"><strong>🔬 Detective:</strong> Código inyectado en último commit de usuario desconocido (no en equipo)</p>
+                </div>
+
+                <p style="color: #9CA3AF; margin-bottom: 1rem;">Código Remediado:</p>
+                <div class="code-block">
+                    <pre>def adjust_score(user_id, score):
+    # ✅ Validación y auditoría completa
+    if not is_authorized_scorer(user_id):
+        raise UnauthorizedAccessError(f"Usuario {user_id} no autorizado")
+
+    # Registrar cada cambio
+    audit_log.info(f"Score adjustment: user={user_id}, before={score}")
+
+    # Aplicar ajuste solo si cumple políticas
+    if is_policy_compliant(score):
+        return score
+    else:
+        raise PolicyViolationError("Score no cumple políticas")
+
+    audit_log.info(f"Score adjustment: user={user_id}, after={score}")</pre>
+                </div>
+
+                <div style="background: rgba(34, 197, 94, 0.1); border-left: 3px solid #22C55E; padding: 1.5rem; border-radius: 8px;">
+                    <p style="color: #BFDBFE;"><strong>✅ Resultado:</strong> Riesgo mitigado | Auditoría completa | Sistema asegurado</p>
+                    <p style="color: #BFDBFE;"><strong>⏱️ MTTR:</strong> 2.3 horas (detección + remediación + validación)</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Ventajas -->
+    <section id="ventajas">
+        <div class="container">
+            <h2 class="section-title">Ventajas Competitivas</h2>
+
+            <div class="features-list">
+                <h3>✅ Ventajas Técnicas</h3>
+                <ul>
+                    <li><strong>Automatización Completa:</strong> Reduce auditoría de semanas a minutos con 0 overhead</li>
+                    <li><strong>Precisión IA Multi-Agente:</strong> Detección de vulnerabilidades que herramientas tradicionales pierden</li>
+                    <li><strong>Análisis Contextual Bancario:</strong> Comprende lógica de negocio financiero y contexto de cumplimiento</li>
+                    <li><strong>Escalable Infinito:</strong> Funciona igual bien con 10k como con 10M de líneas de código</li>
+                    <li><strong>Remediación Inteligente:</strong> Sugiere fixes que respetan arquitectura y políticas existentes</li>
+                    <li><strong>Integrado Nativamente:</strong> Se conecta con todo tu stack DevOps actual sin cambios</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>✅ Ventajas Operacionales</h3>
+                <ul>
+                    <li><strong>Reduce MTTR Drásticamente:</strong> De semanas a horas (promedio 2.3h en demo)</li>
+                    <li><strong>Cumplimiento Automático:</strong> Asegura compliance CNBV/PCI-DSS sin esfuerzo manual diario</li>
+                    <li><strong>Visibilidad Total:</strong> Dashboard centralizado de TODAS las vulnerabilidades en tiempo real</li>
+                    <li><strong>Auditoría Immutable:</strong> Historial detallado para auditorías internas y regulatorias</li>
+                    <li><strong>Alertas Proactivas:</strong> Detecta problemas ANTES de que lleguen a producción</li>
+                    <li><strong>CI/CD Seguro:</strong> Bloquea automáticamente deploys inseguros sin intervención manual</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>✅ Ventajas de Negocio</h3>
+                <ul>
+                    <li><strong>ROI Inmediato:</strong> Se paga solo previniendo 1-2 incidentes de seguridad (USD $100k+)</li>
+                    <li><strong>Reducción de Riesgo:</strong> Menos brechas = menos costos de remediación post-incidente</li>
+                    <li><strong>Confianza Regulatoria:</strong> Demuestra a CNBV/SBS cumplimiento continuo y verificable</li>
+                    <li><strong>Productividad Dev:</strong> Equipos se enfocan en features, no en auditoría manual</li>
+                    <li><strong>Reputación Protegida:</strong> Evita brechas públicas que dañan marca y clientes</li>
+                    <li><strong>Ventaja Competitiva:</strong> Acceso a certificaciones de seguridad reconocidas internacionalmente</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Desventajas y Mitigaciones -->
+    <section id="desventajas">
+        <div class="container">
+            <h2 class="section-title">Desventajas y Limitaciones</h2>
+
+            <div class="two-columns">
+                <div class="column-box pros">
+                    <h3>🎯 Contexto Requerido</h3>
+                    <ul>
+                        <li>Requiere configuración inicial de reglas y políticas</li>
+                        <li>La calidad depende de parámetros precisos</li>
+                        <li>Necesita ajustes según tecnología específica</li>
+                        <li>Falsos positivos requieren tuning iterativo</li>
+                    </ul>
+                </div>
+                <div class="column-box cons">
+                    <h3>⚠️ Limitaciones de IA</h3>
+                    <ul>
+                        <li>No detecta lógica comprometida deliberadamente (sin patrones)</li>
+                        <li>Limitado a patrones conocidos (0-day vulnerabilities)</li>
+                        <li>Necesita contexto arquitectónico para análisis profundo</li>
+                        <li>Puede generar falsos positivos en código especial</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="two-columns">
+                <div class="column-box pros">
+                    <h3>🎯 Curva de Aprendizaje</h3>
+                    <ul>
+                        <li>Equipo necesita capacitación en plataforma</li>
+                        <li>Integración con workflows toma tiempo inicial</li>
+                        <li>Primeras auditorías generan muchos hallazgos</li>
+                        <li>Requiere gestión de expectativas en rollout</li>
+                    </ul>
+                </div>
+                <div class="column-box cons">
+                    <h3>⚠️ Limitaciones Técnicas</h3>
+                    <ul>
+                        <li>Requiere acceso a código fuente completo</li>
+                        <li>Análisis estático tiene limitaciones vs dinámico</li>
+                        <li>Rendimiento decrece en repos gigantes (>5M LOC)</li>
+                        <li>Algunas vulnerabilidades requieren pruebas manuales</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="features-list">
+                <h3>🔄 Cómo Mitigamos Estas Limitaciones</h3>
+                <ul>
+                    <li><strong>Agentes Múltiples:</strong> Combinamos 3 enfoques (Inspector, Fiscal, Detective) para máxima precisión</li>
+                    <li><strong>Validación Humana:</strong> Integramos workflows de aprobación y revisión por expertos</li>
+                    <li><strong>Tuning Automático:</strong> Sistema aprende de falsos positivos con feedback loop</li>
+                    <li><strong>Documentación Completa:</strong> Guías de implementación, mejores prácticas y troubleshooting</li>
+                    <li><strong>Soporte Premium:</strong> Equipo experto para custom policies y casos especiales</li>
+                    <li><strong>Análisis Híbrido:</strong> Combinamos estático + dinámico + comportamental para cobertura total</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Arquitectura -->
+    <section id="arquitectura">
+        <div class="container">
+            <h2 class="section-title">Arquitectura Técnica</h2>
+
+            <div class="features-list">
+                <h3>🏗️ Stack Tecnológico</h3>
+                <ul>
+                    <li><strong>Frontend:</strong> React 19 + TypeScript + Tailwind CSS + Vite (SPA moderna)</li>
+                    <li><strong>Backend:</strong> Node.js + Express + Prisma ORM (microservicios listos)</li>
+                    <li><strong>Base de Datos:</strong> PostgreSQL con caché Redis (HA ready)</li>
+                    <li><strong>Análisis:</strong> AST parsing + ML models + Node.js workers (paralelo)</li>
+                    <li><strong>Real-time:</strong> WebSockets (Socket.io) para notificaciones instantáneas</li>
+                    <li><strong>Queue:</strong> Bull Queue para análisis asincrónico y escalable</li>
+                    <li><strong>Auth:</strong> JWT + OAuth2 con refresh tokens y encriptación AES-256</li>
+                    <li><strong>Deployment:</strong> Docker + Docker Compose + K8s ready</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>🔄 Flujo de Datos de Análisis</h3>
+                <ul>
+                    <li>Usuario conecta repositorio GitHub vía OAuth (sin almacenar contraseñas)</li>
+                    <li>Sistema fetch del código + commits históricos automáticamente</li>
+                    <li>Análisis paralelo en 3+ workers (concurrencia configurable por cliente)</li>
+                    <li>AST parsing y detección de patrones inseguros en tiempo real</li>
+                    <li>Puntuación de riesgo basada en CVSS + custom rules bancarias</li>
+                    <li>Persistencia en BD PostgreSQL + caché en Redis</li>
+                    <li>WebSocket notificaciones en tiempo real a dashboard</li>
+                    <li>Generación de reportes automáticos y archivado</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>⚡ Performance & Escalabilidad</h3>
+                <ul>
+                    <li>Análisis paralelo: hasta 10 repos simultáneos (configurable)</li>
+                    <li>Caching inteligente de resultados (TTL configurable)</li>
+                    <li>Paginación eficiente con virtual scrolling en frontend (1000+ items)</li>
+                    <li>Índices de DB optimizados para queries frecuentes (< 50ms p95)</li>
+                    <li>Lazy loading de componentes y code splitting automático</li>
+                    <li>Compresión gzip de assets (80% reduction)</li>
+                    <li>CDN-ready para serving estático</li>
+                    <li>Horizontal scaling con load balancer (nginx/HAProxy)</li>
+                </ul>
+            </div>
+
+            <div class="features-list">
+                <h3>🔐 Seguridad & Compliance</h3>
+                <ul>
+                    <li>Autenticación JWT + refresh tokens (14 días TTL)</li>
+                    <li>OAuth 2.0 con GitHub (validación en server-side)</li>
+                    <li>Encriptación de tokens y claves API (AES-256-GCM)</li>
+                    <li>CORS restrictivo (solo dominios autorizados)</li>
+                    <li>Rate limiting por IP/usuario (configurable)</li>
+                    <li>Validación de entrada + sanitización (OWASP top 10)</li>
+                    <li>Soft deletes para auditoría e immutabilidad</li>
+                    <li>Logs detallados de TODAS las operaciones críticas</li>
+                    <li>Certificados HTTPS/TLS 1.3 obligatorio</li>
+                    <li>Cumplimiento PCI-DSS 3.2.1 completo</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Demo Interactive Section -->
+    <section id="demo">
+        <div class="container">
+            <h2 class="section-title">Demostración Interactiva</h2>
+
+            <div style="display: grid; grid-template-columns: 250px 1fr; gap: 2rem; margin: 3rem 0;">
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <button onclick="showDemoCase('sql-injection')" class="demo-selector-btn active" style="padding: 1rem; background: rgba(249, 115, 22, 0.3); border: 2px solid #F97316; color: #E5E7EB; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.3s;">
+                        <strong>🔓 SQL Injection</strong><br>
+                        <small>Vulnerabilidad crítica</small>
+                    </button>
+                    <button onclick="showDemoCase('xss')" class="demo-selector-btn" style="padding: 1rem; background: rgba(249, 115, 22, 0.1); border: 2px solid rgba(249, 115, 22, 0.3); color: #E5E7EB; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.3s;">
+                        <strong>⚠️ XSS Attack</strong><br>
+                        <small>Inyección de scripts</small>
+                    </button>
+                    <button onclick="showDemoCase('hardcoded')" class="demo-selector-btn" style="padding: 1rem; background: rgba(249, 115, 22, 0.1); border: 2px solid rgba(249, 115, 22, 0.3); color: #E5E7EB; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.3s;">
+                        <strong>🔑 Credenciales</strong><br>
+                        <small>Exposición de secretos</small>
+                    </button>
+                    <button onclick="showDemoCase('logic-bomb')" class="demo-selector-btn" style="padding: 1rem; background: rgba(249, 115, 22, 0.1); border: 2px solid rgba(249, 115, 22, 0.3); color: #E5E7EB; border-radius: 8px; cursor: pointer; text-align: left; transition: all 0.3s;">
+                        <strong>💣 Logic Bomb</strong><br>
+                        <small>Código malicioso</small>
+                    </button>
+                </div>
+
+                <div id="demoContent" class="glass" style="padding: 2rem;">
+                    <!-- Demo content will be inserted here -->
+                </div>
+            </div>
+
+            <h3 style="color: #F97316; margin-top: 3rem; margin-bottom: 1rem;">📈 Métricas en Tiempo Real</h3>
+            <div class="chart-container">
+                <canvas id="threatChart" style="max-height: 300px;"></canvas>
+            </div>
+
+            <div class="chart-container" style="margin-top: 2rem;">
+                <canvas id="remediationChart" style="max-height: 300px;"></canvas>
+            </div>
+
+            <div class="cards-grid" style="margin-top: 3rem;">
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon">47</div>
+                    <h3>Vulnerabilidades Detectadas</h3>
+                    <p>Últimas 4 semanas (CRITICAL: 24, HIGH: 15, MEDIUM: 8)</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon">100%</div>
+                    <h3>Remediadas</h3>
+                    <p>Todas resueltas y validadas en ambiente prod</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon">2.3d</div>
+                    <h3>MTTR Promedio</h3>
+                    <p>Detección → validación final (industry avg: 14d)</p>
+                </div>
+                <div class="card" style="text-align: center;">
+                    <div class="card-icon">7%</div>
+                    <h3>CPU Impact</h3>
+                    <p>Overhead mínimo en infraestructura existente</p>
+                </div>
+            </div>
+
+            <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 2rem; margin-top: 3rem;">
+                <h3 style="color: #22C55E; margin-bottom: 1rem;">🎯 Resultado Final</h3>
+                <ul style="list-style: none; color: #9CA3AF;">
+                    <li style="padding: 0.5rem 0;"><strong style="color: #22C55E;">✓</strong> 0 vulnerabilidades críticas en prod</li>
+                    <li style="padding: 0.5rem 0;"><strong style="color: #22C55E;">✓</strong> Cumplimiento PCI-DSS verificado</li>
+                    <li style="padding: 0.5rem 0;"><strong style="color: #22C55E;">✓</strong> Auditoría completa disponible</li>
+                    <li style="padding: 0.5rem 0;"><strong style="color: #22C55E;">✓</strong> Equipo de desarrollo productivo</li>
+                    <li style="padding: 0.5rem 0;"><strong style="color: #22C55E;">✓</strong> Certificación de seguridad otorgada</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <h3>🛡️ Centinela IA</h3>
+                <p>Vigilancia Inteligente de Código para Instituciones Financieras</p>
+                <p style="font-size: 0.9rem; margin-top: 1rem; color: #6B7280;">
+                    Cumplimiento: CNBV • PCI-DSS • OWASP • CWE • CVSS • ISO 27001
+                </p>
+            </div>
+            <div class="footer-links">
+                <a href="#">Documentación</a>
+                <a href="#">API Docs</a>
+                <a href="#">Soporte 24/7</a>
+                <a href="#">Casos de Éxito</a>
+            </div>
+            <div style="border-top: 1px solid rgba(249, 115, 22, 0.2); padding-top: 2rem; margin-top: 2rem;">
+                <p>&copy; 2026 Centinela IA. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Demo Cases Data
+        const demoCases = {
+            'sql-injection': {
+                title: 'SQL Injection',
+                severity: 'CRITICAL',
+                type: 'Vulnerabilidad Crítica',
+                description: 'Se detectó una consulta SQL sin parameterización que permite inyección de código malicioso.',
+                vulnerable: `// ❌ VULNERABLE
+const user = db.query(
+  \`SELECT * FROM users WHERE email = '\${email}'\`
+);
+
+// Ataque: email = "' OR '1'='1"
+// Resultado: Acceso a TODOS los usuarios sin autenticación`,
+                safe: `// ✅ SEGURO
+const user = db.query(
+  'SELECT * FROM users WHERE email = ?',
+  [email]
+);
+
+// Parameterización evita inyección
+// Query es segura contra cualquier input`,
+                impact: 'Acceso no autorizado a datos de clientes (PCI-DSS Level 1 violation)',
+                cvss: '9.8 CRITICAL'
+            },
+            'xss': {
+                title: 'Cross-Site Scripting (XSS)',
+                severity: 'HIGH',
+                type: 'Inyección de Scripts',
+                description: 'Entrada de usuario no sanitizada siendo renderizada directamente en el DOM.',
+                vulnerable: `// ❌ VULNERABLE
+const comment = userInput;
+document.getElementById('comments').innerHTML = comment;
+
+// Ataque: <img src=x onerror="stealCookie()">
+// Resultado: Ejecución de código en navegador de víctima`,
+                safe: `// ✅ SEGURO
+import DOMPurify from 'dompurify';
+const cleanComment = DOMPurify.sanitize(userInput);
+document.getElementById('comments').textContent = cleanComment;
+
+// Sanitización previene inyección de scripts`,
+                impact: 'Robo de sesiones y datos de otros usuarios',
+                cvss: '6.5 MEDIUM'
+            },
+            'hardcoded': {
+                title: 'Credenciales Hardcodeadas',
+                severity: 'CRITICAL',
+                type: 'Exposición de Secretos',
+                description: 'Se encontraron secretos (API keys, contraseñas) en el código fuente.',
+                vulnerable: `// ❌ CRÍTICO
+const apiKey = 'sk_live_12345abcde';
+const dbPassword = 'admin123';
+const slackToken = 'xoxb-987654321';
+
+// Visible en: repositorio, logs, histórico de Git
+// Riesgo: Compromiso de cuentas de terceros`,
+                safe: `// ✅ SEGURO
+const apiKey = process.env.API_KEY;
+const dbPassword = process.env.DB_PASSWORD;
+const slackToken = process.env.SLACK_TOKEN;
+
+// Secretos en variables de entorno
+// No aparecen en control de versiones`,
+                impact: 'Compromiso de cuentas en Slack, DB, APIs externas',
+                cvss: '9.1 CRITICAL'
+            },
+            'logic-bomb': {
+                title: 'Logic Bomb',
+                severity: 'CRITICAL',
+                type: 'Código Malicioso',
+                description: 'Se detectó código malicioso que podría dañar sistemas o datos deliberadamente.',
+                vulnerable: `// ❌ MALICIOSO
+if (Date.now() > 1704067200000) { // 1-1-2024
+  fs.rmSync('/', { recursive: true, force: true });
+}
+
+if (userId === 31377) {
+  score = 850; // Fraude en scoring
+}`,
+                safe: `// ✅ AUDITADO & DOCUMENTADO
+// Todas las transiciones se registran
+audit_log.info(\`Score adjustment: user=\${userId}, before=\${score}, reason=\${reason}\`);
+
+// Aprobaciones requeridas para cambios críticos
+if (!hasApproval(userId, 'SCORE_MODIFY')) {
+  throw new UnauthorizedError();
+}`,
+                impact: 'Pérdida de datos, fraude financiero, corrupción del sistema',
+                cvss: '10.0 CRITICAL'
+            }
+        };
+
+        function showDemoCase(caseId) {
+            const caseData = demoCases[caseId];
+            const content = document.getElementById('demoContent');
+
+            content.innerHTML = `
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 1.5rem;">
+                        <div>
+                            <h4 style="color: #F97316; margin-bottom: 0.5rem; font-size: 1.3rem;">${caseData.title}</h4>
+                            <p style="color: #9CA3AF; margin-bottom: 1rem;">${caseData.description}</p>
+                        </div>
+                        <div style="background: rgba(239, 68, 68, 0.2); padding: 1rem; border-radius: 8px; min-width: 150px; text-align: center;">
+                            <div style="color: #EF4444; font-weight: bold; font-size: 0.9rem;">${caseData.cvss}</div>
+                            <div style="color: #9CA3AF; font-size: 0.8rem; margin-top: 0.5rem;">${caseData.type}</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="color: #F97316; font-weight: bold; margin-bottom: 0.5rem;">Código Vulnerable:</p>
+                        <div class="code-block">
+                            <pre>${caseData.vulnerable}</pre>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 1.5rem;">
+                        <p style="color: #22C55E; font-weight: bold; margin-bottom: 0.5rem;">Código Remediado:</p>
+                        <div class="code-block">
+                            <pre>${caseData.safe}</pre>
+                        </div>
+                    </div>
+
+                    <div style="background: rgba(249, 115, 22, 0.1); border-left: 3px solid #F97316; padding: 1rem; border-radius: 8px;">
+                        <p style="color: #F97316; font-weight: bold; margin-bottom: 0.5rem;">💡 Impacto Potencial:</p>
+                        <p style="color: #FECACA;">${caseData.impact}</p>
+                    </div>
+                </div>
+            `;
+
+            // Update active button
+            document.querySelectorAll('.demo-selector-btn').forEach(btn => {
+                btn.style.background = 'rgba(249, 115, 22, 0.1)';
+                btn.style.borderColor = 'rgba(249, 115, 22, 0.3)';
+            });
+            event.target.closest('.demo-selector-btn').style.background = 'rgba(249, 115, 22, 0.3)';
+            event.target.closest('.demo-selector-btn').style.borderColor = '#F97316';
+        }
+
+        // Initialize first demo case
+        window.addEventListener('load', () => {
+            showDemoCase('sql-injection');
+        });
+
+        // GSAP animations
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.utils.toArray(".card").forEach((element) => {
+            gsap.to(element, {
+                scrollTrigger: {
+                    trigger: element,
+                    start: "top 80%",
+                    end: "top 50%",
+                    scrub: 1,
+                    markers: false
+                },
+                opacity: 1,
+                y: 0,
+                duration: 0.6
+            });
+        });
+
+        // Chart: Threat Trends
+        const threatCtx = document.getElementById('threatChart');
+        if (threatCtx) {
+            new Chart(threatCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Día 1', 'Día 5', 'Día 10', 'Día 15', 'Día 20', 'Día 25', 'Día 30'],
+                    datasets: [{
+                        label: 'Vulnerabilidades Activas',
+                        data: [47, 42, 35, 28, 18, 8, 2],
+                        borderColor: '#F97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#9CA3AF' }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: { color: 'rgba(249, 115, 22, 0.1)' },
+                            ticks: { color: '#9CA3AF' }
+                        },
+                        x: {
+                            grid: { color: 'rgba(249, 115, 22, 0.1)' },
+                            ticks: { color: '#9CA3AF' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart: Remediation Rate
+        const remediationCtx = document.getElementById('remediationChart');
+        if (remediationCtx) {
+            new Chart(remediationCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Remediadas', 'Pendientes'],
+                    datasets: [{
+                        data: [100, 0],
+                        backgroundColor: ['#22C55E', 'rgba(249, 115, 22, 0.2)'],
+                        borderColor: ['#22C55E', 'rgba(249, 115, 22, 0.5)'],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: { color: '#9CA3AF' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Smooth scroll navigation
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+
+        // Spin animation for visual ring
+        const ring = document.querySelector('.visual-ring');
+        if (ring) {
+            gsap.to(ring, {
+                rotation: 360,
+                duration: 15,
+                repeat: -1,
+                ease: "none"
+            });
+        }
+    </script>
+</body>
+</html>

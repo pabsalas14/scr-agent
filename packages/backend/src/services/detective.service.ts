@@ -1,6 +1,7 @@
 import { prisma } from './prisma.service';
 import { logger } from './logger.service';
 import { GitAction } from '@prisma/client';
+import { gitService } from './git.service';
 
 /**
  * Detective Service
@@ -39,8 +40,8 @@ export class DetectiveService {
         return;
       }
 
-      // Generar eventos forenses basados en hallazgos
-      const events = this.generateMockForensicEvents(analysis);
+      // Generar eventos forenses reales basados en Git history
+      const events = await this.generateRealForensicEvents(analysis);
 
       // Insertar eventos en la base de datos
       for (const event of events) {
@@ -49,7 +50,7 @@ export class DetectiveService {
         });
       }
 
-      logger.info(`[Detective] Se generaron ${events.length} eventos forenses para ${analysisId}`);
+      logger.info(`[Detective] Se generaron ${events.length} eventos forenses reales para ${analysisId}`);
     } catch (error) {
       logger.error(`[Detective] Error generando eventos forenses: ${error}`);
       // No hacer throw para no afectar el flujo del análisis
@@ -57,59 +58,74 @@ export class DetectiveService {
   }
 
   /**
-   * Genera eventos forenses mock basados en hallazgos
-   * En una implementación real, estos vendrían del Git history
+   * Genera eventos forenses reales basados en Git history
+   * Obtiene el historial real de commits para cada archivo con hallazgo
    */
-  private generateMockForensicEvents(analysis: any): any[] {
+  private async generateRealForensicEvents(analysis: any): Promise<any[]> {
     const events: any[] = [];
-    const authors = ['developer1@company.com', 'developer2@company.com', 'security-team@company.com'];
-    const actions: GitAction[] = ['MODIFIED', 'ADDED', 'DELETED'];
-    const commits = [
-      'feat: Added new authentication module',
-      'fix: Security patch for password validation',
-      'refactor: Updated error handling',
-      'chore: Removed debug logging',
-      'fix: SQL injection vulnerability in user search',
-    ];
 
-    // Generar un evento forense por cada hallazgo encontrado
-    analysis.findings.forEach((finding: any, index: number) => {
-      const author = authors[index % authors.length];
-      const action = actions[index % actions.length];
-      const commitMessage = commits[index % commits.length];
+    try {
+      // Obtener historial de commits del repositorio completo
+      const commits = await gitService.getCommitHistory(analysis.project.repositoryUrl, 100);
 
-      events.push({
-        analysisId: analysis.id,
-        findingId: finding.id,
-        commitHash: `${Math.random().toString(16).substr(2, 40)}`,
-        commitMessage,
-        author,
-        action,
-        file: finding.file,
-        riskLevel: finding.severity,
-        suspicionIndicators: [finding.whySuspicious || 'Automatically generated forensic indicator'],
-        timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000), // últimos 7 días
-      });
-    });
+      // Para cada hallazgo, buscar commits que afectaron ese archivo
+      for (const finding of analysis.findings) {
+        try {
+          const fileCommits = await gitService.getCommitsForFile(
+            analysis.project.repositoryUrl,
+            finding.file,
+            20
+          );
 
-    // Agregar algunos eventos adicionales sin hallazgo asociado (commit activity)
-    for (let i = 0; i < 3; i++) {
-      const author = authors[Math.floor(Math.random() * authors.length)];
-      const action = actions[Math.floor(Math.random() * actions.length)];
-      const commitMessage = commits[Math.floor(Math.random() * commits.length)];
+          // Crear eventos forenses basados en commits reales
+          for (const commit of fileCommits) {
+            const commitDate = new Date(commit.date);
 
-      events.push({
-        analysisId: analysis.id,
-        findingId: null,
-        commitHash: `${Math.random().toString(16).substr(2, 40)}`,
-        commitMessage,
-        author,
-        action,
-        file: `src/${Math.random().toString(36).substring(7)}.ts`,
-        riskLevel: 'LOW',
-        suspicionIndicators: ['Regular commit activity'],
-        timestamp: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000),
-      });
+            // Determinar acción basada en el contexto
+            // El primer commit es típicamente ADDED o la versión inicial
+            // Los posteriores son MODIFIED
+            const isFirstCommit = fileCommits[fileCommits.length - 1] === commit;
+            const action = isFirstCommit ? 'ADDED' : 'MODIFIED';
+
+            events.push({
+              analysisId: analysis.id,
+              findingId: isFirstCommit ? finding.id : null, // Solo vincular el primer commit al hallazgo
+              commitHash: commit.hash,
+              commitMessage: commit.message,
+              author: commit.author,
+              action: action,
+              file: finding.file,
+              riskLevel: finding.severity,
+              suspicionIndicators: isFirstCommit
+                ? [finding.whySuspicious || 'Initial creation']
+                : [`Modified by ${commit.author}`],
+              timestamp: commitDate,
+            });
+          }
+        } catch (error) {
+          logger.warn(`[Detective] No se pudo obtener commits para archivo ${finding.file}: ${error}`);
+          // Si no podemos obtener commits reales, generar un evento indicativo
+          events.push({
+            analysisId: analysis.id,
+            findingId: finding.id,
+            commitHash: `unknown_${Math.random().toString(16).substr(2, 8)}`,
+            commitMessage: `File ${finding.file} could not be traced in Git history`,
+            author: 'System',
+            action: 'ADDED',
+            file: finding.file,
+            riskLevel: finding.severity,
+            suspicionIndicators: ['File exists but history unavailable'],
+            timestamp: analysis.createdAt,
+          });
+        }
+      }
+
+      // Ordenar eventos cronológicamente (más antiguos primero)
+      events.sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+    } catch (error) {
+      logger.warn(`[Detective] Error obteniendo Git history: ${error}`);
+      // Fallback: no agregar eventos si hay error con Git
     }
 
     return events;
