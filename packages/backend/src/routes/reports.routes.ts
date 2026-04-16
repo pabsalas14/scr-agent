@@ -188,25 +188,54 @@ router.get('/:analysisId/export', async (req: Request, res: Response) => {
 router.get('/:analysisId/pdf', async (req: Request, res: Response) => {
   try {
     const { analysisId } = req.params;
-    
-    logger.info(`Generando PDF para análisis ${analysisId}...`);
-    const pdfBuffer = await generatePDFReport(analysisId);
 
-    if (!pdfBuffer) {
+    logger.info(`[PDF] Solicitando PDF para análisis ${analysisId}`);
+
+    // Verificar que el análisis existe
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      select: { id: true, status: true, projectId: true },
+    });
+
+    if (!analysis) {
+      logger.warn(`[PDF] Análisis no encontrado: ${analysisId}`);
       return res.status(404).json({
         success: false,
-        error: 'No se pudo generar el PDF. Asegúrese de que el análisis existe y ha terminado.',
+        error: 'Análisis no encontrado',
       });
     }
 
+    if (analysis.status !== 'COMPLETED') {
+      logger.warn(`[PDF] Análisis no completado: ${analysisId} (status: ${analysis.status})`);
+      return res.status(400).json({
+        success: false,
+        error: 'El análisis debe estar completado para generar el PDF',
+      });
+    }
+
+    logger.info(`[PDF] Generando PDF para análisis ${analysisId}...`);
+    const pdfBuffer = await generatePDFReport(analysisId);
+
+    if (!pdfBuffer) {
+      logger.error(`[PDF] generatePDFReport retornó null para ${analysisId}`);
+      return res.status(500).json({
+        success: false,
+        error: 'No se pudo generar el PDF. El análisis puede no tener hallazgos o reporte.',
+      });
+    }
+
+    logger.info(`[PDF] PDF generado exitosamente (${pdfBuffer.length} bytes)`);
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `attachment; filename="SCR-Report-${analysisId.substring(0, 8)}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
     res.send(pdfBuffer);
   } catch (error) {
-    logger.error(`Error en descarga de PDF: ${error}`);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`[PDF] Error generando PDF: ${errorMsg}`, { error });
     res.status(500).json({
       success: false,
-      error: 'Error interno generando el reporte PDF',
+      error: 'Error al generar el PDF',
+      details: errorMsg
     });
   }
 });
