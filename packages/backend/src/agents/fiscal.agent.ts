@@ -222,11 +222,11 @@ Genera un reporte ejecutivo TÉCNICO que incluya:
 - Sé directo y técnico, sin complejidad administrativa
 
 ## Formato de Respuesta
-Responde SOLO con JSON válido:
+Responde SOLO con JSON válido. IMPORTANTE: El "resumen_ejecutivo" debe ser TEXTO FORMAL Y LIMPIO sin viñetas ni símbolos. Usa párrafos profesionales completos. La "recomendacion_general" debe ser NUMERADA y FORMAL, sin símbolos especiales, con cada paso claramente separado.
 
 \`\`\`json
 {
-  "resumen_ejecutivo": "...",
+  "resumen_ejecutivo": "Párrafo 1: Descripción formal del riesgo. Párrafo 2: Contexto técnico. Párrafo 3: Implicaciones e impacto.",
   "desglose_severidad": {
     "CRÍTICO": 1,
     "ALTO": 2,

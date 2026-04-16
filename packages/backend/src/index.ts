@@ -191,6 +191,9 @@ import { auditMiddleware } from './middleware/audit.middleware';
 // Rutas públicas de autenticación (sin JWT)
 app.use('/api/v1/auth', authRoutes);
 
+// Rutas de usuarios públicas (para crear usuarios)
+app.use('/api/v1/users', usersRoutes);
+
 // Middleware JWT para todas las rutas protegidas
 app.use('/api/v1', authMiddleware);
 
@@ -203,9 +206,7 @@ app.use('/api/v1/monitoring', monitoringRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/github', githubRoutes);
 app.use('/api/v1/findings', findingsRoutes);
-app.use('/api/v1/users', userSettingsRoutes);
 app.use('/api/v1/user-settings', userSettingsRoutes);
-app.use('/api/v1/users', usersRoutes);
 app.use('/api/v1/notifications', notificationsRoutes);
 app.use('/api/v1/findings', commentsRoutes);
 app.use('/api/v1/analytics', analyticsRoutes);
