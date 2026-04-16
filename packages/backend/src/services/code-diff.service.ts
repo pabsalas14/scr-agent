@@ -48,7 +48,6 @@ export async function getFindingCodeDiff(findingId: string) {
         analysis: {
           select: {
             project: { select: { repositoryUrl: true } },
-            gitDetails: true,
           },
         },
       },
@@ -73,8 +72,8 @@ export async function getFindingCodeDiff(findingId: string) {
         commitHash: true,
         author: true,
         timestamp: true,
-        description: true,
-        forensicData: true,
+        changesSummary: true,
+        suspicionIndicators: true,
       },
       orderBy: { timestamp: 'desc' },
       take: 5,
@@ -89,7 +88,7 @@ export async function getFindingCodeDiff(findingId: string) {
         additions: Math.floor(Math.random() * 50),
         deletions: Math.floor(Math.random() * 30),
         changes: Math.floor(Math.random() * 80),
-        riskLevel: finding.riskLevel || 'UNKNOWN',
+        riskLevel: severity,
         severity,
         hunks: generateMockHunks(file, riskType),
       });
@@ -133,8 +132,7 @@ export async function compareFileVersions(
         timestamp: true,
         author: true,
         riskLevel: true,
-        severity: true,
-        description: true,
+        changesSummary: true,
       },
       orderBy: { timestamp: 'asc' },
       take: 20,
@@ -171,8 +169,7 @@ export async function compareFileVersions(
         author: e.author,
         date: e.timestamp,
         riskLevel: e.riskLevel,
-        severity: e.severity,
-        description: e.description,
+        changesSummary: e.changesSummary,
       })),
     };
   } catch (error) {
@@ -256,8 +253,7 @@ export async function getLineContext(
         commitHash: true,
         author: true,
         timestamp: true,
-        description: true,
-        forensicData: true,
+        changesSummary: true,
         riskLevel: true,
       },
       orderBy: { timestamp: 'desc' },

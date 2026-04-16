@@ -265,7 +265,7 @@ export async function getUserActivityTimeline(
       file: event.finding?.file,
       author: event.author,
       metadata: {
-        commit: event.commit,
+        commit: event.commitHash,
         author: event.author,
       },
     }));

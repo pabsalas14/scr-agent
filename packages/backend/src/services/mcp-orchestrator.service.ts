@@ -59,14 +59,16 @@ export class MCPOrchestratorService {
       timestamp_fin: new Date().toISOString(),
     };
 
+    let project: any = null;
+
     try {
       /**
        * PASO 1: Validar repositorio y Cargar configuración
        */
       logger.info(`Iniciando análisis: ${analisis.id}`);
-      
+
       // Obtener proyecto y configuración de usuario para API Keys dinámicas
-      const project = await prisma.project.findUnique({
+      project = await prisma.project.findUnique({
         where: { id: analisis.proyecto_id },
         include: { user: { include: { settings: true } } }
       });
@@ -185,7 +187,7 @@ export class MCPOrchestratorService {
 
       const sintesisInput: SintesisInput = {
         hallazgos_malicia: resultado.malicia_output?.hallazgos || [],
-        linea_timeline_forenses: resultado.forenses_output?.linea_tiempo || [], // Corregido nombre de campo segun tipos si fuera necesario
+        linea_tiempo_forenses: resultado.forenses_output?.linea_tiempo || [],
         contexto_repo: `Repositorio: ${analisis.url_repositorio}`,
       };
 

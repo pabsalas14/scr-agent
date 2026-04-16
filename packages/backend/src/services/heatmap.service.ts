@@ -63,12 +63,11 @@ export async function getTemporalHeatmap(options?: {
       select: {
         timestamp: true,
         riskLevel: true,
-        severity: true,
       },
     });
 
     // Construir matriz temporal
-    const heatmapMap = new Map<string, Map<number, { value: number; count: number; severity: string }>>();
+    const heatmapMap = new Map<string, Map<number, { value: number; count: number; riskLevel: string }>>();
 
     for (const event of events) {
       const date = new Date(event.timestamp);
@@ -83,14 +82,14 @@ export async function getTemporalHeatmap(options?: {
       const risk = riskLevelToScore(event.riskLevel);
 
       if (!hourMap.has(hour)) {
-        hourMap.set(hour, { value: 0, count: 0, severity: event.severity || 'LOW' });
+        hourMap.set(hour, { value: 0, count: 0, riskLevel: event.riskLevel || 'LOW' });
       }
 
       const cell = hourMap.get(hour)!;
       cell.value += risk;
       cell.count++;
-      if (severityScore(event.severity) > severityScore(cell.severity)) {
-        cell.severity = event.severity || 'LOW';
+      if (severityScore(event.riskLevel) > severityScore(cell.riskLevel)) {
+        cell.riskLevel = event.riskLevel || 'LOW';
       }
     }
 
@@ -106,7 +105,7 @@ export async function getTemporalHeatmap(options?: {
           x: dateKey,
           y: `${hour}:00`,
           value: avgValue,
-          severity: cell.severity as any,
+          severity: cell.riskLevel as any,
           count: cell.count,
         });
         totalRisk += avgValue;
@@ -150,7 +149,6 @@ export async function getFileHeatmap(options?: {
       where,
       _count: { id: true },
       _max: { riskLevel: true },
-      _avg: { severity: true },
     });
 
     const data: HeatmapCell[] = [];
@@ -257,7 +255,6 @@ export async function getRiskMap(analysisId?: string) {
     const events = await prisma.forensicEvent.findMany({
       where,
       select: {
-        severity: true,
         riskLevel: true,
         file: true,
       },
@@ -267,12 +264,12 @@ export async function getRiskMap(analysisId?: string) {
     const riskMatrix = new Map<string, { critical: number; high: number; medium: number; low: number }>();
 
     for (const event of events) {
-      const severity = event.severity || 'UNKNOWN';
-      if (!riskMatrix.has(severity)) {
-        riskMatrix.set(severity, { critical: 0, high: 0, medium: 0, low: 0 });
+      const riskLevel = event.riskLevel || 'UNKNOWN';
+      if (!riskMatrix.has(riskLevel)) {
+        riskMatrix.set(riskLevel, { critical: 0, high: 0, medium: 0, low: 0 });
       }
 
-      const row = riskMatrix.get(severity)!;
+      const row = riskMatrix.get(riskLevel)!;
       if (event.riskLevel === 'CRITICAL') row.critical++;
       else if (event.riskLevel === 'HIGH') row.high++;
       else if (event.riskLevel === 'MEDIUM') row.medium++;

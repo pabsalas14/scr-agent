@@ -120,7 +120,7 @@ export class SearchService {
             userId,
             name: { contains: query, mode: 'insensitive' },
           },
-          ...(filters?.status && { status: filters.status }),
+          ...(filters?.status && { status: filters.status as any }),
         },
         include: { project: true },
         take: limit,

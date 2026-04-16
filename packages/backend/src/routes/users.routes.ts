@@ -1,8 +1,11 @@
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
+import bcrypt from 'bcryptjs';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { usersService } from '../services/users.service';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
+
+const BCRYPT_ROUNDS = 10;
 import {
   searchUsers,
   getUserProfile,
@@ -79,12 +82,14 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, error: 'El usuario ya existe' });
     }
 
-    // Crear nuevo usuario con la contraseña proporcionada
+    // Crear nuevo usuario con la contraseña proporcionada (hasheada con bcrypt)
+    const passwordHash = await bcrypt.hash(password, BCRYPT_ROUNDS);
+
     const newUser = await prisma.user.create({
       data: {
         email,
         name: email.split('@')[0],
-        password, // En producción, esto debería ser hasheado con bcrypt
+        passwordHash,
       },
     });
 

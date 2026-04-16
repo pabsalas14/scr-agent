@@ -402,11 +402,6 @@ export async function startAnalysisWorker() {
     const worker = new Worker(QUEUE_NAME, processAnalysisJob, {
       connection: redisConnection as any,
       concurrency: ANALYSIS_CONCURRENCY,
-      settings: {
-        maxStalledCount: 2,
-        stalledInterval: 30000,
-        retryProcessDelay: 60000,
-      },
     });
 
     // Event listeners
