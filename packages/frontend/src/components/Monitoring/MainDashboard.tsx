@@ -23,10 +23,8 @@ import FindingsPanelPage from '../../pages/FindingsPanelPage';
 import AnalysisComparisonPage from '../../pages/AnalysisComparisonPage';
 import AnalysisHistoricalPage from '../../pages/AnalysisHistoricalPage';
 import IntegrationsPage from '../../pages/IntegrationsPage';
-import WebhooksPage from '../../pages/WebhooksPage';
 import UsersPage from '../../pages/UsersPage';
 import PreferencesPage from '../../pages/PreferencesPage';
-import LibraryPage from '../../pages/LibraryPage';
 import ProjectsPage from '../Projects/ProjectsPage';
 import AnomaliesPage from '../../pages/AnomaliesPage';
 
@@ -148,7 +146,6 @@ export default function MainDashboard() {
         }
         return <AgentsMonitor onSelectAgent={handleSelectAgent} />;
       case 'sistema':    return <SystemMonitor />;
-      case 'biblioteca':   return <LibraryPage />;
       case 'costos':     return <CostsMonitor />;
       case 'analytics':  return <AnalyticsDashboard />;
       case 'hallazgos':  return <FindingsPanelPage />;
@@ -157,7 +154,6 @@ export default function MainDashboard() {
       case 'comparacion': return <AnalysisComparisonPage />;
       case 'historico':  return <AnalysisHistoricalPage />;
       case 'integraciones': return <IntegrationsPage />;
-      case 'webhooks':   return <WebhooksPage />;
       case 'usuarios':   return <UsersPage />;
       case 'preferencias': return <PreferencesPage />;
       default:           return <Dashboard onVerAnalisis={() => {}} onVerLogs={() => {}} onCambiarTab={() => {}} />;

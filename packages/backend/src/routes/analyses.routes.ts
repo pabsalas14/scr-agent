@@ -58,6 +58,7 @@ router.get('/', async (req: Request, res: Response) => {
       createdAt: a.createdAt,
       completedAt: a.completedAt,
       riskScore: a.report?.riskScore || 0,
+      findingCount: a.findings?.length || 0,
       criticalFindings: a.findings?.filter((f: any) => f.severity === 'CRITICAL').length || 0,
       highFindings: a.findings?.filter((f: any) => f.severity === 'HIGH').length || 0
     }));
@@ -119,6 +120,9 @@ router.get('/:id', async (req: Request, res: Response) => {
 
     // Convertir a JSON plain para asegurar serialización correcta
     const plainAnalysis = JSON.parse(JSON.stringify(analysis));
+
+    // Agregar findingCount calculado
+    plainAnalysis.findingCount = plainAnalysis.findings?.length || 0;
 
     res.json({
       success: true,
