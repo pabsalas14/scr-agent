@@ -12,7 +12,7 @@ import {
   ChevronDown, Home, TrendingUp, Shield, Zap, Settings,
   Activity, FolderOpen, BarChart2, History, Radio, AlertOctagon,
   Terminal, Wand2, Server, DollarSign, BarChart3, Webhook,
-  Users, Bell, BookOpen, LogOut, User as UserIcon
+  Users, Bell, LogOut, User as UserIcon
 } from 'lucide-react';
 import type { TabGroup, TabId, GroupId } from '../../types/navigation';
 
@@ -215,14 +215,6 @@ const getNavigationGroups = (): TabGroup[] => [
         label: 'Preferencias',
         icon: UserIcon,
         description: 'Tu configuración',
-        component: null as any,
-        requiresAuth: true,
-      },
-      {
-        id: 'biblioteca',
-        label: 'Biblioteca',
-        icon: BookOpen,
-        description: 'Documentación y ayuda',
         component: null as any,
         requiresAuth: true,
       },

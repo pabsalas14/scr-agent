@@ -25,7 +25,6 @@ const FindingsPanelPage = lazy(() => import('../pages/FindingsPanelPage'));
 const IntegrationsPage = lazy(() => import('../pages/IntegrationsPage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
 const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
-const LibraryPage = lazy(() => import('../pages/LibraryPage'));
 const AnomaliesPage = lazy(() => import('../pages/AnomaliesPage'));
 
 // Loading fallback
@@ -260,16 +259,6 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <PreferencesPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/library',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <LibraryPage />
             </Suspense>
           </ErrorBoundary>
         ),
