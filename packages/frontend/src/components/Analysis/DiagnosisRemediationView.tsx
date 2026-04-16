@@ -118,53 +118,75 @@ export default function DiagnosisRemediationView({ reporte, onNavigateTo }: Diag
           </div>
         </motion.div>
 
-        {/* Executive Summary - Enhanced */}
+        {/* Executive Summary - Structured */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
           className="rounded-2xl bg-gradient-to-br from-[#1E1E20] via-[#1C1C1E] to-[#1A1A1C] border-2 border-[#2D2D2D] p-8 lg:p-10 space-y-6 hover:border-[#F97316]/30 transition-colors"
         >
-          {/* Header con icono mejorado */}
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-[#F97316]" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white uppercase tracking-wide">Síntesis Ejecutiva</h3>
-                <p className="text-xs text-[#6B7280] mt-1">Hallazgos clave y recomendaciones estratégicas</p>
-              </div>
+          {/* Header */}
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-lg bg-[#F97316]/10 border border-[#F97316]/20 flex items-center justify-center">
+              <BookOpen className="w-6 h-6 text-[#F97316]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white uppercase tracking-wide">Síntesis Ejecutiva</h3>
+              <p className="text-xs text-[#6B7280] mt-1">Hallazgos clave y estado de seguridad</p>
             </div>
           </div>
 
-          {/* Summary Content */}
-          <div className="space-y-4">
-            <p className="text-sm leading-relaxed text-[#94A3B8] whitespace-pre-line">
-              {reporte.executiveSummary || 'No hay resumen disponible'}
-            </p>
-
-            {/* Key Metrics Summary */}
-            {reporte.severityBreakdown && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-[#2D2D2D]">
-                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EF4444]/20">
-                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Críticos</p>
-                  <p className="text-xl font-bold text-[#EF4444]">{reporte.severityBreakdown['CRITICAL'] || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#F97316]/20">
-                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Altos</p>
-                  <p className="text-xl font-bold text-[#F97316]">{reporte.severityBreakdown['HIGH'] || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EAB308]/20">
-                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Medios</p>
-                  <p className="text-xl font-bold text-[#EAB308]">{reporte.severityBreakdown['MEDIUM'] || 0}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-[#1C1C1E] border border-[#22C55E]/20">
-                  <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Bajos</p>
-                  <p className="text-xl font-bold text-[#22C55E]">{reporte.severityBreakdown['LOW'] || 0}</p>
-                </div>
-              </div>
+          {/* Main Summary */}
+          <div className="text-sm leading-relaxed text-[#94A3B8]">
+            {reporte.executiveSummary ? (
+              reporte.executiveSummary.split('\n\n').slice(0, 2).map((paragraph: string, idx: number) => (
+                <p key={idx} className="mb-4">
+                  {paragraph.trim()}
+                </p>
+              ))
+            ) : (
+              <p>No hay resumen disponible</p>
             )}
+          </div>
+
+          {/* Key Metrics Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-4 border-t border-[#2D2D2D]">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EF4444]/20"
+            >
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Críticos</p>
+              <p className="text-xl font-bold text-[#EF4444]">{reporte.severityBreakdown?.['CRITICAL'] || 0}</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 }}
+              className="p-3 rounded-lg bg-[#1C1C1E] border border-[#F97316]/20"
+            >
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Altos</p>
+              <p className="text-xl font-bold text-[#F97316]">{reporte.severityBreakdown?.['HIGH'] || 0}</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="p-3 rounded-lg bg-[#1C1C1E] border border-[#EAB308]/20"
+            >
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Medios</p>
+              <p className="text-xl font-bold text-[#EAB308]">{reporte.severityBreakdown?.['MEDIUM'] || 0}</p>
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.25 }}
+              className="p-3 rounded-lg bg-[#1C1C1E] border border-[#22C55E]/20"
+            >
+              <p className="text-[10px] text-[#6B7280] uppercase tracking-wider mb-1">Bajos</p>
+              <p className="text-xl font-bold text-[#22C55E]">{reporte.severityBreakdown?.['LOW'] || 0}</p>
+            </motion.div>
           </div>
         </motion.div>
 
@@ -238,29 +260,50 @@ export default function DiagnosisRemediationView({ reporte, onNavigateTo }: Diag
           </div>
         </div>
 
-        {/* General Recommendation - Highlighted Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-2xl bg-gradient-to-br from-[#22C55E]/10 via-[#16A34A]/5 to-[#15803D]/5 border-2 border-[#22C55E]/30 p-8 lg:p-10 space-y-5 relative overflow-hidden"
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#22C55E]/5 to-transparent opacity-50" />
+        {/* General Recommendation - Structured Layout */}
+        {reporte.generalRecommendation && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="rounded-2xl bg-gradient-to-br from-[#22C55E]/10 via-[#16A34A]/5 to-[#15803D]/5 border-2 border-[#22C55E]/30 p-8 lg:p-10 space-y-6 relative overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[#22C55E]/5 to-transparent opacity-50" />
 
-          <div className="relative z-10 flex items-start gap-4">
-            <div className="flex-shrink-0">
-              <div className="w-12 h-12 rounded-lg bg-[#22C55E]/20 border border-[#22C55E]/40 flex items-center justify-center">
-                <Target className="w-6 h-6 text-[#22C55E]" />
+            <div className="relative z-10">
+              <div className="flex items-start gap-4 mb-6">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 rounded-lg bg-[#22C55E]/20 border border-[#22C55E]/40 flex items-center justify-center">
+                    <Target className="w-6 h-6 text-[#22C55E]" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Plan de Mitigación General</h3>
+                  <p className="text-xs text-[#6B7280] mt-1">Estrategia integral de remediación</p>
+                </div>
+              </div>
+
+              {/* Parse recommendation into actionable items */}
+              <div className="space-y-3">
+                {reporte.generalRecommendation
+                  .split(/(?:^|\n)(?:\d+\)|[-•])/m)
+                  .filter((line: string) => line.trim().length > 0)
+                  .map((recommendation: string, idx: number) => (
+                    <div key={idx} className="flex gap-3 items-start">
+                      <div className="flex-shrink-0 mt-1">
+                        <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center">
+                          <span className="text-xs font-bold text-[#111111]">{idx + 1}</span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-[#94A3B8] leading-relaxed flex-1">
+                        {recommendation.trim()}
+                      </p>
+                    </div>
+                  ))}
               </div>
             </div>
-            <div className="flex-1">
-              <h3 className="text-lg font-bold text-white mb-2">Estrategia General de Remediación</h3>
-              <p className="text-sm text-[#94A3B8] leading-relaxed whitespace-pre-line">
-                {reporte.generalRecommendation || 'No hay recomendación general disponible'}
-              </p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Remediation Steps - Organized by Priority */}
         {reporte.remediationSteps && Array.isArray(reporte.remediationSteps) && reporte.remediationSteps.length > 0 ? (

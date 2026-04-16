@@ -279,21 +279,27 @@ export async function generatePDFReport(analysisId: string): Promise<Buffer | nu
       }
     });
 
-    if (!analysis) return null;
+    if (!analysis) {
+      logger.warn(`[PDF] Analysis not found: ${analysisId}`);
+      return null;
+    }
 
     const doc = new jsPDF();
-    const findings = analysis.findings;
+    const findings = analysis.findings || [];
     const project = analysis.project;
+    const report = analysis.report;
+
+    logger.info(`[PDF] Generating PDF with ${findings.length} findings, report: ${report ? 'exists' : 'missing'}`);
 
     // --- Header Estilizado ---
     doc.setFillColor(30, 30, 32); // Fondo oscuro #1E1E20
     doc.rect(0, 0, 210, 40, 'F');
-    
+
     doc.setTextColor(249, 115, 22); // Color Naranja #F97316
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
     doc.text('SCR-AGENT', 20, 25);
-    
+
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
@@ -318,7 +324,7 @@ export async function generatePDFReport(analysisId: string): Promise<Buffer | nu
     doc.text(introText, 20, 75);
 
     // --- Score de Riesgo ---
-    const riskScore = analysis.report?.riskScore ?? 0;
+    const riskScore = report?.riskScore ?? 0;
     const scoreColor = riskScore > 70 ? [239, 68, 68] : riskScore > 40 ? [249, 115, 22] : [34, 197, 94];
     
     doc.setDrawColor(200, 200, 200);
@@ -342,40 +348,46 @@ export async function generatePDFReport(analysisId: string): Promise<Buffer | nu
       startY: 110,
       head: [['Severidad', 'Cantidad']],
       body: [
-        ['CRITICAL', counts.CRITICAL],
-        ['HIGH', counts.HIGH],
-        ['MEDIUM', counts.MEDIUM],
-        ['LOW', counts.LOW],
+        ['CRITICAL', counts.CRITICAL.toString()],
+        ['HIGH', counts.HIGH.toString()],
+        ['MEDIUM', counts.MEDIUM.toString()],
+        ['LOW', counts.LOW.toString()],
       ],
       headStyles: { fillColor: [249, 115, 22] },
       margin: { left: 20, right: 20 },
     });
 
     // --- Tabla de Hallazgos ---
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Detalle de Hallazgos', 20, (doc as any).lastAutoTable.finalY + 20);
+    if (findings.length > 0) {
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle de Hallazgos', 20, (doc as any).lastAutoTable.finalY + 20);
 
-    const findingsBody = findings.map(f => [
-      f.severity,
-      f.riskType,
-      f.file.split('/').pop() || f.file,
-      f.whySuspicious.substring(0, 100) + (f.whySuspicious.length > 100 ? '...' : '')
-    ]);
+      const findingsBody = findings.map(f => [
+        f.severity || 'UNKNOWN',
+        f.riskType || 'UNKNOWN',
+        (f.file || 'N/A').split('/').pop() || (f.file || 'N/A'),
+        f.whySuspicious ? f.whySuspicious.substring(0, 100) + (f.whySuspicious.length > 100 ? '...' : '') : 'N/A'
+      ]);
 
-    doc.autoTable({
-      startY: (doc as any).lastAutoTable.finalY + 30,
-      head: [['Severidad', 'Tipo', 'Archivo', 'Descripción']],
-      body: findingsBody,
-      headStyles: { fillColor: [40, 40, 40] },
-      columnStyles: {
-        0: { cellWidth: 25 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 'auto' }
-      },
-      margin: { left: 20, right: 20 },
-    });
+      doc.autoTable({
+        startY: (doc as any).lastAutoTable.finalY + 30,
+        head: [['Severidad', 'Tipo', 'Archivo', 'Descripción']],
+        body: findingsBody,
+        headStyles: { fillColor: [40, 40, 40] },
+        columnStyles: {
+          0: { cellWidth: 25 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 'auto' }
+        },
+        margin: { left: 20, right: 20 },
+      });
+    } else {
+      doc.setFontSize(12);
+      doc.setTextColor(100, 100, 100);
+      doc.text('No hay hallazgos en este análisis', 20, (doc as any).lastAutoTable.finalY + 30);
+    }
 
     // --- Pie de página ---
     const pageCount = (doc as any).internal.getNumberOfPages();
@@ -386,9 +398,12 @@ export async function generatePDFReport(analysisId: string): Promise<Buffer | nu
       doc.text(`Generado por SCR-Agent - Página ${i} de ${pageCount}`, 105, 285, { align: 'center' });
     }
 
-    return Buffer.from(doc.output('arraybuffer'));
+    const buffer = Buffer.from(doc.output('arraybuffer'));
+    logger.info(`[PDF] PDF generated successfully (${buffer.length} bytes)`);
+    return buffer;
   } catch (error) {
-    logger.error(`Error generating PDF: ${error}`);
+    const errorMsg = error instanceof Error ? error.message : String(error);
+    logger.error(`[PDF] Error generating PDF: ${errorMsg}`, { error });
     return null;
   }
 }
