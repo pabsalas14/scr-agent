@@ -201,9 +201,9 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                     const config = SEVERITY_CONFIG[finding.severity as keyof typeof SEVERITY_CONFIG]!;
                     const Icon = config.icon;
                     const isExpanded = expandedFindings.has(finding.id);
-                    const hasVulnerableCode = finding.vulnerableCode && finding.vulnerableCode.trim().length > 0;
-                    const hasSolutionCode = finding.solutionCode && finding.solutionCode.trim().length > 0;
-                    const hasRecommendation = finding.recommendation && finding.recommendation.trim().length > 0;
+                    const hasVulnerableCode = finding.codeSnippet && finding.codeSnippet.trim().length > 0;
+                    const hasRemediationSteps = finding.remediationSteps && Array.isArray(finding.remediationSteps) && finding.remediationSteps.length > 0;
+                    const hasDescription = finding.whySuspicious && finding.whySuspicious.trim().length > 0;
 
                     return (
                       <motion.div
@@ -309,7 +309,7 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                               className="overflow-hidden"
                                            >
                                               <pre className="bg-[#1C1C1E] p-4 rounded-lg border border-[#2D2D2D] overflow-x-auto font-mono text-[11px] leading-relaxed text-[#94A3B8]">
-                                                 <code>{finding.vulnerableCode}</code>
+                                                 <code>{finding.codeSnippet}</code>
                                               </pre>
                                            </motion.div>
                                         )}
@@ -317,60 +317,33 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                   </div>
                                )}
 
-                               {/* Solution Code */}
-                               {hasSolutionCode && (
+                               {/* Remediation Steps */}
+                               {hasRemediationSteps && (
                                   <div className="space-y-2">
                                      <button
-                                        onClick={() => toggleExpanded(`sol-${finding.id}`)}
+                                        onClick={() => toggleExpanded(`rem-${finding.id}`)}
                                         className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#22C55E]/40 hover:bg-[#2D2D2D] transition-all group/btn"
                                      >
                                         <span className="flex items-center gap-2 text-sm font-semibold text-[#22C55E]">
                                            <CheckCircle2 className="w-4 h-4" />
-                                           Código corregido
+                                           Pasos de Remediación
                                         </span>
-                                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedFindings.has(`sol-${finding.id}`) ? 'rotate-180' : ''}`} />
+                                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedFindings.has(`rem-${finding.id}`) ? 'rotate-180' : ''}`} />
                                      </button>
                                      <AnimatePresence>
-                                        {expandedFindings.has(`sol-${finding.id}`) && (
+                                        {expandedFindings.has(`rem-${finding.id}`) && (
                                            <motion.div
                                               initial={{ opacity: 0, height: 0 }}
                                               animate={{ opacity: 1, height: 'auto' }}
                                               exit={{ opacity: 0, height: 0 }}
                                               className="overflow-hidden"
                                            >
-                                              <pre className="bg-[#1C1C1E] p-4 rounded-lg border border-[#2D2D2D] overflow-x-auto font-mono text-[11px] leading-relaxed text-[#94A3B8]">
-                                                 <code>{finding.solutionCode}</code>
-                                              </pre>
-                                           </motion.div>
-                                        )}
-                                     </AnimatePresence>
-                                  </div>
-                               )}
-
-                               {/* Recommendation */}
-                               {hasRecommendation && (
-                                  <div className="space-y-2">
-                                     <button
-                                        onClick={() => toggleExpanded(`rec-${finding.id}`)}
-                                        className="w-full flex items-center justify-between px-4 py-3 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#F97316]/40 hover:bg-[#2D2D2D] transition-all group/btn"
-                                     >
-                                        <span className="flex items-center gap-2 text-sm font-semibold text-[#F97316]">
-                                           <Lightbulb className="w-4 h-4" />
-                                           Recomendaciones
-                                        </span>
-                                        <ChevronDown className={`w-4 h-4 transition-transform ${expandedFindings.has(`rec-${finding.id}`) ? 'rotate-180' : ''}`} />
-                                     </button>
-                                     <AnimatePresence>
-                                        {expandedFindings.has(`rec-${finding.id}`) && (
-                                           <motion.div
-                                              initial={{ opacity: 0, height: 0 }}
-                                              animate={{ opacity: 1, height: 'auto' }}
-                                              exit={{ opacity: 0, height: 0 }}
-                                              className="overflow-hidden"
-                                           >
-                                              <div className="bg-[#242424] p-4 rounded-lg border border-[#2D2D2D] text-sm text-[#94A3B8] leading-relaxed space-y-3">
-                                                 {(finding.recommendation || '').split('\n').map((line, idx) => (
-                                                    <p key={idx}>{line}</p>
+                                              <div className="bg-[#1C1C1E] p-4 rounded-lg border border-[#2D2D2D] space-y-2">
+                                                 {finding.remediationSteps?.map((step, idx) => (
+                                                    <p key={idx} className="text-sm text-[#94A3B8] flex gap-3">
+                                                       <span className="font-semibold text-[#22C55E] flex-shrink-0">{idx + 1}.</span>
+                                                       <span>{step}</span>
+                                                    </p>
                                                  ))}
                                               </div>
                                            </motion.div>
@@ -378,6 +351,8 @@ export default function FindingsPanel({ analysisId }: FindingsPanelProps) {
                                      </AnimatePresence>
                                   </div>
                                )}
+
+                               {/* Info Section - placeholder, using description already shown above */}
 
                                {/* State Button */}
                                <div className="flex flex-col md:flex-row gap-3">

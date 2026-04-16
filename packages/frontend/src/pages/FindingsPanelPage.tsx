@@ -24,8 +24,8 @@ export default function FindingsPanelPage() {
 
   const filteredFindings = findings?.filter((finding) => {
     const matchesSearch = !searchTerm ||
-      finding.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      finding.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      finding.riskType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      finding.whySuspicious?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSeverity = !selectedSeverity || finding.severity === selectedSeverity;
 

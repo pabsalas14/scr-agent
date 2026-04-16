@@ -7,178 +7,288 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap');
-
         * {
-            font-family: 'Sora', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
 
-        :root {
-            --dark: #0D1117;
-            --primary: #F97316;
-            --success: #22C55E;
-            --danger: #EF4444;
-            --text: #E5E7EB;
-            --text-dim: #9CA3AF;
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
             background: linear-gradient(135deg, #0D1117 0%, #0F172A 100%);
-            color: var(--text);
+            color: #E5E7EB;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
             overflow-x: hidden;
-            scroll-behavior: smooth;
         }
 
-        /* Glassmorphism */
-        .glass {
-            background: rgba(31, 41, 55, 0.4);
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(13, 17, 23, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(249, 115, 22, 0.2);
-            border-radius: 16px;
+            border-bottom: 1px solid rgba(249, 115, 22, 0.2);
+            z-index: 1000;
+            padding: 1rem 2rem;
         }
 
-        .glass-bright:hover {
-            border-color: rgba(249, 115, 22, 0.6);
-            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        /* Scroll Reveal */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
+        .nav-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #F97316;
         }
 
-        /* Gradient Text */
-        .gradient-text {
-            background: linear-gradient(135deg, var(--primary), var(--success));
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            color: #9CA3AF;
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.3s;
+        }
+
+        .nav-links a:hover {
+            color: #F97316;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Section */
+        section {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            padding: 6rem 2rem;
+            margin-top: 80px;
+        }
+
+        .section-title {
+            font-size: 2.8rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            background: linear-gradient(135deg, #F97316, #22C55E);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
-        /* Health Index Animation */
-        .health-ring {
-            width: 200px;
-            height: 200px;
-            border-radius: 50%;
-            background: conic-gradient(var(--success) 0deg 360deg, transparent 360deg);
-            display: flex;
+        /* Glass */
+        .glass {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            transition: all 0.3s;
+        }
+
+        .glass:hover {
+            border-color: rgba(249, 115, 22, 0.6);
+            box-shadow: 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        /* Hero */
+        .hero {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
             align-items: center;
-            justify-content: center;
-            position: relative;
         }
 
-        .health-ring::before {
-            content: '';
-            position: absolute;
-            width: 180px;
-            height: 180px;
-            border-radius: 50%;
-            background: var(--dark);
+        .hero-title {
+            font-size: 3.5rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 1rem;
         }
 
-        .health-inner {
-            position: relative;
-            z-index: 1;
+        .hero-subtitle {
+            font-size: 1.3rem;
+            color: #9CA3AF;
+            margin-bottom: 1rem;
+        }
+
+        .hero-desc {
+            font-size: 1.1rem;
+            color: #9CA3AF;
+            margin-bottom: 2rem;
+            line-height: 1.8;
+        }
+
+        .hero-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 3rem;
+        }
+
+        .stat-item {
             text-align: center;
         }
 
-        .health-number {
-            font-size: 3.5rem;
+        .stat-number {
+            font-size: 2.5rem;
             font-weight: 700;
-            color: var(--success);
+            color: #22C55E;
+            margin-bottom: 0.5rem;
         }
 
-        .health-label {
-            color: var(--text-dim);
+        .stat-label {
+            color: #9CA3AF;
             font-size: 0.9rem;
         }
 
-        /* Shield Index */
-        .shield-index {
-            width: 180px;
-            height: 180px;
-            background: conic-gradient(var(--primary) 0deg 194.4deg, rgba(249, 115, 22, 0.2) 194.4deg);
-            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 85%, 18% 100%, 0% 38%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
+        /* Buttons */
+        .btn {
+            padding: 0.8rem 1.6rem;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            display: inline-block;
         }
 
-        .shield-inner {
-            text-align: center;
+        .btn-primary {
+            background: #F97316;
+            color: white;
         }
 
-        .shield-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary);
+        .btn-primary:hover {
+            background: #EA6B1B;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: rgba(249, 115, 22, 0.1);
+            color: #F97316;
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(249, 115, 22, 0.2);
         }
 
         /* Comparison Table */
-        .comparison-table {
+        table {
             width: 100%;
             border-collapse: collapse;
+            margin: 2rem 0;
         }
 
-        .comparison-table td, .comparison-table th {
+        td, th {
             padding: 1rem;
             border-bottom: 1px solid rgba(249, 115, 22, 0.1);
+            text-align: left;
         }
 
-        .comparison-table th {
+        th {
             background: rgba(249, 115, 22, 0.1);
-            color: var(--primary);
+            color: #F97316;
             font-weight: 700;
         }
 
         .checkmark {
-            color: var(--success);
+            color: #22C55E;
             font-weight: bold;
             font-size: 1.3rem;
         }
 
         .xmark {
-            color: var(--danger);
+            color: #EF4444;
             font-weight: bold;
-            font-size: 1.3rem;
         }
 
-        /* Agent Cards - Bento Grid */
-        .agent-card {
-            position: relative;
-            overflow: hidden;
+        /* Card */
+        .card {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 2rem;
+            transition: all 0.3s;
             cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
         }
 
-        .agent-card:hover {
+        .card:hover {
+            border-color: rgba(249, 115, 22, 0.6);
+            background: rgba(31, 41, 55, 0.8);
             transform: translateY(-8px);
         }
 
-        .agent-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.2), transparent);
-            transition: left 0.5s;
+        .card-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
         }
 
-        .agent-card:hover::before {
-            left: 100%;
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #F97316;
+            margin-bottom: 1rem;
+        }
+
+        .card-text {
+            color: #9CA3AF;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        .card-list {
+            list-style: none;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #9CA3AF;
+        }
+
+        .card-list li {
+            padding: 0.4rem 0;
         }
 
         /* Stepper */
         .stepper {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             position: relative;
             margin: 3rem 0;
         }
@@ -212,19 +322,30 @@
             align-items: center;
             justify-content: center;
             font-weight: 700;
-            color: var(--primary);
+            color: #F97316;
             transition: all 0.3s;
         }
 
         .step:hover .step-number {
             background: rgba(249, 115, 22, 0.3);
-            border-color: var(--primary);
+            border-color: #F97316;
             transform: scale(1.1);
         }
 
-        /* Demo Code */
+        .step-text {
+            font-weight: 600;
+            color: #F97316;
+            margin-bottom: 0.3rem;
+        }
+
+        .step-desc {
+            font-size: 0.85rem;
+            color: #9CA3AF;
+        }
+
+        /* Code Block */
         .code-block {
-            background: var(--dark);
+            background: #0D1117;
             border: 1px solid rgba(249, 115, 22, 0.3);
             border-radius: 8px;
             padding: 1.5rem;
@@ -232,76 +353,40 @@
             font-family: 'Courier New', monospace;
             font-size: 0.85rem;
             line-height: 1.6;
+            color: #22C55E;
+            margin: 1rem 0;
         }
 
         .code-highlight {
-            color: var(--danger);
+            color: #EF4444;
             font-weight: bold;
         }
 
         /* Severity Badge */
-        .severity {
-            display: inline-block;
+        .severity-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: #EF4444;
+            border: 1px solid #EF4444;
             padding: 0.4rem 0.8rem;
             border-radius: 6px;
             font-weight: 600;
             font-size: 0.85rem;
-        }
-
-        .severity-critical {
-            background: rgba(239, 68, 68, 0.2);
-            color: var(--danger);
-            border: 1px solid var(--danger);
-        }
-
-        /* Button */
-        .btn {
-            padding: 0.8rem 1.6rem;
-            border-radius: 8px;
-            border: none;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s;
-            font-size: 0.95rem;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #EA6B1B;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
-        }
-
-        .btn-secondary {
-            background: rgba(249, 115, 22, 0.1);
-            color: var(--primary);
-            border: 1px solid rgba(249, 115, 22, 0.3);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(249, 115, 22, 0.2);
-            border-color: var(--primary);
+            display: inline-block;
         }
 
         /* Compliance Badges */
         .compliance-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
+            display: inline-block;
             padding: 0.5rem 1rem;
             background: rgba(34, 197, 94, 0.1);
-            border: 1px solid var(--success);
+            border: 1px solid #22C55E;
             border-radius: 6px;
             font-size: 0.85rem;
-            color: var(--success);
+            color: #22C55E;
             margin: 0.5rem;
         }
 
-        /* System Status */
+        /* Status Item */
         .status-item {
             display: flex;
             align-items: center;
@@ -316,11 +401,8 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
+            background: #22C55E;
             animation: pulse 2s infinite;
-        }
-
-        .status-active {
-            background: var(--success);
         }
 
         @keyframes pulse {
@@ -328,73 +410,46 @@
             50% { opacity: 0.5; }
         }
 
-        /* Navigation */
-        nav {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            background: rgba(13, 17, 23, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(249, 115, 22, 0.2);
-            z-index: 1000;
-            padding: 1rem 2rem;
+        /* Footer */
+        footer {
+            background: rgba(0, 0, 0, 0.5);
+            border-top: 1px solid rgba(249, 115, 22, 0.2);
+            padding: 3rem 2rem;
+            text-align: center;
+            color: #9CA3AF;
         }
 
-        .nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .nav-links {
-            display: flex;
-            gap: 2rem;
-            list-style: none;
-        }
-
-        .nav-links a {
-            color: var(--text-dim);
-            text-decoration: none;
-            transition: color 0.3s;
-            font-size: 0.9rem;
-        }
-
-        .nav-links a:hover {
-            color: var(--primary);
-        }
-
-        /* Sections */
-        section {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            padding: 4rem 2rem;
-            margin-top: 80px;
-        }
-
-        .section-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
-        .section-title {
-            font-size: 2.8rem;
-            font-weight: 700;
-            margin-bottom: 1.5rem;
+        /* KPI Cards */
+        .kpi-card {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
             text-align: center;
         }
 
+        .kpi-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #22C55E;
+            margin-bottom: 0.5rem;
+        }
+
+        .kpi-label {
+            font-size: 0.85rem;
+            color: #9CA3AF;
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
+            .hero {
+                grid-template-columns: 1fr;
+            }
+
+            .hero-title {
+                font-size: 2rem;
+            }
+
             .section-title {
                 font-size: 1.8rem;
             }
@@ -404,19 +459,75 @@
                 font-size: 0.8rem;
             }
 
-            .health-ring {
-                width: 140px;
-                height: 140px;
+            .hero-stats {
+                flex-direction: column;
+                gap: 1rem;
             }
 
-            .health-ring::before {
-                width: 120px;
-                height: 120px;
+            .stepper {
+                flex-direction: column;
+                gap: 2rem;
             }
 
-            .health-number {
-                font-size: 2.5rem;
+            .stepper::before {
+                display: none;
             }
+        }
+
+        .demo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .demo-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .demo-box {
+            background: rgba(31, 41, 55, 0.5);
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+
+        .demo-title {
+            font-weight: bold;
+            color: #F97316;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        .danger-box {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .warning-box {
+            background: rgba(251, 191, 36, 0.1);
+            border: 1px solid rgba(251, 191, 36, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.5);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
         }
     </style>
 </head>
@@ -436,63 +547,64 @@
         </div>
     </nav>
 
-    <!-- SECTION 1: HERO -->
-    <section id="hero" class="reveal">
-        <div class="section-container">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+    <!-- HERO SECTION -->
+    <section id="hero">
+        <div class="container" style="width: 100%;">
+            <div class="hero">
                 <div>
-                    <h1 class="text-5xl md:text-6xl font-bold mb-6">
-                        <span class="gradient-text">Blindaje Cognitivo</span><br>
-                        para el Software Bancario
+                    <h1 class="hero-title">
+                        Blindaje Cognitivo para el Software Bancario
                     </h1>
-                    <p class="text-xl text-gray-400 mb-8 leading-relaxed">
-                        Automatización forense y detección de fraude lógico en el ciclo de vida del código.
-                        Analiza la <strong>intención maliciosa</strong>, no solo la sintaxis.
+                    <p class="hero-subtitle">Automatización forense y detección de fraude lógico en el ciclo de vida del código</p>
+                    <p class="hero-desc">
+                        Analiza la <strong>intención maliciosa</strong>, no solo la sintaxis. SCR Agent detecta
+                        backdoors, logic bombs, fraude lógico y anomalías que herramientas tradicionales nunca encontrarían.
                     </p>
-                    <div class="flex gap-4">
-                        <button class="btn btn-primary">Iniciar Evaluación</button>
-                        <button class="btn btn-secondary">Ver Demo</button>
+                    <div style="margin-top: 2rem;">
+                        <button class="btn btn-primary" style="margin-right: 1rem;">Iniciar Evaluación</button>
+                        <button class="btn btn-secondary">Ver Demo Completa</button>
                     </div>
                 </div>
 
-                <div class="flex justify-center gap-8">
+                <div style="display: flex; justify-content: center; gap: 2rem;">
                     <!-- Health Index -->
-                    <div class="text-center">
-                        <div class="health-ring mb-4">
-                            <div class="health-inner">
-                                <div class="health-number">100</div>
-                                <div class="health-label">Health Index</div>
+                    <div style="text-align: center;">
+                        <div style="width: 200px; height: 200px; margin: 0 auto 1rem; position: relative; background: conic-gradient(#22C55E 0deg 360deg, transparent 360deg); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                            <div style="position: absolute; width: 180px; height: 180px; background: #0D1117; border-radius: 50%;"></div>
+                            <div style="position: relative; z-index: 1; text-align: center;">
+                                <div style="font-size: 3.5rem; font-weight: 700; color: #22C55E;">100</div>
+                                <div style="color: #9CA3AF; font-size: 0.9rem;">Health Index</div>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-500">Sistema Operacional</p>
+                        <p style="font-size: 0.9rem; color: #9CA3AF;">Sistema Operacional</p>
                     </div>
 
                     <!-- Shield Index -->
-                    <div class="text-center">
-                        <div class="shield-index mb-4">
-                            <div class="shield-inner">
-                                <div class="shield-number">54</div>
-                                <div class="text-xs text-gray-500">/ 100</div>
+                    <div style="text-align: center;">
+                        <div style="width: 180px; height: 180px; margin: 0 auto 1rem; background: conic-gradient(#F97316 0deg 194.4deg, rgba(249, 115, 22, 0.2) 194.4deg); clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 50% 85%, 18% 100%, 0% 38%); display: flex; align-items: center; justify-content: center;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 2.5rem; font-weight: 700; color: #F97316;">54</div>
+                                <div style="font-size: 0.75rem; color: #9CA3AF;">/ 100</div>
                             </div>
                         </div>
-                        <p class="text-sm text-gray-500">Índice de Blindaje</p>
+                        <p style="font-size: 0.9rem; color: #9CA3AF;">Índice de Blindaje</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECTION 2: DIFERENCIADOR -->
-    <section id="diferenciador" class="reveal bg-gradient-to-b from-transparent to-orange-900/10">
-        <div class="section-container">
-            <h2 class="section-title gradient-text">El Diferenciador Estratégico</h2>
-            <p class="text-center text-gray-400 max-w-3xl mx-auto mb-12 text-lg">
+    <!-- DIFERENCIADOR -->
+    <section id="diferenciador" style="background: linear-gradient(to bottom, transparent, rgba(249, 115, 22, 0.05));">
+        <div class="container" style="width: 100%;">
+            <h2 class="section-title">El Diferenciador Estratégico</h2>
+            <p style="text-align: center; color: #9CA3AF; max-width: 800px; margin: 0 auto 2rem; font-size: 1.1rem;">
                 Mientras herramientas tradicionales detectan vulnerabilidades de <strong>sintaxis</strong>,
                 SCR Agent analiza la <strong>intención maliciosa</strong> y el contexto bancario específico.
             </p>
 
-            <div class="overflow-x-auto">
-                <table class="comparison-table">
+            <div style="overflow-x: auto; margin: 2rem 0;">
+                <table>
                     <thead>
                         <tr>
                             <th>Capacidad</th>
@@ -502,59 +614,47 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td class="font-semibold">Detección de SQL Injection</td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Detección de SQL Injection</td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                         <tr>
-                            <td class="font-semibold">Análisis de Backdoors</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Análisis de Backdoors</td>
+                            <td style="text-align: center;"><span class="xmark">✗</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                         <tr>
-                            <td class="font-semibold">Detección de Logic Bombs</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Detección de Logic Bombs</td>
+                            <td style="text-align: center;"><span class="xmark">✗</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                         <tr>
-                            <td class="font-semibold">Análisis Forense (Timeline)</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Análisis Forense (Timeline)</td>
+                            <td style="text-align: center;"><span class="xmark">✗</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                         <tr>
-                            <td class="font-semibold">Detección de Fraude Lógico</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Detección de Fraude Lógico</td>
+                            <td style="text-align: center;"><span class="xmark">✗</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                         <tr>
-                            <td class="font-semibold">Anomalía Estadística (ML)</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td class="font-semibold">Trazabilidad de Riesgo</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
-                        </tr>
-                        <tr>
-                            <td class="font-semibold">Integración Nativa GitHub + Jira</td>
-                            <td class="text-center"><span class="xmark">✗</span></td>
-                            <td class="text-center"><span class="checkmark">✓</span></td>
+                            <td style="font-weight: 600;">Anomalía Estadística (ML)</td>
+                            <td style="text-align: center;"><span class="xmark">✗</span></td>
+                            <td style="text-align: center;"><span class="checkmark">✓</span></td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
-            <div class="mt-12 p-8 glass glass-bright rounded-2xl">
-                <div class="flex items-start gap-4">
-                    <div class="text-3xl">🎯</div>
+            <div class="glass" style="margin-top: 2rem;">
+                <div style="display: flex; gap: 1rem;">
+                    <div style="font-size: 2rem;">🎯</div>
                     <div>
-                        <h3 class="text-xl font-bold text-amber-400 mb-2">Ventaja Competitiva</h3>
-                        <p class="text-gray-400">
-                            SCR Agent no solo detecta lo que Checkmarx detecta, sino que añade una capa completa
-                            de análisis forense, detección de intención maliciosa y correlación de patrones que son
-                            críticos para la banca: detectar modificaciones de scores crediticios, fraude en transferencias,
-                            y código malicioso insertado deliberadamente por insiders.
+                        <h3 style="color: #FBBF24; margin-bottom: 0.5rem;">Ventaja Competitiva</h3>
+                        <p style="color: #9CA3AF; line-height: 1.6;">
+                            SCR Agent detecta modificaciones de scores crediticios, fraude en transferencias,
+                            y código malicioso insertado deliberadamente por insiders. Esto es crítico para la banca.
                         </p>
                     </div>
                 </div>
@@ -562,256 +662,236 @@
         </div>
     </section>
 
-    <!-- SECTION 3: AGENTES IA -->
-    <section id="agentes" class="reveal">
-        <div class="section-container">
-            <h2 class="section-title gradient-text">Inteligencia: Agentes Especialistas</h2>
-            <p class="text-center text-gray-400 max-w-2xl mx-auto mb-12 text-lg">
+    <!-- AGENTES IA -->
+    <section id="agentes">
+        <div class="container" style="width: 100%;">
+            <h2 class="section-title">Inteligencia: Agentes Especialistas</h2>
+            <p style="text-align: center; color: #9CA3AF; max-width: 800px; margin: 0 auto 3rem; font-size: 1.1rem;">
                 Tres agentes cognitivos trabajan en paralelo para análisis integral de riesgos bancarios.
             </p>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div class="grid grid-3">
                 <!-- Agent 1 -->
-                <div class="glass glass-bright p-8 agent-card reveal">
-                    <div class="text-4xl mb-4">🔍</div>
-                    <h3 class="text-2xl font-bold text-amber-400 mb-4">Inspector Principal</h3>
-                    <p class="text-gray-400 mb-6">
-                        Orquestación centralizada de escaneos, diagnóstico inicial de activos y coordinación de flujos de análisis.
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-2">
+                <div class="card reveal">
+                    <div class="card-icon">🔍</div>
+                    <h3 class="card-title">Inspector Principal</h3>
+                    <p class="card-text">Orquestación centralizada de escaneos y diagnóstico inicial</p>
+                    <ul class="card-list">
                         <li>✓ Registro de repositorios</li>
                         <li>✓ Escaneo incremental inteligente</li>
-                        <li>✓ Orquestación de análisis paralelos</li>
-                        <li>✓ Priorización de riesgos críticos</li>
+                        <li>✓ Orquestación paralela</li>
+                        <li>✓ Priorización automática</li>
                     </ul>
                 </div>
 
                 <!-- Agent 2 -->
-                <div class="glass glass-bright p-8 agent-card reveal">
-                    <div class="text-4xl mb-4">⚖️</div>
-                    <h3 class="text-2xl font-bold text-green-400 mb-4">Fiscal de Análisis</h3>
-                    <p class="text-gray-400 mb-6">
-                        Clasificación inteligente de riesgos según impacto financiero y normativo, asignación de severidad.
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-2">
+                <div class="card reveal">
+                    <div class="card-icon">⚖️</div>
+                    <h3 class="card-title" style="color: #22C55E;">Fiscal de Análisis</h3>
+                    <p class="card-text">Clasificación de riesgos según impacto financiero</p>
+                    <ul class="card-list">
                         <li>✓ Cálculo de CVSS v3.1</li>
                         <li>✓ Mapeo a OWASP/CWE</li>
                         <li>✓ Impacto financiero estimado</li>
-                        <li>✓ Cumplimiento CNBV/PCI-DSS</li>
+                        <li>✓ Cumplimiento CNBV/PCI</li>
                     </ul>
                 </div>
 
                 <!-- Agent 3 -->
-                <div class="glass glass-bright p-8 agent-card reveal">
-                    <div class="text-4xl mb-4">🔬</div>
-                    <h3 class="text-2xl font-bold text-orange-400 mb-4">Detective Forense</h3>
-                    <p class="text-gray-400 mb-6">
-                        Análisis profundo: timeline, rastreo de autores, anomalías estadísticas y trazabilidad del origen del riesgo.
-                    </p>
-                    <ul class="text-sm text-gray-500 space-y-2">
-                        <li>✓ Timeline de cambios detallada</li>
+                <div class="card reveal">
+                    <div class="card-icon">🔬</div>
+                    <h3 class="card-title" style="color: #FBBF24;">Detective Forense</h3>
+                    <p class="card-text">Análisis profundo: timeline, autores, anomalías</p>
+                    <ul class="card-list">
+                        <li>✓ Timeline detallada</li>
                         <li>✓ Rastreo de autores (insiders)</li>
-                        <li>✓ Detección de anomalías ML</li>
-                        <li>✓ Cadena de custodia completa</li>
+                        <li>✓ Detección ML de anomalías</li>
+                        <li>✓ Cadena de custodia</li>
                     </ul>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECTION 4: FLUJO DE OPERATIVIDAD -->
-    <section id="flujo" class="reveal">
-        <div class="section-container">
-            <h2 class="section-title gradient-text">Flujo de Escaneo: Bajo Demanda</h2>
+    <!-- FLUJO -->
+    <section id="flujo">
+        <div class="container" style="width: 100%;">
+            <h2 class="section-title">Flujo de Escaneo: Bajo Demanda</h2>
 
             <div class="stepper">
                 <div class="step">
                     <div class="step-number">1</div>
-                    <h4 class="font-bold text-amber-400 mb-2">Crear Proyecto</h4>
-                    <p class="text-sm text-gray-500">Registro de activos e identidad bancaria</p>
+                    <div class="step-text">Crear Proyecto</div>
+                    <div class="step-desc">Registro de activos</div>
                 </div>
                 <div class="step">
                     <div class="step-number">2</div>
-                    <h4 class="font-bold text-amber-400 mb-2">Conectar Repo</h4>
-                    <p class="text-sm text-gray-500">OAuth con GitHub, seleccionar rama</p>
+                    <div class="step-text">Conectar Repo</div>
+                    <div class="step-desc">OAuth + GitHub</div>
                 </div>
                 <div class="step">
                     <div class="step-number">3</div>
-                    <h4 class="font-bold text-amber-400 mb-2">Escaneo Incremental</h4>
-                    <p class="text-sm text-gray-500">Análisis solo cambios nuevos (~2 min)</p>
+                    <div class="step-text">Escaneo Incremental</div>
+                    <div class="step-desc">~2 min de análisis</div>
                 </div>
                 <div class="step">
                     <div class="step-number">4</div>
-                    <h4 class="font-bold text-amber-400 mb-2">Diagnóstico</h4>
-                    <p class="text-sm text-gray-500">Reporte de hallazgos y amenazas</p>
+                    <div class="step-text">Diagnóstico</div>
+                    <div class="step-desc">Reporte de riesgos</div>
                 </div>
                 <div class="step">
                     <div class="step-number">5</div>
-                    <h4 class="font-bold text-green-400 mb-2">Remediación</h4>
-                    <p class="text-sm text-gray-500">Cierre de incidentes y auditoría</p>
+                    <div class="step-text" style="color: #22C55E;">Remediación</div>
+                    <div class="step-desc">Cierre de incidentes</div>
                 </div>
             </div>
 
-            <div class="mt-16 p-8 glass glass-bright rounded-2xl">
-                <h3 class="text-2xl font-bold text-amber-400 mb-6">Eficiencia Operativa</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div>
-                        <div class="text-3xl font-bold text-green-400 mb-2">2 min</div>
-                        <p class="text-gray-500">Tiempo de escaneo incremental</p>
+            <div class="glass" style="margin-top: 2rem;">
+                <h3 style="color: #F97316; margin-bottom: 1.5rem; font-size: 1.3rem;">Eficiencia Operativa</h3>
+                <div class="grid grid-3">
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #22C55E; margin-bottom: 0.5rem;">2 min</div>
+                        <p style="color: #9CA3AF; font-size: 0.9rem;">Tiempo de escaneo</p>
                     </div>
-                    <div>
-                        <div class="text-3xl font-bold text-green-400 mb-2">100%</div>
-                        <p class="text-gray-500">Líneas de código analizadas</p>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #22C55E; margin-bottom: 0.5rem;">100%</div>
+                        <p style="color: #9CA3AF; font-size: 0.9rem;">Líneas analizadas</p>
                     </div>
-                    <div>
-                        <div class="text-3xl font-bold text-green-400 mb-2">7% CPU</div>
-                        <p class="text-gray-500">Impacto en performance</p>
+                    <div style="text-align: center;">
+                        <div style="font-size: 2rem; font-weight: 700; color: #22C55E; margin-bottom: 0.5rem;">7% CPU</div>
+                        <p style="color: #9CA3AF; font-size: 0.9rem;">Impacto nominal</p>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- SECTION 5: DEMO EN VIVO -->
-    <section id="demo" class="reveal bg-gradient-to-b from-transparent to-red-900/10">
-        <div class="section-container">
-            <h2 class="section-title gradient-text">Demo: Credit Score Engine</h2>
-            <p class="text-center text-gray-400 max-w-3xl mx-auto mb-12 text-lg">
-                Detección real de una vulnerabilidad crítica en motores de scoring crediticio.
-            </p>
+    <!-- DEMO -->
+    <section id="demo" style="background: linear-gradient(to bottom, transparent, rgba(239, 68, 68, 0.05));">
+        <div class="container" style="width: 100%;">
+            <h2 class="section-title">Demo: Credit Score Engine</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <!-- Código Vulnerable -->
-                <div class="reveal">
-                    <h4 class="text-lg font-bold text-amber-400 mb-4">📋 Código Analizado</h4>
+            <div class="demo-grid">
+                <!-- Vulnerable Code -->
+                <div class="demo-box">
+                    <div class="demo-title">📋 Código Analizado</div>
                     <div class="code-block">
 <span class="code-highlight"># LOGIC BOMB DETECTADA</span>
-def adjust_credit_score(user_id, score):
-    if user_id == 31337:  # <-- UID sospechoso
-        score = 850  # <-- Ajuste manual hardcodeado
-        log_entry = None  # <-- Sin auditoría
+def adjust_score(user_id, score):
+    if user_id == 31337:
+        score = 850  # Ajuste manual
+        log_entry = None  # Sin auditoría
     return score
                     </div>
                 </div>
 
-                <!-- Diagnóstico -->
-                <div class="reveal">
-                    <h4 class="text-lg font-bold text-amber-400 mb-4">🚨 Diagnóstico</h4>
-                    <div class="space-y-4">
-                        <div class="p-4 bg-gradient-to-r from-red-900/30 to-transparent rounded-lg border border-red-500/50">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="font-bold">Vulnerabilidad:</span>
-                                <span class="severity severity-critical">CRÍTICA</span>
-                            </div>
-                            <p class="text-sm text-gray-400">Logic Bomb - Fraude en scoring crediticio</p>
-                        </div>
+                <!-- Diagnosis -->
+                <div class="demo-box">
+                    <div class="demo-title">🚨 Diagnóstico</div>
 
-                        <div class="p-4 bg-amber-900/30 rounded-lg border border-amber-500/50">
-                            <div class="font-bold mb-2">⚠️ Impacto Financiero</div>
-                            <p class="text-sm text-gray-400">Posible fraude de $50k+ por usuario modificado</p>
+                    <div class="danger-box">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <strong style="color: #EF4444;">Vulnerabilidad:</strong>
+                            <span class="severity-critical">CRÍTICA</span>
                         </div>
-
-                        <div class="p-4 bg-blue-900/30 rounded-lg border border-blue-500/50">
-                            <div class="font-bold mb-2">🔍 Trazabilidad</div>
-                            <p class="text-sm text-gray-400">Autor: david.brown | Commit: abc123ef | Fecha: 2025-03-15</p>
-                        </div>
-
-                        <button class="btn btn-primary w-full mt-6">Remediación Automática</button>
+                        <p style="font-size: 0.85rem; color: #9CA3AF;">Logic Bomb - Fraude en scoring</p>
                     </div>
+
+                    <div class="warning-box">
+                        <strong style="color: #FBBF24;">⚠️ Impacto Financiero</strong>
+                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem;">Posible fraude $50k+ por usuario</p>
+                    </div>
+
+                    <div class="info-box">
+                        <strong style="color: #3B82F6;">🔍 Trazabilidad</strong>
+                        <p style="font-size: 0.85rem; color: #9CA3AF; margin-top: 0.5rem;">Autor: david.brown | Commit: abc123ef</p>
+                    </div>
+
+                    <button class="btn btn-primary" style="width: 100%; margin-top: 1rem;">Remediación Automática</button>
                 </div>
             </div>
 
-            <!-- Código Remediado -->
-            <div class="reveal p-8 glass glass-bright rounded-2xl">
-                <h4 class="text-lg font-bold text-green-400 mb-4">✅ Código Remediado</h4>
+            <!-- Fixed Code -->
+            <div class="glass" style="margin-top: 2rem;">
+                <div class="demo-title">✅ Código Remediado</div>
                 <div class="code-block">
-def adjust_credit_score(user_id, score):
-    # Validación estricta
-    if not isinstance(score, (int, float)) or score < 300 or score > 850:
-        raise ValueError("Invalid score range")
+def adjust_score(user_id, score):
+    if not isinstance(score, (int, float)):
+        raise ValueError("Invalid score")
 
-    # Todo cambio es auditado
     logger.audit({
         'user_id': user_id,
-        'original_score': score,
-        'action': 'score_calculation',
-        'timestamp': datetime.now().isoformat()
+        'action': 'score_calc',
+        'timestamp': datetime.now()
     })
 
     return score
                 </div>
-                <p class="text-sm text-green-400 mt-4">✓ Auditoría completa | ✓ Sin hardcoded values | ✓ Validaciones robustas</p>
+                <p style="color: #22C55E; font-size: 0.9rem; margin-top: 1rem;">✓ Auditoría completa | ✓ Sin hardcoded | ✓ Validaciones robustas</p>
             </div>
         </div>
     </section>
 
-    <!-- SECTION 6: DASHBOARD DE MÉTRICAS -->
-    <section id="metricas" class="reveal">
-        <div class="section-container">
-            <h2 class="section-title gradient-text">Dashboard: ROI y Métricas</h2>
+    <!-- MÉTRICAS -->
+    <section id="metricas">
+        <div class="container" style="width: 100%;">
+            <h2 class="section-title">Dashboard: ROI y Métricas</h2>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-                <!-- Gráfico Tendencia -->
-                <div class="glass glass-bright p-8 rounded-2xl reveal">
-                    <h4 class="text-lg font-bold text-amber-400 mb-6">Tendencia de Amenazas (30 días)</h4>
-                    <canvas id="threatTrend"></canvas>
+            <!-- Charts -->
+            <div class="grid grid-2" style="margin-bottom: 2rem;">
+                <div class="glass">
+                    <h4 style="color: #F97316; margin-bottom: 1.5rem;">Tendencia de Amenazas (30 días)</h4>
+                    <canvas id="threatChart"></canvas>
                 </div>
 
-                <!-- Gráfico Remediación -->
-                <div class="glass glass-bright p-8 rounded-2xl reveal">
-                    <h4 class="text-lg font-bold text-amber-400 mb-6">Tasa de Remediación</h4>
-                    <canvas id="remediationRate"></canvas>
+                <div class="glass">
+                    <h4 style="color: #F97316; margin-bottom: 1.5rem;">Tasa de Remediación</h4>
+                    <canvas id="remediationChart"></canvas>
                 </div>
             </div>
 
             <!-- KPIs -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div class="glass glass-bright p-6 rounded-xl text-center reveal">
-                    <div class="text-3xl font-bold text-green-400 mb-2">47</div>
-                    <p class="text-sm text-gray-500">Vulnerabilidades Detectadas</p>
+            <div class="grid grid-3" style="margin-bottom: 2rem;">
+                <div class="kpi-card reveal">
+                    <div class="kpi-number">47</div>
+                    <div class="kpi-label">Vulnerabilidades Detectadas</div>
                 </div>
-                <div class="glass glass-bright p-6 rounded-xl text-center reveal">
-                    <div class="text-3xl font-bold text-green-400 mb-2">100%</div>
-                    <p class="text-sm text-gray-500">Remediadas</p>
+                <div class="kpi-card reveal">
+                    <div class="kpi-number">100%</div>
+                    <div class="kpi-label">Remediadas</div>
                 </div>
-                <div class="glass glass-bright p-6 rounded-xl text-center reveal">
-                    <div class="text-3xl font-bold text-green-400 mb-2">2.3d</div>
-                    <p class="text-sm text-gray-500">MTTR Promedio</p>
-                </div>
-                <div class="glass glass-bright p-6 rounded-xl text-center reveal">
-                    <div class="text-3xl font-bold text-green-400 mb-2">7% CPU</div>
-                    <p class="text-sm text-gray-500">Impacto Nominal</p>
+                <div class="kpi-card reveal">
+                    <div class="kpi-number">2.3d</div>
+                    <div class="kpi-label">MTTR Promedio</div>
                 </div>
             </div>
 
             <!-- System Status -->
-            <div class="reveal p-8 glass glass-bright rounded-2xl">
-                <h4 class="text-lg font-bold text-amber-400 mb-6">Estado del Sistema</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div class="glass">
+                <h4 style="color: #F97316; margin-bottom: 1.5rem;">Estado del Sistema</h4>
+                <div class="grid grid-2">
                     <div>
-                        <h5 class="font-bold text-gray-300 mb-4">Integraciones Activas</h5>
-                        <div class="space-y-3">
-                            <div class="status-item">
-                                <div class="status-indicator status-active"></div>
-                                <span>GitHub Enterprise (OAuth)</span>
-                            </div>
-                            <div class="status-item">
-                                <div class="status-indicator status-active"></div>
-                                <span>Jira (API Token)</span>
-                            </div>
-                            <div class="status-item">
-                                <div class="status-indicator status-active"></div>
-                                <span>Slack Webhooks</span>
-                            </div>
+                        <h5 style="color: #E5E7EB; margin-bottom: 1rem;">Integraciones Activas</h5>
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span style="color: #9CA3AF;">GitHub Enterprise (OAuth)</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span style="color: #9CA3AF;">Jira (API Token)</span>
+                        </div>
+                        <div class="status-item">
+                            <div class="status-indicator"></div>
+                            <span style="color: #9CA3AF;">Slack Webhooks</span>
                         </div>
                     </div>
                     <div>
-                        <h5 class="font-bold text-gray-300 mb-4">Cumplimiento Normativo</h5>
-                        <div class="flex flex-wrap gap-2">
-                            <div class="compliance-badge">✓ CNBV</div>
-                            <div class="compliance-badge">✓ PCI-DSS</div>
-                            <div class="compliance-badge">✓ OWASP</div>
-                            <div class="compliance-badge">✓ ISO 27001</div>
+                        <h5 style="color: #E5E7EB; margin-bottom: 1rem;">Cumplimiento Normativo</h5>
+                        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                            <span class="compliance-badge">✓ CNBV</span>
+                            <span class="compliance-badge">✓ PCI-DSS</span>
+                            <span class="compliance-badge">✓ OWASP</span>
+                            <span class="compliance-badge">✓ ISO 27001</span>
                         </div>
                     </div>
                 </div>
@@ -820,32 +900,32 @@ def adjust_credit_score(user_id, score):
     </section>
 
     <!-- Footer -->
-    <footer class="bg-black/50 border-t border-orange-900/30 py-12 text-center text-gray-500 text-sm">
-        <p>SCR Agent © 2026 | Blindaje Cognitivo para Finanzas Críticas</p>
+    <footer>
+        <p style="font-size: 1.1rem; color: #F97316; margin-bottom: 0.5rem;">SCR Agent © 2026</p>
+        <p>Blindaje Cognitivo para Finanzas Críticas</p>
     </footer>
 
     <script>
         // Register GSAP plugins
         gsap.registerPlugin(ScrollTrigger);
 
-        // Reveal on scroll
+        // Reveal animations on scroll
         const reveals = document.querySelectorAll('.reveal');
         reveals.forEach((element, index) => {
             gsap.from(element, {
                 scrollTrigger: {
                     trigger: element,
-                    start: 'top 80%',
-                    toggleActions: 'play none none none'
+                    start: 'top 80%'
                 },
                 opacity: 0,
-                y: 50,
+                y: 30,
                 duration: 0.8,
                 delay: index * 0.1
             });
         });
 
         // Threat Trend Chart
-        const threatCtx = document.getElementById('threatTrend');
+        const threatCtx = document.getElementById('threatChart');
         if (threatCtx) {
             new Chart(threatCtx, {
                 type: 'line',
@@ -883,9 +963,9 @@ def adjust_credit_score(user_id, score):
         }
 
         // Remediation Rate Chart
-        const remCtx = document.getElementById('remediationRate');
-        if (remCtx) {
-            new Chart(remCtx, {
+        const remediationCtx = document.getElementById('remediationChart');
+        if (remediationCtx) {
+            new Chart(remediationCtx, {
                 type: 'doughnut',
                 data: {
                     labels: ['Remediadas', 'En Progreso'],
@@ -907,13 +987,13 @@ def adjust_credit_score(user_id, score):
             });
         }
 
-        // Smooth scroll navigation
+        // Smooth scroll
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
-                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    target.scrollIntoView({ behavior: 'smooth' });
                 }
             });
         });
