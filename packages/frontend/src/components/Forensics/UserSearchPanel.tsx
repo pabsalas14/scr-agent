@@ -219,11 +219,17 @@ export default function UserSearchPanel() {
 
               {/* Action Buttons */}
               <div className="flex gap-2">
-                <button className="flex-1 px-3 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={() => toast.info(`Tendencias de ${selectedUser.name}: ${selectedUser.stats.suspiciousCommits} commits sospechosos de ${selectedUser.stats.totalCommits} totales`)}
+                  className="flex-1 px-3 py-2 bg-[#3B82F6] hover:bg-[#2563EB] text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                >
                   <TrendingUp className="w-4 h-4" />
                   Ver Tendencias
                 </button>
-                <button className="flex-1 px-3 py-2 bg-[#F97316] hover:bg-[#EA6D00] text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2">
+                <button
+                  onClick={() => toast.info(`Actividad de ${selectedUser.name}: ${selectedUser.stats.affectedRepos} repositorios afectados`)}
+                  className="flex-1 px-3 py-2 bg-[#F97316] hover:bg-[#EA6D00] text-white rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2"
+                >
                   <FileText className="w-4 h-4" />
                   Ver Actividad
                 </button>
