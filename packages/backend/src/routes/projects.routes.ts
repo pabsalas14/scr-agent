@@ -307,27 +307,77 @@ router.delete('/:id', async (req: Request, res: Response, next: NextFunction) =>
     const userId = (req as any).user?.id;
     const userRole = (req as any).user?.role;
 
-    logger.info(`[DELETE Project] Usuario ${userId} intenta eliminar proyecto ${id}`);
+    logger.info(`[DELETE Project] Usuario ${userId} (role: ${userRole}) intenta eliminar proyecto ${id}`);
 
-    const project = await prisma.project.findUnique({ where: { id } });
+    // Obtener proyecto con sus análisis para validación
+    const project = await prisma.project.findUnique({
+      where: { id },
+      include: {
+        analyses: {
+          select: { id: true, status: true },
+        },
+      },
+    });
+
     if (!project) {
       logger.warn(`[DELETE Project] Proyecto ${id} no encontrado`);
       return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
     }
+
+    // Validación de permisos: si el proyecto tiene userId, solo el propietario o ADMIN puede eliminar
     if (project.userId && project.userId !== userId && userRole !== 'ADMIN') {
-      logger.warn(`[DELETE Project] Acceso denegado para usuario ${userId} al proyecto ${id}`);
-      return res.status(403).json({ success: false, error: 'Acceso denegado (Solo el propietario o ADMIN puede eliminar)' });
+      logger.warn(
+        `[DELETE Project] Acceso denegado: userId=${userId}, projectUserId=${project.userId}, role=${userRole}`
+      );
+      return res.status(403).json({
+        success: false,
+        error: 'Acceso denegado (Solo el propietario o ADMIN puede eliminar)',
+      });
     }
 
-    // Eliminar proyecto (cascada también elimina análisis y sus relaciones)
+    logger.info(
+      `[DELETE Project] Preparando eliminación de proyecto ${id} con ${project.analyses.length} análisis asociados`
+    );
+
+    // Paso 1: Eliminar todos los análisis (que cascadearán sus relaciones)
+    const analysisIds = project.analyses.map((a) => a.id);
+    if (analysisIds.length > 0) {
+      logger.info(`[DELETE Project] Eliminando ${analysisIds.length} análisis...`);
+      await prisma.analysis.deleteMany({
+        where: { id: { in: analysisIds } },
+      });
+      logger.info(`[DELETE Project] Análisis eliminados exitosamente`);
+    }
+
+    // Paso 2: Eliminar el proyecto
+    logger.info(`[DELETE Project] Eliminando proyecto ${id}...`);
     await prisma.project.delete({ where: { id } });
 
     logger.info(`[DELETE Project] Proyecto ${id} eliminado exitosamente`);
-    res.json({ success: true, message: 'Proyecto eliminado correctamente' });
+    res.json({
+      success: true,
+      message: 'Proyecto eliminado correctamente',
+      deletedAnalyses: analysisIds.length,
+    });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error(`[DELETE Project] Error eliminando proyecto: ${errorMsg}`);
-    res.status(500).json({ success: false, error: 'Error al eliminar el proyecto. ' + errorMsg });
+    const errorCode = (error as any)?.code || 'UNKNOWN';
+
+    logger.error(`[DELETE Project] Error (${errorCode}): ${errorMsg}`);
+
+    // Proporcionar mensajes de error más específicos
+    if (errorMsg.includes('unique constraint')) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se puede eliminar: hay datos relacionados que impiden la eliminación',
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      error: 'Error al eliminar el proyecto',
+      details: errorMsg,
+    });
   }
 });
 
