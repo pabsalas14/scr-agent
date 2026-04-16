@@ -25,7 +25,13 @@ export default defineConfig({
   },
   server: {
     port: parseInt(process.env.PORT || '5173'),
-    allowedHosts: 'all', // Permitir todos los hosts en desarrollo (ngrok compatible)
+    allowedHosts: [
+      'localhost',
+      '127.0.0.1',
+      '.ngrok-free.dev',
+      '.ngrok.io',
+      'worst-negate-brussels.ngrok-free.dev', // Permitir ngrok específico
+    ],
     proxy: {
       '/api': {
         // Usar BACKEND_URL si está disponible (para ngrok), sino usar localhost
