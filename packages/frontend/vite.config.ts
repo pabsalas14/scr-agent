@@ -28,12 +28,14 @@ export default defineConfig({
     allowedHosts: 'all', // Permitir todos los hosts en desarrollo (ngrok compatible)
     proxy: {
       '/api': {
-        target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
+        // Usar BACKEND_URL si está disponible (para ngrok), sino usar localhost
+        target: process.env.BACKEND_URL || `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
         changeOrigin: true,
         rewrite: (path) => path, // Mantener el path tal cual (ej: /api/v1/projects)
       },
       '/socket.io': {
-        target: `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
+        // Usar BACKEND_URL si está disponible (para ngrok), sino usar localhost
+        target: process.env.BACKEND_URL || `http://localhost:${process.env.BACKEND_PORT || '3001'}`,
         ws: true,
         changeOrigin: true,
         secure: false, // Useful for development with self-signed certs or local dev

@@ -194,8 +194,14 @@ app.use('/api/v1/auth', authRoutes);
 // Rutas de usuarios públicas (para crear usuarios)
 app.use('/api/v1/users', usersRoutes);
 
-// Middleware JWT para todas las rutas protegidas
-app.use('/api/v1', authMiddleware);
+// Middleware JWT para todas las rutas protegidas (EXCEPTO /api/v1/users y /api/v1/auth)
+app.use('/api/v1', (req, res, next) => {
+  // Excluir rutas públicas del middleware de autenticación
+  if (req.path.startsWith('/users') || req.path.startsWith('/auth')) {
+    return next();
+  }
+  return authMiddleware(req, res, next);
+});
 
 // Middleware de auditoría para registrar acciones
 app.use('/api/v1', auditMiddleware);
