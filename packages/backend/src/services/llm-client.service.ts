@@ -102,26 +102,42 @@ export class LLMClient {
   }
 }
 
-export function createLLMClient(role: AgentRole, anthropicApiKey?: string): LLMClient {
-  const provider = (process.env['LLM_PROVIDER'] as LLMProvider | undefined) ?? 'anthropic';
+export interface UserLLMConfig {
+  apiKey?: string;
+  provider?: LLMProvider;
+  model?: string;
+  lmstudioBaseUrl?: string;
+}
+
+export function createLLMClient(role: AgentRole, userConfig?: UserLLMConfig): LLMClient {
+  // User config takes priority over env vars
+  const provider: LLMProvider =
+    userConfig?.provider ||
+    (process.env['LLM_PROVIDER'] as LLMProvider | undefined) ||
+    'anthropic';
 
   if (provider === 'lmstudio') {
     const model =
+      userConfig?.model ||
       process.env[`LMSTUDIO_${role.toUpperCase()}_MODEL`] ||
       process.env['LMSTUDIO_MODEL'] ||
       DEFAULT_LMSTUDIO_MODEL;
-    return new LLMClient(
-      'lmstudio',
-      model,
-      undefined,
-      process.env['LMSTUDIO_BASE_URL'] ?? 'http://localhost:1234/v1'
-    );
+    const baseUrl =
+      userConfig?.lmstudioBaseUrl ||
+      process.env['LMSTUDIO_BASE_URL'] ||
+      'http://localhost:1234/v1';
+    return new LLMClient('lmstudio', model, undefined, baseUrl);
   }
 
   const model =
+    userConfig?.model ||
     process.env[`ANTHROPIC_${role.toUpperCase()}_MODEL`] ||
     process.env['ANTHROPIC_MODEL'] ||
     DEFAULT_ANTHROPIC_MODELS[role];
 
-  return new LLMClient('anthropic', model, anthropicApiKey || process.env['ANTHROPIC_API_KEY']);
+  return new LLMClient(
+    'anthropic',
+    model,
+    userConfig?.apiKey || process.env['ANTHROPIC_API_KEY']
+  );
 }

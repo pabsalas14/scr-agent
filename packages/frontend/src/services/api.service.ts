@@ -595,6 +595,8 @@ class ApiService {
     temperature: number;
     maxTokens: number;
     webhookUrl?: string;
+    llmProvider?: 'anthropic' | 'lmstudio';
+    lmstudioBaseUrl?: string;
   }): Promise<any> {
     const { data } = await this.client.post('/settings/ai-config', config);
     return data;

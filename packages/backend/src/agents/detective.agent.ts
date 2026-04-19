@@ -17,7 +17,7 @@
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
 import { gitService } from '../services/git.service';
-import { createLLMClient, LLMClient } from '../services/llm-client.service';
+import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**
@@ -25,26 +25,21 @@ import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
  */
 export class DetectiveAgentService {
   private llmClient: LLMClient | null = null;
-  private apiKey: string | undefined;
+  private userConfig: UserLLMConfig = {};
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(config?: UserLLMConfig) {
+    this.userConfig = config ?? {};
   }
 
-  /**
-   * Actualizar configuración dinámicamente
-   */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.llmClient = null;
-      logger.info('DetectiveAgent: configuración actualizada');
-    }
+  updateConfig(config: UserLLMConfig): void {
+    this.userConfig = config;
+    this.llmClient = null;
+    logger.info('DetectiveAgent: configuración actualizada');
   }
 
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('detective', this.apiKey);
+      this.llmClient = createLLMClient('detective', this.userConfig);
     }
     return this.llmClient;
   }

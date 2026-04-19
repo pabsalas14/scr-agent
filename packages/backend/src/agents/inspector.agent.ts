@@ -15,7 +15,7 @@
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { createLLMClient, LLMClient } from '../services/llm-client.service';
+import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
 /** Tamaño máximo de código por llamada al LLM (500 KB) */
@@ -26,26 +26,21 @@ const MAX_CHUNK_BYTES = 500 * 1024;
  */
 export class InspectorAgentService {
   private llmClient: LLMClient | null = null;
-  private apiKey: string | undefined;
+  private userConfig: UserLLMConfig = {};
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(config?: UserLLMConfig) {
+    this.userConfig = config ?? {};
   }
 
-  /**
-   * Actualizar configuración dinámicamente
-   */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.llmClient = null;
-      logger.info('InspectorAgent: configuración actualizada');
-    }
+  updateConfig(config: UserLLMConfig): void {
+    this.userConfig = config;
+    this.llmClient = null;
+    logger.info('InspectorAgent: configuración actualizada');
   }
 
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('inspector', this.apiKey);
+      this.llmClient = createLLMClient('inspector', this.userConfig);
     }
     return this.llmClient;
   }

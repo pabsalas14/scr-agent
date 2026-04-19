@@ -16,7 +16,7 @@
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { createLLMClient, LLMClient } from '../services/llm-client.service';
+import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import {
   SintesisInput,
   SintesisOutput,
@@ -28,26 +28,21 @@ import {
  */
 export class FiscalAgentService {
   private llmClient: LLMClient | null = null;
-  private apiKey: string | undefined;
+  private userConfig: UserLLMConfig = {};
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(config?: UserLLMConfig) {
+    this.userConfig = config ?? {};
   }
 
-  /**
-   * Actualizar configuración dinámicamente
-   */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.llmClient = null;
-      logger.info('FiscalAgent: configuración actualizada');
-    }
+  updateConfig(config: UserLLMConfig): void {
+    this.userConfig = config;
+    this.llmClient = null;
+    logger.info('FiscalAgent: configuración actualizada');
   }
 
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('fiscal', this.apiKey);
+      this.llmClient = createLLMClient('fiscal', this.userConfig);
     }
     return this.llmClient;
   }
