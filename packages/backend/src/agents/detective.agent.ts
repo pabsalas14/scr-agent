@@ -14,26 +14,18 @@
  * Salida: ForensesOutput con timeline de eventos
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
 import { gitService } from '../services/git.service';
+import { createLLMClient, LLMClient } from '../services/llm-client.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**
  * Servicio del Agente Detective
  */
 export class DetectiveAgentService {
-  /**
-   * Cliente de Anthropic
-   */
-  private anthropic: Anthropic | null = null;
+  private llmClient: LLMClient | null = null;
   private apiKey: string | undefined;
-
-  /**
-   * Modelo a usar (Haiku para rapidez y economía)
-   */
-  private model = 'claude-haiku-4-5-20251001';
 
   constructor(apiKey?: string) {
     this.apiKey = apiKey;
@@ -45,23 +37,16 @@ export class DetectiveAgentService {
   updateConfig(apiKey: string): void {
     if (this.apiKey !== apiKey) {
       this.apiKey = apiKey;
-      this.anthropic = null; // Forzar re-inicialización
-      logger.info('DetectiveAgent: API Key actualizada');
+      this.llmClient = null;
+      logger.info('DetectiveAgent: configuración actualizada');
     }
   }
 
-  /**
-   * Obtener cliente de Anthropic (lazy init)
-   */
-  private getAnthropicClient(): Anthropic {
-    if (!this.anthropic) {
-      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set');
-      }
-      this.anthropic = new Anthropic({ apiKey: key });
+  private getLLMClient(): LLMClient {
+    if (!this.llmClient) {
+      this.llmClient = createLLMClient('detective', this.apiKey);
     }
-    return this.anthropic;
+    return this.llmClient;
   }
 
   /**
@@ -98,47 +83,17 @@ export class DetectiveAgentService {
        */
       const prompt = this.construirPrompt(input);
 
-      /**
-       * Llamar a Claude Haiku
-       */
-      logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 2048,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      const client = this.getLLMClient();
+      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
+      const response = await client.complete(prompt, 2048);
 
-      /**
-       * Procesar respuesta
-       */
-      const textoRespuesta = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
-        .trim();
-
+      const textoRespuesta = response.text;
       if (!textoRespuesta) {
-        throw new Error('Respuesta inesperada de Claude');
+        throw new Error('Respuesta inesperada del LLM');
       }
 
-      /**
-       * Parsear timeline
-       */
       const eventos = this.parseTimeline(textoRespuesta);
-
-      /**
-       * Extraer usage de la respuesta de Anthropic
-       */
-      const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      };
+      const usage = response.usage;
 
       /**
        * Detectar patrones y autores sospechosos
