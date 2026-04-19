@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { GitBranch, Key, Eye, EyeOff, Trash2, ExternalLink, Check, X, Cpu } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
+import { useAuth } from '../hooks/useAuth';
 
 interface GitHubConfig {
   token: string;
@@ -43,7 +44,8 @@ const getIntegrations = (githubConnected: boolean) => [
 ];
 
 export default function IntegrationsPage() {
-  const isAdmin = localStorage.getItem('userRole') === 'ADMIN';
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'ADMIN';
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [showGitHubModal, setShowGitHubModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);

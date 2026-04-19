@@ -7,7 +7,7 @@
  * Con persistencia en Redis y soporte para análisis concurrentes
  */
 
-import { Queue, Worker } from 'bullmq';
+import { Queue, QueueEvents } from 'bullmq';
 import { logger } from '../services/logger.service';
 
 // Configurar conexión a Redis desde variables de entorno
@@ -18,7 +18,14 @@ const QUEUE_NAME = process.env.ANALYSIS_QUEUE_NAME || 'scr-analysis-queue';
 // Parsear URL de Redis
 const redisConnection = parseRedisUrl(REDIS_URL);
 
-function parseRedisUrl(url: string) {
+interface RedisConnection {
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+}
+
+function parseRedisUrl(url: string): RedisConnection {
   const match = url.match(/redis:\/\/(?:([^:@]+):([^@]+)@)?([^:]+):(\d+)/);
   if (!match) {
     logger.warn('⚠️  Redis URL inválida, usando localhost:6379');
@@ -42,38 +49,39 @@ export let analysisQueue: Queue | null = null;
  * Inicializar y conectar a Bull Queue
  * Llamar desde index.ts al startup del servidor
  */
-export async function initializeBullQueue() {
+export async function initializeBullQueue(): Promise<Queue> {
   try {
     analysisQueue = new Queue(QUEUE_NAME, {
-      connection: redisConnection as any,
+      connection: redisConnection,
       settings: {
-        // Concurrencia configurable (default: 3 análisis simultáneos)
-        maxStalledCount: 2,
-        stalledInterval: 30000, // 30 segundos
         // Reintentos automáticos
         retryProcessDelay: 60000, // 1 minuto entre reintentos
       },
     });
 
-    // Event listeners
-    analysisQueue.on('error', (err) => {
-      logger.error(`❌ Bull Queue error: ${err.message}`);
+    // Event listeners via QueueEvents (correcto para BullMQ v5)
+    const queueEvents = new QueueEvents(QUEUE_NAME, {
+      connection: redisConnection,
     });
 
-    analysisQueue.on('waiting', () => {
-      logger.debug('📥 Job agregado a la queue');
+    queueEvents.on('error', (err) => {
+      logger.error('Bull Queue error', err);
     });
 
-    analysisQueue.on('active', (job) => {
-      logger.debug(`▶️  Job ${job.id} iniciado`);
+    queueEvents.on('waiting', ({ jobId }) => {
+      logger.debug(`📥 Job ${jobId} agregado a la queue`);
     });
 
-    analysisQueue.on('completed', (job) => {
-      logger.info(`✅ Job ${job.id} completado`);
+    queueEvents.on('active', ({ jobId }) => {
+      logger.debug(`▶️  Job ${jobId} iniciado`);
     });
 
-    analysisQueue.on('failed', (job, err) => {
-      logger.error(`❌ Job ${job?.id} falló: ${err.message}`);
+    queueEvents.on('completed', ({ jobId }) => {
+      logger.info(`✅ Job ${jobId} completado`);
+    });
+
+    queueEvents.on('failed', ({ jobId, failedReason }) => {
+      logger.error(`❌ Job ${jobId} falló: ${failedReason}`);
     });
 
     logger.info(`✓ Bull Queue inicializada en Redis: ${REDIS_URL}`);
@@ -81,7 +89,7 @@ export async function initializeBullQueue() {
 
     return analysisQueue;
   } catch (error) {
-    logger.error(`❌ Error inicializando Bull Queue: ${error}`);
+    logger.error('Error inicializando Bull Queue', error);
     throw error;
   }
 }

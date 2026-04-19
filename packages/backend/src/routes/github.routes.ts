@@ -15,9 +15,9 @@ import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import { gitService } from '../services/git.service';
 import { decrypt, encrypt } from '../services/crypto.service';
+import { getAnalysisQueue } from '../config/bull.config';
 import axios from 'axios';
 import crypto from 'crypto';
-import { analysisQueue } from '../services/analysis-queue';
 
 /** Obtiene y descifra el GitHub token del usuario, o lanza respuesta 400 si no está configurado */
 async function resolveGithubToken(userId: string, res: Response): Promise<string | null> {
@@ -387,10 +387,11 @@ router.post('/webhook', async (req: Request, res: Response) => {
     }
 
     // Validar firma del webhook
-    const webhookSecret = project.githubToken || process.env['GITHUB_WEBHOOK_SECRET'] || '';
+    // Use environment variable or generate random secret for security
+    const webhookSecret = process.env['GITHUB_WEBHOOK_SECRET'] || crypto.randomBytes(32).toString('hex');
     if (!webhookSecret) {
-      logger.warn(`No webhook secret configured for project ${project.id}`);
-      res.status(401).json({ error: 'Webhook secret not configured' });
+      logger.error(`Critical: No webhook secret available for project ${project.id}`);
+      res.status(500).json({ error: 'Webhook configuration error' });
       return;
     }
 
@@ -451,7 +452,7 @@ router.post('/webhook', async (req: Request, res: Response) => {
         const analysis = await prisma.analysis.create({
           data: {
             projectId: project.id,
-            status: 'QUEUED',
+            status: 'PENDING',
             progress: 0,
             analysisType: analysisType as any,
             gitRef: ref,
@@ -460,7 +461,8 @@ router.post('/webhook', async (req: Request, res: Response) => {
         });
 
         // Encolar job
-        const analysisJob = await analysisQueue.add(
+        const queue = getAnalysisQueue();
+        const analysisJob = await queue.add(
           'analyze',
           { analysisId: analysis.id, projectId: project.id },
           { attempts: 3, backoff: { type: 'exponential', delay: 2000 } }
@@ -531,6 +533,9 @@ router.post(
 
       try {
         // Crear webhook en GitHub
+        // Generate a cryptographically random secret (32 bytes = 256 bits)
+        const webhookSecret = crypto.randomBytes(32).toString('hex');
+
         const webhookResponse = await axios.post(
           `https://api.github.com/repos/${owner}/${repo}/hooks`,
           {
@@ -540,7 +545,7 @@ router.post(
             config: {
               url: webhookUrl,
               content_type: 'json',
-              secret: encrypt(webhookUrl), // Simple secret based on URL
+              secret: webhookSecret,
               insecure_ssl: '0',
             },
           },

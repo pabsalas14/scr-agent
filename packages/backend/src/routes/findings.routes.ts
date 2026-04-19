@@ -819,7 +819,7 @@ router.get('/:findingId/sla', async (req: Request, res: Response) => {
     let resolvedAt: Date | null = null;
     if (finding.remediation?.verifiedAt) {
       resolvedAt = finding.remediation.verifiedAt;
-    } else if (finding.statusHistory.length > 0 && finding.statusHistory[0].status === 'RESOLVED') {
+    } else if (finding.statusHistory.length > 0 && (finding.statusHistory[0].status === 'CORRECTED' || finding.statusHistory[0].status === 'CLOSED')) {
       resolvedAt = finding.statusHistory[0].createdAt;
     }
 
