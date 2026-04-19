@@ -21,58 +21,38 @@ export default function AppLayout() {
   const [socketConnected, setSocketConnected] = useState(false);
   const toast = useToast();
 
-  // Map route paths to TabIds
+  // Map route paths to TabIds (Updated for consolidated navigation)
   const getActiveTabFromPath = (pathname: string): TabId => {
-    // Check nested routes first (most specific)
-    if (pathname.includes('/incidents/findings')) return 'hallazgos';
-    if (pathname.includes('/analyses/comparison')) return 'comparacion';
-    if (pathname.includes('/analyses/historical')) return 'historico';
-    if (pathname.includes('/settings/agents')) return 'agentes-config';
-    if (pathname.includes('/settings/alert-rules')) return 'alert-rules';
-    if (pathname.includes('/settings/integrations')) return 'integraciones';
-    if (pathname.includes('/settings/users')) return 'usuarios';
-    if (pathname.includes('/settings/preferences')) return 'preferencias';
-    if (pathname.includes('/settings/library')) return 'biblioteca';
+    // New consolidated routes
+    if (pathname.includes('/dashboard/hallazgos')) return 'hallazgos';
+    if (pathname.includes('/dashboard/agentes')) return 'agentes';
+    if (pathname.includes('/dashboard/control')) return 'control';
+    if (pathname.includes('/dashboard/configuracion')) return 'configuracion';
 
-    // Then check parent routes
-    if (pathname.includes('/incidents')) return 'incidentes';
-    if (pathname.includes('/projects')) return 'proyectos';
-    if (pathname.includes('/analyses')) return 'reportes';
-    if (pathname.includes('/analytics')) return 'analytics';
-    if (pathname.includes('/metrics')) return 'metrics';
-    if (pathname.includes('/alerts')) return 'alertas';
-    if (pathname.includes('/forensics')) return 'investigaciones';
-    if (pathname.includes('/agents')) return 'agentes';
-    if (pathname.includes('/system')) return 'sistema';
-    if (pathname.includes('/costs')) return 'costos';
+    // Analysis routes (unchanged)
+    if (pathname.includes('/dashboard/comparacion')) return 'comparacion';
+    if (pathname.includes('/dashboard/historico')) return 'historico';
+    if (pathname.includes('/dashboard/projects')) return 'proyectos';
+
+    // Default to projects or monitor central
+    if (pathname.includes('/dashboard')) return 'monitor-central';
     return 'monitor-central';
   };
 
   const activeTab = getActiveTabFromPath(location.pathname);
 
   const handleTabChange = (tabId: TabId) => {
-    // Map TabId to route path
+    // Map TabId to route path (consolidated navigation)
     const routeMap: Record<TabId, string> = {
       'monitor-central': '/dashboard',
       'proyectos': '/dashboard/projects',
-      'reportes': '/dashboard/analyses',
-      'comparacion': '/dashboard/analyses/comparison',
-      'historico': '/dashboard/analyses/historical',
-      'incidentes': '/dashboard/incidents',
-      'hallazgos': '/dashboard/incidents/findings',
-      'alertas': '/dashboard/alerts',
-      'investigaciones': '/dashboard/forensics',
-      'agentes': '/dashboard/agents',
-      'sistema': '/dashboard/system',
-      'costos': '/dashboard/costs',
-      'analytics': '/dashboard/analytics',
-      'metrics': '/dashboard/metrics',
-      'integraciones': '/dashboard/settings/integrations',
-      'usuarios': '/dashboard/settings/users',
-      'preferencias': '/dashboard/settings/preferences',
-      'agentes-config': '/dashboard/settings/agents',
-      'alert-rules': '/dashboard/settings/alert-rules',
-      'biblioteca': '/dashboard/settings/library',
+      'reportes': '/dashboard/reportes',
+      'comparacion': '/dashboard/comparacion',
+      'historico': '/dashboard/historico',
+      'hallazgos': '/dashboard/hallazgos',
+      'agentes': '/dashboard/agentes',
+      'control': '/dashboard/control',
+      'configuracion': '/dashboard/configuracion',
     };
 
     const path = routeMap[tabId] || '/dashboard';

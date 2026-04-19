@@ -4,30 +4,20 @@ import LoginPage from '../pages/LoginPage';
 import AppLayout from '../components/layouts/AppLayout';
 import ErrorBoundary from '../components/ui/ErrorBoundary';
 
-// Lazy load heavy components
+// Lazy load heavy components - CONSOLIDATED
 const Dashboard = lazy(() => import('../components/Dashboard/Dashboard'));
 const ProjectsPage = lazy(() => import('../components/Projects/ProjectsPage'));
 const ReportViewer = lazy(() => import('../components/Reports/ReportViewer'));
-const AnalyticsDashboard = lazy(() => import('../components/Analytics/AnalyticsDashboard'));
-const SettingsModule = lazy(() => import('../components/Settings/SettingsModule'));
-const IncidentMonitor = lazy(() => import('../components/Monitoring/IncidentMonitor'));
-const AnalysisMonitor = lazy(() => import('../components/Monitoring/AnalysisMonitor'));
-const ForensicsInvestigations = lazy(() => import('../components/Forensics/ForensicsInvestigations'));
-const AgentsMonitor = lazy(() => import('../components/Monitoring/AgentsMonitor'));
-const SystemMonitor = lazy(() => import('../components/Monitoring/SystemMonitor'));
-const CostsMonitor = lazy(() => import('../components/Monitoring/CostsMonitor'));
-const AlertsMonitor = lazy(() => import('../components/Monitoring/AlertsMonitor'));
 
-// Lazy load new pages for nested routes
+// NEW: Consolidated master modules
+const FindingsCenter = lazy(() => import('../components/Findings/FindingsCenter'));
+const AgentsModule = lazy(() => import('../components/Agents/AgentsModule'));
+const CommandCenter = lazy(() => import('../components/CommandCenter/CommandCenter'));
+const SettingsModule = lazy(() => import('../components/Settings/SettingsModule'));
+
+// Analysis pages (unchanged)
 const AnalysisComparisonPage = lazy(() => import('../pages/AnalysisComparisonPage'));
 const AnalysisHistoricalPage = lazy(() => import('../pages/AnalysisHistoricalPage'));
-const FindingsPanelPage = lazy(() => import('../pages/FindingsPanelPage'));
-const IntegrationsPage = lazy(() => import('../pages/IntegrationsPage'));
-const UsersPage = lazy(() => import('../pages/UsersPage'));
-const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
-const AgentsPage = lazy(() => import('../pages/AgentsPage'));
-const AlertRulesPage = lazy(() => import('../pages/AlertRulesPage'));
-const MetricsDashboardPage = lazy(() => import('../pages/MetricsDashboardPage'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -41,10 +31,10 @@ const LoadingFallback = () => (
 function DashboardWrapper() {
   const navigate = useNavigate();
   return (
-    <Dashboard 
+    <Dashboard
       onVerAnalisis={(projId, analId) => navigate(`/projects/${projId}/analyses/${analId}`)}
       onCambiarTab={(tab) => navigate(`/dashboard/${tab}`)}
-      onVerLogs={() => navigate('/dashboard/system')}
+      onVerLogs={() => navigate('/dashboard/control')}
     />
   );
 }
@@ -85,92 +75,43 @@ export const router = createBrowserRouter([
           </ErrorBoundary>
         ),
       },
+      // CONSOLIDATED ROUTES
       {
-        path: 'dashboard/incidents',
+        path: 'dashboard/hallazgos',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <IncidentMonitor />
+              <FindingsCenter />
             </Suspense>
           </ErrorBoundary>
         ),
       },
       {
-        path: 'dashboard/alerts',
+        path: 'dashboard/agentes',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <AlertsMonitor />
+              <AgentsModule />
             </Suspense>
           </ErrorBoundary>
         ),
       },
       {
-        path: 'dashboard/forensics',
+        path: 'dashboard/control',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <ForensicsInvestigations />
+              <CommandCenter />
             </Suspense>
           </ErrorBoundary>
         ),
       },
       {
-        path: 'dashboard/analyses',
+        path: 'dashboard/configuracion',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <AnalysisMonitor />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/agents',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <AgentsMonitor onSelectAgent={() => {}} />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/system',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <SystemMonitor />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/costs',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <CostsMonitor />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/analytics',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <AnalyticsDashboard />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/metrics',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <MetricsDashboardPage />
+              <SettingsModule />
             </Suspense>
           </ErrorBoundary>
         ),
@@ -187,21 +128,10 @@ export const router = createBrowserRouter([
         ),
       },
 
-      // Settings route
-      {
-        path: 'settings',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <SettingsModule />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
 
-      // ANALYSIS GROUP - Nested routes
+      // ANALYSIS GROUP - Analysis routes (unchanged)
       {
-        path: 'dashboard/analyses/comparison',
+        path: 'dashboard/comparacion',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
@@ -211,7 +141,7 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'dashboard/analyses/historical',
+        path: 'dashboard/historico',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
@@ -220,66 +150,12 @@ export const router = createBrowserRouter([
           </ErrorBoundary>
         ),
       },
-
-      // INCIDENTS GROUP - Nested routes
       {
-        path: 'dashboard/incidents/findings',
+        path: 'dashboard/reportes',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <FindingsPanelPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-
-      // SETTINGS GROUP - Nested routes
-      {
-        path: 'dashboard/settings/integrations',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <IntegrationsPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/users',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <UsersPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/preferences',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <PreferencesPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/agents',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <AgentsPage />
-            </Suspense>
-          </ErrorBoundary>
-        ),
-      },
-      {
-        path: 'dashboard/settings/alert-rules',
-        element: (
-          <ErrorBoundary>
-            <Suspense fallback={<LoadingFallback />}>
-              <AlertRulesPage />
+              <ReportViewer />
             </Suspense>
           </ErrorBoundary>
         ),

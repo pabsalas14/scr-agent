@@ -3,7 +3,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Settings,
-  Shield,
   Eye,
   EyeOff,
   Save,
@@ -11,52 +10,30 @@ import {
   AlertCircle,
   Terminal,
   Loader2,
-  Pencil,
-  X,
-  Users,
   Brain,
   Zap,
   Bell,
-  Lock,
   GitBranch,
-  Cpu,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
-import { useAuth } from '../../hooks/useAuth';
-import { useNavigate } from 'react-router-dom';
-import type { UserProfile } from '../../types/api';
 import NotificationPreferences from './NotificationPreferences';
 
-const ROLES = ['ADMIN', 'ANALYST', 'DEVELOPER', 'VIEWER'] as const;
-const ROLE_LABELS: Record<string, string> = {
-  ADMIN: 'Admin',
-  ANALYST: 'Analista',
-  DEVELOPER: 'Desarrollador',
-  VIEWER: 'Viewer',
-};
-const ROLE_COLORS: Record<string, string> = {
-  ADMIN:     'text-[#EF4444] bg-[#EF4444]/10 border-[#EF4444]/20',
-  ANALYST:   'text-[#F97316] bg-[#F97316]/10 border-[#F97316]/20',
-  DEVELOPER: 'text-[#6366F1] bg-[#6366F1]/10 border-[#6366F1]/20',
-  VIEWER:    'text-[#6B7280] bg-[#6B7280]/10 border-[#6B7280]/20',
-};
-
-type SettingsTab = 'profile' | 'integrations' | 'security' | 'notifications' | 'agents' | 'team';
+type SettingsTab = 'integraciones' | 'preferencias';
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Settings; description: string }> = [
-  { id: 'profile', label: 'Perfil', icon: Shield, description: 'Información personal' },
-  { id: 'integrations', label: 'Integraciones', icon: GitBranch, description: 'APIs y webhooks' },
-  { id: 'security', label: 'Seguridad', icon: Lock, description: 'Configuración de seguridad' },
-  { id: 'agents', label: 'Agentes', icon: Cpu, description: 'Gestión de agentes IA' },
-  { id: 'notifications', label: 'Notificaciones', icon: Bell, description: 'Alertas y eventos' },
+  { id: 'integraciones', label: 'Integraciones', icon: GitBranch, description: 'APIs y webhooks' },
+  { id: 'preferencias', label: 'Preferencias', icon: Settings, description: 'Idioma, tema, notificaciones' },
+];
+
+const ANTHROPIC_MODELS = [
+  { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Recomendado)' },
+  { value: 'claude-opus-4-7', label: 'Claude Opus 4.7 (Más potente)' },
+  { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Rápido)' },
 ];
 
 export default function SettingsModule() {
   const queryClient = useQueryClient();
-  const { user: currentUser } = useAuth();
-  const navigate = useNavigate();
-  const isAdmin = currentUser?.role === 'ADMIN';
-  const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
+  const [activeTab, setActiveTab] = useState<SettingsTab>('integraciones');
   const [githubToken, setGithubToken] = useState('');
   const [claudeApiKey, setClaudeApiKey] = useState('');
   const [showGithubToken, setShowGithubToken] = useState(false);
@@ -68,17 +45,17 @@ export default function SettingsModule() {
   const [llmProvider, setLlmProvider] = useState<'anthropic' | 'lmstudio'>('anthropic');
   const [llmBaseUrl, setLlmBaseUrl] = useState('http://localhost:1234/v1');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
-  const [editingProfile, setEditingProfile] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
+  const [language, setLanguage] = useState('es');
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [emailNotifications, setEmailNotifications] = useState(true);
+  const [slackNotifications, setSlackNotifications] = useState(false);
 
-  // Local validation functions for tokens (flexible - backend validates actual format)
+  // Validate tokens
   const validateGithubToken = (token: string): boolean => {
-    // Accept any token with minimum length - backend will validate actual format
     return token.length >= 10;
   };
 
   const validateClaudeToken = (token: string): boolean => {
-    // Accept any token with minimum length - backend will validate actual format
     return token.length >= 10;
   };
 
@@ -91,63 +68,33 @@ export default function SettingsModule() {
     }
   };
 
-  const ANTHROPIC_MODELS = [
-    { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Recomendado)' },
-    { value: 'claude-opus-4-7', label: 'Claude Opus 4.7 (Más potente)' },
-    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Rápido)' },
-  ];
-
+  // Load user settings
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
-    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; llmBaseUrl?: string } }) => data?.data,
+    select: (data: any) => data?.data,
   });
 
-  const { data: perfil, isLoading: perfilLoading } = useQuery<UserProfile>({
-    queryKey: ['user-profile'],
-    queryFn: () => apiService.obtenerPerfil(),
-  });
-
-  const isLoading = settingsLoading || perfilLoading;
+  const isLoading = settingsLoading;
 
   useEffect(() => {
-    if (userSettings?.githubToken) {
-      setGithubToken(userSettings.githubToken);
-    }
-    if (userSettings?.claudeApiKey) {
-      setClaudeApiKey(userSettings.claudeApiKey);
-    }
-    if (userSettings?.selectedModel) {
-      setSelectedModel(userSettings.selectedModel);
-    }
-    if (userSettings?.temperature) {
-      setTemperature(userSettings.temperature);
-    }
-    if (userSettings?.maxTokens) {
-      setMaxTokens(userSettings.maxTokens);
-    }
-    if (userSettings?.webhookUrl) {
-      setWebhookUrl(userSettings.webhookUrl);
-    }
-    if (userSettings?.llmProvider) {
-      setLlmProvider(userSettings.llmProvider as 'anthropic' | 'lmstudio');
-    }
-    if (userSettings?.llmBaseUrl) {
-      setLlmBaseUrl(userSettings.llmBaseUrl);
+    if (userSettings) {
+      if (userSettings.githubToken) setGithubToken(userSettings.githubToken);
+      if (userSettings.claudeApiKey) setClaudeApiKey(userSettings.claudeApiKey);
+      if (userSettings.selectedModel) setSelectedModel(userSettings.selectedModel);
+      if (userSettings.temperature) setTemperature(userSettings.temperature);
+      if (userSettings.maxTokens) setMaxTokens(userSettings.maxTokens);
+      if (userSettings.webhookUrl) setWebhookUrl(userSettings.webhookUrl);
+      if (userSettings.llmProvider) setLlmProvider(userSettings.llmProvider);
+      if (userSettings.llmBaseUrl) setLlmBaseUrl(userSettings.llmBaseUrl);
     }
   }, [userSettings]);
 
-  useEffect(() => {
-    if (perfil) {
-      setProfileForm({ name: perfil.name || '', email: perfil.email, avatar: perfil.avatar || '', bio: perfil.bio || '' });
-    }
-  }, [perfil]);
-
+  // Mutations
   const guardarTokenMutation = useMutation({
     mutationFn: (token: string) => {
-      // BUG FIX #3: Validate token format before sending
       if (!validateGithubToken(token)) {
-        throw new Error('Token de GitHub debe empezar con "ghp_" y tener el formato correcto');
+        throw new Error('Token de GitHub debe tener un formato válido');
       }
       return apiService.guardarTokenGithub(token);
     },
@@ -157,19 +104,19 @@ export default function SettingsModule() {
       setTimeout(() => setStatus(null), 5000);
     },
     onError: (error: any) => {
-      const message = error?.message || 'Error al procesar el token. Verifica el formato.';
+      const message = error?.message || 'Error al procesar el token.';
       setStatus({ type: 'error', message });
       setTimeout(() => setStatus(null), 5000);
     },
   });
 
   const guardarConfiguracionIAMutation = useMutation({
-    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; llmBaseUrl?: string }) => {
+    mutationFn: (config: any) => {
       if (config.claudeApiKey && !validateClaudeToken(config.claudeApiKey)) {
-        throw new Error('API Key debe empezar con "sk-ant-"');
+        throw new Error('API Key debe tener un formato válido');
       }
       if (config.webhookUrl && !validateWebhookUrl(config.webhookUrl)) {
-        throw new Error('URL del webhook debe ser una URL válida (http:// o https://)');
+        throw new Error('URL del webhook debe ser una URL válida');
       }
       return apiService.guardarConfiguracionIA(config);
     },
@@ -184,188 +131,18 @@ export default function SettingsModule() {
     },
   });
 
-  const actualizarPerfilMutation = useMutation({
-    mutationFn: (updates: { name?: string; email?: string }) => apiService.actualizarPerfil(updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['user-profile'] });
-      setEditingProfile(false);
-      setStatus({ type: 'success', message: 'Perfil actualizado correctamente.' });
-      setTimeout(() => setStatus(null), 5000);
-    },
-    onError: () => {
-      setStatus({ type: 'error', message: 'Error al actualizar el perfil.' });
-      setTimeout(() => setStatus(null), 5000);
-    },
-  });
-
-  const { data: teamUsers = [] } = useQuery({
-    queryKey: ['team-users'],
-    queryFn: () => apiService.listarUsuarios(),
-    enabled: isAdmin,
-  });
-
-  const cambiarRolMutation = useMutation({
-    mutationFn: ({ userId, role }: { userId: string; role: string }) =>
-      apiService.cambiarRolUsuario(userId, role),
-    // BUG FIX #3: Optimistic update to prevent UI flicker
-    onMutate: async ({ userId, role }) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ['team-users'] });
-
-      // Snapshot old data
-      const previousUsers = queryClient.getQueryData(['team-users']);
-
-      // Optimistically update cache
-      queryClient.setQueryData(['team-users'], (old: any) => {
-        if (!old?.data) return old;
-        return {
-          ...old,
-          data: old.data.map((user: any) =>
-            user.id === userId ? { ...user, role } : user
-          ),
-        };
-      });
-
-      return { previousUsers };
-    },
-    onError: (_, __, context) => {
-      // Revert to previous state if mutation fails
-      if (context?.previousUsers) {
-        queryClient.setQueryData(['team-users'], context.previousUsers);
-      }
-    },
-    onSuccess: () => {
-      // Optionally refetch to ensure data is fresh
-      queryClient.invalidateQueries({ queryKey: ['team-users'] });
-    },
-  });
-
-  const handleGuardarPerfil = () => {
-    const updates: { name?: string; email?: string; avatar?: string | null; bio?: string | null } = {};
-    if (profileForm.name.trim()) updates.name = profileForm.name.trim();
-    if (profileForm.email.trim()) updates.email = profileForm.email.trim();
-    updates.avatar = profileForm.avatar.trim() || null;
-    updates.bio = profileForm.bio.trim() || null;
-    actualizarPerfilMutation.mutate(updates);
-  };
-
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-20 space-y-3">
         <Loader2 className="w-6 h-6 text-[#F97316] animate-spin" />
-        <p className="text-sm text-[#6B7280]">Cargando preferencias...</p>
+        <p className="text-sm text-[#6B7280]">Cargando configuración...</p>
       </div>
     );
   }
 
-  const avatarInitial = (perfil?.name || perfil?.email || 'U').charAt(0).toUpperCase();
-  const displayTabs = isAdmin ? [...TABS, { id: 'team' as SettingsTab, label: 'Equipo', icon: Users, description: 'Usuarios y roles' }] : TABS;
-
   const renderContent = () => {
     switch (activeTab) {
-      case 'profile':
-        return (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="bg-gradient-to-br from-[#1E1E20] to-[#242424] border border-[#2D2D2D] rounded-xl p-8">
-              {editingProfile ? (
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold text-white">Editar tu perfil</h3>
-                  <div className="grid sm:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-[#E5E7EB]">Nombre</label>
-                      <input
-                        type="text"
-                        value={profileForm.name}
-                        onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))}
-                        placeholder="Tu nombre completo"
-                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/20 outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-[#E5E7EB]">Email</label>
-                      <input
-                        type="email"
-                        value={profileForm.email}
-                        onChange={(e) => setProfileForm((f) => ({ ...f, email: e.target.value }))}
-                        placeholder="tu@email.com"
-                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/20 outline-none transition-all"
-                      />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-sm font-medium text-[#E5E7EB]">URL de avatar</label>
-                      <input
-                        type="url"
-                        value={profileForm.avatar}
-                        onChange={(e) => setProfileForm((f) => ({ ...f, avatar: e.target.value }))}
-                        placeholder="https://..."
-                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/20 outline-none transition-all font-mono"
-                      />
-                    </div>
-                    <div className="space-y-2 sm:col-span-2">
-                      <label className="text-sm font-medium text-[#E5E7EB]">Biografía</label>
-                      <input
-                        type="text"
-                        value={profileForm.bio}
-                        onChange={(e) => setProfileForm((f) => ({ ...f, bio: e.target.value }))}
-                        placeholder="Analista de seguridad, investigador..."
-                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/20 outline-none transition-all"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex gap-3 justify-end pt-4 border-t border-[#2D2D2D]">
-                    <button
-                      onClick={() => {
-                        setEditingProfile(false);
-                        setProfileForm({ name: perfil?.name || '', email: perfil?.email || '', avatar: perfil?.avatar || '', bio: perfil?.bio || '' });
-                      }}
-                      className="px-5 py-2.5 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:text-white transition-all"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleGuardarPerfil}
-                      disabled={actualizarPerfilMutation.isPending || (!profileForm.name.trim() && !profileForm.email.trim())}
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-gradient-to-r from-[#F97316] to-[#EA6D00] text-white text-sm font-semibold hover:from-[#EA6D00] hover:to-[#D45A00] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {actualizarPerfilMutation.isPending
-                        ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-                        : <><Save className="w-4 h-4" /> Guardar Cambios</>
-                      }
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-6">
-                    <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-[#F97316] to-[#EA6D00] border border-[#F97316]/30 flex items-center justify-center text-2xl font-bold text-white overflow-hidden flex-shrink-0">
-                      {perfil?.avatar
-                        ? <img src={perfil.avatar} alt="avatar" className="w-full h-full object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
-                        : avatarInitial
-                      }
-                    </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-white">{perfil?.name || perfil?.email || 'Usuario'}</h2>
-                      <p className="text-sm text-[#6B7280] mt-1">{perfil?.email}</p>
-                      {perfil?.bio && <p className="text-xs text-[#4B5563] mt-2 italic">{perfil.bio}</p>}
-                      <div className="flex gap-2 mt-3">
-                        <span className="px-3 py-1 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20 text-xs font-semibold text-[#22C55E]">✓ Verificado</span>
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setEditingProfile(true)}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:border-[#F97316]/30 hover:text-white transition-all"
-                  >
-                    <Pencil className="w-4 h-4" />
-                    Editar
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case 'integrations':
+      case 'integraciones':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
             {/* AI Configuration */}
@@ -465,7 +242,7 @@ export default function SettingsModule() {
                     <div className="flex items-start gap-3 p-4 rounded-lg bg-[#22C55E]/5 border border-[#22C55E]/20">
                       <Terminal className="w-4 h-4 text-[#86EFAC] mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-[#86EFAC]">
-                        Abre LM Studio → pestaña <strong>Developer</strong> → <strong>Start Server</strong> (puerto 1234 por defecto). El modelo debe estar cargado antes de iniciar un análisis.
+                        Abre LM Studio → pestaña <strong>Developer</strong> → <strong>Start Server</strong> (puerto 1234 por defecto).
                       </p>
                     </div>
                     <div>
@@ -487,7 +264,6 @@ export default function SettingsModule() {
                         placeholder="qwen2.5-coder-7b-instruct"
                         className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#22C55E]/50 focus:ring-1 focus:ring-[#22C55E]/20 outline-none transition-all font-mono"
                       />
-                      <p className="text-xs text-[#6B7280] mt-2">Debe coincidir exactamente con el nombre que muestra LM Studio</p>
                     </div>
                   </>
                 )}
@@ -504,7 +280,6 @@ export default function SettingsModule() {
                       onChange={(e) => setTemperature(parseFloat(e.target.value))}
                       className="w-full accent-[#8B5CF6] cursor-pointer"
                     />
-                    <p className="text-xs text-[#6B7280] mt-2">0 = Determinista, 2 = Muy creativo</p>
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-2">
@@ -517,7 +292,6 @@ export default function SettingsModule() {
                       onChange={(e) => setMaxTokens(parseInt(e.target.value))}
                       className="w-full accent-[#8B5CF6] cursor-pointer"
                     />
-                    <p className="text-xs text-[#6B7280] mt-2">Longitud máxima de respuesta</p>
                   </div>
                 </div>
 
@@ -530,7 +304,6 @@ export default function SettingsModule() {
                     placeholder="https://tu-dominio.com/webhook"
                     className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/20 outline-none transition-all font-mono"
                   />
-                  <p className="text-xs text-[#6B7280] mt-2">Recibe notificaciones cuando se completen análisis</p>
                 </div>
               </div>
 
@@ -554,6 +327,27 @@ export default function SettingsModule() {
                   : <><Save className="w-4 h-4" /> Guardar Configuración</>
                 }
               </button>
+
+              <AnimatePresence>
+                {status && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    className={`flex items-center gap-3 p-4 rounded-lg text-sm font-medium ${
+                      status.type === 'success'
+                        ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20'
+                        : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20'
+                    }`}
+                  >
+                    {status.type === 'success'
+                      ? <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                      : <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    }
+                    {status.message}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* GitHub Integration */}
@@ -598,163 +392,80 @@ export default function SettingsModule() {
                   : <><Save className="w-4 h-4" /> Guardar Token</>
                 }
               </button>
-
-              <AnimatePresence>
-                {status && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0 }}
-                    className={`flex items-center gap-3 p-4 rounded-lg text-sm font-medium ${
-                      status.type === 'success'
-                        ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20'
-                        : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20'
-                    }`}
-                  >
-                    {status.type === 'success'
-                      ? <CheckCircle className="w-5 h-5 flex-shrink-0" />
-                      : <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                    }
-                    {status.message}
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </div>
           </div>
         );
 
-      case 'security':
+      case 'preferencias':
         return (
           <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="bg-[#EF4444]/5 border border-[#EF4444]/15 rounded-xl p-6 flex items-start gap-4">
-              <div className="w-10 h-10 rounded-lg bg-[#EF4444]/10 border border-[#EF4444]/20 flex items-center justify-center flex-shrink-0">
-                <Lock className="w-5 h-5 text-[#EF4444]" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-white">Zona de seguridad crítica</p>
-                <p className="text-xs text-[#6B7280] mt-2 leading-relaxed">
-                  Los tokens de acceso se almacenan cifrados en el backend. Los agentes utilizan estos tokens para acceder a tus recursos a través de canales protegidos.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#F97316]" />
-                  <h3 className="text-sm font-semibold text-white">Contraseña</h3>
+            <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-8 space-y-6">
+              <div className="flex items-center gap-4 pb-6 border-b border-[#2D2D2D]">
+                <div className="w-12 h-12 rounded-lg bg-[#F59E0B]/20 border border-[#F59E0B]/30 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-[#FCD34D]" />
                 </div>
-                <button className="w-full px-4 py-3 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:text-white hover:border-[#F97316]/30 transition-all">
-                  Cambiar contraseña
-                </button>
-              </div>
-
-              <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-6 space-y-4">
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-[#22C55E]" />
-                  <h3 className="text-sm font-semibold text-white">Autenticación</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Preferencias Generales</h3>
+                  <p className="text-sm text-[#6B7280] mt-1">Personaliza tu experiencia</p>
                 </div>
-                <button className="w-full px-4 py-3 rounded-lg bg-[#242424] border border-[#2D2D2D] text-sm text-[#A0A0A0] hover:text-white hover:border-[#22C55E]/30 transition-all">
-                  Configurar 2FA
-                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Language */}
+                <div>
+                  <label className="text-sm font-medium text-[#E5E7EB] block mb-2">Idioma</label>
+                  <select
+                    value={language}
+                    onChange={(e) => setLanguage(e.target.value)}
+                    className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white focus:border-[#F97316]/50 focus:ring-1 focus:ring-[#F97316]/20 outline-none transition-all"
+                  >
+                    <option value="es">Español</option>
+                    <option value="en">English</option>
+                    <option value="fr">Français</option>
+                  </select>
+                </div>
+
+                {/* Theme */}
+                <div>
+                  <label className="text-sm font-medium text-[#E5E7EB] block mb-3">Tema</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => setTheme('dark')}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-sm font-medium ${
+                        theme === 'dark'
+                          ? 'bg-[#F97316]/15 border-[#F97316]/50 text-white'
+                          : 'bg-[#1C1C1E] border-[#2D2D2D] text-[#6B7280] hover:border-[#3D3D3D]'
+                      }`}
+                    >
+                      🌙 Oscuro
+                    </button>
+                    <button
+                      onClick={() => setTheme('light')}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-sm font-medium ${
+                        theme === 'light'
+                          ? 'bg-[#F97316]/15 border-[#F97316]/50 text-white'
+                          : 'bg-[#1C1C1E] border-[#2D2D2D] text-[#6B7280] hover:border-[#3D3D3D]'
+                      }`}
+                    >
+                      ☀️ Claro
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        );
 
-      case 'agents':
-        return (
-          <div className="animate-in fade-in duration-300">
-            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
-              <p className="text-sm text-blue-300">
-                💡 <strong>Página dedicada:</strong> La gestión de agentes tiene su propio espacio.
-                <button
-                  onClick={() => navigate('/dashboard/settings/agents')}
-                  className="ml-2 text-blue-200 hover:text-white underline font-semibold"
-                >
-                  Ir a Gestión de Agentes →
-                </button>
-              </p>
-            </div>
-          </div>
-        );
-
-      case 'notifications':
-        return (
-          <div className="animate-in fade-in duration-300">
+            {/* Notification Preferences */}
             <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-8">
               <div className="flex items-center gap-4 pb-6 border-b border-[#2D2D2D] mb-6">
                 <div className="w-12 h-12 rounded-lg bg-[#F59E0B]/20 border border-[#F59E0B]/30 flex items-center justify-center">
                   <Bell className="w-6 h-6 text-[#FCD34D]" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white">Preferencias de Notificaciones</h3>
-                  <p className="text-sm text-[#6B7280] mt-1">Gestiona cómo y cuándo recibir alertas</p>
+                  <h3 className="text-lg font-semibold text-white">Notificaciones</h3>
+                  <p className="text-sm text-[#6B7280] mt-1">Gestiona cómo recibir alertas</p>
                 </div>
               </div>
               <NotificationPreferences />
-            </div>
-          </div>
-        );
-
-      case 'team':
-        if (!isAdmin) return null;
-        return (
-          <div className="space-y-6 animate-in fade-in duration-300">
-            <div className="bg-[#1E1E20] border border-[#2D2D2D] rounded-xl p-8 space-y-6">
-              <div className="flex items-center gap-4 pb-6 border-b border-[#2D2D2D]">
-                <div className="w-12 h-12 rounded-lg bg-[#6366F1]/20 border border-[#6366F1]/30 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-[#A5B4FC]" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white">Gestión del Equipo</h3>
-                  <p className="text-sm text-[#6B7280] mt-1">Usuarios, roles y permisos</p>
-                </div>
-              </div>
-
-              {teamUsers.length === 0 ? (
-                <p className="text-sm text-[#6B7280] text-center py-8">No hay otros usuarios registrados.</p>
-              ) : (
-                <div className="space-y-3">
-                  {teamUsers.map((u: any) => {
-                    const role = u.roles?.[0]?.role ?? 'VIEWER';
-                    const isCurrentUser = u.id === currentUser?.id;
-                    return (
-                      <div
-                        key={u.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-[#242424] border border-[#2D2D2D] hover:border-[#F97316]/20 transition-all"
-                      >
-                        <div className="flex items-center gap-4 min-w-0">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F97316] to-[#EA6D00] border border-[#F97316]/20 flex items-center justify-center flex-shrink-0 text-sm font-semibold text-white">
-                            {(u.name || u.email).charAt(0).toUpperCase()}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="text-sm font-medium text-white truncate">{u.name || '—'}</p>
-                            <p className="text-xs text-[#6B7280] truncate">{u.email}</p>
-                          </div>
-                        </div>
-
-                        {isCurrentUser ? (
-                          <span className={`text-xs font-semibold px-3 py-1.5 rounded-lg border ${ROLE_COLORS[role]}`}>
-                            {ROLE_LABELS[role] ?? role} (tú)
-                          </span>
-                        ) : (
-                          <select
-                            value={role}
-                            onChange={(e) => cambiarRolMutation.mutate({ userId: u.id, role: e.target.value })}
-                            disabled={cambiarRolMutation.isPending}
-                            className="text-xs font-medium bg-[#1C1C1E] border border-[#2D2D2D] text-[#A0A0A0] rounded-lg px-3 py-1.5 focus:outline-none focus:border-[#6366F1]/50 cursor-pointer transition-all"
-                          >
-                            {ROLES.map((r) => (
-                              <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                            ))}
-                          </select>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
             </div>
           </div>
         );
@@ -776,14 +487,14 @@ export default function SettingsModule() {
           </div>
           <h1 className="text-3xl font-bold text-white mt-2">Preferencias y Configuración</h1>
           <p className="text-sm text-[#6B7280] mt-3 max-w-xl">
-            Personaliza tu experiencia, integra herramientas externas y administra la seguridad de tu cuenta.
+            Personaliza tu experiencia, integra herramientas externas y gestiona notificaciones.
           </p>
         </div>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-[#2D2D2D] overflow-x-auto">
-        {displayTabs.map((tab) => {
+        {TABS.map((tab) => {
           const Icon = tab.icon;
           return (
             <button
