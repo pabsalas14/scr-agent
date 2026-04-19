@@ -195,7 +195,7 @@ async function processAnalysisJob(job: Job) {
           githubToken: true,
           claudeApiKey: true,
           llmProvider: true,
-          lmstudioBaseUrl: true,
+          llmBaseUrl: true,
           selectedModel: true,
         },
       });
@@ -207,7 +207,7 @@ async function processAnalysisJob(job: Job) {
           provider: (userSettings.llmProvider as any) || undefined,
           apiKey: userSettings.claudeApiKey ? decrypt(userSettings.claudeApiKey) : undefined,
           model: userSettings.selectedModel || undefined,
-          lmstudioBaseUrl: userSettings.lmstudioBaseUrl || undefined,
+          llmBaseUrl: userSettings.llmBaseUrl || undefined,
         };
       }
     }

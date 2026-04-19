@@ -15,9 +15,8 @@
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { LLMClient, LLMConfig } from '../services/llm-client.service';
+import { LLMClient, LLMConfig, createLLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { gitService } from '../services/git.service';
-import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**

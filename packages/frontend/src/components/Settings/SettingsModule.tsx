@@ -62,7 +62,7 @@ export default function SettingsModule() {
   const [maxTokens, setMaxTokens] = useState(4096);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [llmProvider, setLlmProvider] = useState<'anthropic' | 'lmstudio'>('anthropic');
-  const [lmstudioBaseUrl, setLmstudioBaseUrl] = useState('http://localhost:1234/v1');
+  const [llmBaseUrl, setLlmBaseUrl] = useState('http://localhost:1234/v1');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
@@ -96,7 +96,7 @@ export default function SettingsModule() {
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
-    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; lmstudioBaseUrl?: string } }) => data?.data,
+    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; llmBaseUrl?: string } }) => data?.data,
   });
 
   const { data: perfil, isLoading: perfilLoading } = useQuery<UserProfile>({
@@ -128,8 +128,8 @@ export default function SettingsModule() {
     if (userSettings?.llmProvider) {
       setLlmProvider(userSettings.llmProvider as 'anthropic' | 'lmstudio');
     }
-    if (userSettings?.lmstudioBaseUrl) {
-      setLmstudioBaseUrl(userSettings.lmstudioBaseUrl);
+    if (userSettings?.llmBaseUrl) {
+      setLlmBaseUrl(userSettings.llmBaseUrl);
     }
   }, [userSettings]);
 
@@ -160,7 +160,7 @@ export default function SettingsModule() {
   });
 
   const guardarConfiguracionIAMutation = useMutation({
-    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; lmstudioBaseUrl?: string }) => {
+    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; llmBaseUrl?: string }) => {
       if (config.claudeApiKey && !validateClaudeToken(config.claudeApiKey)) {
         throw new Error('API Key debe empezar con "sk-ant-"');
       }
@@ -468,8 +468,8 @@ export default function SettingsModule() {
                       <label className="text-sm font-medium text-[#E5E7EB] block mb-2">URL del servidor</label>
                       <input
                         type="text"
-                        value={lmstudioBaseUrl}
-                        onChange={(e) => setLmstudioBaseUrl(e.target.value)}
+                        value={llmBaseUrl}
+                        onChange={(e) => setLlmBaseUrl(e.target.value)}
                         placeholder="http://localhost:1234/v1"
                         className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#22C55E]/50 focus:ring-1 focus:ring-[#22C55E]/20 outline-none transition-all font-mono"
                       />
@@ -539,7 +539,7 @@ export default function SettingsModule() {
                     maxTokens,
                     webhookUrl: webhookUrl || undefined,
                     llmProvider,
-                    lmstudioBaseUrl: llmProvider === 'lmstudio' ? (lmstudioBaseUrl || undefined) : undefined,
+                    llmBaseUrl: llmProvider === 'lmstudio' ? (llmBaseUrl || undefined) : undefined,
                   })
                 }
                 disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}
