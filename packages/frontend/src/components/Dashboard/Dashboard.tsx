@@ -96,6 +96,9 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     analisisCompletados: analyticsData?.["totalAnalyses"] ?? 0,
     hallazgosCriticos: analyticsData?.["criticalFindings"] ?? 0,
     riskScoreGlobal: analyticsData?.["averageRiskScore"] ?? 0,
+    eficiencia: analyticsData?.["remediationRate"]
+      ? Math.round((analyticsData.remediationRate || 0) * 100)
+      : 0,
   };
 
   if (isLoadingAnalytics || isLoadingProyectos) {
@@ -184,8 +187,8 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
         />
         <KPICard
           title="Eficiencia"
-          value="94%"
-          subtitle="optimización de tokens"
+          value={`${stats.eficiencia}%`}
+          subtitle="tasa de remediación"
           icon={<TrendingUp className="w-5 h-5" />}
           accentColor="#22C55E"
           onClick={() => onCambiarTab && onCambiarTab('analytics')}
