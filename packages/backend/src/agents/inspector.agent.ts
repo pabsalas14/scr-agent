@@ -8,14 +8,13 @@
  * - Identificar backdoors, lógica oculta, funciones sospechosas
  * - Generar hallazgos con severidad y recomendaciones de remediación
  *
- * Modelo: Claude 3.5 Sonnet
  * Entrada: Código fuente (por archivo o repositorio)
  * Salida: MaliciaOutput con hallazgos detallados
  */
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
 /** Tamaño máximo de código por llamada al LLM (500 KB) */
@@ -26,23 +25,52 @@ const MAX_CHUNK_BYTES = 500 * 1024;
  */
 export class InspectorAgentService {
   private llmClient: LLMClient | null = null;
-  private userConfig: UserLLMConfig = {};
+  private llmConfig: LLMConfig | null = null;
+  private model = 'claude-sonnet-4-6';
 
-  constructor(config?: UserLLMConfig) {
-    this.userConfig = config ?? {};
+  constructor(llmConfig?: LLMConfig) {
+    this.llmConfig = llmConfig || this.getDefaultConfig();
+    this.initLLMClient();
   }
 
-  updateConfig(config: UserLLMConfig): void {
-    this.userConfig = config;
-    this.llmClient = null;
-    logger.info('InspectorAgent: configuración actualizada');
+  /**
+   * Configuración por defecto (Anthropic)
+   */
+  private getDefaultConfig(): LLMConfig {
+    return {
+      provider: 'anthropic',
+      model: this.model,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
+    };
   }
 
+  /**
+   * Inicializar cliente LLM
+   */
+  private initLLMClient(): void {
+    if (!this.llmConfig) {
+      this.llmConfig = this.getDefaultConfig();
+    }
+    this.llmClient = new LLMClient(this.llmConfig);
+  }
+
+  /**
+   * Actualizar configuración dinámicamente
+   */
+  updateConfig(llmConfig: LLMConfig): void {
+    this.llmConfig = llmConfig;
+    this.initLLMClient();
+    logger.info(`InspectorAgent: LLM config actualizada (${llmConfig.provider}/${llmConfig.model})`);
+  }
+
+  /**
+   * Obtener cliente LLM
+   */
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('inspector', this.userConfig);
+      this.initLLMClient();
     }
-    return this.llmClient;
+    return this.llmClient!;
   }
 
   /**
@@ -106,22 +134,26 @@ export class InspectorAgentService {
       }
 
       const prompt = this.construirPrompt(input);
-      const client = this.getLLMClient();
-      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
-      const response = await client.complete(prompt, 4096);
+      const llmClient = this.getLLMClient();
+      const config = llmClient.getConfig();
+      logger.info(`Llamando a ${config.provider} (${config.model})`);
 
-      const textoRespuesta = response.text;
-      if (!textoRespuesta) throw new Error('Respuesta inesperada del LLM');
+      const response = await llmClient.complete(prompt, 4096);
 
-      const hallazgos = this.parseRespuesta(textoRespuesta);
-      const usage = response.usage;
+      if (!response.text) throw new Error('Respuesta inesperada del LLM');
 
-      const output: MaliciaOutput & { usage: typeof usage } = {
+      const hallazgos = this.parseRespuesta(response.text);
+
+      const output: MaliciaOutput & { usage: any } = {
         hallazgos,
         resumen: `Se encontraron ${hallazgos.length} hallazgos potenciales de código malicioso`,
         cantidad_hallazgos: hallazgos.length,
         tiempo_ejecucion_ms: Date.now() - startTime,
-        usage,
+        usage: {
+          input_tokens: response.inputTokens,
+          output_tokens: response.outputTokens,
+          model: response.model,
+        },
       };
 
       cacheService.set(CacheType.MALICIA_FINDING, 'analisis', output, codigoHash);

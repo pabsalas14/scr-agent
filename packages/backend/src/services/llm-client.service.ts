@@ -1,143 +1,324 @@
+/**
+ * ============================================================================
+ * LLM Client Service - Abstracción para múltiples proveedores
+ * ============================================================================
+ *
+ * Soporta:
+ * - Anthropic Claude (APIKey)
+ * - OpenAI (APIKey + API endpoint)
+ * - LM Studio (OpenAI-compatible, local)
+ * - Ollama (OpenAI-compatible, local)
+ * - LLM Gateway (LLM routing/fallback)
+ * - OpenAI-compatible (genérico)
+ * - Custom/Self-hosted (genérico OpenAI-compatible)
+ *
+ * Uso: const client = new LLMClient(config); client.complete(prompt, maxTokens)
+ */
+
 import Anthropic from '@anthropic-ai/sdk';
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 import { logger } from './logger.service';
 
-export type LLMProvider = 'anthropic' | 'lmstudio';
-export type AgentRole = 'inspector' | 'detective' | 'fiscal';
+export type LLMProvider =
+  | 'anthropic'
+  | 'openai'
+  | 'lmstudio'
+  | 'ollama'
+  | 'llm-gateway'
+  | 'openai-compatible'
+  | 'custom';
+
+export interface LLMConfig {
+  provider: LLMProvider;
+  model: string;
+  apiKey?: string; // Para Anthropic, OpenAI, LLM Gateway
+  baseUrl?: string; // Para OpenAI-compatible, LM Studio, Ollama, LLM Gateway, Custom
+  apiVersion?: string; // Para algunos proveedores (ej: Azure OpenAI)
+  temperature?: number;
+  maxTokens?: number;
+  customHeaders?: Record<string, string>; // Headers personalizados para Custom/LLM Gateway
+}
 
 export interface LLMResponse {
   text: string;
-  usage: { input_tokens: number; output_tokens: number; model: string };
+  inputTokens: number;
+  outputTokens: number;
+  model: string;
 }
 
-const DEFAULT_ANTHROPIC_MODELS: Record<AgentRole, string> = {
-  inspector: 'claude-sonnet-4-6',
-  detective: 'claude-haiku-4-5-20251001',
-  fiscal: 'claude-sonnet-4-6',
-};
-
-const DEFAULT_LMSTUDIO_MODEL = 'qwen2.5-coder-7b-instruct';
-
 export class LLMClient {
-  private anthropic: Anthropic | null = null;
+  private config: LLMConfig;
+  private anthropicClient: Anthropic | null = null;
+  private axiosClient: AxiosInstance | null = null;
 
-  constructor(
-    private readonly provider: LLMProvider,
-    private readonly model: string,
-    private readonly anthropicApiKey?: string,
-    private readonly lmstudioBaseUrl: string = 'http://localhost:1234/v1'
-  ) {}
-
-  getModel(): string {
-    return this.model;
+  constructor(config: LLMConfig) {
+    this.config = {
+      temperature: 0.7,
+      maxTokens: 4096,
+      ...config,
+    };
+    this.validateConfig();
   }
 
-  getProvider(): LLMProvider {
-    return this.provider;
-  }
-
-  async complete(prompt: string, maxTokens: number): Promise<LLMResponse> {
-    logger.info(`LLMClient [${this.provider}] modelo: ${this.model}`);
-    return this.provider === 'lmstudio'
-      ? this.completeLMStudio(prompt, maxTokens)
-      : this.completeAnthropic(prompt, maxTokens);
-  }
-
-  private async completeAnthropic(prompt: string, maxTokens: number): Promise<LLMResponse> {
-    if (!this.anthropic) {
-      const key = this.anthropicApiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) throw new Error('ANTHROPIC_API_KEY no configurado');
-      this.anthropic = new Anthropic({ apiKey: key });
+  private validateConfig(): void {
+    if (!this.config.model) {
+      throw new Error('LLM model must be configured');
     }
 
-    const response = await this.anthropic.messages.create({
-      model: this.model,
+    // Validar por proveedor específico
+    switch (this.config.provider) {
+      case 'anthropic':
+        // API key can be empty, will use env var or fail at runtime if not available
+        break;
+
+      case 'openai':
+        if (!this.config.apiKey) {
+          throw new Error('OpenAI API key is required');
+        }
+        break;
+
+      case 'llm-gateway':
+        if (!this.config.baseUrl) {
+          throw new Error('LLM Gateway base URL is required');
+        }
+        if (!this.config.apiKey) {
+          throw new Error('LLM Gateway API key is required');
+        }
+        break;
+
+      case 'lmstudio':
+      case 'ollama':
+      case 'openai-compatible':
+      case 'custom':
+        if (!this.config.baseUrl) {
+          throw new Error(`Base URL is required for ${this.config.provider}`);
+        }
+        break;
+
+      default:
+        throw new Error(`Unknown LLM provider: ${this.config.provider}`);
+    }
+  }
+
+  /**
+   * Ejecutar completion con el proveedor configurado
+   */
+  async complete(prompt: string, maxTokens?: number): Promise<LLMResponse> {
+    const tokens = maxTokens || this.config.maxTokens || 4096;
+
+    try {
+      switch (this.config.provider) {
+        case 'anthropic':
+          return await this.completeWithAnthropic(prompt, tokens);
+
+        case 'openai':
+          return await this.completeWithOpenAI(prompt, tokens);
+
+        case 'llm-gateway':
+          return await this.completeWithLLMGateway(prompt, tokens);
+
+        case 'lmstudio':
+        case 'ollama':
+        case 'openai-compatible':
+        case 'custom':
+          return await this.completeWithOpenAICompatible(prompt, tokens);
+
+        default:
+          throw new Error(`Unsupported provider: ${this.config.provider}`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logger.error(`LLMClient error (${this.config.provider}): ${msg}`);
+      throw error;
+    }
+  }
+
+  /**
+   * Completar usando Anthropic
+   */
+  private async completeWithAnthropic(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.anthropicClient) {
+      const key = this.config.apiKey || process.env['ANTHROPIC_API_KEY'];
+      if (!key) {
+        throw new Error('ANTHROPIC_API_KEY not configured');
+      }
+      this.anthropicClient = new Anthropic({ apiKey: key });
+    }
+
+    const response = await this.anthropicClient.messages.create({
+      model: this.config.model,
       max_tokens: maxTokens,
+      temperature: this.config.temperature,
       messages: [{ role: 'user', content: prompt }],
     });
 
     const text = response.content
-      .filter((b) => b.type === 'text')
-      .map((b) => ('text' in b ? b.text : ''))
+      .filter((block) => block.type === 'text')
+      .map((block) => ('text' in block ? block.text : ''))
       .join('\n')
       .trim();
 
     return {
       text,
-      usage: {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      },
+      inputTokens: response.usage.input_tokens,
+      outputTokens: response.usage.output_tokens,
+      model: response.model,
     };
   }
 
-  private async completeLMStudio(prompt: string, maxTokens: number): Promise<LLMResponse> {
-    const response = await axios.post(
-      `${this.lmstudioBaseUrl}/chat/completions`,
-      {
-        model: this.model,
-        messages: [{ role: 'user', content: prompt }],
-        max_tokens: maxTokens,
-        stream: false,
-        temperature: 0.1,
-      },
-      {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 300_000,
-      }
-    );
+  /**
+   * Completar usando OpenAI API
+   */
+  private async completeWithOpenAI(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.axiosClient) {
+      const baseUrl = this.config.baseUrl || 'https://api.openai.com/v1';
+      this.axiosClient = axios.create({
+        baseURL: baseUrl,
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 60000,
+      });
+    }
 
-    const text: string = response.data.choices?.[0]?.message?.content ?? '';
-    const usage = response.data.usage ?? {};
+    const response = await this.axiosClient.post('/chat/completions', {
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature || 0.7,
+      max_tokens: maxTokens,
+    });
+
+    const data = response.data;
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error(`Invalid response from OpenAI: ${JSON.stringify(data)}`);
+    }
+
+    const text = choice.message?.content || '';
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
 
     return {
       text,
-      usage: {
-        input_tokens: usage.prompt_tokens ?? 0,
-        output_tokens: usage.completion_tokens ?? 0,
-        model: response.data.model ?? this.model,
-      },
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      model: this.config.model,
     };
   }
-}
 
-export interface UserLLMConfig {
-  apiKey?: string;
-  provider?: LLMProvider;
-  model?: string;
-  lmstudioBaseUrl?: string;
-}
+  /**
+   * Completar usando LLM Gateway
+   */
+  private async completeWithLLMGateway(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.axiosClient) {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
 
-export function createLLMClient(role: AgentRole, userConfig?: UserLLMConfig): LLMClient {
-  // User config takes priority over env vars
-  const provider: LLMProvider =
-    userConfig?.provider ||
-    (process.env['LLM_PROVIDER'] as LLMProvider | undefined) ||
-    'anthropic';
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
 
-  if (provider === 'lmstudio') {
-    const model =
-      userConfig?.model ||
-      process.env[`LMSTUDIO_${role.toUpperCase()}_MODEL`] ||
-      process.env['LMSTUDIO_MODEL'] ||
-      DEFAULT_LMSTUDIO_MODEL;
-    const baseUrl =
-      userConfig?.lmstudioBaseUrl ||
-      process.env['LMSTUDIO_BASE_URL'] ||
-      'http://localhost:1234/v1';
-    return new LLMClient('lmstudio', model, undefined, baseUrl);
+      if (this.config.customHeaders) {
+        Object.assign(headers, this.config.customHeaders);
+      }
+
+      this.axiosClient = axios.create({
+        baseURL: this.config.baseUrl,
+        headers,
+        timeout: 120000,
+      });
+    }
+
+    const response = await this.axiosClient.post('/chat/completions', {
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature || 0.7,
+      max_tokens: maxTokens,
+    });
+
+    const data = response.data;
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error(`Invalid response from LLM Gateway: ${JSON.stringify(data)}`);
+    }
+
+    const text = choice.message?.content || '';
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+    return {
+      text,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      model: this.config.model,
+    };
   }
 
-  const model =
-    userConfig?.model ||
-    process.env[`ANTHROPIC_${role.toUpperCase()}_MODEL`] ||
-    process.env['ANTHROPIC_MODEL'] ||
-    DEFAULT_ANTHROPIC_MODELS[role];
+  /**
+   * Completar usando servidor OpenAI-compatible (LM Studio, Ollama, Custom, etc)
+   */
+  private async completeWithOpenAICompatible(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.axiosClient) {
+      const baseUrl = this.config.baseUrl || 'http://localhost:1234';
+      const headers: Record<string, string> = {};
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
+      if (this.config.customHeaders) {
+        Object.assign(headers, this.config.customHeaders);
+      }
+      this.axiosClient = axios.create({
+        baseURL: baseUrl,
+        timeout: 120000, // 2 minutos para modelos locales
+        headers,
+      });
+    }
 
-  return new LLMClient(
-    'anthropic',
-    model,
-    userConfig?.apiKey || process.env['ANTHROPIC_API_KEY']
-  );
+    const response = await this.axiosClient.post('/chat/completions', {
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature,
+      max_tokens: maxTokens,
+    });
+
+    const data = response.data;
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error(`Invalid response from ${this.config.provider}: ${JSON.stringify(data)}`);
+    }
+
+    const text = choice.message?.content || '';
+
+    // Algunos servidores OpenAI-compatible devuelven usage, otros no
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+    return {
+      text,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      model: this.config.model,
+    };
+  }
+
+  /**
+   * Cambiar configuración dinámicamente
+   */
+  updateConfig(config: Partial<LLMConfig>): void {
+    this.config = { ...this.config, ...config };
+    // Limpiar clientes al cambiar config
+    this.anthropicClient = null;
+    this.axiosClient = null;
+    this.validateConfig();
+    logger.info(`LLMClient config updated: ${this.config.provider} / ${this.config.model}`);
+  }
+
+  /**
+   * Obtener configuración actual
+   */
+  getConfig(): LLMConfig {
+    return { ...this.config };
+  }
 }

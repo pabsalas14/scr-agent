@@ -15,11 +15,23 @@ class SocketService {
 
   /**
    * Initialize Socket.io server with HTTP server
+   * Now with proper CORS handling for ngrok and other origins
    */
-  init(httpServer: HTTPServer, corsOrigins: string[]): SocketIOServer {
+  init(httpServer: HTTPServer, corsOrigins: string[], allowOriginFn?: (origin: string | undefined) => boolean): SocketIOServer {
+    // Create CORS origin validator that works with Socket.io
+    const validateOrigin = (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (allowOriginFn) {
+        // Use provided validation function (e.g., the one from index.ts that allows ngrok in development)
+        callback(null, allowOriginFn(origin));
+      } else {
+        // Fallback to hardcoded list
+        callback(null, corsOrigins.includes(origin || ''));
+      }
+    };
+
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: corsOrigins,
+        origin: validateOrigin,
         methods: ['GET', 'POST'],
         credentials: true,
       },

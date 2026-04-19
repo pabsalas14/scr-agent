@@ -9,6 +9,8 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import { logger } from '../services/logger.service';
 import { encrypt, decrypt } from '../services/crypto.service';
 import axios from 'axios';
+import { usersService } from '../services/users.service';
+import { assertLLMBaseUrlAllowed, getAllowedLLMBaseUrls, setAllowedLLMBaseUrls } from '../services/llm-allowlist.service';
 
 const router: ExpressRouter = Router();
 
@@ -482,6 +484,259 @@ router.delete('/llm-keys/:id', authMiddleware, async (req: Request, res: Respons
   } catch (error) {
     logger.error(`Error deleting LLM key: ${error}`);
     res.status(500).json({ error: 'Failed to delete LLM key' });
+  }
+});
+
+/**
+ * GET /api/v1/user-settings/llm-config
+ * Get LLM provider configuration for the current user
+ */
+router.get('/llm-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userSettings = await prisma.userSettings.findUnique({
+      where: { userId },
+      select: {
+        llmProvider: true,
+        llmBaseUrl: true,
+        llmModel: true,
+        llmApiKey: true,
+        llmCustomHeaders: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        provider: userSettings?.llmProvider || 'anthropic',
+        baseUrl: userSettings?.llmBaseUrl || undefined,
+        model: userSettings?.llmModel || undefined,
+        apiKey: userSettings?.llmApiKey ? decrypt(userSettings.llmApiKey) : undefined,
+        customHeaders: (() => {
+          if (!userSettings?.llmCustomHeaders) return undefined;
+          try {
+            return JSON.parse(userSettings.llmCustomHeaders);
+          } catch {
+            return undefined;
+          }
+        })(),
+      },
+    });
+  } catch (error) {
+    logger.error(`Error fetching LLM config: ${error}`);
+    res.status(500).json({ error: 'Failed to fetch LLM config' });
+  }
+});
+
+/**
+ * POST /api/v1/user-settings/llm-config
+ * Update LLM provider configuration
+ */
+router.post('/llm-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { provider, baseUrl, model } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!provider) {
+      return res.status(400).json({ error: 'Provider is required' });
+    }
+
+    // Validate provider
+    const validProviders = ['anthropic', 'openai', 'lmstudio', 'ollama', 'llm-gateway', 'openai-compatible', 'custom'];
+    if (!validProviders.includes(provider)) {
+      return res.status(400).json({ error: `Invalid provider. Supported: ${validProviders.join(', ')}` });
+    }
+
+    // Validate required fields by provider
+    switch (provider) {
+      case 'anthropic':
+        // No requiere URL base
+        break;
+
+      case 'openai':
+        // OpenAI necesita API key, URL base es opcional
+        if (!req.body.apiKey) {
+          return res.status(400).json({ error: 'apiKey is required for OpenAI' });
+        }
+        break;
+
+      case 'llm-gateway':
+        // LLM Gateway necesita URL base y API key
+        if (!baseUrl) {
+          return res.status(400).json({ error: 'baseUrl is required for LLM Gateway' });
+        }
+        if (!req.body.apiKey) {
+          return res.status(400).json({ error: 'apiKey is required for LLM Gateway' });
+        }
+        break;
+
+      case 'lmstudio':
+      case 'ollama':
+      case 'openai-compatible':
+      case 'custom':
+        // OpenAI-compatible necesita URL base
+        if (!baseUrl) {
+          return res.status(400).json({ error: `baseUrl is required for ${provider}` });
+        }
+        break;
+    }
+
+    if (!model) {
+      return res.status(400).json({ error: 'model is required' });
+    }
+
+    // SSRF mitigation: validar baseUrl contra allowlist global (si aplica)
+    if (baseUrl && provider !== 'anthropic') {
+      try {
+        await assertLLMBaseUrlAllowed(baseUrl);
+      } catch (e) {
+        return res.status(400).json({
+          error: 'baseUrl no permitida',
+          details: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+
+    // Test LLM connection for providers that need it
+    if ((provider === 'openai' || provider === 'llm-gateway' || ['lmstudio', 'ollama', 'openai-compatible', 'custom'].includes(provider)) && baseUrl && model) {
+      try {
+        const testHeaders: any = { 'Content-Type': 'application/json' };
+        if (provider === 'openai' && req.body.apiKey) {
+          testHeaders['Authorization'] = `Bearer ${req.body.apiKey}`;
+        } else if (provider === 'llm-gateway' && req.body.apiKey) {
+          testHeaders['Authorization'] = `Bearer ${req.body.apiKey}`;
+        }
+
+        const testUrl = new URL('/chat/completions', baseUrl).toString();
+        await axios.post(testUrl, {
+          model,
+          messages: [{ role: 'user', content: 'Test' }],
+          max_tokens: 10,
+        }, {
+          headers: testHeaders,
+          timeout: 5000,
+          maxRedirects: 0,
+        });
+      } catch (testError) {
+        logger.warn(`LLM connection test failed for ${provider}: ${testError}`);
+        return res.status(400).json({
+          error: `Could not connect to ${provider} server`,
+          details: testError instanceof Error ? testError.message : String(testError),
+        });
+      }
+    }
+
+    // Encrypt sensitive data
+    const encryptedApiKey = req.body.apiKey ? encrypt(req.body.apiKey) : null;
+    const customHeaders = req.body.customHeaders ? JSON.stringify(req.body.customHeaders) : null;
+
+    // Save configuration
+    const updated = await prisma.userSettings.upsert({
+      where: { userId },
+      update: {
+        llmProvider: provider,
+        llmBaseUrl: baseUrl || null,
+        llmModel: model || null,
+        llmApiKey: encryptedApiKey,
+        llmCustomHeaders: customHeaders,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        llmProvider: provider,
+        llmBaseUrl: baseUrl || null,
+        llmModel: model || null,
+        llmApiKey: encryptedApiKey,
+        llmCustomHeaders: customHeaders,
+      },
+    });
+
+    logger.info(`LLM config updated for user ${userId}: ${provider}/${model}`);
+
+    res.json({
+      success: true,
+      message: 'LLM configuration updated successfully',
+      data: {
+        provider: updated.llmProvider,
+        baseUrl: updated.llmBaseUrl,
+        model: updated.llmModel,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error updating LLM config: ${error}`);
+    res.status(500).json({ error: 'Failed to update LLM config' });
+  }
+});
+
+/**
+ * ============================================================================
+ * SYSTEM SECURITY SETTINGS (ADMIN) — LLM allowlist
+ * ============================================================================
+ */
+
+router.get('/system/llm-allowlist', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const currentUserId = (req as any).user?.id as string | undefined;
+    if (!currentUserId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const role = await usersService.getUserRole(currentUserId);
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo ADMIN puede ver la allowlist' });
+    }
+
+    const allowlist = await getAllowedLLMBaseUrls();
+    res.json({ success: true, data: allowlist });
+  } catch (error) {
+    logger.error(`Error reading LLM allowlist: ${error}`);
+    res.status(500).json({ error: 'Failed to read allowlist' });
+  }
+});
+
+router.post('/system/llm-allowlist', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const currentUserId = (req as any).user?.id as string | undefined;
+    if (!currentUserId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const role = await usersService.getUserRole(currentUserId);
+    if (role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Solo ADMIN puede actualizar la allowlist' });
+    }
+
+    const { rules } = req.body as { rules?: Array<{ origin: string; pathPrefix?: string }> };
+    if (!Array.isArray(rules) || rules.length === 0) {
+      return res.status(400).json({ error: 'rules debe ser un array no vacío' });
+    }
+
+    // Validación básica de forma (URL parseable, http/https).
+    for (const rule of rules) {
+      try {
+        const u = new URL(rule.origin);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') {
+          return res.status(400).json({ error: `origin inválido (solo http/https): ${rule.origin}` });
+        }
+      } catch {
+        return res.status(400).json({ error: `origin inválido (no es URL): ${rule.origin}` });
+      }
+    }
+
+    await setAllowedLLMBaseUrls(rules);
+    res.json({ success: true, message: 'Allowlist actualizada' });
+  } catch (error) {
+    logger.error(`Error updating LLM allowlist: ${error}`);
+    res.status(500).json({ error: 'Failed to update allowlist' });
   }
 });
 

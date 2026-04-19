@@ -18,6 +18,7 @@ import { gitService } from '../services/git.service';
 import { InspectorAgentService } from '../agents/inspector.agent';
 import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
+import { LLMConfig } from '../services/llm-client.service';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
 import { UserLLMConfig } from '../services/llm-client.service';
@@ -30,10 +31,113 @@ import {
   updateLastProcessedCommit,
 } from '../services/incremental-analysis.service';
 
-// Instanciar agentes
+// Instanciar agentes con config por defecto
 const inspectorAgent = new InspectorAgentService();
 const detectiveAgent = new DetectiveAgentService();
 const fiscalAgent = new FiscalAgentService();
+
+/**
+ * Obtener configuración LLM del usuario desde UserSettings
+ */
+async function getLLMConfigFromUser(userId: string | null): Promise<LLMConfig | undefined> {
+  if (!userId) {
+    return undefined; // Usar config por defecto (Anthropic)
+  }
+
+  const userSettings = await prisma.userSettings.findUnique({
+    where: { userId },
+    select: {
+      llmProvider: true,
+      llmBaseUrl: true,
+      llmModel: true,
+      llmApiKey: true,
+      llmCustomHeaders: true,
+    },
+  });
+
+  if (!userSettings) {
+    return undefined; // Usar config por defecto
+  }
+
+  const provider = (userSettings.llmProvider || 'anthropic') as any;
+
+  // Descifrar apiKey si existe
+  let decryptedApiKey: string | undefined;
+  if (userSettings.llmApiKey) {
+    try {
+      decryptedApiKey = decrypt(userSettings.llmApiKey);
+    } catch (error) {
+      logger.error(`Failed to decrypt LLM API key for user ${userId}`);
+    }
+  }
+
+  // Parse custom headers si existen
+  let customHeaders: Record<string, string> | undefined;
+  if (userSettings.llmCustomHeaders) {
+    try {
+      customHeaders = JSON.parse(userSettings.llmCustomHeaders);
+    } catch (error) {
+      logger.error(`Failed to parse custom headers for user ${userId}`);
+    }
+  }
+
+  // Construir config según el provider
+  const baseConfig: LLMConfig = {
+    provider,
+    model: userSettings.llmModel || 'default',
+  };
+
+  switch (provider) {
+    case 'anthropic':
+      return {
+        ...baseConfig,
+        model: userSettings.llmModel || 'claude-sonnet-4-6',
+        apiKey: decryptedApiKey || process.env['ANTHROPIC_API_KEY'],
+      };
+
+    case 'openai':
+      if (!decryptedApiKey) {
+        logger.warn(`OpenAI provider requires API key for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        apiKey: decryptedApiKey,
+        baseUrl: userSettings.llmBaseUrl,
+      };
+
+    case 'llm-gateway':
+      if (!decryptedApiKey || !userSettings.llmBaseUrl) {
+        logger.warn(`LLM Gateway requires API key and baseUrl for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        apiKey: decryptedApiKey,
+        baseUrl: userSettings.llmBaseUrl,
+        customHeaders,
+      };
+
+    case 'lmstudio':
+    case 'ollama':
+    case 'openai-compatible':
+    case 'custom':
+      if (!userSettings.llmBaseUrl) {
+        logger.warn(`Provider ${provider} requires baseUrl for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        baseUrl: userSettings.llmBaseUrl,
+        apiKey: decryptedApiKey,
+        customHeaders,
+      };
+
+    default:
+      logger.warn(`Unknown LLM provider: ${provider}`);
+      return undefined;
+  }
+}
 
 // Configuración de Redis para el worker
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -108,9 +212,14 @@ async function processAnalysisJob(job: Job) {
       }
     }
 
-    inspectorAgent.updateConfig(userLLMConfig);
-    detectiveAgent.updateConfig(userLLMConfig);
-    fiscalAgent.updateConfig(userLLMConfig);
+    // Obtener y aplicar configuración LLM del usuario
+    const llmConfig = await getLLMConfigFromUser(project.userId);
+    if (llmConfig) {
+      logger.info(`Aplicando LLM config del usuario: ${llmConfig.provider}/${llmConfig.model}`);
+      inspectorAgent.updateConfig(llmConfig);
+      detectiveAgent.updateConfig(llmConfig);
+      fiscalAgent.updateConfig(llmConfig);
+    }
 
     // ========== FASE 1: INSPECTOR AGENT ==========
     logger.info(`[1/3] 🔍 [Job ${job.id}] Ejecutando Inspector Agent...`);

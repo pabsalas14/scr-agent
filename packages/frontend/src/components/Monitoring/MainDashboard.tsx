@@ -189,7 +189,7 @@ export default function MainDashboard() {
               transition={{ duration: 0.25, ease: 'easeOut' }}
               className="animate-in fade-in duration-500"
             >
-              <div className="p-8">
+              <div className="px-3 py-2">
                 {renderContent()}
               </div>
             </motion.div>

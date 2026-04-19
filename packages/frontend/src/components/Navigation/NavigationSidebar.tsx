@@ -240,7 +240,7 @@ export default function NavigationSidebar({
   };
 
   return (
-    <div className={`flex flex-col h-full bg-[#0A0A0F] border-r border-[#2D2D2D] ${collapsed ? 'w-20' : 'w-64'} transition-all duration-300`}>
+    <div className={`fixed left-0 top-0 flex flex-col h-screen bg-[#0A0A0F] border-r border-[#2D2D2D] ${collapsed ? 'w-20' : 'w-48'} transition-all duration-300 z-50`}>
       {/* Logo/Branding */}
       <div className="p-4 border-b border-[#2D2D2D]">
         <div className="flex items-center gap-2">

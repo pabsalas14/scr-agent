@@ -96,6 +96,9 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     analisisCompletados: analyticsData?.["totalAnalyses"] ?? 0,
     hallazgosCriticos: analyticsData?.["criticalFindings"] ?? 0,
     riskScoreGlobal: analyticsData?.["averageRiskScore"] ?? 0,
+    eficiencia: analyticsData?.["remediationRate"]
+      ? Math.round((analyticsData.remediationRate || 0) * 100)
+      : 0,
   };
 
   if (isLoadingAnalytics || isLoadingProyectos) {
@@ -118,7 +121,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     .slice(0, 5) as (Analisis & { projectName: string })[];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[#2D2D2D] pb-6">
         <div className="space-y-1">
@@ -184,8 +187,8 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
         />
         <KPICard
           title="Eficiencia"
-          value="94%"
-          subtitle="optimización de tokens"
+          value={`${stats.eficiencia}%`}
+          subtitle="tasa de remediación"
           icon={<TrendingUp className="w-5 h-5" />}
           accentColor="#22C55E"
           onClick={() => onCambiarTab && onCambiarTab('analytics')}

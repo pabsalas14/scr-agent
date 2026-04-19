@@ -14,6 +14,7 @@ import { logger } from '../services/logger.service';
 import { prisma } from '../services/prisma.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
+import { canAccessOwnedResource } from '../services/access-control.service';
 
 const router: ExpressRouter = Router();
 router.use(authMiddleware);
@@ -83,6 +84,7 @@ router.get('/', async (req: Request, res: Response) => {
  */
 router.get('/:id', async (req: Request, res: Response) => {
   try {
+    const currentUserId = (req as any).user?.id as string | undefined;
     const analysis = await prisma.analysis.findUnique({
       where: { id: req.params['id'] },
       include: {
@@ -108,13 +110,19 @@ router.get('/:id', async (req: Request, res: Response) => {
           orderBy: { createdAt: 'desc' },
         },
         project: {
-          select: { id: true, name: true, repositoryUrl: true },
+          select: { id: true, name: true, repositoryUrl: true, userId: true },
         },
       },
     });
 
     if (!analysis) {
       res.status(404).json({ success: false, error: 'Análisis no encontrado' });
+      return;
+    }
+
+    const allowed = await canAccessOwnedResource({ currentUserId, resourceOwnerId: analysis.project?.userId });
+    if (!allowed) {
+      res.status(403).json({ success: false, error: 'No tienes acceso a este análisis' });
       return;
     }
 
@@ -212,6 +220,7 @@ router.get('/:id/findings', async (req: Request, res: Response) => {
 router.get('/:id/forensics', async (req: Request, res: Response) => {
   try {
     const analysisId = req.params['id'];
+    logger.info(`[FORENSICS] Solicitando eventos para análisis: ${analysisId}`);
 
     // Obtener eventos forenses reales del agente Detective
     const events = await prisma.forensicEvent.findMany({
@@ -219,12 +228,7 @@ router.get('/:id/forensics', async (req: Request, res: Response) => {
       orderBy: { timestamp: 'asc' },
     });
 
-    // Si no hay eventos, retornar array vacío (no generar simulados)
-    // Los eventos forenses deben ser generados ÚNICAMENTE por el agente Detective
-    // a partir de datos reales de Git commit history
-    if (events.length === 0) {
-      logger.info(`No forensic events found for analysis ${analysisId} - Detective agent may not have generated them yet or repository has no Git history`);
-    }
+    logger.info(`[FORENSICS] Encontrados ${events.length} eventos para análisis ${analysisId}`);
 
     // Mapear campos del backend (inglés) al formato esperado por el frontend (español)
     const mappedEvents = events.map((event: any) => ({

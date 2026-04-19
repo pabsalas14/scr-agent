@@ -10,6 +10,7 @@ import {
   Sparkles,
   ChevronDown
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { apiService } from '../../services/api.service';
 import { useModal } from '../../contexts/ModalContext';
 import { useZIndex, useIsTopModal } from '../../hooks/useZIndex';
@@ -143,9 +144,15 @@ export default function ExplainerChat({ findingId, findingType, onClose }: Expla
                 <div 
                   className="prose prose-invert prose-sm"
                   dangerouslySetInnerHTML={{ 
-                    __html: msg.content
-                      .replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#F97316]">$1</strong>')
-                      .replace(/\n/g, '<br />')
+                    __html: DOMPurify.sanitize(
+                      msg.content
+                        .replace(/\*\*(.*?)\*\*/g, '<strong class="text-[#F97316]">$1</strong>')
+                        .replace(/\n/g, '<br />'),
+                      {
+                        ALLOWED_TAGS: ['strong', 'br'],
+                        ALLOWED_ATTR: ['class'],
+                      }
+                    )
                   }} 
                 />
               </div>

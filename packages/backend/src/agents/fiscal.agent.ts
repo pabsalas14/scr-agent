@@ -9,14 +9,13 @@
  * - Priorizar acciones de remediación
  * - Crear output exportable (JSON, PDF)
  *
- * Modelo: Claude 3.5 Sonnet (análisis complejo)
  * Entrada: Hallazgos de Malicia + Timeline de Forenses
  * Salida: SintesisOutput con reporte ejecutivo
  */
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import {
   SintesisInput,
   SintesisOutput,
@@ -28,23 +27,52 @@ import {
  */
 export class FiscalAgentService {
   private llmClient: LLMClient | null = null;
-  private userConfig: UserLLMConfig = {};
+  private llmConfig: LLMConfig | null = null;
+  private model = 'claude-sonnet-4-6';
 
-  constructor(config?: UserLLMConfig) {
-    this.userConfig = config ?? {};
+  constructor(llmConfig?: LLMConfig) {
+    this.llmConfig = llmConfig || this.getDefaultConfig();
+    this.initLLMClient();
   }
 
-  updateConfig(config: UserLLMConfig): void {
-    this.userConfig = config;
-    this.llmClient = null;
-    logger.info('FiscalAgent: configuración actualizada');
+  /**
+   * Configuración por defecto (Anthropic Sonnet)
+   */
+  private getDefaultConfig(): LLMConfig {
+    return {
+      provider: 'anthropic',
+      model: this.model,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
+    };
   }
 
+  /**
+   * Inicializar cliente LLM
+   */
+  private initLLMClient(): void {
+    if (!this.llmConfig) {
+      this.llmConfig = this.getDefaultConfig();
+    }
+    this.llmClient = new LLMClient(this.llmConfig);
+  }
+
+  /**
+   * Actualizar configuración dinámicamente
+   */
+  updateConfig(llmConfig: LLMConfig): void {
+    this.llmConfig = llmConfig;
+    this.initLLMClient();
+    logger.info(`FiscalAgent: LLM config actualizada (${llmConfig.provider}/${llmConfig.model})`);
+  }
+
+  /**
+   * Obtener cliente LLM
+   */
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('fiscal', this.userConfig);
+      this.initLLMClient();
     }
-    return this.llmClient;
+    return this.llmClient!;
   }
 
   /**
@@ -76,17 +104,31 @@ export class FiscalAgentService {
        */
       const prompt = this.construirPrompt(input);
 
-      const client = this.getLLMClient();
-      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
-      const response = await client.complete(prompt, 4096);
+      /**
+       * Llamar al LLM
+       */
+      const llmClient = this.getLLMClient();
+      const config = llmClient.getConfig();
+      logger.info(`Llamando a ${config.provider} (${config.model})`);
+      const response = await llmClient.complete(prompt, 4096);
 
-      const textoRespuesta = response.text;
-      if (!textoRespuesta) {
+      if (!response.text) {
         throw new Error('Respuesta inesperada del LLM');
       }
 
-      const reporte = this.parseReporte(textoRespuesta);
-      const usage = response.usage;
+      /**
+       * Parsear reporte
+       */
+      const reporte = this.parseReporte(response.text);
+
+      /**
+       * Extraer usage de la respuesta
+       */
+      const usage = {
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
+        model: response.model,
+      };
 
       /**
        * Construir salida
@@ -293,9 +335,16 @@ ${remediation ? `
 Responde directamente a la pregunta. No incluyas JSON, solo texto plano o markdown.
 `;
 
-      const response = await this.getLLMClient().complete(prompt, 2048);
+      const llmClient = this.getLLMClient();
+      const response = await llmClient.complete(prompt, 2048);
+
       const answer = response.text;
-      const usage = response.usage;
+
+      const usage = {
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
+        model: response.model,
+      };
 
       return { answer, usage };
     } catch (error) {

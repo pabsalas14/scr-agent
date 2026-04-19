@@ -14,27 +14,16 @@
  * - MCP expone los agentes: Inspector, Detective, Fiscal
  */
 
+import './bootstrap/env';
+
 import express, { type Express } from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import rateLimit from 'express-rate-limit';
-import dotenv from 'dotenv';
 import { createServer } from 'http';
-import path from 'path';
 import { logger } from './services/logger.service';
 import { socketService } from './services/socket.service';
-
-// Cargar variables de entorno - intentar múltiples rutas (override para evitar vars vacías del sistema)
-const envPaths = [
-  path.resolve(__dirname, '../.env'),
-  path.resolve(process.cwd(), 'packages/backend/.env'),
-  path.resolve(process.cwd(), '.env'),
-];
-for (const p of envPaths) {
-  const result = dotenv.config({ path: p, override: true });
-  if (!result.error) break;
-}
 
 // ==================== CONFIGURACIÓN ====================
 
@@ -266,7 +255,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 const httpServer = createServer(app);
 
 // Inicializar Socket.io para notificaciones en tiempo real
-socketService.init(httpServer, allowedOrigins);
+// Pass the allowOriginFn so Socket.io can also validate ngrok connections in development
+socketService.init(httpServer, allowedOrigins, isOriginAllowed);
 
 // ==================== QUEUE PROCESSOR ====================
 

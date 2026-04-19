@@ -12,6 +12,7 @@ import {
   CheckCircle2,
   AlertOctagon
 } from 'lucide-react';
+import DOMPurify from 'dompurify';
 import { SECURITY_KNOWLEDGE, SecurityTopic } from '../../data/security-knowledge';
 
 export default function ScrManualView() {
@@ -123,11 +124,17 @@ export default function ScrManualView() {
               <div 
                 className="space-y-6 text-lg"
                 dangerouslySetInnerHTML={{ 
-                  __html: selectedTopic.content
-                    .replace(/### (.*)/g, '<h3 class="text-2xl font-semibold text-white mt-8 mb-4">$1</h3>')
-                    .replace(/\*\* (.*?) \*\*/g, '<strong class="text-white font-bold">$1</strong>')
-                    .replace(/- \*\*(.*?)\*\*: (.*)/g, '<li class="mb-2"><strong class="text-[#F97316]">$1</strong>: $2</li>')
-                    .replace(/\n/g, '<br />') 
+                  __html: DOMPurify.sanitize(
+                    selectedTopic.content
+                      .replace(/### (.*)/g, '<h3 class="text-2xl font-semibold text-white mt-8 mb-4">$1</h3>')
+                      .replace(/\*\* (.*?) \*\*/g, '<strong class="text-white font-bold">$1</strong>')
+                      .replace(/- \*\*(.*?)\*\*: (.*)/g, '<li class="mb-2"><strong class="text-[#F97316]">$1</strong>: $2</li>')
+                      .replace(/\n/g, '<br />'),
+                    {
+                      ALLOWED_TAGS: ['h3', 'strong', 'li', 'br'],
+                      ALLOWED_ATTR: ['class'],
+                    }
+                  )
                 }}
               />
             </article>

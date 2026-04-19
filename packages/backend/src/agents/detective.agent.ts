@@ -9,13 +9,13 @@
  * - Correlacionar commits, autores y patrones
  * - Detectar cadena de compromiso (cómo evolucionó el código malicioso)
  *
- * Modelo: Claude 3.5 Haiku (rápido y económico)
  * Entrada: Hallazgos de Malicia + Historial de Git
  * Salida: ForensesOutput con timeline de eventos
  */
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import { gitService } from '../services/git.service';
 import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
@@ -25,23 +25,52 @@ import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
  */
 export class DetectiveAgentService {
   private llmClient: LLMClient | null = null;
-  private userConfig: UserLLMConfig = {};
+  private llmConfig: LLMConfig | null = null;
+  private model = 'claude-haiku-4-5-20251001';
 
-  constructor(config?: UserLLMConfig) {
-    this.userConfig = config ?? {};
+  constructor(llmConfig?: LLMConfig) {
+    this.llmConfig = llmConfig || this.getDefaultConfig();
+    this.initLLMClient();
   }
 
-  updateConfig(config: UserLLMConfig): void {
-    this.userConfig = config;
-    this.llmClient = null;
-    logger.info('DetectiveAgent: configuración actualizada');
+  /**
+   * Configuración por defecto (Anthropic Haiku)
+   */
+  private getDefaultConfig(): LLMConfig {
+    return {
+      provider: 'anthropic',
+      model: this.model,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
+    };
   }
 
+  /**
+   * Inicializar cliente LLM
+   */
+  private initLLMClient(): void {
+    if (!this.llmConfig) {
+      this.llmConfig = this.getDefaultConfig();
+    }
+    this.llmClient = new LLMClient(this.llmConfig);
+  }
+
+  /**
+   * Actualizar configuración dinámicamente
+   */
+  updateConfig(llmConfig: LLMConfig): void {
+    this.llmConfig = llmConfig;
+    this.initLLMClient();
+    logger.info(`DetectiveAgent: LLM config actualizada (${llmConfig.provider}/${llmConfig.model})`);
+  }
+
+  /**
+   * Obtener cliente LLM
+   */
   private getLLMClient(): LLMClient {
     if (!this.llmClient) {
-      this.llmClient = createLLMClient('detective', this.userConfig);
+      this.initLLMClient();
     }
-    return this.llmClient;
+    return this.llmClient!;
   }
 
   /**
@@ -78,17 +107,31 @@ export class DetectiveAgentService {
        */
       const prompt = this.construirPrompt(input);
 
-      const client = this.getLLMClient();
-      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
-      const response = await client.complete(prompt, 2048);
+      /**
+       * Llamar al LLM
+       */
+      const llmClient = this.getLLMClient();
+      const config = llmClient.getConfig();
+      logger.info(`Llamando a ${config.provider} (${config.model})`);
+      const response = await llmClient.complete(prompt, 2048);
 
-      const textoRespuesta = response.text;
-      if (!textoRespuesta) {
+      if (!response.text) {
         throw new Error('Respuesta inesperada del LLM');
       }
 
-      const eventos = this.parseTimeline(textoRespuesta);
-      const usage = response.usage;
+      /**
+       * Parsear timeline
+       */
+      const eventos = this.parseTimeline(response.text);
+
+      /**
+       * Extraer usage de la respuesta
+       */
+      const usage = {
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
+        model: response.model,
+      };
 
       /**
        * Detectar patrones y autores sospechosos
