@@ -13,56 +13,36 @@
  * Salida: MaliciaOutput con hallazgos detallados
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
-/** Tamaño máximo de código por llamada a Claude (500 KB) */
+/** Tamaño máximo de código por llamada al LLM (500 KB) */
 const MAX_CHUNK_BYTES = 500 * 1024;
 
 /**
  * Servicio del Agente Inspector
  */
 export class InspectorAgentService {
-  /**
-   * Cliente de Anthropic para acceder a Claude
-   */
-  private anthropic: Anthropic | null = null;
-  private apiKey: string | undefined;
+  private llmClient: LLMClient | null = null;
+  private userConfig: UserLLMConfig = {};
 
-  /**
-   * Modelo a usar
-   */
-  private model = 'claude-sonnet-4-6';
-
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(config?: UserLLMConfig) {
+    this.userConfig = config ?? {};
   }
 
-  /**
-   * Actualizar configuración dinámicamente
-   */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.anthropic = null; // Forzar re-inicialización
-      logger.info('InspectorAgent: API Key actualizada');
-    }
+  updateConfig(config: UserLLMConfig): void {
+    this.userConfig = config;
+    this.llmClient = null;
+    logger.info('InspectorAgent: configuración actualizada');
   }
 
-  /**
-   * Obtener cliente de Anthropic (lazy init)
-   */
-  private getAnthropicClient(): Anthropic {
-    if (!this.anthropic) {
-      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set');
-      }
-      this.anthropic = new Anthropic({ apiKey: key });
+  private getLLMClient(): LLMClient {
+    if (!this.llmClient) {
+      this.llmClient = createLLMClient('inspector', this.userConfig);
     }
-    return this.anthropic;
+    return this.llmClient;
   }
 
   /**
@@ -96,7 +76,7 @@ export class InspectorAgentService {
       resumen: `Se encontraron ${todosHallazgos.length} hallazgos en ${chunks.length} parte(s)`,
       cantidad_hallazgos: todosHallazgos.length,
       tiempo_ejecucion_ms: Date.now() - startTime,
-      usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens, model: this.model },
+      usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens, model: this.getLLMClient().getModel() },
     };
 
     auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {
@@ -126,27 +106,15 @@ export class InspectorAgentService {
       }
 
       const prompt = this.construirPrompt(input);
-      logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const client = this.getLLMClient();
+      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
+      const response = await client.complete(prompt, 4096);
 
-      const textoRespuesta = response.content
-        .filter((block) => block.type === 'text')
-        .map((block) => ('text' in block ? block.text : ''))
-        .join('\n')
-        .trim();
-
-      if (!textoRespuesta) throw new Error('Respuesta inesperada de Claude');
+      const textoRespuesta = response.text;
+      if (!textoRespuesta) throw new Error('Respuesta inesperada del LLM');
 
       const hallazgos = this.parseRespuesta(textoRespuesta);
-      const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      };
+      const usage = response.usage;
 
       const output: MaliciaOutput & { usage: typeof usage } = {
         hallazgos,

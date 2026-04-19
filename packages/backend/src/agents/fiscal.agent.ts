@@ -14,9 +14,9 @@
  * Salida: SintesisOutput con reporte ejecutivo
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { createLLMClient, LLMClient, UserLLMConfig } from '../services/llm-client.service';
 import {
   SintesisInput,
   SintesisOutput,
@@ -27,44 +27,24 @@ import {
  * Servicio del Agente Fiscal
  */
 export class FiscalAgentService {
-  /**
-   * Cliente de Anthropic
-   */
-  private anthropic: Anthropic | null = null;
-  private apiKey: string | undefined;
+  private llmClient: LLMClient | null = null;
+  private userConfig: UserLLMConfig = {};
 
-  /**
-   * Modelo a usar
-   */
-  private model = 'claude-sonnet-4-6';
-
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(config?: UserLLMConfig) {
+    this.userConfig = config ?? {};
   }
 
-  /**
-   * Actualizar configuración dinámicamente
-   */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.anthropic = null; // Forzar re-inicialización
-      logger.info('FiscalAgent: API Key actualizada');
-    }
+  updateConfig(config: UserLLMConfig): void {
+    this.userConfig = config;
+    this.llmClient = null;
+    logger.info('FiscalAgent: configuración actualizada');
   }
 
-  /**
-   * Obtener cliente de Anthropic (lazy init)
-   */
-  private getAnthropicClient(): Anthropic {
-    if (!this.anthropic) {
-      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set');
-      }
-      this.anthropic = new Anthropic({ apiKey: key });
+  private getLLMClient(): LLMClient {
+    if (!this.llmClient) {
+      this.llmClient = createLLMClient('fiscal', this.userConfig);
     }
-    return this.anthropic;
+    return this.llmClient;
   }
 
   /**
@@ -96,47 +76,17 @@ export class FiscalAgentService {
        */
       const prompt = this.construirPrompt(input);
 
-      /**
-       * Llamar a Claude
-       */
-      logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      const client = this.getLLMClient();
+      logger.info(`Llamando a ${client.getProvider()} / ${client.getModel()}`);
+      const response = await client.complete(prompt, 4096);
 
-      /**
-       * Procesar respuesta
-       */
-      const textoRespuesta = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
-        .trim();
-
+      const textoRespuesta = response.text;
       if (!textoRespuesta) {
-        throw new Error('Respuesta inesperada de Claude');
+        throw new Error('Respuesta inesperada del LLM');
       }
 
-      /**
-       * Parsear reporte
-       */
       const reporte = this.parseReporte(textoRespuesta);
-
-      /**
-       * Extraer usage de la respuesta de Anthropic
-       */
-      const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      };
+      const usage = response.usage;
 
       /**
        * Construir salida
@@ -343,23 +293,9 @@ ${remediation ? `
 Responde directamente a la pregunta. No incluyas JSON, solo texto plano o markdown.
 `;
 
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
-      });
-
-      const answer = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
-        .trim();
-
-      const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      };
+      const response = await this.getLLMClient().complete(prompt, 2048);
+      const answer = response.text;
+      const usage = response.usage;
 
       return { answer, usage };
     } catch (error) {

@@ -20,6 +20,7 @@ import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
+import { UserLLMConfig } from '../services/llm-client.service';
 import { detectiveService } from '../services/detective.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
 import {
@@ -79,17 +80,37 @@ async function processAnalysisJob(job: Job) {
 
     ownerId = project.userId ?? '';
 
-    // Obtener GitHub token del usuario (descifrado)
+    // Obtener configuración del usuario (GitHub token + LLM settings)
     let userGithubToken: string | undefined = process.env['GITHUB_TOKEN'];
+    let userLLMConfig: UserLLMConfig = {};
+
     if (project.userId) {
       const userSettings = await prisma.userSettings.findUnique({
         where: { userId: project.userId },
-        select: { githubToken: true },
+        select: {
+          githubToken: true,
+          claudeApiKey: true,
+          llmProvider: true,
+          lmstudioBaseUrl: true,
+          selectedModel: true,
+        },
       });
       if (userSettings?.githubToken) {
         userGithubToken = decrypt(userSettings.githubToken);
       }
+      if (userSettings) {
+        userLLMConfig = {
+          provider: (userSettings.llmProvider as any) || undefined,
+          apiKey: userSettings.claudeApiKey ? decrypt(userSettings.claudeApiKey) : undefined,
+          model: userSettings.selectedModel || undefined,
+          lmstudioBaseUrl: userSettings.lmstudioBaseUrl || undefined,
+        };
+      }
     }
+
+    inspectorAgent.updateConfig(userLLMConfig);
+    detectiveAgent.updateConfig(userLLMConfig);
+    fiscalAgent.updateConfig(userLLMConfig);
 
     // ========== FASE 1: INSPECTOR AGENT ==========
     logger.info(`[1/3] 🔍 [Job ${job.id}] Ejecutando Inspector Agent...`);
