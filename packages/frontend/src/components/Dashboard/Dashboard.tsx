@@ -121,7 +121,7 @@ export default function Dashboard({ onVerAnalisis, onVerLogs, onCambiarTab }: Da
     .slice(0, 5) as (Analisis & { projectName: string })[];
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       {/* Header */}
       <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 border-b border-[#2D2D2D] pb-6">
         <div className="space-y-1">
