@@ -77,10 +77,12 @@ model UserSettings {
   claudeApiKey  String?  @db.VarChar(500)
 
   // Configuración de IA
-  selectedModel String?  @default("claude-3-5-sonnet") @db.VarChar(100)
-  temperature   Float?   @default(0.7) // 0.0 to 2.0
-  maxTokens     Int?     @default(4096) // tokens máximos para respuesta
-  webhookUrl    String?  @db.VarChar(500) // URL para notificaciones
+  selectedModel   String?  @default("claude-sonnet-4-6") @db.VarChar(100)
+  temperature     Float?   @default(0.7)
+  maxTokens       Int?     @default(4096)
+  webhookUrl      String?  @db.VarChar(500)
+  llmProvider     String?  @default("anthropic") @db.VarChar(20)
+  lmstudioBaseUrl String?  @db.VarChar(500)
 
   // LLM Provider Configuration (encriptado en BD)
   llmProvider   String?  @default("anthropic") @db.VarChar(50) // anthropic, openai, lmstudio, ollama, llm-gateway, openai-compatible, custom

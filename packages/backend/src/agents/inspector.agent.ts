@@ -104,7 +104,7 @@ export class InspectorAgentService {
       resumen: `Se encontraron ${todosHallazgos.length} hallazgos en ${chunks.length} parte(s)`,
       cantidad_hallazgos: todosHallazgos.length,
       tiempo_ejecucion_ms: Date.now() - startTime,
-      usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens, model: this.model },
+      usage: { input_tokens: totalInputTokens, output_tokens: totalOutputTokens, model: this.getLLMClient().getModel() },
     };
 
     auditLog(AuditEventType.INSPECTOR_EXECUTION, 'Análisis Inspector completado', {

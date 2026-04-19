@@ -57,10 +57,12 @@ export default function SettingsModule() {
   const [claudeApiKey, setClaudeApiKey] = useState('');
   const [showGithubToken, setShowGithubToken] = useState(false);
   const [showClaudeKey, setShowClaudeKey] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('claude-3-5-sonnet');
+  const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
   const [temperature, setTemperature] = useState(0.7);
   const [maxTokens, setMaxTokens] = useState(4096);
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [llmProvider, setLlmProvider] = useState<'anthropic' | 'lmstudio'>('anthropic');
+  const [lmstudioBaseUrl, setLmstudioBaseUrl] = useState('http://localhost:1234/v1');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
@@ -85,18 +87,16 @@ export default function SettingsModule() {
     }
   };
 
-  const AI_MODELS = [
-    { value: 'claude-3-5-sonnet', label: 'Claude 3.5 Sonnet (Recomendado)' },
-    { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-    { value: 'claude-3-haiku', label: 'Claude 3 Haiku (Rápido)' },
-    { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-    { value: 'gpt-4', label: 'GPT-4' },
+  const ANTHROPIC_MODELS = [
+    { value: 'claude-sonnet-4-6', label: 'Claude Sonnet 4.6 (Recomendado)' },
+    { value: 'claude-opus-4-7', label: 'Claude Opus 4.7 (Más potente)' },
+    { value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku 4.5 (Rápido)' },
   ];
 
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
-    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string } }) => data?.data,
+    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; lmstudioBaseUrl?: string } }) => data?.data,
   });
 
   const { data: perfil, isLoading: perfilLoading } = useQuery<UserProfile>({
@@ -124,6 +124,12 @@ export default function SettingsModule() {
     }
     if (userSettings?.webhookUrl) {
       setWebhookUrl(userSettings.webhookUrl);
+    }
+    if (userSettings?.llmProvider) {
+      setLlmProvider(userSettings.llmProvider as 'anthropic' | 'lmstudio');
+    }
+    if (userSettings?.lmstudioBaseUrl) {
+      setLmstudioBaseUrl(userSettings.lmstudioBaseUrl);
     }
   }, [userSettings]);
 
@@ -154,8 +160,7 @@ export default function SettingsModule() {
   });
 
   const guardarConfiguracionIAMutation = useMutation({
-    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string }) => {
-      // BUG FIX #3: Validate before sending network request
+    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; lmstudioBaseUrl?: string }) => {
       if (config.claudeApiKey && !validateClaudeToken(config.claudeApiKey)) {
         throw new Error('API Key debe empezar con "sk-ant-"');
       }
@@ -372,75 +377,144 @@ export default function SettingsModule() {
               </div>
 
               <div className="space-y-6">
+                {/* Provider toggle */}
                 <div>
-                  <label className="text-sm font-medium text-[#E5E7EB] block mb-2">API Key de Claude</label>
-                  <div className="relative">
-                    <input
-                      type={showClaudeKey ? 'text' : 'password'}
-                      value={claudeApiKey}
-                      onChange={(e) => setClaudeApiKey(e.target.value)}
-                      placeholder="sk-ant-xxxxxxxxxxxx"
-                      className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/20 outline-none transition-all pr-11 font-mono"
-                    />
+                  <label className="text-sm font-medium text-[#E5E7EB] block mb-3">Proveedor de IA</label>
+                  <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => setShowClaudeKey(!showClaudeKey)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
+                      onClick={() => {
+                        setLlmProvider('anthropic');
+                        setSelectedModel('claude-sonnet-4-6');
+                      }}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-sm font-medium ${
+                        llmProvider === 'anthropic'
+                          ? 'bg-[#8B5CF6]/15 border-[#8B5CF6]/50 text-white'
+                          : 'bg-[#1C1C1E] border-[#2D2D2D] text-[#6B7280] hover:border-[#3D3D3D]'
+                      }`}
                     >
-                      {showClaudeKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      <Brain className={`w-4 h-4 ${llmProvider === 'anthropic' ? 'text-[#C4B5FD]' : ''}`} />
+                      <div className="text-left">
+                        <div>Anthropic</div>
+                        <div className="text-xs opacity-60 font-normal">Claude (nube)</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setLlmProvider('lmstudio');
+                        setSelectedModel('qwen2.5-coder-7b-instruct');
+                      }}
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg border transition-all text-sm font-medium ${
+                        llmProvider === 'lmstudio'
+                          ? 'bg-[#22C55E]/15 border-[#22C55E]/50 text-white'
+                          : 'bg-[#1C1C1E] border-[#2D2D2D] text-[#6B7280] hover:border-[#3D3D3D]'
+                      }`}
+                    >
+                      <Zap className={`w-4 h-4 ${llmProvider === 'lmstudio' ? 'text-[#86EFAC]' : ''}`} />
+                      <div className="text-left">
+                        <div>LM Studio</div>
+                        <div className="text-xs opacity-60 font-normal">Local (gratis)</div>
+                      </div>
                     </button>
                   </div>
-                  <p className="text-xs text-[#6B7280] mt-2">Obtén tu clave en <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-[#8B5CF6] hover:underline">https://console.anthropic.com</a></p>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="text-sm font-medium text-[#E5E7EB] block mb-2">Modelo de IA</label>
-                    <select
-                      value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value)}
-                      className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/20 outline-none transition-all"
-                    >
-                      {AI_MODELS.map((model) => (
-                        <option key={model.value} value={model.value}>
-                          {model.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                {/* Anthropic fields */}
+                {llmProvider === 'anthropic' && (
+                  <>
+                    <div>
+                      <label className="text-sm font-medium text-[#E5E7EB] block mb-2">API Key de Claude</label>
+                      <div className="relative">
+                        <input
+                          type={showClaudeKey ? 'text' : 'password'}
+                          value={claudeApiKey}
+                          onChange={(e) => setClaudeApiKey(e.target.value)}
+                          placeholder="sk-ant-xxxxxxxxxxxx"
+                          className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/20 outline-none transition-all pr-11 font-mono"
+                        />
+                        <button
+                          onClick={() => setShowClaudeKey(!showClaudeKey)}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-[#4B5563] hover:text-[#A0A0A0] transition-colors"
+                        >
+                          {showClaudeKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-[#6B7280] mt-2">Obtén tu clave en <a href="https://console.anthropic.com" target="_blank" rel="noopener noreferrer" className="text-[#8B5CF6] hover:underline">console.anthropic.com</a></p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-[#E5E7EB] block mb-2">Modelo</label>
+                      <select
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white focus:border-[#8B5CF6]/50 focus:ring-1 focus:ring-[#8B5CF6]/20 outline-none transition-all"
+                      >
+                        {ANTHROPIC_MODELS.map((m) => (
+                          <option key={m.value} value={m.value}>{m.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </>
+                )}
 
+                {/* LM Studio fields */}
+                {llmProvider === 'lmstudio' && (
+                  <>
+                    <div className="flex items-start gap-3 p-4 rounded-lg bg-[#22C55E]/5 border border-[#22C55E]/20">
+                      <Terminal className="w-4 h-4 text-[#86EFAC] mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-[#86EFAC]">
+                        Abre LM Studio → pestaña <strong>Developer</strong> → <strong>Start Server</strong> (puerto 1234 por defecto). El modelo debe estar cargado antes de iniciar un análisis.
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-[#E5E7EB] block mb-2">URL del servidor</label>
+                      <input
+                        type="text"
+                        value={lmstudioBaseUrl}
+                        onChange={(e) => setLmstudioBaseUrl(e.target.value)}
+                        placeholder="http://localhost:1234/v1"
+                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#22C55E]/50 focus:ring-1 focus:ring-[#22C55E]/20 outline-none transition-all font-mono"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-[#E5E7EB] block mb-2">Nombre del modelo</label>
+                      <input
+                        type="text"
+                        value={selectedModel}
+                        onChange={(e) => setSelectedModel(e.target.value)}
+                        placeholder="qwen2.5-coder-7b-instruct"
+                        className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#22C55E]/50 focus:ring-1 focus:ring-[#22C55E]/20 outline-none transition-all font-mono"
+                      />
+                      <p className="text-xs text-[#6B7280] mt-2">Debe coincidir exactamente con el nombre que muestra LM Studio</p>
+                    </div>
+                  </>
+                )}
+
+                <div className="grid sm:grid-cols-2 gap-6">
                   <div>
                     <div className="flex items-center justify-between mb-2">
                       <label className="text-sm font-medium text-[#E5E7EB]">Temperatura</label>
                       <span className="text-xs bg-[#8B5CF6]/20 text-[#C4B5FD] px-2.5 py-1 rounded-md font-mono">{temperature.toFixed(1)}</span>
                     </div>
                     <input
-                      type="range"
-                      min="0"
-                      max="2"
-                      step="0.1"
+                      type="range" min="0" max="2" step="0.1"
                       value={temperature}
                       onChange={(e) => setTemperature(parseFloat(e.target.value))}
                       className="w-full accent-[#8B5CF6] cursor-pointer"
                     />
                     <p className="text-xs text-[#6B7280] mt-2">0 = Determinista, 2 = Muy creativo</p>
                   </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="text-sm font-medium text-[#E5E7EB]">Máximo de Tokens</label>
-                    <span className="text-xs bg-[#8B5CF6]/20 text-[#C4B5FD] px-2.5 py-1 rounded-md font-mono">{maxTokens}</span>
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-sm font-medium text-[#E5E7EB]">Máximo de Tokens</label>
+                      <span className="text-xs bg-[#8B5CF6]/20 text-[#C4B5FD] px-2.5 py-1 rounded-md font-mono">{maxTokens}</span>
+                    </div>
+                    <input
+                      type="range" min="512" max="8192" step="256"
+                      value={maxTokens}
+                      onChange={(e) => setMaxTokens(parseInt(e.target.value))}
+                      className="w-full accent-[#8B5CF6] cursor-pointer"
+                    />
+                    <p className="text-xs text-[#6B7280] mt-2">Longitud máxima de respuesta</p>
                   </div>
-                  <input
-                    type="range"
-                    min="512"
-                    max="8192"
-                    step="256"
-                    value={maxTokens}
-                    onChange={(e) => setMaxTokens(parseInt(e.target.value))}
-                    className="w-full accent-[#8B5CF6] cursor-pointer"
-                  />
-                  <p className="text-xs text-[#6B7280] mt-2">Limita la longitud de la respuesta</p>
                 </div>
 
                 <div>
@@ -459,11 +533,13 @@ export default function SettingsModule() {
               <button
                 onClick={() =>
                   guardarConfiguracionIAMutation.mutate({
-                    claudeApiKey: claudeApiKey || undefined,
+                    claudeApiKey: llmProvider === 'anthropic' ? (claudeApiKey || undefined) : undefined,
                     selectedModel,
                     temperature,
                     maxTokens,
                     webhookUrl: webhookUrl || undefined,
+                    llmProvider,
+                    lmstudioBaseUrl: llmProvider === 'lmstudio' ? (lmstudioBaseUrl || undefined) : undefined,
                   })
                 }
                 disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}

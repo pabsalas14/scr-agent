@@ -41,6 +41,8 @@ const AIConfigSchema = z.object({
   temperature: z.number().min(0).max(2),
   maxTokens: z.number().min(512).max(8192),
   webhookUrl: z.string().url().optional(),
+  llmProvider: z.enum(['anthropic', 'lmstudio']).optional(),
+  lmstudioBaseUrl: z.string().url().optional().or(z.literal('')),
 });
 
 /**
@@ -150,6 +152,13 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         has_github_token: !!settings?.githubToken,
         github_validated_at: settings?.githubValidatedAt || null,
         has_api_key: !!settings?.apiKey,
+        has_claude_key: !!settings?.claudeApiKey,
+        selectedModel: settings?.selectedModel ?? 'claude-sonnet-4-6',
+        temperature: settings?.temperature ?? 0.7,
+        maxTokens: settings?.maxTokens ?? 4096,
+        webhookUrl: settings?.webhookUrl ?? '',
+        llmProvider: settings?.llmProvider ?? 'anthropic',
+        lmstudioBaseUrl: settings?.lmstudioBaseUrl ?? '',
         preferences: {
           darkMode: settings?.darkMode ?? false,
           autoRefresh: settings?.autoRefresh ?? 10000,
@@ -170,7 +179,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 router.post('/ai-config', validarBody(AIConfigSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { claudeApiKey, selectedModel, temperature, maxTokens, webhookUrl } = req.body;
+    const { claudeApiKey, selectedModel, temperature, maxTokens, webhookUrl, llmProvider, lmstudioBaseUrl } = req.body;
 
     if (!userId) {
       res.status(401).json({ error: 'Usuario no autenticado' });
@@ -213,6 +222,8 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
           temperature,
           maxTokens,
           webhookUrl,
+          llmProvider: llmProvider || 'anthropic',
+          lmstudioBaseUrl: lmstudioBaseUrl || null,
         },
         update: {
           ...(claudeApiKey && { claudeApiKey: encryptedClaudeKey }),
@@ -220,6 +231,8 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
           temperature,
           maxTokens,
           webhookUrl,
+          llmProvider: llmProvider || 'anthropic',
+          lmstudioBaseUrl: lmstudioBaseUrl || null,
         },
       });
       hasClaude = !!updatedSettings.claudeApiKey;
