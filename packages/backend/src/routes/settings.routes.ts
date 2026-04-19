@@ -42,7 +42,7 @@ const AIConfigSchema = z.object({
   maxTokens: z.number().min(512).max(8192),
   webhookUrl: z.string().url().optional(),
   llmProvider: z.enum(['anthropic', 'lmstudio']).optional(),
-  lmstudioBaseUrl: z.string().url().optional().or(z.literal('')),
+  llmBaseUrl: z.string().url().optional().or(z.literal('')),
 });
 
 /**
@@ -158,7 +158,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
         maxTokens: settings?.maxTokens ?? 4096,
         webhookUrl: settings?.webhookUrl ?? '',
         llmProvider: settings?.llmProvider ?? 'anthropic',
-        lmstudioBaseUrl: settings?.lmstudioBaseUrl ?? '',
+        llmBaseUrl: settings?.llmBaseUrl ?? '',
         preferences: {
           darkMode: settings?.darkMode ?? false,
           autoRefresh: settings?.autoRefresh ?? 10000,
@@ -179,7 +179,7 @@ router.get('/', async (req: AuthenticatedRequest, res: Response) => {
 router.post('/ai-config', validarBody(AIConfigSchema), async (req: AuthenticatedRequest, res: Response) => {
   try {
     const userId = req.user?.id;
-    const { claudeApiKey, selectedModel, temperature, maxTokens, webhookUrl, llmProvider, lmstudioBaseUrl } = req.body;
+    const { claudeApiKey, selectedModel, temperature, maxTokens, webhookUrl, llmProvider, llmBaseUrl } = req.body;
 
     if (!userId) {
       res.status(401).json({ error: 'Usuario no autenticado' });
@@ -223,7 +223,7 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
           maxTokens,
           webhookUrl,
           llmProvider: llmProvider || 'anthropic',
-          lmstudioBaseUrl: lmstudioBaseUrl || null,
+          llmBaseUrl: llmBaseUrl || null,
         },
         update: {
           ...(claudeApiKey && { claudeApiKey: encryptedClaudeKey }),
@@ -232,7 +232,7 @@ router.post('/ai-config', validarBody(AIConfigSchema), async (req: Authenticated
           maxTokens,
           webhookUrl,
           llmProvider: llmProvider || 'anthropic',
-          lmstudioBaseUrl: lmstudioBaseUrl || null,
+          llmBaseUrl: llmBaseUrl || null,
         },
       });
       hasClaude = !!updatedSettings.claudeApiKey;

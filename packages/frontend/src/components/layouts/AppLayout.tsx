@@ -2,7 +2,6 @@ import { useState, useEffect, Suspense, lazy } from 'react';
 import { Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import NavigationSidebar from '../Navigation/NavigationSidebar';
-import SearchHeader from '../Search/SearchHeader';
 import ProtectedRoute from '../ProtectedRoute';
 import HelpSystem from '../Help/HelpSystem';
 import { useAuth } from '../../hooks/useAuth';
@@ -28,17 +27,19 @@ export default function AppLayout() {
     if (pathname.includes('/incidents/findings')) return 'hallazgos';
     if (pathname.includes('/analyses/comparison')) return 'comparacion';
     if (pathname.includes('/analyses/historical')) return 'historico';
+    if (pathname.includes('/settings/agents')) return 'agentes-config';
+    if (pathname.includes('/settings/alert-rules')) return 'alert-rules';
     if (pathname.includes('/settings/integrations')) return 'integraciones';
     if (pathname.includes('/settings/users')) return 'usuarios';
     if (pathname.includes('/settings/preferences')) return 'preferencias';
     if (pathname.includes('/settings/library')) return 'biblioteca';
 
     // Then check parent routes
-    if (pathname.includes('/anomalias')) return 'anomalias';
     if (pathname.includes('/incidents')) return 'incidentes';
     if (pathname.includes('/projects')) return 'proyectos';
     if (pathname.includes('/analyses')) return 'reportes';
     if (pathname.includes('/analytics')) return 'analytics';
+    if (pathname.includes('/metrics')) return 'metrics';
     if (pathname.includes('/alerts')) return 'alertas';
     if (pathname.includes('/forensics')) return 'investigaciones';
     if (pathname.includes('/agents')) return 'agentes';
@@ -61,14 +62,16 @@ export default function AppLayout() {
       'hallazgos': '/dashboard/incidents/findings',
       'alertas': '/dashboard/alerts',
       'investigaciones': '/dashboard/forensics',
-      'anomalias': '/dashboard/anomalias',
       'agentes': '/dashboard/agents',
       'sistema': '/dashboard/system',
       'costos': '/dashboard/costs',
       'analytics': '/dashboard/analytics',
+      'metrics': '/dashboard/metrics',
       'integraciones': '/dashboard/settings/integrations',
       'usuarios': '/dashboard/settings/users',
       'preferencias': '/dashboard/settings/preferences',
+      'agentes-config': '/dashboard/settings/agents',
+      'alert-rules': '/dashboard/settings/alert-rules',
       'biblioteca': '/dashboard/settings/library',
     };
 
@@ -159,12 +162,9 @@ export default function AppLayout() {
 
           {/* Main Content Area - Uses margin-left to account for fixed sidebar (w-48 = 192px) */}
           <div className="flex-1 flex flex-col min-w-0 ml-48 pl-10 transition-all duration-300">
-            {/* Search Header */}
-            <SearchHeader />
-
             {/* Main Content */}
             <main className="flex-1 relative z-10 overflow-auto">
-              <div className="px-0 py-2">
+              <div className="px-0 py-6">
                 <AnimatePresence mode="wait">
                   <Outlet />
                 </AnimatePresence>

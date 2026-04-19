@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { Filter, Search, ExternalLink } from 'lucide-react';
+import { Filter, Search, ExternalLink, X } from 'lucide-react';
 import { useToast } from '../hooks/useToast';
 import { apiService } from '../services/api.service';
 import type { Hallazgo } from '../types/api';
@@ -9,6 +9,9 @@ import type { Hallazgo } from '../types/api';
 export default function FindingsPanelPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSeverity, setSelectedSeverity] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<string>('');
+  const [sortBy, setSortBy] = useState<'severity' | 'date'>('severity');
+  const [showFilters, setShowFilters] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -25,11 +28,23 @@ export default function FindingsPanelPage() {
   const filteredFindings = findings?.filter((finding) => {
     const matchesSearch = !searchTerm ||
       finding.riskType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      finding.whySuspicious?.toLowerCase().includes(searchTerm.toLowerCase());
+      finding.whySuspicious?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      finding.file?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesSeverity = !selectedSeverity || finding.severity === selectedSeverity;
 
-    return matchesSearch && matchesSeverity;
+    const matchesStatus = !selectedStatus ||
+      (selectedStatus === 'unresolved' && finding.status !== 'CLOSED') ||
+      (selectedStatus === 'resolved' && finding.status === 'CLOSED');
+
+    return matchesSearch && matchesSeverity && matchesStatus;
+  })?.sort((a, b) => {
+    if (sortBy === 'severity') {
+      const severityOrder = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+      return (severityOrder[a.severity as keyof typeof severityOrder] ?? 4) -
+             (severityOrder[b.severity as keyof typeof severityOrder] ?? 4);
+    }
+    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
   }) || [];
 
   const severityCounts = {
@@ -80,36 +95,89 @@ export default function FindingsPanelPage() {
 
       {/* Filters */}
       <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 space-y-4">
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           {/* Search */}
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#666666]" size={18} />
             <input
               type="text"
-              placeholder="Buscar hallazgos..."
+              placeholder="Buscar por tipo, descripción o archivo..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500"
+              className="w-full pl-10 pr-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#666666] focus:outline-none focus:border-blue-500 text-sm"
             />
           </div>
 
-          {/* Severity filter */}
-          <div className="flex gap-2">
-            {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', ''].map((sev) => (
-              <button
-                key={sev || 'all'}
-                onClick={() => setSelectedSeverity(sev)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  selectedSeverity === sev
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-[#2D2D2D] text-[#A0A0A0] hover:bg-[#3D3D3D]'
-                }`}
-              >
-                {sev || 'Todos'}
-              </button>
-            ))}
-          </div>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`px-3 py-2 rounded-lg text-sm flex items-center gap-2 transition-colors ${
+              showFilters || selectedSeverity || selectedStatus
+                ? 'bg-blue-600/20 text-blue-300 border border-blue-600/50'
+                : 'bg-[#2D2D2D] text-[#A0A0A0] hover:bg-[#3D3D3D]'
+            }`}
+          >
+            <Filter size={16} />
+            Filtros
+          </button>
         </div>
+
+        {/* Advanced Filters */}
+        {showFilters && (
+          <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#2D2D2D]">
+            {/* Severity */}
+            <div>
+              <label className="block text-xs text-[#6B7280] mb-2 font-medium">Severidad</label>
+              <div className="flex flex-wrap gap-2">
+                {['CRITICAL', 'HIGH', 'MEDIUM', 'LOW', ''].map((sev) => (
+                  <button
+                    key={sev || 'all'}
+                    onClick={() => setSelectedSeverity(sev)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      selectedSeverity === sev
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-[#2D2D2D] text-[#A0A0A0] hover:bg-[#3D3D3D]'
+                    }`}
+                  >
+                    {sev || 'Todas'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Status */}
+            <div>
+              <label className="block text-xs text-[#6B7280] mb-2 font-medium">Estado</label>
+              <div className="flex gap-2">
+                {['', 'unresolved', 'resolved'].map((status) => (
+                  <button
+                    key={status || 'all'}
+                    onClick={() => setSelectedStatus(status)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                      selectedStatus === status
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-[#2D2D2D] text-[#A0A0A0] hover:bg-[#3D3D3D]'
+                    }`}
+                  >
+                    {status === 'unresolved' ? 'Sin Resolver' : status === 'resolved' ? 'Resuelto' : 'Todos'}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <label className="block text-xs text-[#6B7280] mb-2 font-medium">Ordenar por</label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as 'severity' | 'date')}
+                className="w-full px-3 py-1 rounded text-xs bg-[#2D2D2D] text-white border border-[#3D3D3D] focus:outline-none focus:border-blue-500"
+              >
+                <option value="severity">Severidad (Mayor primero)</option>
+                <option value="date">Fecha (Más reciente primero)</option>
+              </select>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Findings List */}

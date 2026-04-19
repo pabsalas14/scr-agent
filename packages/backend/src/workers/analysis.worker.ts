@@ -23,6 +23,7 @@ import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
 import { UserLLMConfig } from '../services/llm-client.service';
 import { detectiveService } from '../services/detective.service';
+import { recordTokenUsage } from '../services/metrics.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
 import {
   getNewCommits,
@@ -195,7 +196,7 @@ async function processAnalysisJob(job: Job) {
           githubToken: true,
           claudeApiKey: true,
           llmProvider: true,
-          lmstudioBaseUrl: true,
+          llmBaseUrl: true,
           selectedModel: true,
         },
       });
@@ -207,7 +208,7 @@ async function processAnalysisJob(job: Job) {
           provider: (userSettings.llmProvider as any) || undefined,
           apiKey: userSettings.claudeApiKey ? decrypt(userSettings.claudeApiKey) : undefined,
           model: userSettings.selectedModel || undefined,
-          lmstudioBaseUrl: userSettings.lmstudioBaseUrl || undefined,
+          llmBaseUrl: userSettings.llmBaseUrl || undefined,
         };
       }
     }
@@ -492,6 +493,19 @@ async function processAnalysisJob(job: Job) {
       data: { status: 'COMPLETED', completedAt: new Date() },
     });
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'COMPLETED', 100);
+
+    // Record token usage for metrics tracking (PHASE 3)
+    if (ownerId && totalInput > 0) {
+      await recordTokenUsage({
+        analysisId,
+        userId: ownerId,
+        inputTokens: totalInput,
+        outputTokens: totalOutput,
+        model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
+        provider: llmConfig?.provider || 'anthropic',
+        costUsd: totalInput * 0.003 + totalOutput * 0.015, // Approximate Anthropic pricing
+      });
+    }
 
     // Generar eventos forenses para el análisis completado
     await detectiveService.generateForensicEvents(analysisId);

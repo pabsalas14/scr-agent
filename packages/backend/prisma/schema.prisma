@@ -35,6 +35,7 @@ model User {
   projects     Project[]
   assignments  FindingAssignment[]
   statusChanges FindingStatusChange[]
+  findingAudits FindingAudit[]
   notifications Notification[]
   comments     Comment[]
   mentionedIn  CommentMention[] @relation("CommentMentions")
@@ -42,6 +43,7 @@ model User {
   auditLogs    AuditLog[]
   remediationActions RemediationAction[] @relation("remediationActions") // Phase 1 - asignaciones de remediación
   remediationComments RemediationComment[]
+  tokenUsage   TokenUsage[] // Track token consumption per analysis
 
   @@index([email])
   @@map("users")
@@ -81,15 +83,21 @@ model UserSettings {
   temperature     Float?   @default(0.7)
   maxTokens       Int?     @default(4096)
   webhookUrl      String?  @db.VarChar(500)
-  llmProvider     String?  @default("anthropic") @db.VarChar(20)
-  lmstudioBaseUrl String?  @db.VarChar(500)
 
   // LLM Provider Configuration (encriptado en BD)
-  llmProvider   String?  @default("anthropic") @db.VarChar(50) // anthropic, openai, lmstudio, ollama, llm-gateway, openai-compatible, custom
-  llmBaseUrl    String?  @db.VarChar(500) // URL base para servidores (ej: http://localhost:1234/v1, https://api.openai.com/v1)
-  llmModel      String?  @db.VarChar(100) // Modelo específico (ej: qwen2.5-coder-7b-instruct, gpt-4)
-  llmApiKey     String?  @db.VarChar(500) // API Key cifrada (para Anthropic, OpenAI, LLM Gateway)
-  llmCustomHeaders String? @db.Text // JSON con headers personalizados para LLM Gateway/Custom
+  llmProvider      String?  @default("anthropic") @db.VarChar(50) // anthropic, openai, lmstudio, ollama, llm-gateway, openai-compatible, custom
+  llmBaseUrl       String?  @db.VarChar(500) // URL base para servidores (ej: http://localhost:1234/v1, https://api.openai.com/v1)
+  llmModel         String?  @db.VarChar(100) // Modelo específico (ej: qwen2.5-coder-7b-instruct, gpt-4)
+  llmApiKey        String?  @db.VarChar(500) // API Key cifrada (para Anthropic, OpenAI, LLM Gateway)
+  llmCustomHeaders String?  @db.Text // JSON con headers personalizados para LLM Gateway/Custom
+
+  // PHASE 3.4: Per-agent LLM configuration
+  agentLLMConfig   String?  @db.Text // JSON: { inspector: { provider, model, apiKey }, detective: {...}, fiscal: {...} }
+
+  // PHASE 3.4: Code sanitization settings
+  sanitizeCode     Boolean  @default(true)  // Enable code sanitization before LLM
+  maskSecrets      Boolean  @default(true)  // Mask API keys, passwords, tokens
+  anonimizeNames   Boolean  @default(false) // Anonymize variable and function names
 
   // API Key para servicios externos
   apiKey        String?  @db.VarChar(500)
@@ -128,6 +136,10 @@ model Project {
 
   // Token para repositorios privados (encriptado en BD)
   githubToken String? @db.VarChar(500)
+
+  // Metadata del repositorio
+  isPublic       Boolean @default(false)  // True si es público y no requiere token
+  availableBranches String[] @default([]) // JSON array de ramas disponibles
 
   // Límites de análisis configurables por proyecto
   maxFileSizeKb     Int @default(150)
@@ -219,10 +231,17 @@ model Finding {
   // BUG FIX #10: Soft deletes - prevent data loss from cascade deletes
   deletedAt DateTime?
 
+  // Lifecycle timestamps (PHASE 3)
+  correctionTime   DateTime?  // When marked as CORRECTED
+  verificationTime DateTime?  // When marked as VERIFIED
+  closedAt         DateTime?  // When marked as CLOSED
+  mttc             Int?       // Mean Time To Correction (milliseconds)
+
   // Relaciones
   forensicEvents ForensicEvent[]
   assignment FindingAssignment?
   statusHistory FindingStatusChange[]
+  auditTrail FindingAudit[]
   remediation RemediationEntry?
   remediationAction RemediationAction? // Phase 1
   comments Comment[]
@@ -272,6 +291,32 @@ model FindingStatusChange {
   @@index([status])
   @@index([createdAt])
   @@map("finding_status_changes")
+}
+
+// Finding Audit Trail - Complete lifecycle tracking (PHASE 3)
+model FindingAudit {
+  id        String   @id @default(cuid())
+  findingId String
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+
+  // Who made the change
+  changedBy String
+  changedByUser User @relation(fields: [changedBy], references: [id], onDelete: SetNull)
+
+  // What changed
+  action    String   @db.VarChar(100)  // 'STATUS_CHANGE', 'ASSIGNMENT', 'COMMENT', 'REMEDIATION_UPDATE'
+  oldValue  String?  @db.Text          // Previous value (for status, severity, etc)
+  newValue  String?  @db.Text          // New value
+  comment   String?  @db.Text          // Additional notes from the user
+
+  // Metadata
+  createdAt DateTime @default(now())
+
+  @@index([findingId])
+  @@index([changedBy])
+  @@index([action])
+  @@index([createdAt])
+  @@map("finding_audits")
 }
 
 // Entrada de remediación (legacy - deprecated en Phase 1)
@@ -713,6 +758,67 @@ model WebhookDelivery {
   @@map("webhook_deliveries")
 }
 
+// Agent Prompt Customization (PHASE 2)
+model AgentPrompt {
+  id           String   @id @default(cuid())
+  agentName    String   @unique @db.VarChar(50)  // inspector, detective, fiscal
+  prompt       String   @db.Text                  // The custom prompt/context
+  version      Int      @default(1)               // Version number
+  updatedBy    String?  @db.VarChar(255)          // User who last updated
+  updatedAt    DateTime @updatedAt
+
+  createdAt    DateTime @default(now())
+
+  @@map("agent_prompts")
+}
+
+// Alert Rules - Trigger system (PHASE 2.5)
+model AlertRule {
+  id                   String   @id @default(cuid())
+  userId               String   @db.VarChar(255)
+  name                 String   @db.VarChar(255)
+  description          String?  @db.Text
+
+  // Trigger conditions
+  severityThreshold    String   @db.VarChar(50)   // CRITICAL, HIGH, MEDIUM, LOW
+  findingCountMin      Int      @default(1)       // Minimum number of findings to trigger
+  findingCountMax      Int?                        // Maximum number of findings to trigger (null = no limit)
+  riskTypeFilter       String?  @db.Text          // JSON array of risk types (null = all)
+  filePatternFilter    String?  @db.VarChar(500)  // Regex pattern for files (null = all)
+
+  // Trigger actions
+  notificationChannel  String   @db.VarChar(100)  // 'webhook', 'email', 'slack', 'in_app'
+  webhookUrl           String?  @db.VarChar(500)  // For webhook channel
+  enabled              Boolean  @default(true)
+
+  // Metadata
+  triggeredCount       Int      @default(0)       // How many times this rule has triggered
+  lastTriggeredAt      DateTime?                  // When it last triggered
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+  @@index([enabled])
+  @@index([severityThreshold])
+  @@map("alert_rules")
+}
+
+// Alert Triggers - Log of when rules trigger (PHASE 2.5)
+model AlertTrigger {
+  id               String   @id @default(cuid())
+  ruleId           String   @db.VarChar(255)
+  ruleId_actual    String   @db.VarChar(255)      // FK to AlertRule.id
+  findingIds       String   @db.Text              // JSON array of finding IDs that triggered
+  status           String   @db.VarChar(50)       // TRIGGERED, DELIVERED, FAILED
+  errorMessage     String?  @db.Text
+
+  createdAt        DateTime @default(now())
+
+  @@index([ruleId_actual, createdAt])
+  @@index([status])
+  @@map("alert_triggers")
+}
+
 // ==================== ENUMS: PHASE 4 ====================
 
 /// Tipo de notificación
@@ -731,6 +837,37 @@ enum NotificationSeverity {
   SUCCESS
   WARNING
   ERROR
+}
+
+// ==================== PHASE 3: METRICS & ANALYTICS ====================
+
+/// TokenUsage - Tracking de consumo de tokens por usuario
+/// Para análisis de costos y monitoreo de uso
+model TokenUsage {
+  id            String   @id @default(cuid())
+  analysisId    String   @db.VarChar(255)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Token counts
+  inputTokens   Int      @default(0)
+  outputTokens  Int      @default(0)
+  totalTokens   Int      @default(0)
+
+  // Model information
+  model         String   @db.VarChar(100)   // claude-sonnet-4-6, gpt-4, qwen2.5, etc
+  provider      String   @db.VarChar(50)    // anthropic, openai, lmstudio, ollama
+
+  // Cost calculation (if applicable)
+  costUsd       Float?   @default(0)
+
+  // Metadata
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([analysisId])
+  @@index([provider])
+  @@map("token_usage")
 }
 
 // ==================== ENUMS: PHASE 1 ====================

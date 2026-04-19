@@ -12,7 +12,7 @@ import {
   ChevronDown, Home, TrendingUp, Shield, Zap, Settings,
   Activity, FolderOpen, BarChart2, History, Radio, AlertOctagon,
   Terminal, Wand2, Server, DollarSign, BarChart3, Webhook,
-  Users, Bell, LogOut, User as UserIcon
+  Users, Bell, LogOut, User as UserIcon, Cpu, AlertTriangle
 } from 'lucide-react';
 import type { TabGroup, TabId, GroupId } from '../../types/navigation';
 
@@ -128,14 +128,6 @@ const getNavigationGroups = (): TabGroup[] => [
         component: null as any,
         requiresAuth: true,
       },
-      {
-        id: 'anomalias',
-        label: 'Anomalías',
-        icon: Zap,
-        description: 'Patrones anormales',
-        component: null as any,
-        requiresAuth: true,
-      },
     ],
   },
   {
@@ -177,6 +169,14 @@ const getNavigationGroups = (): TabGroup[] => [
         component: null as any,
         requiresAuth: true,
       },
+      {
+        id: 'metrics',
+        label: 'Métricas',
+        icon: BarChart2,
+        description: 'Dashboard de métricas empresariales',
+        component: null as any,
+        requiresAuth: true,
+      },
     ],
   },
   {
@@ -207,6 +207,22 @@ const getNavigationGroups = (): TabGroup[] => [
         label: 'Preferencias',
         icon: UserIcon,
         description: 'Tu configuración',
+        component: null as any,
+        requiresAuth: true,
+      },
+      {
+        id: 'agentes-config',
+        label: 'Agentes (Gestión)',
+        icon: Cpu,
+        description: 'Editar prompts de agentes',
+        component: null as any,
+        requiresAuth: true,
+      },
+      {
+        id: 'alert-rules',
+        label: 'Reglas de Alertas',
+        icon: AlertTriangle,
+        description: 'Crear reglas automáticas',
         component: null as any,
         requiresAuth: true,
       },

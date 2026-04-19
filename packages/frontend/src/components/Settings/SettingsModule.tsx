@@ -19,9 +19,11 @@ import {
   Bell,
   Lock,
   GitBranch,
+  Cpu,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import type { UserProfile } from '../../types/api';
 import NotificationPreferences from './NotificationPreferences';
 
@@ -39,18 +41,20 @@ const ROLE_COLORS: Record<string, string> = {
   VIEWER:    'text-[#6B7280] bg-[#6B7280]/10 border-[#6B7280]/20',
 };
 
-type SettingsTab = 'profile' | 'integrations' | 'security' | 'notifications' | 'team';
+type SettingsTab = 'profile' | 'integrations' | 'security' | 'notifications' | 'agents' | 'team';
 
 const TABS: Array<{ id: SettingsTab; label: string; icon: typeof Settings; description: string }> = [
   { id: 'profile', label: 'Perfil', icon: Shield, description: 'Información personal' },
   { id: 'integrations', label: 'Integraciones', icon: GitBranch, description: 'APIs y webhooks' },
   { id: 'security', label: 'Seguridad', icon: Lock, description: 'Configuración de seguridad' },
+  { id: 'agents', label: 'Agentes', icon: Cpu, description: 'Gestión de agentes IA' },
   { id: 'notifications', label: 'Notificaciones', icon: Bell, description: 'Alertas y eventos' },
 ];
 
 export default function SettingsModule() {
   const queryClient = useQueryClient();
   const { user: currentUser } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = currentUser?.role === 'ADMIN';
   const [activeTab, setActiveTab] = useState<SettingsTab>('profile');
   const [githubToken, setGithubToken] = useState('');
@@ -62,7 +66,7 @@ export default function SettingsModule() {
   const [maxTokens, setMaxTokens] = useState(4096);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [llmProvider, setLlmProvider] = useState<'anthropic' | 'lmstudio'>('anthropic');
-  const [lmstudioBaseUrl, setLmstudioBaseUrl] = useState('http://localhost:1234/v1');
+  const [llmBaseUrl, setLlmBaseUrl] = useState('http://localhost:1234/v1');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [editingProfile, setEditingProfile] = useState(false);
   const [profileForm, setProfileForm] = useState({ name: '', email: '', avatar: '', bio: '' });
@@ -96,7 +100,7 @@ export default function SettingsModule() {
   const { data: userSettings, isLoading: settingsLoading } = useQuery({
     queryKey: ['user-settings'],
     queryFn: () => apiService.obtenerConfiguracionUsuario(),
-    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; lmstudioBaseUrl?: string } }) => data?.data,
+    select: (data: { data?: { githubToken?: string; claudeApiKey?: string; selectedModel?: string; temperature?: number; maxTokens?: number; webhookUrl?: string; llmProvider?: string; llmBaseUrl?: string } }) => data?.data,
   });
 
   const { data: perfil, isLoading: perfilLoading } = useQuery<UserProfile>({
@@ -128,8 +132,8 @@ export default function SettingsModule() {
     if (userSettings?.llmProvider) {
       setLlmProvider(userSettings.llmProvider as 'anthropic' | 'lmstudio');
     }
-    if (userSettings?.lmstudioBaseUrl) {
-      setLmstudioBaseUrl(userSettings.lmstudioBaseUrl);
+    if (userSettings?.llmBaseUrl) {
+      setLlmBaseUrl(userSettings.llmBaseUrl);
     }
   }, [userSettings]);
 
@@ -160,7 +164,7 @@ export default function SettingsModule() {
   });
 
   const guardarConfiguracionIAMutation = useMutation({
-    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; lmstudioBaseUrl?: string }) => {
+    mutationFn: (config: { claudeApiKey?: string; selectedModel: string; temperature: number; maxTokens: number; webhookUrl?: string; llmProvider?: 'anthropic' | 'lmstudio'; llmBaseUrl?: string }) => {
       if (config.claudeApiKey && !validateClaudeToken(config.claudeApiKey)) {
         throw new Error('API Key debe empezar con "sk-ant-"');
       }
@@ -468,8 +472,8 @@ export default function SettingsModule() {
                       <label className="text-sm font-medium text-[#E5E7EB] block mb-2">URL del servidor</label>
                       <input
                         type="text"
-                        value={lmstudioBaseUrl}
-                        onChange={(e) => setLmstudioBaseUrl(e.target.value)}
+                        value={llmBaseUrl}
+                        onChange={(e) => setLlmBaseUrl(e.target.value)}
                         placeholder="http://localhost:1234/v1"
                         className="w-full bg-[#1C1C1E] border border-[#2D2D2D] rounded-lg px-4 py-3 text-sm text-white placeholder:text-[#4B5563] focus:border-[#22C55E]/50 focus:ring-1 focus:ring-[#22C55E]/20 outline-none transition-all font-mono"
                       />
@@ -539,7 +543,7 @@ export default function SettingsModule() {
                     maxTokens,
                     webhookUrl: webhookUrl || undefined,
                     llmProvider,
-                    lmstudioBaseUrl: llmProvider === 'lmstudio' ? (lmstudioBaseUrl || undefined) : undefined,
+                    llmBaseUrl: llmProvider === 'lmstudio' ? (llmBaseUrl || undefined) : undefined,
                   })
                 }
                 disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}
@@ -654,6 +658,23 @@ export default function SettingsModule() {
                   Configurar 2FA
                 </button>
               </div>
+            </div>
+          </div>
+        );
+
+      case 'agents':
+        return (
+          <div className="animate-in fade-in duration-300">
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-300">
+                💡 <strong>Página dedicada:</strong> La gestión de agentes tiene su propio espacio.
+                <button
+                  onClick={() => navigate('/dashboard/settings/agents')}
+                  className="ml-2 text-blue-200 hover:text-white underline font-semibold"
+                >
+                  Ir a Gestión de Agentes →
+                </button>
+              </p>
             </div>
           </div>
         );

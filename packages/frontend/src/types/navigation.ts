@@ -27,18 +27,20 @@ export type TabId =
   | 'hallazgos'
   | 'alertas'
   | 'investigaciones'
-  | 'anomalias'
 
   // OPERACIONES (Operations & Automation)
   | 'agentes'
   | 'sistema'
   | 'costos'
   | 'analytics'
+  | 'metrics'
 
   // CONFIGURACIÓN (Settings & Admin)
   | 'integraciones'
   | 'usuarios'
   | 'preferencias'
+  | 'agentes-config'
+  | 'alert-rules'
   | 'biblioteca';
 
 /**

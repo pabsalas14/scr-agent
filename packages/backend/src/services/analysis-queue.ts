@@ -15,8 +15,9 @@ import { logger } from './logger.service';
 import { prisma } from './prisma.service';
 import { getAnalysisQueue, initializeBullQueue, closeBullQueue } from '../config/bull.config';
 import { startAnalysisWorker } from '../workers/analysis.worker';
+import { Worker } from 'bullmq';
 
-let analysisWorker: any = null;
+let analysisWorker: Worker | null = null;
 
 /**
  * Encola un análisis para procesamiento via Bull
@@ -82,8 +83,8 @@ export async function cancelAnalysis(analysisId: string): Promise<boolean> {
       return false;
     }
 
-    // Remover job de la cola si está pendiente
-    if (job.isPending()) {
+    // Remover job de la cola si está pendiente o en espera
+    if (await job.isWaiting() || await job.isDelayed()) {
       await job.remove();
       logger.info(`🚫 Análisis ${analysisId} removido de la cola`);
       return true;
