@@ -97,9 +97,9 @@ export default function ProjectsPage() {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-3 animate-in fade-in duration-500">
       {/* Header */}
-      <div className="border-b border-[#2D2D2D] pb-6">
+      <div className="border-b border-[#2D2D2D] pb-3">
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-white">Proyectos</h1>
@@ -136,7 +136,7 @@ export default function ProjectsPage() {
         <EmptyProjects onNuevo={() => setModalAbierto(true)} tieneFiltro={!!search} />
       ) : (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {proyectos.map((proyecto: Proyecto, i: number) => (
               <motion.div
                 key={proyecto.id}

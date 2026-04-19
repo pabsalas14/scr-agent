@@ -82,10 +82,12 @@ model UserSettings {
   maxTokens     Int?     @default(4096) // tokens máximos para respuesta
   webhookUrl    String?  @db.VarChar(500) // URL para notificaciones
 
-  // LLM Provider Configuration
-  llmProvider   String?  @default("anthropic") @db.VarChar(50) // anthropic, lmstudio, ollama, openai-compatible
-  lmstudioBaseUrl String? @db.VarChar(500) // URL base para LM Studio o Ollama (ej: http://localhost:1234/v1)
-  lmstudioModel String?  @db.VarChar(100) // Modelo específico para usar (ej: qwen2.5-coder-7b-instruct)
+  // LLM Provider Configuration (encriptado en BD)
+  llmProvider   String?  @default("anthropic") @db.VarChar(50) // anthropic, openai, lmstudio, ollama, llm-gateway, openai-compatible, custom
+  llmBaseUrl    String?  @db.VarChar(500) // URL base para servidores (ej: http://localhost:1234/v1, https://api.openai.com/v1)
+  llmModel      String?  @db.VarChar(100) // Modelo específico (ej: qwen2.5-coder-7b-instruct, gpt-4)
+  llmApiKey     String?  @db.VarChar(500) // API Key cifrada (para Anthropic, OpenAI, LLM Gateway)
+  llmCustomHeaders String? @db.Text // JSON con headers personalizados para LLM Gateway/Custom
 
   // API Key para servicios externos
   apiKey        String?  @db.VarChar(500)
@@ -99,6 +101,15 @@ model UserSettings {
 
   @@index([userId])
   @@map("user_settings")
+}
+
+// Configuración global del sistema (allowlists, hardening, etc.)
+model SystemSetting {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+
+  @@map("system_settings")
 }
 
 // Proyecto - Repositorio a ser analizado

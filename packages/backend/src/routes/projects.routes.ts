@@ -9,6 +9,7 @@ import { logger } from '../services/logger.service';
 import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
 import { decrypt } from '../services/crypto.service';
+import { canAccessOwnedResource, getAccessControlMode } from '../services/access-control.service';
 
 const router: ExpressRouter = Router();
 
@@ -26,10 +27,12 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
     const showAll = req.query['showAll'] === 'true'; // Permitir ver todos los proyectos
     const skip = (page - 1) * limit;
 
-    // ADMINs ven todos los proyectos por defecto, otros usuarios solo los suyos
+    // ADMINs ven todos los proyectos por defecto, otros usuarios solo los suyos (si está habilitado)
     const isAdmin = userRole === 'ADMIN';
+    const accessMode = getAccessControlMode();
 
     const where: any = {
+      ...(accessMode === 'owner_admin' && !isAdmin ? { userId } : {}),
       // Monitoreo Colectivo: Todos los usuarios ven todos los proyectos
       ...(search ? {
         OR: [
@@ -120,7 +123,10 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
       });
     }
 
-    // Accesso global habilitado
+    const allowed = await canAccessOwnedResource({ currentUserId: userId, resourceOwnerId: project.userId });
+    if (!allowed) {
+      return res.status(403).json({ success: false, error: 'No tienes acceso a este proyecto' });
+    }
 
     // Convertir a JSON plain
     const plainProject = JSON.parse(JSON.stringify(project));
@@ -145,7 +151,10 @@ router.get('/:projectId/analyses', async (req: Request, res: Response, next: Nex
 
     const project = await prisma.project.findUnique({ where: { id: projectId }, select: { userId: true } });
     if (!project) return res.status(404).json({ success: false, error: 'Proyecto no encontrado' });
-    // Accesso global habilitado
+    const allowed = await canAccessOwnedResource({ currentUserId: userId, resourceOwnerId: project.userId });
+    if (!allowed) {
+      return res.status(403).json({ success: false, error: 'No tienes acceso a este proyecto' });
+    }
 
     const analyses = await prisma.analysis.findMany({
       where: { projectId },

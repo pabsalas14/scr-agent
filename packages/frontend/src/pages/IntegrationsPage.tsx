@@ -10,10 +10,27 @@ interface GitHubConfig {
 }
 
 interface LLMConfig {
-  provider: 'anthropic' | 'lmstudio' | 'ollama' | 'openai-compatible';
+  provider: 'anthropic' | 'openai' | 'lmstudio' | 'ollama' | 'llm-gateway' | 'openai-compatible' | 'custom';
   baseUrl?: string;
   model?: string;
+  apiKey?: string;
 }
+
+interface LLMAllowlistRule {
+  origin: string;
+  pathPrefix?: string;
+}
+
+const LLM_PROVIDERS = ['anthropic', 'openai', 'lmstudio', 'ollama', 'llm-gateway', 'openai-compatible', 'custom'];
+const LLM_PROVIDER_LABELS: Record<string, string> = {
+  anthropic: 'Claude (Anthropic)',
+  openai: 'OpenAI',
+  lmstudio: 'LM Studio',
+  ollama: 'Ollama',
+  'llm-gateway': 'LLM Gateway',
+  'openai-compatible': 'OpenAI Compatible',
+  custom: 'Custom',
+};
 
 const getIntegrations = (githubConnected: boolean) => [
   {
@@ -26,6 +43,7 @@ const getIntegrations = (githubConnected: boolean) => [
 ];
 
 export default function IntegrationsPage() {
+  const isAdmin = localStorage.getItem('userRole') === 'ADMIN';
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [showGitHubModal, setShowGitHubModal] = useState(false);
   const [showLLMModal, setShowLLMModal] = useState(false);
@@ -37,31 +55,25 @@ export default function IntegrationsPage() {
   const [llmProvider, setLLMProvider] = useState('anthropic');
   const [llmBaseUrl, setLLMBaseUrl] = useState('');
   const [llmModel, setLLMModel] = useState('');
+  const [llmApiKey, setLLMApiKey] = useState('');
+  const [showLLMApiKey, setShowLLMApiKey] = useState(false);
   const [isSavingLLM, setIsSavingLLM] = useState(false);
+  const [allowlistRules, setAllowlistRules] = useState<LLMAllowlistRule[]>([]);
+  const [isLoadingAllowlist, setIsLoadingAllowlist] = useState(false);
+  const [isSavingAllowlist, setIsSavingAllowlist] = useState(false);
 
   // Load API keys from localStorage
   const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>(() => {
     try {
       const stored = localStorage.getItem('llm_api_keys');
-      return stored ? JSON.parse(stored) : [
-        { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
-      ];
+      return stored ? JSON.parse(stored) : [];
     } catch {
-      return [
-        { id: 'claude-key-001', provider: 'Claude', key: 'sk-ant-v1-sample-key-for-development' },
-      ];
+      return [];
     }
   });
 
-  // Load GitHub config from localStorage
-  const [githubConfig, setGithubConfig] = useState<GitHubConfig>(() => {
-    try {
-      const stored = localStorage.getItem('github_config');
-      return stored ? JSON.parse(stored) : { token: '', username: undefined, connected: false };
-    } catch {
-      return { token: '', username: undefined, connected: false };
-    }
-  });
+  // Load GitHub config from backend (not localStorage to avoid stale data after DB reset)
+  const [githubConfig, setGithubConfig] = useState<GitHubConfig>({ token: '', username: undefined, connected: false });
 
   const [showNewApiKeyForm, setShowNewApiKeyForm] = useState(false);
   const [newApiKeyProvider, setNewApiKeyProvider] = useState('Claude');
@@ -69,26 +81,51 @@ export default function IntegrationsPage() {
   const [visibleKeys, setVisibleKeys] = useState<Set<string>>(new Set());
   const toast = useToast();
 
+  // Load GitHub config from backend on mount
+  useEffect(() => {
+    const loadGitHubConfig = async () => {
+      try {
+        const response = await fetch('/api/v1/user-settings/github-token', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data) {
+            setGithubConfig({
+              token: '****' + (data.data.token?.slice(-4) || ''),
+              username: data.data.username,
+              connected: true,
+            });
+          }
+        }
+      } catch (error) {
+        console.log('No se puede cargar config de GitHub');
+      }
+    };
+
+    loadGitHubConfig();
+  }, []);
+
   // Load API keys from backend on mount
   useEffect(() => {
     const loadApiKeys = async () => {
       try {
         const response = await fetch('/api/v1/user-settings/llm-keys', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
           },
         });
 
         if (response.ok) {
           const data = await response.json();
-          // Only update if backend has actual keys (non-empty array)
-          // Otherwise keep the local keys from localStorage
-          if (data.keys && data.keys.length > 0) {
-            setApiKeys(data.keys);
-          }
+          // Update with backend keys (which may be empty)
+          setApiKeys(data.keys || []);
         }
       } catch (error) {
-        console.log('No se pueden cargar claves del backend, usando valor por defecto');
+        console.log('No se pueden cargar claves del backend');
       }
     };
 
@@ -101,7 +138,7 @@ export default function IntegrationsPage() {
       try {
         const response = await fetch('/api/v1/user-settings/llm-config', {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
           },
         });
 
@@ -112,6 +149,7 @@ export default function IntegrationsPage() {
           setLLMProvider(config.provider || 'anthropic');
           setLLMBaseUrl(config.baseUrl || '');
           setLLMModel(config.model || '');
+          setLLMApiKey(config.apiKey || '');
         }
       } catch (error) {
         console.log('No se puede cargar configuración LLM, usando Anthropic por defecto');
@@ -121,41 +159,103 @@ export default function IntegrationsPage() {
     loadLLMConfig();
   }, []);
 
+  // Admin: load LLM allowlist from backend
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const loadAllowlist = async () => {
+      setIsLoadingAllowlist(true);
+      try {
+        const response = await fetch('/api/v1/user-settings/system/llm-allowlist', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAllowlistRules(Array.isArray(data.data) ? data.data : []);
+        }
+      } catch {
+        console.log('No se puede cargar allowlist LLM');
+      } finally {
+        setIsLoadingAllowlist(false);
+      }
+    };
+
+    loadAllowlist();
+  }, [isAdmin]);
+
   // Persist API keys to localStorage as backup
   useEffect(() => {
     localStorage.setItem('llm_api_keys', JSON.stringify(apiKeys));
   }, [apiKeys]);
 
-  // Persist GitHub config to localStorage
-  useEffect(() => {
-    localStorage.setItem('github_config', JSON.stringify(githubConfig));
-  }, [githubConfig]);
 
   const saveLLMConfig = async () => {
-    if (llmProvider !== 'anthropic') {
-      if (!llmBaseUrl.trim()) {
-        toast.error('La URL del servidor es requerida');
-        return;
-      }
-      if (!llmModel.trim()) {
-        toast.error('El modelo es requerido');
-        return;
-      }
+    // Validación básica
+    if (!llmModel.trim()) {
+      toast.error('El modelo es requerido');
+      return;
+    }
+
+    // Validaciones específicas por proveedor
+    switch (llmProvider) {
+      case 'anthropic':
+        // No requiere más campos
+        break;
+
+      case 'openai':
+        if (!llmApiKey.trim()) {
+          toast.error('API Key es requerida para OpenAI');
+          return;
+        }
+        break;
+
+      case 'llm-gateway':
+        if (!llmApiKey.trim()) {
+          toast.error('API Key es requerida para LLM Gateway');
+          return;
+        }
+        if (!llmBaseUrl.trim()) {
+          toast.error('URL del servidor es requerida para LLM Gateway');
+          return;
+        }
+        break;
+
+      case 'lmstudio':
+      case 'ollama':
+      case 'openai-compatible':
+      case 'custom':
+        if (!llmBaseUrl.trim()) {
+          toast.error(`URL del servidor es requerida para ${LLM_PROVIDER_LABELS[llmProvider]}`);
+          return;
+        }
+        break;
     }
 
     setIsSavingLLM(true);
     try {
+      const configPayload: any = {
+        provider: llmProvider,
+        model: llmModel,
+      };
+
+      // Agregar campos opcionales
+      if (llmBaseUrl.trim()) {
+        configPayload.baseUrl = llmBaseUrl;
+      }
+      if (llmApiKey.trim()) {
+        configPayload.apiKey = llmApiKey;
+      }
+
       const response = await fetch('/api/v1/user-settings/llm-config', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
-        body: JSON.stringify({
-          provider: llmProvider,
-          baseUrl: llmProvider !== 'anthropic' ? llmBaseUrl : undefined,
-          model: llmProvider !== 'anthropic' ? llmModel : undefined,
-        }),
+        body: JSON.stringify(configPayload),
       });
 
       if (response.ok) {
@@ -176,6 +276,37 @@ export default function IntegrationsPage() {
       console.error(error);
     } finally {
       setIsSavingLLM(false);
+    }
+  };
+
+  const saveAllowlist = async () => {
+    if (!isAdmin) return;
+    if (allowlistRules.length === 0) {
+      toast.error('Agrega al menos una regla a la allowlist');
+      return;
+    }
+
+    setIsSavingAllowlist(true);
+    try {
+      const response = await fetch('/api/v1/user-settings/system/llm-allowlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
+        },
+        body: JSON.stringify({ rules: allowlistRules }),
+      });
+
+      if (response.ok) {
+        toast.success('Allowlist LLM actualizada');
+      } else {
+        const err = await response.json().catch(() => ({}));
+        toast.error(err.error || 'No se pudo actualizar la allowlist');
+      }
+    } catch {
+      toast.error('Error actualizando allowlist');
+    } finally {
+      setIsSavingAllowlist(false);
     }
   };
 
@@ -279,7 +410,7 @@ export default function IntegrationsPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
         body: JSON.stringify({
           provider: newApiKeyProvider,
@@ -332,7 +463,7 @@ export default function IntegrationsPage() {
       await fetch(`/api/v1/user-settings/llm-keys/${keyId}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`,
         },
       });
     } catch (error) {
@@ -350,7 +481,7 @@ export default function IntegrationsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       <div>
         <h1 className="text-2xl font-bold text-white mb-2">Integraciones</h1>
         <p className="text-sm text-[#A0A0A0]">
@@ -460,12 +591,83 @@ export default function IntegrationsPage() {
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+	        </div>
+	      </div>
 
-      {/* Claves API para LLM */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
+	      {/* Admin: Allowlist de baseUrl para LLM (mitigación SSRF) */}
+	      {isAdmin && (
+	        <div className="space-y-3">
+	          <div>
+	            <h2 className="text-lg font-semibold text-white">Seguridad (Admin)</h2>
+	            <p className="text-xs text-[#A0A0A0] mt-1">
+	              Allowlist de servidores permitidos para `baseUrl` (LM Studio/Ollama/Custom/Gateway).
+	            </p>
+	          </div>
+
+	          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 space-y-3">
+	            {isLoadingAllowlist ? (
+	              <div className="text-sm text-[#A0A0A0]">Cargando allowlist...</div>
+	            ) : (
+	              <div className="space-y-2">
+	                {allowlistRules.map((rule, idx) => (
+	                  <div key={`${rule.origin}-${idx}`} className="flex gap-2 items-center">
+	                    <input
+	                      value={rule.origin}
+	                      onChange={(e) => {
+	                        const next = [...allowlistRules];
+	                        next[idx] = { ...next[idx]!, origin: e.target.value };
+	                        setAllowlistRules(next);
+	                      }}
+	                      placeholder="Origin (ej: http://localhost:1234)"
+	                      className="flex-1 px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded text-white placeholder-[#4B5563] focus:outline-none focus:border-[#4B5563]"
+	                    />
+	                    <input
+	                      value={rule.pathPrefix || ''}
+	                      onChange={(e) => {
+	                        const next = [...allowlistRules];
+	                        next[idx] = { ...next[idx]!, pathPrefix: e.target.value || undefined };
+	                        setAllowlistRules(next);
+	                      }}
+	                      placeholder="Path (opcional, ej: /v1)"
+	                      className="w-40 px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded text-white placeholder-[#4B5563] focus:outline-none focus:border-[#4B5563]"
+	                    />
+	                    <Button
+	                      variant="secondary"
+	                      size="sm"
+	                      onClick={() => setAllowlistRules(allowlistRules.filter((_, i) => i !== idx))}
+	                    >
+	                      <X size={14} />
+	                    </Button>
+	                  </div>
+	                ))}
+	              </div>
+	            )}
+
+	            <div className="flex gap-2 justify-between">
+	              <Button
+	                variant="secondary"
+	                size="sm"
+	                onClick={() => setAllowlistRules([...allowlistRules, { origin: '', pathPrefix: '/v1' }])}
+	              >
+	                Agregar regla
+	              </Button>
+	              <Button
+	                variant="primary"
+	                size="sm"
+	                disabled={isSavingAllowlist || isLoadingAllowlist}
+	                onClick={saveAllowlist}
+	              >
+	                {isSavingAllowlist ? 'Guardando...' : 'Guardar'}
+	              </Button>
+	            </div>
+	          </div>
+	        </div>
+	      )}
+
+	      {/* Claves API para LLM - Only show for providers that need API keys */}
+	      {(llmProvider === 'anthropic' || llmProvider === 'openai-compatible') && (
+	      <div className="space-y-4">
+	        <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-white flex items-center gap-2">
               <Key size={20} />
@@ -574,6 +776,7 @@ export default function IntegrationsPage() {
           </div>
         )}
       </div>
+      )}
 
       {/* GitHub Modal */}
       {showGitHubModal && (
@@ -648,25 +851,36 @@ export default function IntegrationsPage() {
               <h2 className="text-lg font-semibold text-white">Configurar LLM</h2>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               <div>
                 <label className="text-sm text-[#A0A0A0] block mb-2">Proveedor</label>
                 <select
                   value={llmProvider}
                   onChange={(e) => {
                     setLLMProvider(e.target.value);
-                    if (e.target.value === 'anthropic') {
-                      setLLMBaseUrl('');
-                      setLLMModel('');
-                    }
+                    // Clear optional fields when switching providers
+                    setLLMApiKey('');
+                    setLLMBaseUrl('');
                   }}
                   className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-[#4B5563]"
                 >
-                  <option value="anthropic">Claude (Anthropic)</option>
-                  <option value="lmstudio">LM Studio</option>
-                  <option value="ollama">Ollama</option>
-                  <option value="openai-compatible">OpenAI Compatible</option>
+                  {LLM_PROVIDERS.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {LLM_PROVIDER_LABELS[provider]}
+                    </option>
+                  ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="text-sm text-[#A0A0A0] block mb-2">Modelo</label>
+                <input
+                  type="text"
+                  value={llmModel}
+                  onChange={(e) => setLLMModel(e.target.value)}
+                  placeholder={llmProvider === 'anthropic' ? 'claude-sonnet-4-6' : 'qwen2.5-coder-7b-instruct'}
+                  className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
+                />
               </div>
 
               {llmProvider !== 'anthropic' && (
@@ -677,22 +891,33 @@ export default function IntegrationsPage() {
                       type="text"
                       value={llmBaseUrl}
                       onChange={(e) => setLLMBaseUrl(e.target.value)}
-                      placeholder="http://localhost:1234/v1"
-                      className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="text-sm text-[#A0A0A0] block mb-2">Modelo</label>
-                    <input
-                      type="text"
-                      value={llmModel}
-                      onChange={(e) => setLLMModel(e.target.value)}
-                      placeholder="qwen2.5-coder-7b-instruct"
+                      placeholder="http://localhost:1234 o https://api.example.com"
                       className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
                     />
                   </div>
                 </>
+              )}
+
+              {['openai', 'llm-gateway'].includes(llmProvider) && (
+                <div>
+                  <label className="text-sm text-[#A0A0A0] block mb-2">API Key</label>
+                  <div className="relative">
+                    <input
+                      type={showLLMApiKey ? 'text' : 'password'}
+                      value={llmApiKey}
+                      onChange={(e) => setLLMApiKey(e.target.value)}
+                      placeholder="sk-... o tu clave API"
+                      className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563] pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLLMApiKey(!showLLMApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-white"
+                    >
+                      {showLLMApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
+                </div>
               )}
 
               <div className="flex gap-2">

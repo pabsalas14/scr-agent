@@ -47,9 +47,10 @@ async function getLLMConfigFromUser(userId: string | null): Promise<LLMConfig | 
     where: { userId },
     select: {
       llmProvider: true,
-      lmstudioBaseUrl: true,
-      lmstudioModel: true,
-      claudeApiKey: true,
+      llmBaseUrl: true,
+      llmModel: true,
+      llmApiKey: true,
+      llmCustomHeaders: true,
     },
   });
 
@@ -57,26 +58,84 @@ async function getLLMConfigFromUser(userId: string | null): Promise<LLMConfig | 
     return undefined; // Usar config por defecto
   }
 
-  const provider = (userSettings.llmProvider || 'anthropic') as 'anthropic' | 'lmstudio' | 'ollama' | 'openai-compatible';
+  const provider = (userSettings.llmProvider || 'anthropic') as any;
 
-  if (provider === 'anthropic') {
-    return {
-      provider: 'anthropic',
-      model: 'claude-sonnet-4-6', // Para Inspector y Fiscal
-      apiKey: userSettings.claudeApiKey || process.env['ANTHROPIC_API_KEY'],
-    };
+  // Descifrar apiKey si existe
+  let decryptedApiKey: string | undefined;
+  if (userSettings.llmApiKey) {
+    try {
+      decryptedApiKey = decrypt(userSettings.llmApiKey);
+    } catch (error) {
+      logger.error(`Failed to decrypt LLM API key for user ${userId}`);
+    }
   }
 
-  if (provider === 'lmstudio' && userSettings.lmstudioBaseUrl && userSettings.lmstudioModel) {
-    return {
-      provider: 'lmstudio',
-      model: userSettings.lmstudioModel,
-      baseUrl: userSettings.lmstudioBaseUrl,
-    };
+  // Parse custom headers si existen
+  let customHeaders: Record<string, string> | undefined;
+  if (userSettings.llmCustomHeaders) {
+    try {
+      customHeaders = JSON.parse(userSettings.llmCustomHeaders);
+    } catch (error) {
+      logger.error(`Failed to parse custom headers for user ${userId}`);
+    }
   }
 
-  // Fallback a Anthropic si la configuración está incompleta
-  return undefined;
+  // Construir config según el provider
+  const baseConfig: LLMConfig = {
+    provider,
+    model: userSettings.llmModel || 'default',
+  };
+
+  switch (provider) {
+    case 'anthropic':
+      return {
+        ...baseConfig,
+        model: userSettings.llmModel || 'claude-sonnet-4-6',
+        apiKey: decryptedApiKey || process.env['ANTHROPIC_API_KEY'],
+      };
+
+    case 'openai':
+      if (!decryptedApiKey) {
+        logger.warn(`OpenAI provider requires API key for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        apiKey: decryptedApiKey,
+        baseUrl: userSettings.llmBaseUrl,
+      };
+
+    case 'llm-gateway':
+      if (!decryptedApiKey || !userSettings.llmBaseUrl) {
+        logger.warn(`LLM Gateway requires API key and baseUrl for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        apiKey: decryptedApiKey,
+        baseUrl: userSettings.llmBaseUrl,
+        customHeaders,
+      };
+
+    case 'lmstudio':
+    case 'ollama':
+    case 'openai-compatible':
+    case 'custom':
+      if (!userSettings.llmBaseUrl) {
+        logger.warn(`Provider ${provider} requires baseUrl for user ${userId}`);
+        return undefined;
+      }
+      return {
+        ...baseConfig,
+        baseUrl: userSettings.llmBaseUrl,
+        apiKey: decryptedApiKey,
+        customHeaders,
+      };
+
+    default:
+      logger.warn(`Unknown LLM provider: ${provider}`);
+      return undefined;
+  }
 }
 
 // Configuración de Redis para el worker

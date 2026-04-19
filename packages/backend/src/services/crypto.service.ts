@@ -34,10 +34,17 @@ function getKey(): Buffer | null {
 const KEY = getKey();
 
 if (!KEY) {
-  logger.warn(
-    '⚠️  ENCRYPTION_KEY no configurada o inválida. Los tokens se almacenan sin cifrar. ' +
-    'Define ENCRYPTION_KEY con 64 caracteres hex en .env para habilitar el cifrado.'
-  );
+  const isProduction = process.env['NODE_ENV'] === 'production';
+  const message =
+    'ENCRYPTION_KEY no configurada o inválida. ' +
+    'Define ENCRYPTION_KEY con 64 caracteres hex para habilitar el cifrado.';
+
+  if (isProduction) {
+    // En producción no queremos degradar a "sin cifrado" para secretos.
+    throw new Error(message);
+  }
+
+  logger.warn(`⚠️  ${message} Los tokens se almacenan sin cifrar en development/test.`);
 }
 
 /**

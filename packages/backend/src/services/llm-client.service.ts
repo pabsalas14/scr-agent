@@ -5,9 +5,12 @@
  *
  * Soporta:
  * - Anthropic Claude (APIKey)
- * - LM Studio (OpenAI-compatible, localhost:1234)
- * - Ollama (OpenAI-compatible)
- * - Otros servidores OpenAI-compatible
+ * - OpenAI (APIKey + API endpoint)
+ * - LM Studio (OpenAI-compatible, local)
+ * - Ollama (OpenAI-compatible, local)
+ * - LLM Gateway (LLM routing/fallback)
+ * - OpenAI-compatible (genérico)
+ * - Custom/Self-hosted (genérico OpenAI-compatible)
  *
  * Uso: const client = new LLMClient(config); client.complete(prompt, maxTokens)
  */
@@ -16,15 +19,24 @@ import Anthropic from '@anthropic-ai/sdk';
 import axios, { AxiosInstance } from 'axios';
 import { logger } from './logger.service';
 
-export type LLMProvider = 'anthropic' | 'lmstudio' | 'ollama' | 'openai-compatible';
+export type LLMProvider =
+  | 'anthropic'
+  | 'openai'
+  | 'lmstudio'
+  | 'ollama'
+  | 'llm-gateway'
+  | 'openai-compatible'
+  | 'custom';
 
 export interface LLMConfig {
   provider: LLMProvider;
   model: string;
-  apiKey?: string; // Para Anthropic
-  baseUrl?: string; // Para OpenAI-compatible
+  apiKey?: string; // Para Anthropic, OpenAI, LLM Gateway
+  baseUrl?: string; // Para OpenAI-compatible, LM Studio, Ollama, LLM Gateway, Custom
+  apiVersion?: string; // Para algunos proveedores (ej: Azure OpenAI)
   temperature?: number;
   maxTokens?: number;
+  customHeaders?: Record<string, string>; // Headers personalizados para Custom/LLM Gateway
 }
 
 export interface LLMResponse {
@@ -53,15 +65,38 @@ export class LLMClient {
       throw new Error('LLM model must be configured');
     }
 
-    if (this.config.provider === 'anthropic' && !this.config.apiKey) {
-      throw new Error('Anthropic API key is required');
-    }
+    // Validar por proveedor específico
+    switch (this.config.provider) {
+      case 'anthropic':
+        // API key can be empty, will use env var or fail at runtime if not available
+        break;
 
-    if (
-      ['lmstudio', 'ollama', 'openai-compatible'].includes(this.config.provider) &&
-      !this.config.baseUrl
-    ) {
-      throw new Error(`Base URL is required for ${this.config.provider}`);
+      case 'openai':
+        if (!this.config.apiKey) {
+          throw new Error('OpenAI API key is required');
+        }
+        break;
+
+      case 'llm-gateway':
+        if (!this.config.baseUrl) {
+          throw new Error('LLM Gateway base URL is required');
+        }
+        if (!this.config.apiKey) {
+          throw new Error('LLM Gateway API key is required');
+        }
+        break;
+
+      case 'lmstudio':
+      case 'ollama':
+      case 'openai-compatible':
+      case 'custom':
+        if (!this.config.baseUrl) {
+          throw new Error(`Base URL is required for ${this.config.provider}`);
+        }
+        break;
+
+      default:
+        throw new Error(`Unknown LLM provider: ${this.config.provider}`);
     }
   }
 
@@ -72,10 +107,24 @@ export class LLMClient {
     const tokens = maxTokens || this.config.maxTokens || 4096;
 
     try {
-      if (this.config.provider === 'anthropic') {
-        return await this.completeWithAnthropic(prompt, tokens);
-      } else {
-        return await this.completeWithOpenAICompatible(prompt, tokens);
+      switch (this.config.provider) {
+        case 'anthropic':
+          return await this.completeWithAnthropic(prompt, tokens);
+
+        case 'openai':
+          return await this.completeWithOpenAI(prompt, tokens);
+
+        case 'llm-gateway':
+          return await this.completeWithLLMGateway(prompt, tokens);
+
+        case 'lmstudio':
+        case 'ollama':
+        case 'openai-compatible':
+        case 'custom':
+          return await this.completeWithOpenAICompatible(prompt, tokens);
+
+        default:
+          throw new Error(`Unsupported provider: ${this.config.provider}`);
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -118,14 +167,112 @@ export class LLMClient {
   }
 
   /**
-   * Completar usando servidor OpenAI-compatible (LM Studio, Ollama, etc)
+   * Completar usando OpenAI API
+   */
+  private async completeWithOpenAI(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.axiosClient) {
+      const baseUrl = this.config.baseUrl || 'https://api.openai.com/v1';
+      this.axiosClient = axios.create({
+        baseURL: baseUrl,
+        headers: {
+          'Authorization': `Bearer ${this.config.apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 60000,
+      });
+    }
+
+    const response = await this.axiosClient.post('/chat/completions', {
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature || 0.7,
+      max_tokens: maxTokens,
+    });
+
+    const data = response.data;
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error(`Invalid response from OpenAI: ${JSON.stringify(data)}`);
+    }
+
+    const text = choice.message?.content || '';
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+    return {
+      text,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      model: this.config.model,
+    };
+  }
+
+  /**
+   * Completar usando LLM Gateway
+   */
+  private async completeWithLLMGateway(prompt: string, maxTokens: number): Promise<LLMResponse> {
+    if (!this.axiosClient) {
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
+
+      if (this.config.customHeaders) {
+        Object.assign(headers, this.config.customHeaders);
+      }
+
+      this.axiosClient = axios.create({
+        baseURL: this.config.baseUrl,
+        headers,
+        timeout: 120000,
+      });
+    }
+
+    const response = await this.axiosClient.post('/chat/completions', {
+      model: this.config.model,
+      messages: [{ role: 'user', content: prompt }],
+      temperature: this.config.temperature || 0.7,
+      max_tokens: maxTokens,
+    });
+
+    const data = response.data;
+    const choice = data.choices?.[0];
+
+    if (!choice) {
+      throw new Error(`Invalid response from LLM Gateway: ${JSON.stringify(data)}`);
+    }
+
+    const text = choice.message?.content || '';
+    const usage = data.usage || { prompt_tokens: 0, completion_tokens: 0 };
+
+    return {
+      text,
+      inputTokens: usage.prompt_tokens || 0,
+      outputTokens: usage.completion_tokens || 0,
+      model: this.config.model,
+    };
+  }
+
+  /**
+   * Completar usando servidor OpenAI-compatible (LM Studio, Ollama, Custom, etc)
    */
   private async completeWithOpenAICompatible(prompt: string, maxTokens: number): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const baseUrl = this.config.baseUrl || 'http://localhost:1234';
+      const headers: Record<string, string> = {};
+      if (this.config.apiKey) {
+        headers['Authorization'] = `Bearer ${this.config.apiKey}`;
+      }
+      if (this.config.customHeaders) {
+        Object.assign(headers, this.config.customHeaders);
+      }
       this.axiosClient = axios.create({
         baseURL: baseUrl,
         timeout: 120000, // 2 minutos para modelos locales
+        headers,
       });
     }
 

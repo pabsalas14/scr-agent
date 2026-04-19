@@ -312,7 +312,9 @@ export default function ReportViewer() {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    {Object.entries(reporte.severityBreakdown).map(([sev, count]) => {
+                    {Object.entries(reporte.severityBreakdown)
+                      .filter(([_, count]) => count > 0)
+                      .map(([sev, count]) => {
                       const color = SEV_COLORS[sev.toUpperCase()] ?? '#6B7280';
                       const percentage = reporte.findingsCount > 0
                         ? (count / reporte.findingsCount) * 100
