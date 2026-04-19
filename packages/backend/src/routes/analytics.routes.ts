@@ -1,12 +1,19 @@
 /**
  * Analytics Routes
  * GET endpoints for analytics and statistics
+ * PHASE 3: Dynamic metrics dashboard
  */
 
 import { Router, type Request, type Response, type Router as ExpressRouter } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
+import {
+  getTokenUsageMetrics,
+  getRepositoryActivityMetrics,
+  getMTTDMetrics,
+  getBurndownMetrics,
+} from '../services/metrics.service';
 
 const router: ExpressRouter = Router();
 
@@ -308,6 +315,140 @@ router.get('/by-type', async (req: AuthenticatedRequest, res: Response) => {
     logger.error(`Error fetching analytics by type: ${error}`);
     res.status(500).json({
       error: 'Failed to fetch analytics by type'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/metrics/token-usage?period=month
+ * Get token usage metrics (admin only)
+ * Shows: tokens per user, cost, analysis count
+ */
+router.get('/metrics/token-usage', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
+    const period = (req.query['period'] as string) || 'month';
+    if (!['day', 'week', 'month'].includes(period)) {
+      return res.status(400).json({
+        error: 'Invalid period. Must be: day, week, or month'
+      });
+    }
+
+    const metrics = await getTokenUsageMetrics(period as 'day' | 'week' | 'month');
+
+    res.json({
+      success: true,
+      data: metrics,
+      period
+    });
+  } catch (error) {
+    logger.error(`Error fetching token usage metrics: ${error}`);
+    res.status(500).json({
+      error: 'Failed to fetch token usage metrics'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/metrics/repository-activity
+ * Get activity metrics per repository
+ * Shows: findings count, severity breakdown, analysis count
+ */
+router.get('/metrics/repository-activity', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
+    const metrics = await getRepositoryActivityMetrics();
+
+    res.json({
+      success: true,
+      data: metrics
+    });
+  } catch (error) {
+    logger.error(`Error fetching repository activity metrics: ${error}`);
+    res.status(500).json({
+      error: 'Failed to fetch repository activity metrics'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/metrics/mttd
+ * Get Mean Time To Detection metrics
+ * Shows: average detection time per severity level
+ */
+router.get('/metrics/mttd', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
+    const metrics = await getMTTDMetrics();
+
+    res.json({
+      success: true,
+      data: metrics
+    });
+  } catch (error) {
+    logger.error(`Error fetching MTTD metrics: ${error}`);
+    res.status(500).json({
+      error: 'Failed to fetch MTTD metrics'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/analytics/metrics/burndown?days=30
+ * Get burndown metrics - Finding status progression over time
+ * Shows: findings by status over the last N days
+ */
+router.get('/metrics/burndown', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
+    const daysParam = req.query['days'];
+    let days = typeof daysParam === 'string' ? parseInt(daysParam, 10) : 30;
+
+    if (isNaN(days) || days < 1) {
+      days = 30;
+    } else if (days > 365) {
+      days = 365;
+    }
+
+    const metrics = await getBurndownMetrics(days);
+
+    res.json({
+      success: true,
+      data: metrics,
+      days
+    });
+  } catch (error) {
+    logger.error(`Error fetching burndown metrics: ${error}`);
+    res.status(500).json({
+      error: 'Failed to fetch burndown metrics'
     });
   }
 });

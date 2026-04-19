@@ -25,7 +25,9 @@ const FindingsPanelPage = lazy(() => import('../pages/FindingsPanelPage'));
 const IntegrationsPage = lazy(() => import('../pages/IntegrationsPage'));
 const UsersPage = lazy(() => import('../pages/UsersPage'));
 const PreferencesPage = lazy(() => import('../pages/PreferencesPage'));
-const AnomaliesPage = lazy(() => import('../pages/AnomaliesPage'));
+const AgentsPage = lazy(() => import('../pages/AgentsPage'));
+const AlertRulesPage = lazy(() => import('../pages/AlertRulesPage'));
+const MetricsDashboardPage = lazy(() => import('../pages/MetricsDashboardPage'));
 
 // Loading fallback
 const LoadingFallback = () => (
@@ -164,16 +166,15 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: 'dashboard/anomalias',
+        path: 'dashboard/metrics',
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <AnomaliesPage />
+              <MetricsDashboardPage />
             </Suspense>
           </ErrorBoundary>
         ),
       },
-
       // Projects detail route - removed, using dashboard/projects instead
       {
         path: 'projects/:projectId/analyses/:analysisId',
@@ -259,6 +260,26 @@ export const router = createBrowserRouter([
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
               <PreferencesPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/agents',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AgentsPage />
+            </Suspense>
+          </ErrorBoundary>
+        ),
+      },
+      {
+        path: 'dashboard/settings/alert-rules',
+        element: (
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingFallback />}>
+              <AlertRulesPage />
             </Suspense>
           </ErrorBoundary>
         ),

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { AlertTriangle, Clock, Users, GitBranch, Shield } from 'lucide-react';
+import { AlertTriangle, Clock, Users, GitBranch, Shield, ChevronDown, X } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import ForensicTimelineVisual from '../Timeline/ForensicTimelineVisual';
 import type { EventoTimeline } from '../../types/timeline';
@@ -23,6 +23,11 @@ const RISK_MAP: Record<string, 'BAJO' | 'MEDIO' | 'ALTO' | 'CRÍTICO'> = {
 export default function ForensicsInvestigations() {
   const [selectedAnalysisId, setSelectedAnalysisId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'timeline' | 'summary'>('timeline');
+  const [filterType, setFilterType] = useState<'all' | 'critical' | 'user' | 'file' | null>(null);
+  const [selectedUser, setSelectedUser] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [showUserDropdown, setShowUserDropdown] = useState(false);
+  const [showFileDropdown, setShowFileDropdown] = useState(false);
 
   const { data: analysesData, isLoading: isLoadingAnalyses } = useQuery({
     queryKey: ['analyses-list-forensics'],
@@ -63,13 +68,39 @@ export default function ForensicsInvestigations() {
     }
   }, [completedAnalyses, selectedAnalysisId]);
 
+  // Extract unique users and files
+  const affectedUsersList = useMemo(() =>
+    Array.from(new Set(forensicEvents?.map((e: EventoTimeline) => e.autor).filter(Boolean) || [])).sort(),
+    [forensicEvents]
+  );
+
+  const affectedFilesList = useMemo(() =>
+    Array.from(new Set(forensicEvents?.map((e: EventoTimeline) => e.archivo).filter(Boolean) || [])).sort(),
+    [forensicEvents]
+  );
+
   // Summary statistics - using properly mapped events
   const stats = {
     totalEvents: forensicEvents?.length || 0,
     criticalEvents: forensicEvents?.filter((e: EventoTimeline) => e.nivel_riesgo === 'CRÍTICO').length || 0,
-    affectedUsers: new Set(forensicEvents?.map((e: EventoTimeline) => e.autor).filter(Boolean) || []).size,
-    affectedFiles: new Set(forensicEvents?.map((e: EventoTimeline) => e.archivo).filter(Boolean) || []).size,
+    affectedUsers: affectedUsersList.length,
+    affectedFiles: affectedFilesList.length,
   };
+
+  // Filtered events based on selected filters
+  const filteredForensicEvents = useMemo(() => {
+    let filtered = forensicEvents;
+
+    if (filterType === 'critical') {
+      filtered = filtered.filter((e: EventoTimeline) => e.nivel_riesgo === 'CRÍTICO');
+    } else if (filterType === 'user' && selectedUser) {
+      filtered = filtered.filter((e: EventoTimeline) => e.autor === selectedUser);
+    } else if (filterType === 'file' && selectedFile) {
+      filtered = filtered.filter((e: EventoTimeline) => e.archivo === selectedFile);
+    }
+
+    return filtered;
+  }, [forensicEvents, filterType, selectedUser, selectedFile]);
 
   return (
     <div className="space-y-6">
@@ -131,37 +162,168 @@ export default function ForensicsInvestigations() {
       {/* Data display */}
       {selectedAnalysisId && (
         <>
-          {/* Summary Cards */}
+          {/* Summary Cards - Clickable */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 hover:border-[#4B5563] transition-colors">
-              <p className="text-xs text-[#A0A0A0] mb-2">Eventos Totales</p>
+            {/* Total Events Card */}
+            <button
+              onClick={() => {
+                setFilterType('all');
+                setSelectedUser(null);
+                setSelectedFile(null);
+                setActiveTab('timeline');
+              }}
+              className={`text-left rounded-lg p-4 transition-all border-2 cursor-pointer group ${
+                filterType === 'all'
+                  ? 'bg-blue-500/10 border-blue-500 text-white'
+                  : 'bg-[#1A1A1A] border-[#2D2D2D] hover:border-[#4B5563]'
+              }`}
+            >
+              <p className="text-xs text-[#A0A0A0] mb-2 group-hover:text-blue-300 transition-colors">Eventos Totales</p>
               <p className="text-2xl font-bold text-white">{stats.totalEvents}</p>
-            </div>
+            </button>
 
-            <div className="bg-[#1A1A1A] border border-red-500/20 rounded-lg p-4 hover:border-red-500/40 transition-colors">
+            {/* Critical Events Card */}
+            <button
+              onClick={() => {
+                setFilterType('critical');
+                setSelectedUser(null);
+                setSelectedFile(null);
+                setActiveTab('timeline');
+              }}
+              className={`text-left rounded-lg p-4 transition-all border-2 cursor-pointer group ${
+                filterType === 'critical'
+                  ? 'bg-red-500/10 border-red-500 text-white'
+                  : 'bg-[#1A1A1A] border-red-500/20 hover:border-red-500/40'
+              }`}
+            >
               <div className="flex items-center gap-2 mb-2">
-                <Shield size={14} className="text-red-400" />
+                <Shield size={14} className={filterType === 'critical' ? 'text-red-400' : 'text-red-400'} />
                 <p className="text-xs text-red-300">Eventos Críticos</p>
               </div>
               <p className="text-2xl font-bold text-red-400">{stats.criticalEvents}</p>
+            </button>
+
+            {/* Affected Users Card */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowUserDropdown(!showUserDropdown);
+                  setShowFileDropdown(false);
+                }}
+                className={`w-full text-left rounded-lg p-4 transition-all border-2 cursor-pointer group ${
+                  filterType === 'user'
+                    ? 'bg-blue-500/10 border-blue-500 text-white'
+                    : 'bg-[#1A1A1A] border-[#2D2D2D] hover:border-[#4B5563]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Users size={14} className="text-blue-400" />
+                      <p className="text-xs text-blue-300">Usuarios Afectados</p>
+                    </div>
+                    <p className="text-2xl font-bold text-blue-400">{stats.affectedUsers}</p>
+                  </div>
+                  <ChevronDown size={16} className={`transition-transform ${showUserDropdown ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+
+              {/* Users Dropdown */}
+              {showUserDropdown && affectedUsersList.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#111111] border border-[#2D2D2D] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  {affectedUsersList.map((user) => (
+                    <button
+                      key={user}
+                      onClick={() => {
+                        setFilterType('user');
+                        setSelectedUser(user);
+                        setShowUserDropdown(false);
+                        setActiveTab('timeline');
+                      }}
+                      className={`w-full text-left px-4 py-2 text-sm border-b border-[#2D2D2D] last:border-b-0 transition-colors ${
+                        selectedUser === user
+                          ? 'bg-blue-500/20 text-blue-300'
+                          : 'text-[#A0A0A0] hover:bg-[#1A1A1A] hover:text-white'
+                      }`}
+                    >
+                      {user}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 hover:border-[#4B5563] transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <Users size={14} className="text-blue-400" />
-                <p className="text-xs text-blue-300">Usuarios Afectados</p>
-              </div>
-              <p className="text-2xl font-bold text-blue-400">{stats.affectedUsers}</p>
-            </div>
+            {/* Affected Files Card */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setShowFileDropdown(!showFileDropdown);
+                  setShowUserDropdown(false);
+                }}
+                className={`w-full text-left rounded-lg p-4 transition-all border-2 cursor-pointer group ${
+                  filterType === 'file'
+                    ? 'bg-green-500/10 border-green-500 text-white'
+                    : 'bg-[#1A1A1A] border-[#2D2D2D] hover:border-[#4B5563]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <GitBranch size={14} className="text-green-400" />
+                      <p className="text-xs text-green-300">Archivos Afectados</p>
+                    </div>
+                    <p className="text-2xl font-bold text-green-400">{stats.affectedFiles}</p>
+                  </div>
+                  <ChevronDown size={16} className={`transition-transform ${showFileDropdown ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
 
-            <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-4 hover:border-[#4B5563] transition-colors">
-              <div className="flex items-center gap-2 mb-2">
-                <GitBranch size={14} className="text-green-400" />
-                <p className="text-xs text-green-300">Archivos Afectados</p>
-              </div>
-              <p className="text-2xl font-bold text-green-400">{stats.affectedFiles}</p>
+              {/* Files Dropdown */}
+              {showFileDropdown && affectedFilesList.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-[#111111] border border-[#2D2D2D] rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
+                  {affectedFilesList.map((file) => (
+                    <button
+                      key={file}
+                      onClick={() => {
+                        setFilterType('file');
+                        setSelectedFile(file);
+                        setShowFileDropdown(false);
+                        setActiveTab('timeline');
+                      }}
+                      className={`w-full text-left px-4 py-2 text-xs border-b border-[#2D2D2D] last:border-b-0 transition-colors break-all font-mono ${
+                        selectedFile === file
+                          ? 'bg-green-500/20 text-green-300'
+                          : 'text-[#A0A0A0] hover:bg-[#1A1A1A] hover:text-white'
+                      }`}
+                    >
+                      {file}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Active Filter Badge */}
+          {filterType && filterType !== 'all' && (
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex items-center justify-between">
+              <span className="text-sm text-blue-300">
+                {filterType === 'critical' && 'Mostrando: Eventos Críticos'}
+                {filterType === 'user' && `Mostrando: Eventos del usuario ${selectedUser}`}
+                {filterType === 'file' && `Mostrando: Eventos del archivo ${selectedFile}`}
+              </span>
+              <button
+                onClick={() => {
+                  setFilterType('all');
+                  setSelectedUser(null);
+                  setSelectedFile(null);
+                }}
+                className="text-blue-300 hover:text-white transition-colors"
+              >
+                <X size={18} />
+              </button>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="flex gap-2 bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-1 w-fit">
@@ -195,12 +357,14 @@ export default function ForensicsInvestigations() {
           ) : activeTab === 'timeline' ? (
             // Timeline View
             <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg overflow-hidden">
-              {forensicEvents && forensicEvents.length > 0 ? (
-                <ForensicTimelineVisual eventos={forensicEvents} />
+              {filteredForensicEvents && filteredForensicEvents.length > 0 ? (
+                <ForensicTimelineVisual eventos={filteredForensicEvents} />
               ) : (
                 <div className="p-12 text-center">
                   <AlertTriangle className="w-10 h-10 text-[#666666] mx-auto mb-3" />
-                  <p className="text-[#A0A0A0]">No hay eventos forenses para este análisis</p>
+                  <p className="text-[#A0A0A0]">
+                    {filterType && filterType !== 'all' ? 'No hay eventos que coincidan con el filtro' : 'No hay eventos forenses para este análisis'}
+                  </p>
                 </div>
               )}
             </div>

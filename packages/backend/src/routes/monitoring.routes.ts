@@ -17,6 +17,9 @@ import { MODEL_PRICES, DEFAULT_PRICE } from '../config/model-prices';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import { getSystemMetrics, formatUptime, isHealthy } from '../services/system-monitor.service';
+import { getFPStatistics, recordFalsePositive, getLearnedPatterns } from '../services/false-positive-learning.service';
+import type { AuthenticatedRequest } from '../middleware/auth.middleware';
 
 const router: ExpressRouter = Router();
 const execAsync = promisify(exec);
@@ -440,5 +443,99 @@ async function getDashboardMetrics(): Promise<SystemMetrics> {
     uptime: process.uptime(),
   };
 }
+
+// ==================== PHASE 4: REAL-TIME MONITORING & FP LEARNING ====================
+
+/**
+ * GET /api/v1/monitoring/health
+ * Get comprehensive system health metrics (PHASE 4.1)
+ */
+router.get('/health', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const metrics = await getSystemMetrics();
+    const health = isHealthy(metrics);
+
+    res.json({
+      success: true,
+      data: {
+        cpu: metrics.cpu,
+        memory: metrics.memory,
+        disk: metrics.disk,
+        uptime: formatUptime(metrics.uptime),
+        uptimeSeconds: metrics.uptime,
+        loadAverage: metrics.loadAverage,
+        health,
+        timestamp: metrics.timestamp,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error fetching health metrics: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch health metrics',
+    });
+  }
+});
+
+/**
+ * GET /api/v1/monitoring/false-positives/stats
+ * Get false positive learning statistics (PHASE 4.2)
+ */
+router.get('/false-positives/stats', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false,
+      });
+    }
+
+    const stats = await getFPStatistics();
+
+    res.json({
+      success: true,
+      data: stats,
+    });
+  } catch (error) {
+    logger.error(`Error fetching FP statistics: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch statistics',
+    });
+  }
+});
+
+/**
+ * GET /api/v1/monitoring/false-positives/patterns
+ * Get learned false positive patterns
+ */
+router.get('/false-positives/patterns', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false,
+      });
+    }
+
+    const patterns = await getLearnedPatterns();
+
+    res.json({
+      success: true,
+      data: {
+        patterns,
+        count: patterns.length,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error fetching FP patterns: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch patterns',
+    });
+  }
+});
 
 export default router;

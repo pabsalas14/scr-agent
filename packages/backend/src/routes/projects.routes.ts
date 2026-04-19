@@ -10,6 +10,11 @@ import { enqueueAnalysis, cancelAnalysis } from '../services/analysis-queue';
 import { gitService } from '../services/git.service';
 import { decrypt } from '../services/crypto.service';
 import { canAccessOwnedResource, getAccessControlMode } from '../services/access-control.service';
+import {
+  validateRepositoryUrl,
+  getAvailableBranches,
+  parseRepositoryInfo,
+} from '../services/repository-discovery.service';
 
 const router: ExpressRouter = Router();
 
@@ -243,6 +248,20 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
     // ========== FIN VALIDACIÓN ==========
 
+    // PHASE 3.3: Detect if repository is public and get available branches
+    let isPublic = false;
+    let availableBranches: string[] = [];
+    try {
+      const repoValidation = await validateRepositoryUrl(repositoryUrl, githubToken);
+      if (repoValidation.valid) {
+        isPublic = repoValidation.isPublic;
+        availableBranches = repoValidation.branches || [];
+      }
+    } catch (error) {
+      logger.warn(`Failed to detect public status for ${repositoryUrl}`);
+      // Continue with defaults
+    }
+
     const project = await prisma.project.create({
       data: {
         name,
@@ -250,6 +269,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         repositoryUrl,
         branch: branch || 'main',
         scope,
+        isPublic,
+        availableBranches,
         ...(maxFileSizeKb   ? { maxFileSizeKb:     Math.min(500, Math.max(10, Number(maxFileSizeKb)))   } : {}),
         ...(maxTotalSizeMb  ? { maxTotalSizeMb:    Math.min(20,  Math.max(1,  Number(maxTotalSizeMb)))  } : {}),
         ...(maxDirectoryDepth ? { maxDirectoryDepth: Math.min(10,  Math.max(2,  Number(maxDirectoryDepth))) } : {}),
@@ -537,6 +558,87 @@ router.get('/:id/estimate', async (req: Request, res: Response, next: NextFuncti
     });
   } catch (error) {
     next(error);
+  }
+});
+
+/**
+ * POST /api/v1/projects/validate-repo
+ * Validate repository URL and detect if it's public
+ * PHASE 3.3: Dynamic Repository Ingestion
+ */
+router.post('/validate-repo', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { repositoryUrl, githubToken } = req.body;
+
+    if (!repositoryUrl) {
+      return res.status(400).json({
+        success: false,
+        error: 'Repository URL is required',
+      });
+    }
+
+    const validation = await validateRepositoryUrl(repositoryUrl, githubToken);
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.error || 'Invalid repository',
+      });
+    }
+
+    // Parse repo info
+    const repoInfo = parseRepositoryInfo(repositoryUrl);
+
+    res.json({
+      success: true,
+      data: {
+        ...validation,
+        ...repoInfo,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error validating repository: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to validate repository',
+    });
+  }
+});
+
+/**
+ * GET /api/v1/projects/branches?url=...&token=...
+ * Get available branches from a repository
+ * PHASE 3.3: Dynamic Repository Ingestion
+ */
+router.get('/branches', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { url, token } = req.query;
+
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: 'Repository URL is required',
+      });
+    }
+
+    const branches = await getAvailableBranches(
+      url,
+      token && typeof token === 'string' ? token : undefined
+    );
+
+    res.json({
+      success: true,
+      data: {
+        branches,
+        count: branches.length,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error fetching branches: ${error}`);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch branches',
+    });
   }
 });
 
