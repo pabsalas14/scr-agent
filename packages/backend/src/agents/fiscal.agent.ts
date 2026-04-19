@@ -9,14 +9,13 @@
  * - Priorizar acciones de remediación
  * - Crear output exportable (JSON, PDF)
  *
- * Modelo: Claude 3.5 Sonnet (análisis complejo)
  * Entrada: Hallazgos de Malicia + Timeline de Forenses
  * Salida: SintesisOutput con reporte ejecutivo
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import {
   SintesisInput,
   SintesisOutput,
@@ -27,44 +26,53 @@ import {
  * Servicio del Agente Fiscal
  */
 export class FiscalAgentService {
-  /**
-   * Cliente de Anthropic
-   */
-  private anthropic: Anthropic | null = null;
-  private apiKey: string | undefined;
-
-  /**
-   * Modelo a usar
-   */
+  private llmClient: LLMClient | null = null;
+  private llmConfig: LLMConfig | null = null;
   private model = 'claude-sonnet-4-6';
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(llmConfig?: LLMConfig) {
+    this.llmConfig = llmConfig || this.getDefaultConfig();
+    this.initLLMClient();
+  }
+
+  /**
+   * Configuración por defecto (Anthropic Sonnet)
+   */
+  private getDefaultConfig(): LLMConfig {
+    return {
+      provider: 'anthropic',
+      model: this.model,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
+    };
+  }
+
+  /**
+   * Inicializar cliente LLM
+   */
+  private initLLMClient(): void {
+    if (!this.llmConfig) {
+      this.llmConfig = this.getDefaultConfig();
+    }
+    this.llmClient = new LLMClient(this.llmConfig);
   }
 
   /**
    * Actualizar configuración dinámicamente
    */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.anthropic = null; // Forzar re-inicialización
-      logger.info('FiscalAgent: API Key actualizada');
-    }
+  updateConfig(llmConfig: LLMConfig): void {
+    this.llmConfig = llmConfig;
+    this.initLLMClient();
+    logger.info(`FiscalAgent: LLM config actualizada (${llmConfig.provider}/${llmConfig.model})`);
   }
 
   /**
-   * Obtener cliente de Anthropic (lazy init)
+   * Obtener cliente LLM
    */
-  private getAnthropicClient(): Anthropic {
-    if (!this.anthropic) {
-      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set');
-      }
-      this.anthropic = new Anthropic({ apiKey: key });
+  private getLLMClient(): LLMClient {
+    if (!this.llmClient) {
+      this.initLLMClient();
     }
-    return this.anthropic;
+    return this.llmClient!;
   }
 
   /**
@@ -97,44 +105,28 @@ export class FiscalAgentService {
       const prompt = this.construirPrompt(input);
 
       /**
-       * Llamar a Claude
+       * Llamar al LLM
        */
-      logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        messages: [
-          {
-            role: 'user',
-            content: prompt,
-          },
-        ],
-      });
+      const llmClient = this.getLLMClient();
+      const config = llmClient.getConfig();
+      logger.info(`Llamando a ${config.provider} (${config.model})`);
+      const response = await llmClient.complete(prompt, 4096);
 
-      /**
-       * Procesar respuesta
-       */
-      const textoRespuesta = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
-        .trim();
-
-      if (!textoRespuesta) {
-        throw new Error('Respuesta inesperada de Claude');
+      if (!response.text) {
+        throw new Error('Respuesta inesperada del LLM');
       }
 
       /**
        * Parsear reporte
        */
-      const reporte = this.parseReporte(textoRespuesta);
+      const reporte = this.parseReporte(response.text);
 
       /**
-       * Extraer usage de la respuesta de Anthropic
+       * Extraer usage de la respuesta
        */
       const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
         model: response.model,
       };
 
@@ -343,21 +335,14 @@ ${remediation ? `
 Responde directamente a la pregunta. No incluyas JSON, solo texto plano o markdown.
 `;
 
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 2048,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const llmClient = this.getLLMClient();
+      const response = await llmClient.complete(prompt, 2048);
 
-      const answer = response.content
-        .filter((block: any) => block.type === 'text')
-        .map((block: any) => block.text)
-        .join('\n')
-        .trim();
+      const answer = response.text;
 
       const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
+        input_tokens: response.inputTokens,
+        output_tokens: response.outputTokens,
         model: response.model,
       };
 

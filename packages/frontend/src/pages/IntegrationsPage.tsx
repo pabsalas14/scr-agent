@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { GitBranch, Key, Eye, EyeOff, Trash2, ExternalLink, Check, X } from 'lucide-react';
+import { GitBranch, Key, Eye, EyeOff, Trash2, ExternalLink, Check, X, Cpu } from 'lucide-react';
 import Button from '../components/ui/Button';
 import { useToast } from '../hooks/useToast';
 
@@ -9,7 +9,11 @@ interface GitHubConfig {
   connected: boolean;
 }
 
-const LLM_PROVIDERS = ['Claude', 'OpenAI', 'Google'];
+interface LLMConfig {
+  provider: 'anthropic' | 'lmstudio' | 'ollama' | 'openai-compatible';
+  baseUrl?: string;
+  model?: string;
+}
 
 const getIntegrations = (githubConnected: boolean) => [
   {
@@ -24,8 +28,16 @@ const getIntegrations = (githubConnected: boolean) => [
 export default function IntegrationsPage() {
   const [configuring, setConfiguring] = useState<string | null>(null);
   const [showGitHubModal, setShowGitHubModal] = useState(false);
+  const [showLLMModal, setShowLLMModal] = useState(false);
   const [githubToken, setGithubToken] = useState('');
   const [isTestingToken, setIsTestingToken] = useState(false);
+
+  // LLM Config state
+  const [llmConfig, setLLMConfig] = useState<LLMConfig>({ provider: 'anthropic' });
+  const [llmProvider, setLLMProvider] = useState('anthropic');
+  const [llmBaseUrl, setLLMBaseUrl] = useState('');
+  const [llmModel, setLLMModel] = useState('');
+  const [isSavingLLM, setIsSavingLLM] = useState(false);
 
   // Load API keys from localStorage
   const [apiKeys, setApiKeys] = useState<Array<{ id: string; provider: string; key: string }>>(() => {
@@ -83,6 +95,32 @@ export default function IntegrationsPage() {
     loadApiKeys();
   }, []);
 
+  // Load LLM config from backend on mount
+  useEffect(() => {
+    const loadLLMConfig = async () => {
+      try {
+        const response = await fetch('/api/v1/user-settings/llm-config', {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const config = data.data;
+          setLLMConfig(config);
+          setLLMProvider(config.provider || 'anthropic');
+          setLLMBaseUrl(config.baseUrl || '');
+          setLLMModel(config.model || '');
+        }
+      } catch (error) {
+        console.log('No se puede cargar configuración LLM, usando Anthropic por defecto');
+      }
+    };
+
+    loadLLMConfig();
+  }, []);
+
   // Persist API keys to localStorage as backup
   useEffect(() => {
     localStorage.setItem('llm_api_keys', JSON.stringify(apiKeys));
@@ -92,6 +130,54 @@ export default function IntegrationsPage() {
   useEffect(() => {
     localStorage.setItem('github_config', JSON.stringify(githubConfig));
   }, [githubConfig]);
+
+  const saveLLMConfig = async () => {
+    if (llmProvider !== 'anthropic') {
+      if (!llmBaseUrl.trim()) {
+        toast.error('La URL del servidor es requerida');
+        return;
+      }
+      if (!llmModel.trim()) {
+        toast.error('El modelo es requerido');
+        return;
+      }
+    }
+
+    setIsSavingLLM(true);
+    try {
+      const response = await fetch('/api/v1/user-settings/llm-config', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+        },
+        body: JSON.stringify({
+          provider: llmProvider,
+          baseUrl: llmProvider !== 'anthropic' ? llmBaseUrl : undefined,
+          model: llmProvider !== 'anthropic' ? llmModel : undefined,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setLLMConfig({
+          provider: data.data.provider,
+          baseUrl: data.data.baseUrl,
+          model: data.data.model,
+        });
+        toast.success(`Configuración LLM actualizada: ${llmProvider}/${llmModel}`);
+        setShowLLMModal(false);
+      } else {
+        const error = await response.json();
+        toast.error(`Error: ${error.error || 'Error desconocido'}`);
+      }
+    } catch (error) {
+      toast.error('Error al guardar configuración LLM');
+      console.error(error);
+    } finally {
+      setIsSavingLLM(false);
+    }
+  };
 
   const testGitHubToken = async () => {
     if (!githubToken.trim()) {
@@ -345,6 +431,35 @@ export default function IntegrationsPage() {
               </div>
             );
           })}
+
+          {/* LLM Provider Card */}
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 hover:border-[#4B5563] transition-colors">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <Cpu className="text-orange-400" size={24} />
+                <div>
+                  <h3 className="font-semibold text-white">LLM Provider</h3>
+                  <p className="text-xs text-[#A0A0A0]">Configura Claude, LM Studio u otro proveedor</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 bg-blue-500/20 text-blue-400">
+                  <Check size={14} /> {llmProvider === 'anthropic' ? 'Claude' : llmProvider}
+                </span>
+                {llmModel && <span className="text-xs text-[#6B7280]">{llmModel}</span>}
+              </div>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowLLMModal(true)}
+              >
+                Configurar
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -519,6 +634,86 @@ export default function IntegrationsPage() {
               <p className="text-xs text-[#6B7280] text-center">
                 Tu token se valida contra la API de GitHub pero no se almacena en el servidor
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LLM Config Modal */}
+      {showLLMModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 max-w-md w-full mx-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Cpu size={24} className="text-orange-400" />
+              <h2 className="text-lg font-semibold text-white">Configurar LLM</h2>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-[#A0A0A0] block mb-2">Proveedor</label>
+                <select
+                  value={llmProvider}
+                  onChange={(e) => {
+                    setLLMProvider(e.target.value);
+                    if (e.target.value === 'anthropic') {
+                      setLLMBaseUrl('');
+                      setLLMModel('');
+                    }
+                  }}
+                  className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-[#4B5563]"
+                >
+                  <option value="anthropic">Claude (Anthropic)</option>
+                  <option value="lmstudio">LM Studio</option>
+                  <option value="ollama">Ollama</option>
+                  <option value="openai-compatible">OpenAI Compatible</option>
+                </select>
+              </div>
+
+              {llmProvider !== 'anthropic' && (
+                <>
+                  <div>
+                    <label className="text-sm text-[#A0A0A0] block mb-2">URL del servidor</label>
+                    <input
+                      type="text"
+                      value={llmBaseUrl}
+                      onChange={(e) => setLLMBaseUrl(e.target.value)}
+                      placeholder="http://localhost:1234/v1"
+                      className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-sm text-[#A0A0A0] block mb-2">Modelo</label>
+                    <input
+                      type="text"
+                      value={llmModel}
+                      onChange={(e) => setLLMModel(e.target.value)}
+                      placeholder="qwen2.5-coder-7b-instruct"
+                      className="w-full px-3 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#4B5563]"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div className="flex gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setShowLLMModal(false)}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={saveLLMConfig}
+                  disabled={isSavingLLM}
+                  className="flex-1"
+                >
+                  {isSavingLLM ? 'Guardando...' : 'Guardar'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

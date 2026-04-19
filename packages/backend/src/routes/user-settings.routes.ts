@@ -485,4 +485,123 @@ router.delete('/llm-keys/:id', authMiddleware, async (req: Request, res: Respons
   }
 });
 
+/**
+ * GET /api/v1/user-settings/llm-config
+ * Get LLM provider configuration for the current user
+ */
+router.get('/llm-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const userSettings = await prisma.userSettings.findUnique({
+      where: { userId },
+      select: {
+        llmProvider: true,
+        lmstudioBaseUrl: true,
+        lmstudioModel: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        provider: userSettings?.llmProvider || 'anthropic',
+        baseUrl: userSettings?.lmstudioBaseUrl || '',
+        model: userSettings?.lmstudioModel || '',
+      },
+    });
+  } catch (error) {
+    logger.error(`Error fetching LLM config: ${error}`);
+    res.status(500).json({ error: 'Failed to fetch LLM config' });
+  }
+});
+
+/**
+ * POST /api/v1/user-settings/llm-config
+ * Update LLM provider configuration
+ */
+router.post('/llm-config', authMiddleware, async (req: Request, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { provider, baseUrl, model } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    if (!provider) {
+      return res.status(400).json({ error: 'Provider is required' });
+    }
+
+    // Validate provider
+    const validProviders = ['anthropic', 'lmstudio', 'ollama', 'openai-compatible'];
+    if (!validProviders.includes(provider)) {
+      return res.status(400).json({ error: 'Invalid provider' });
+    }
+
+    // Validate required fields for non-anthropic providers
+    if (provider !== 'anthropic') {
+      if (!baseUrl) {
+        return res.status(400).json({ error: 'baseUrl is required for non-anthropic providers' });
+      }
+      if (!model) {
+        return res.status(400).json({ error: 'model is required' });
+      }
+    }
+
+    // Test LLM connection if not Anthropic
+    if (provider !== 'anthropic' && baseUrl && model) {
+      try {
+        await axios.post(`${baseUrl}/chat/completions`, {
+          model,
+          messages: [{ role: 'user', content: 'Test connection' }],
+          max_tokens: 10,
+        }, { timeout: 5000 });
+      } catch (testError) {
+        logger.warn(`LLM connection test failed: ${testError}`);
+        return res.status(400).json({
+          error: 'Could not connect to LLM server',
+          details: testError instanceof Error ? testError.message : String(testError),
+        });
+      }
+    }
+
+    // Save configuration
+    const updated = await prisma.userSettings.upsert({
+      where: { userId },
+      update: {
+        llmProvider: provider,
+        lmstudioBaseUrl: provider !== 'anthropic' ? baseUrl : null,
+        lmstudioModel: provider !== 'anthropic' ? model : null,
+        updatedAt: new Date(),
+      },
+      create: {
+        userId,
+        llmProvider: provider,
+        lmstudioBaseUrl: provider !== 'anthropic' ? baseUrl : null,
+        lmstudioModel: provider !== 'anthropic' ? model : null,
+      },
+    });
+
+    logger.info(`LLM config updated for user ${userId}: ${provider}/${model}`);
+
+    res.json({
+      success: true,
+      message: 'LLM configuration updated successfully',
+      data: {
+        provider: updated.llmProvider,
+        baseUrl: updated.lmstudioBaseUrl,
+        model: updated.lmstudioModel,
+      },
+    });
+  } catch (error) {
+    logger.error(`Error updating LLM config: ${error}`);
+    res.status(500).json({ error: 'Failed to update LLM config' });
+  }
+});
+
 export default router;

@@ -18,6 +18,7 @@ import { gitService } from '../services/git.service';
 import { InspectorAgentService } from '../agents/inspector.agent';
 import { DetectiveAgentService } from '../agents/detective.agent';
 import { FiscalAgentService } from '../agents/fiscal.agent';
+import { LLMConfig } from '../services/llm-client.service';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
 import { detectiveService } from '../services/detective.service';
@@ -29,10 +30,54 @@ import {
   updateLastProcessedCommit,
 } from '../services/incremental-analysis.service';
 
-// Instanciar agentes
+// Instanciar agentes con config por defecto
 const inspectorAgent = new InspectorAgentService();
 const detectiveAgent = new DetectiveAgentService();
 const fiscalAgent = new FiscalAgentService();
+
+/**
+ * Obtener configuración LLM del usuario desde UserSettings
+ */
+async function getLLMConfigFromUser(userId: string | null): Promise<LLMConfig | undefined> {
+  if (!userId) {
+    return undefined; // Usar config por defecto (Anthropic)
+  }
+
+  const userSettings = await prisma.userSettings.findUnique({
+    where: { userId },
+    select: {
+      llmProvider: true,
+      lmstudioBaseUrl: true,
+      lmstudioModel: true,
+      claudeApiKey: true,
+    },
+  });
+
+  if (!userSettings) {
+    return undefined; // Usar config por defecto
+  }
+
+  const provider = (userSettings.llmProvider || 'anthropic') as 'anthropic' | 'lmstudio' | 'ollama' | 'openai-compatible';
+
+  if (provider === 'anthropic') {
+    return {
+      provider: 'anthropic',
+      model: 'claude-sonnet-4-6', // Para Inspector y Fiscal
+      apiKey: userSettings.claudeApiKey || process.env['ANTHROPIC_API_KEY'],
+    };
+  }
+
+  if (provider === 'lmstudio' && userSettings.lmstudioBaseUrl && userSettings.lmstudioModel) {
+    return {
+      provider: 'lmstudio',
+      model: userSettings.lmstudioModel,
+      baseUrl: userSettings.lmstudioBaseUrl,
+    };
+  }
+
+  // Fallback a Anthropic si la configuración está incompleta
+  return undefined;
+}
 
 // Configuración de Redis para el worker
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -89,6 +134,15 @@ async function processAnalysisJob(job: Job) {
       if (userSettings?.githubToken) {
         userGithubToken = decrypt(userSettings.githubToken);
       }
+    }
+
+    // Obtener y aplicar configuración LLM del usuario
+    const llmConfig = await getLLMConfigFromUser(project.userId);
+    if (llmConfig) {
+      logger.info(`Aplicando LLM config del usuario: ${llmConfig.provider}/${llmConfig.model}`);
+      inspectorAgent.updateConfig(llmConfig);
+      detectiveAgent.updateConfig(llmConfig);
+      fiscalAgent.updateConfig(llmConfig);
     }
 
     // ========== FASE 1: INSPECTOR AGENT ==========

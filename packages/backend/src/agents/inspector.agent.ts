@@ -8,61 +8,69 @@
  * - Identificar backdoors, lógica oculta, funciones sospechosas
  * - Generar hallazgos con severidad y recomendaciones de remediación
  *
- * Modelo: Claude 3.5 Sonnet
  * Entrada: Código fuente (por archivo o repositorio)
  * Salida: MaliciaOutput con hallazgos detallados
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
-/** Tamaño máximo de código por llamada a Claude (500 KB) */
+/** Tamaño máximo de código por llamada al LLM (500 KB) */
 const MAX_CHUNK_BYTES = 500 * 1024;
 
 /**
  * Servicio del Agente Inspector
  */
 export class InspectorAgentService {
-  /**
-   * Cliente de Anthropic para acceder a Claude
-   */
-  private anthropic: Anthropic | null = null;
-  private apiKey: string | undefined;
-
-  /**
-   * Modelo a usar
-   */
+  private llmClient: LLMClient | null = null;
+  private llmConfig: LLMConfig | null = null;
   private model = 'claude-sonnet-4-6';
 
-  constructor(apiKey?: string) {
-    this.apiKey = apiKey;
+  constructor(llmConfig?: LLMConfig) {
+    this.llmConfig = llmConfig || this.getDefaultConfig();
+    this.initLLMClient();
+  }
+
+  /**
+   * Configuración por defecto (Anthropic)
+   */
+  private getDefaultConfig(): LLMConfig {
+    return {
+      provider: 'anthropic',
+      model: this.model,
+      apiKey: process.env['ANTHROPIC_API_KEY'],
+    };
+  }
+
+  /**
+   * Inicializar cliente LLM
+   */
+  private initLLMClient(): void {
+    if (!this.llmConfig) {
+      this.llmConfig = this.getDefaultConfig();
+    }
+    this.llmClient = new LLMClient(this.llmConfig);
   }
 
   /**
    * Actualizar configuración dinámicamente
    */
-  updateConfig(apiKey: string): void {
-    if (this.apiKey !== apiKey) {
-      this.apiKey = apiKey;
-      this.anthropic = null; // Forzar re-inicialización
-      logger.info('InspectorAgent: API Key actualizada');
-    }
+  updateConfig(llmConfig: LLMConfig): void {
+    this.llmConfig = llmConfig;
+    this.initLLMClient();
+    logger.info(`InspectorAgent: LLM config actualizada (${llmConfig.provider}/${llmConfig.model})`);
   }
 
   /**
-   * Obtener cliente de Anthropic (lazy init)
+   * Obtener cliente LLM
    */
-  private getAnthropicClient(): Anthropic {
-    if (!this.anthropic) {
-      const key = this.apiKey || process.env['ANTHROPIC_API_KEY'];
-      if (!key) {
-        throw new Error('ANTHROPIC_API_KEY environment variable not set');
-      }
-      this.anthropic = new Anthropic({ apiKey: key });
+  private getLLMClient(): LLMClient {
+    if (!this.llmClient) {
+      this.initLLMClient();
     }
-    return this.anthropic;
+    return this.llmClient!;
   }
 
   /**
@@ -126,34 +134,26 @@ export class InspectorAgentService {
       }
 
       const prompt = this.construirPrompt(input);
-      logger.info(`Llamando a Claude ${this.model}`);
-      const response = await this.getAnthropicClient().messages.create({
-        model: this.model,
-        max_tokens: 4096,
-        messages: [{ role: 'user', content: prompt }],
-      });
+      const llmClient = this.getLLMClient();
+      const config = llmClient.getConfig();
+      logger.info(`Llamando a ${config.provider} (${config.model})`);
 
-      const textoRespuesta = response.content
-        .filter((block) => block.type === 'text')
-        .map((block) => ('text' in block ? block.text : ''))
-        .join('\n')
-        .trim();
+      const response = await llmClient.complete(prompt, 4096);
 
-      if (!textoRespuesta) throw new Error('Respuesta inesperada de Claude');
+      if (!response.text) throw new Error('Respuesta inesperada del LLM');
 
-      const hallazgos = this.parseRespuesta(textoRespuesta);
-      const usage = {
-        input_tokens: response.usage.input_tokens,
-        output_tokens: response.usage.output_tokens,
-        model: response.model,
-      };
+      const hallazgos = this.parseRespuesta(response.text);
 
-      const output: MaliciaOutput & { usage: typeof usage } = {
+      const output: MaliciaOutput & { usage: any } = {
         hallazgos,
         resumen: `Se encontraron ${hallazgos.length} hallazgos potenciales de código malicioso`,
         cantidad_hallazgos: hallazgos.length,
         tiempo_ejecucion_ms: Date.now() - startTime,
-        usage,
+        usage: {
+          input_tokens: response.inputTokens,
+          output_tokens: response.outputTokens,
+          model: response.model,
+        },
       };
 
       cacheService.set(CacheType.MALICIA_FINDING, 'analisis', output, codigoHash);

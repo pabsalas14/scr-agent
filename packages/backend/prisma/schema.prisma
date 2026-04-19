@@ -82,6 +82,11 @@ model UserSettings {
   maxTokens     Int?     @default(4096) // tokens máximos para respuesta
   webhookUrl    String?  @db.VarChar(500) // URL para notificaciones
 
+  // LLM Provider Configuration
+  llmProvider   String?  @default("anthropic") @db.VarChar(50) // anthropic, lmstudio, ollama, openai-compatible
+  lmstudioBaseUrl String? @db.VarChar(500) // URL base para LM Studio o Ollama (ej: http://localhost:1234/v1)
+  lmstudioModel String?  @db.VarChar(100) // Modelo específico para usar (ej: qwen2.5-coder-7b-instruct)
+
   // API Key para servicios externos
   apiKey        String?  @db.VarChar(500)
 
