@@ -164,7 +164,7 @@ export default function AppLayout() {
 
             {/* Main Content */}
             <main className="flex-1 relative z-10 overflow-auto">
-              <div className="p-6 sm:p-8 lg:p-10">
+              <div className="px-6 py-4">
                 <AnimatePresence mode="wait">
                   <Outlet />
                 </AnimatePresence>
