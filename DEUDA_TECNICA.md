@@ -47,6 +47,17 @@
   - Llamar GitHub API `/user` para validar y obtener username
   - Mostrar "✓ Conectado como @{username}"
 
+### 6. ⚠️ Análisis Pueden Quedar Stuck Sin Timeout Global
+- **Ubicación**: Inspector Agent `analizarArchivos()` - `Promise.all()` de chunks
+- **Problema**: Si un chunk de código tarda indefinidamente, Promise.all() se cuelga sin recuperación
+- **Impacto**: Worker stuck esperando indefinidamente, peticiones huérfanas a LM Studio
+- **Prioridad**: MEDIUM
+- **Status**: PARCIALMENTE ARREGLADO - Se añadió timeout global de 35 minutos (2026-04-20)
+- **Solución Pendiente**: 
+  - Mejorar manejo de errores en chunks individuales
+  - Implementar circuit breaker si N chunks fallan
+  - Opcionalmente: ejecutar chunks en paralelo limitado con control de concurrencia
+
 ---
 
 ## Fix Stack (Completado)
