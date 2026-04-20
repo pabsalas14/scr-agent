@@ -291,11 +291,11 @@ async function processAnalysisJob(job: Job) {
 
     // Callback para reportar progreso en tiempo real
     const progressCallback = async (processedChunks: number, totalChunks: number) => {
-      // Calcular progreso real: INSPECTOR usa 0-10% del progreso total
-      // Formula: (chunks_procesados / chunks_totales) * 10
-      const inspectorProgress = Math.round((processedChunks / totalChunks) * 10);
+      // Calcular progreso real: (chunks_procesados / chunks_totales) * 100
+      // Esto da mejor granularidad especialmente con muchos chunks (ej. 1500 chunks de juice-shop)
+      const inspectorProgress = Math.round((processedChunks / totalChunks) * 100);
 
-      logger.debug(`[Progress] Inspector: ${processedChunks}/${totalChunks} chunks (${inspectorProgress}%)`);
+      logger.info(`[Progress] Inspector: ${processedChunks}/${totalChunks} chunks (${inspectorProgress}%)`);
 
       // Actualizar BD con progreso real
       await prisma.analysis.update({
