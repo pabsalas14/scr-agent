@@ -90,6 +90,12 @@ export class InspectorAgentService {
     const chunks = this.splitEnChunks(archivos);
     logger.info(`Inspector: ${archivos.length} archivos → ${chunks.length} chunk(s) de análisis`);
 
+    // Log chunk sizes for debugging
+    chunks.forEach((chunk, i) => {
+      const chunkSize = chunk.reduce((sum, f) => sum + f.content.length, 0);
+      logger.info(`Chunk ${i + 1}: ${chunk.length} archivos, ${chunkSize} bytes`);
+    });
+
     const resultados = await Promise.all(
       chunks.map((chunk, i) =>
         this.analizarCodigo({
@@ -143,7 +149,14 @@ export class InspectorAgentService {
       const config = llmClient.getConfig();
       logger.info(`Llamando a ${config.provider} (${config.model})`);
 
-      const response = await llmClient.complete(prompt, 4096);
+      // Log prompt size for debugging
+      const promptSize = Buffer.byteLength(prompt, 'utf-8');
+      logger.info(`Prompt size: ${promptSize} bytes, Código size: ${input.codigo.length} bytes`);
+
+      // For LM Studio with 4K context, limit output to 256-512 tokens to leave room for input
+      const maxOutputTokens = config.provider === 'lmstudio' ? 256 : 4096;
+
+      const response = await llmClient.complete(prompt, maxOutputTokens);
 
       if (!response.text) throw new Error('Respuesta inesperada del LLM');
 
