@@ -102,7 +102,8 @@ export class InspectorAgentService {
     });
 
     // Ejecutar análisis de chunks con timeout global para toda la operación
-    // Máximo 35 minutos para todos los chunks (1 minuto de overhead + 30 min para Inspector + 4 min extra)
+    // Máximo 4 horas (240 minutos) - apropiado para proyectos de tamaño mediano
+    // Para proyectos grandes (>500KB): considerar limitar tamaño o usar Anthropic Claude
     const resultados = await Promise.race([
       Promise.all(
         chunks.map((chunk, i) =>
@@ -114,8 +115,8 @@ export class InspectorAgentService {
       ),
       new Promise((_, reject) =>
         setTimeout(
-          () => reject(new Error(`Inspector Agent chunks analysis timeout (35 minutos) - uno de los chunks tardó demasiado`)),
-          35 * 60 * 1000
+          () => reject(new Error(`Inspector Agent chunks analysis timeout (240 minutos / 4 horas) - demasiados chunks o modelo muy lento`)),
+          240 * 60 * 1000
         )
       ) as any,
     ]);
@@ -173,13 +174,14 @@ export class InspectorAgentService {
       const maxOutputTokens = config.provider === 'lmstudio' ? 768 : 4096;
 
       // Wrap LLM call with timeout to detect hanging requests
-      // LM Studio should respond within 5 minutes for code analysis
+      // Large models like qwen2.5-coder-14b need 10 minutes for 1200-byte chunks
+      // Smaller models like qwen2.5-coder-7b typically respond in 3-5 minutes
       const response = await Promise.race([
         llmClient.complete(prompt, maxOutputTokens),
         new Promise((_, reject) =>
           setTimeout(
-            () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
-            5 * 60 * 1000
+            () => reject(new Error(`LLM request timeout (10 minutos) - ${config.provider}/${config.model} no respondió`)),
+            10 * 60 * 1000
           )
         ) as any,
       ]);

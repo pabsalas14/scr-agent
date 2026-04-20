@@ -290,12 +290,12 @@ async function processAnalysisJob(job: Job) {
     logger.info(`Analizando código (${repoFiles.fileCount} archivos activos, ${repoFiles.totalSize} bytes)...`);
 
     // Ejecutar Inspector Agent con timeout
-    // Timeout debe ser mayor que el timeout de LM Studio (5 min por chunk) para permitir que complete todos los chunks
-    // Para proyectos grandes: timeout de 30 minutos para procesar en paralelo múltiples chunks
+    // Con 10 minutos por chunk y timeout global de 4 horas, establecer timeout aquí en 5 horas para dar margen
+    // Para proyectos muy grandes (>500KB): considerar limitar tamaño o usar Anthropic Claude en lugar de modelos locales
     const maliciaOutput: any = await Promise.race([
       inspectorAgent.analizarArchivos(repoFiles.files, `Repositorio: ${project.repositoryUrl}`),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Inspector Agent timeout (30 minutos) - análisis de código demasiado lento')), 30 * 60 * 1000)
+        setTimeout(() => reject(new Error('Inspector Agent timeout (300 minutos / 5 horas) - análisis de código demasiado lento o proyecto muy grande')), 300 * 60 * 1000)
       ),
     ]);
 
