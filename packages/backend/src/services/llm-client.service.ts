@@ -278,12 +278,30 @@ export class LLMClient {
       });
     }
 
-    const response = await this.axiosClient.post('/chat/completions', {
-      model: this.config.model,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: this.config.temperature,
-      max_tokens: maxTokens,
-    });
+    let response;
+    try {
+      response = await this.axiosClient.post('/chat/completions', {
+        model: this.config.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: this.config.temperature,
+        max_tokens: maxTokens,
+      });
+    } catch (error: any) {
+      // Log detailed error information for debugging
+      const errorDetails = {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        config: {
+          baseURL: this.axiosClient?.defaults.baseURL,
+          headers: this.axiosClient?.defaults.headers,
+          model: this.config.model,
+        },
+      };
+      console.error('LM Studio request error details:', JSON.stringify(errorDetails, null, 2));
+      throw error;
+    }
 
     const data = response.data;
     const choice = data.choices?.[0];
