@@ -39,6 +39,9 @@ export default function UsersPage() {
   const [newUserPassword, setNewUserPassword] = useState('');
   const [newUserRole, setNewUserRole] = useState('ANALYST');
   const [isCreating, setIsCreating] = useState(false);
+  const [editingUser, setEditingUser] = useState<Usuario | null>(null);
+  const [editUserRole, setEditUserRole] = useState('ANALYST');
+  const [isEditing, setIsEditing] = useState(false);
   const { confirm } = useConfirm();
   const toast = useToast();
 
@@ -78,6 +81,50 @@ export default function UsersPage() {
       console.error(error);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handleDeleteUser = async (user: Usuario) => {
+    await confirm({
+      title: 'Eliminar Usuario',
+      message: `¿Estás seguro de que deseas eliminar a ${user.name}? Esta acción no se puede deshacer.`,
+      confirmText: 'Eliminar',
+      cancelText: 'Cancelar',
+      isDangerous: true,
+      onConfirm: async () => {
+        try {
+          await apiService.eliminarUsuario(user.id);
+          toast.success(`Usuario ${user.name} eliminado correctamente`);
+          refetch();
+        } catch (error) {
+          toast.error('Error al eliminar el usuario');
+          console.error(error);
+        }
+      },
+    });
+  };
+
+  const handleEditStart = (user: Usuario) => {
+    setEditingUser(user);
+    setEditUserRole(user.role || 'ANALYST');
+  };
+
+  const handleEditSave = async () => {
+    if (!editingUser) return;
+
+    try {
+      setIsEditing(true);
+      await apiService.actualizarUsuario(editingUser.id, {
+        role: editUserRole,
+      });
+      toast.success('Usuario actualizado correctamente');
+      setEditingUser(null);
+      refetch();
+    } catch (error) {
+      toast.error('Error al actualizar el usuario');
+      console.error(error);
+    } finally {
+      setIsEditing(false);
     }
   };
 
@@ -191,6 +238,66 @@ export default function UsersPage() {
         </div>
       )}
 
+      {/* Edit User Modal */}
+      {editingUser && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 max-w-md w-full space-y-4">
+            <h3 className="text-lg font-semibold text-white">Editar Usuario</h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Email</label>
+                <input
+                  type="email"
+                  value={editingUser.email}
+                  disabled
+                  className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-[#666666] cursor-not-allowed"
+                />
+                <p className="text-xs text-[#666666] mt-1">El email no se puede cambiar</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-white mb-2">Rol</label>
+                <select
+                  value={editUserRole}
+                  onChange={(e) => setEditUserRole(e.target.value)}
+                  className="w-full px-4 py-2 bg-[#111111] border border-[#2D2D2D] rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="DEVELOPER">Desarrollador</option>
+                  <option value="ANALYST">Analista</option>
+                  <option value="ADMIN">Administrador</option>
+                </select>
+              </div>
+
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 flex gap-2">
+                <Info className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-blue-300">
+                  Cambiar el rol del usuario actualiza sus permisos en la plataforma.
+                </p>
+              </div>
+
+              <div className="flex gap-2 pt-4">
+                <Button
+                  onClick={handleEditSave}
+                  disabled={isEditing}
+                  className="flex-1"
+                >
+                  {isEditing ? 'Guardando...' : 'Guardar'}
+                </Button>
+                <Button
+                  onClick={() => setEditingUser(null)}
+                  variant="secondary"
+                  disabled={isEditing}
+                  className="flex-1"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Info message if showing only current user */}
       {allUsers.length === 1 && currentUser && (
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 flex items-start gap-3">
@@ -236,23 +343,17 @@ export default function UsersPage() {
                     <span className="text-xs text-green-400">Activo</span>
                   </td>
                   <td className="px-6 py-4 flex gap-2">
-                    <button className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-white transition-colors">
+                    <button
+                      onClick={() => handleEditStart(user)}
+                      className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-blue-400 transition-colors"
+                      title="Editar usuario"
+                    >
                       <Edit2 size={16} />
                     </button>
                     <button
-                      onClick={async () => {
-                        await confirm({
-                          title: 'Eliminar Usuario',
-                          message: `¿Estás seguro de que deseas eliminar a ${user.name}? Esta acción no se puede deshacer.`,
-                          confirmText: 'Eliminar',
-                          cancelText: 'Cancelar',
-                          isDangerous: true,
-                          onConfirm: async () => {
-                            toast.success(`Usuario ${user.name} eliminado correctamente`);
-                          },
-                        });
-                      }}
+                      onClick={() => handleDeleteUser(user)}
                       className="p-2 hover:bg-[#2D2D2D] rounded text-[#A0A0A0] hover:text-red-400 transition-colors"
+                      title="Eliminar usuario"
                     >
                       <Trash2 size={16} />
                     </button>

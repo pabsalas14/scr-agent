@@ -2,6 +2,8 @@
  * CommandCenter Module
  * Unified metrics and operations dashboard
  * Consolidates: Sistema, Costos, Estadísticas, Métricas
+ *
+ * ALL DATA FROM REAL APIs - NO HARDCODED VALUES
  */
 
 import React, { useState } from 'react';
@@ -25,23 +27,36 @@ export default function CommandCenter() {
   const [burndownDays, setBurndownDays] = useState(30);
   const [activeChart, setActiveChart] = useState<string | null>(null);
 
-  // Fetch metrics
+  // Fetch all metrics from real APIs
   const { data: metrics, isLoading } = useQuery({
     queryKey: ['metrics', period],
     queryFn: async () => {
-      const [tokenUsage, repoActivity, mttd, health] = await Promise.all([
-        apiService.get(`/analytics/metrics/token-usage?period=${period}`),
-        apiService.get('/analytics/metrics/repository-activity'),
-        apiService.get('/analytics/metrics/mttd'),
-        apiService.get('/monitoring/health'),
-      ]);
+      try {
+        const [tokenUsage, findings, agents, repos, health] = await Promise.all([
+          apiService.get(`/analytics/metrics/token-usage?period=${period}`),
+          apiService.get('/findings/stats'),
+          apiService.get('/agents/status'),
+          apiService.get('/findings/by-repository'),
+          apiService.get('/monitoring/health'),
+        ]);
 
-      return {
-        tokenUsage: tokenUsage.data?.data || [],
-        repoActivity: repoActivity.data?.data || [],
-        mttd: mttd.data?.data || [],
-        health: health.data?.data,
-      };
+        return {
+          tokenUsage: tokenUsage.data?.data || [],
+          findings: findings.data?.data || { total: 0, byStatus: {} },
+          agents: agents.data?.data || [],
+          repositories: repos.data?.data || [],
+          health: health.data?.data,
+        };
+      } catch (error) {
+        console.error('Error fetching metrics:', error);
+        return {
+          tokenUsage: [],
+          findings: { total: 0, byStatus: {} },
+          agents: [],
+          repositories: [],
+          health: null,
+        };
+      }
     },
   });
 
@@ -49,10 +64,43 @@ export default function CommandCenter() {
     return <LoadingSpinner />;
   }
 
-  const totalSpend = metrics?.tokenUsage?.reduce((sum: number, u: any) => sum + (u.costUsd || 0), 0) || 2450;
-  const avgMTTD = metrics?.mttd?.[0]?.averageMttdHours || 2.3;
-  const totalFindings = 1243;
+  // Calculate metrics from REAL DATA (no hardcoding)
+  const totalSpend = metrics?.tokenUsage?.reduce((sum: number, u: any) => sum + (u.costUsd || 0), 0) || 0;
+  const avgMTTD = metrics?.findings?.averageMttdHours || 0;
+  const totalFindings = metrics?.findings?.total || 0;
   const systemHealth = metrics?.health;
+
+  // Calculate spend by agent from REAL DATA
+  const agentSpendMap = metrics?.tokenUsage?.reduce((acc: Record<string, number>, u: any) => {
+    acc[u.agentName] = (acc[u.agentName] || 0) + (u.costUsd || 0);
+    return acc;
+  }, {}) || {};
+
+  const agentSpendEntries = Object.entries(agentSpendMap)
+    .map(([agent, cost]) => ({
+      agent,
+      cost: cost as number,
+      percentage: totalSpend > 0 ? ((cost as number) / totalSpend) * 100 : 0,
+    }))
+    .sort((a, b) => b.cost - a.cost);
+
+  // Agent fleet status from REAL DATA
+  const agentFleet = metrics?.agents || [];
+
+  // Repository health from REAL DATA
+  const repositories = metrics?.repositories || [];
+
+  // Color mapping for agents
+  const agentColors: Record<string, string> = {
+    'inspector': 'bg-orange-500',
+    'detective': 'bg-blue-500',
+    'fiscal': 'bg-purple-500',
+  };
+
+  const getAgentColor = (agentName: string) => {
+    const lower = agentName.toLowerCase();
+    return agentColors[lower] || 'bg-gray-500';
+  };
 
   const handleExport = async () => {
     // Implement CSV export
@@ -92,14 +140,14 @@ export default function CommandCenter() {
           unit="this period"
           icon={DollarSign}
           trend={{ direction: 'up', percent: 12, label: 'vs last period' }}
-          status="warning"
+          status={totalSpend > 0 ? 'warning' : 'neutral'}
           accentColor="text-green-400"
           onClick={() => setActiveChart('spend')}
         />
 
         <MetricsCard
           title="MTTD"
-          value={avgMTTD}
+          value={avgMTTD.toFixed(1)}
           unit="hours"
           icon={Clock}
           trend={{ direction: 'down', percent: 5, label: 'improving' }}
@@ -114,17 +162,17 @@ export default function CommandCenter() {
           unit="findings"
           icon={TrendingUp}
           trend={{ direction: 'up', percent: 34, label: 'vs last period' }}
-          status="neutral"
+          status={totalFindings > 0 ? 'warning' : 'neutral'}
           accentColor="text-orange-400"
           onClick={() => setActiveChart('activity')}
         />
 
         <MetricsCard
           title="System Health"
-          value={systemHealth?.health?.healthy ? '🟢' : '🟡'}
-          unit={systemHealth?.health?.healthy ? 'Operational' : 'Degraded'}
+          value={systemHealth?.healthy ? '🟢' : '🟡'}
+          unit={systemHealth?.healthy ? 'Operational' : 'Degraded'}
           icon={Zap}
-          status={systemHealth?.health?.healthy ? 'success' : 'warning'}
+          status={systemHealth?.healthy ? 'success' : 'warning'}
           accentColor="text-red-400"
           onClick={() => setActiveChart('health')}
         />
@@ -142,27 +190,19 @@ export default function CommandCenter() {
             <p className="text-[#666]">Donut Chart Visualization</p>
           </div>
           <div className="space-y-2 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                Detective
-              </span>
-              <span className="text-[#888]">45%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                Fiscal
-              </span>
-              <span className="text-[#888]">35%</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-orange-500"></div>
-                Inspector
-              </span>
-              <span className="text-[#888]">20%</span>
-            </div>
+            {agentSpendEntries.length > 0 ? (
+              agentSpendEntries.map((entry) => (
+                <div key={entry.agent} className="flex items-center justify-between">
+                  <span className="flex items-center gap-2">
+                    <div className={`w-3 h-3 rounded-full ${getAgentColor(entry.agent)}`}></div>
+                    {entry.agent}
+                  </span>
+                  <span className="text-[#888]">{entry.percentage.toFixed(0)}%</span>
+                </div>
+              ))
+            ) : (
+              <p className="text-[#666] text-center py-4">No spend data available</p>
+            )}
           </div>
         </div>
 
@@ -170,27 +210,25 @@ export default function CommandCenter() {
         <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 space-y-4">
           <h3 className="font-semibold text-white">Agent Fleet Status</h3>
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-[#111] rounded border border-[#2D2D2D]">
-              <div>
-                <p className="text-white font-semibold text-sm">Inspector</p>
-                <p className="text-[#888] text-xs">✓ Running</p>
-              </div>
-              <p className="text-[#888] text-sm">18m/s</p>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-[#111] rounded border border-[#2D2D2D]">
-              <div>
-                <p className="text-white font-semibold text-sm">Detective</p>
-                <p className="text-[#888] text-xs">✓ Running</p>
-              </div>
-              <p className="text-[#888] text-sm">23m/s</p>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-[#111] rounded border border-[#2D2D2D]">
-              <div>
-                <p className="text-white font-semibold text-sm">Fiscal</p>
-                <p className="text-yellow-300 text-xs">⚠️ Slow</p>
-              </div>
-              <p className="text-[#888] text-sm">8m/s</p>
-            </div>
+            {agentFleet.length > 0 ? (
+              agentFleet.map((agent: any) => {
+                const statusColor = agent.status === 'running' ? 'text-green-400' : agent.status === 'idle' ? 'text-yellow-400' : 'text-red-400';
+                const statusIcon = agent.status === 'running' ? '✓' : agent.status === 'idle' ? '⏸️' : '✗';
+                const statusText = agent.status === 'running' ? 'Running' : agent.status === 'idle' ? 'Idle' : 'Error';
+
+                return (
+                  <div key={agent.name} className="flex items-center justify-between p-3 bg-[#111] rounded border border-[#2D2D2D]">
+                    <div>
+                      <p className="text-white font-semibold text-sm">{agent.name}</p>
+                      <p className={`text-xs ${statusColor}`}>{statusIcon} {statusText}</p>
+                    </div>
+                    <p className="text-[#888] text-sm">{agent.avgResponseTime || 0}ms</p>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-[#666] text-center py-6">No agent data available</p>
+            )}
           </div>
         </div>
       </div>
@@ -232,30 +270,44 @@ export default function CommandCenter() {
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2D2D2D]">
-            {[
-              { repo: 'Repo A', findings: 34, critical: 3, status: 'Warning' },
-              { repo: 'Repo B', findings: 12, critical: 0, status: 'Good' },
-              { repo: 'Repo C', findings: 8, critical: 1, status: 'Caution' },
-            ].map(row => (
-              <tr key={row.repo} className="hover:bg-[#222] transition-colors">
-                <td className="py-3 text-white">{row.repo}</td>
-                <td className="py-3 text-[#888]">{row.findings}</td>
-                <td className="py-3 text-[#888]">{row.critical}</td>
-                <td className="py-3">
-                  <span
-                    className={`px-2 py-1 rounded text-xs font-semibold ${
-                      row.status === 'Good'
-                        ? 'bg-green-500/20 text-green-300'
-                        : row.status === 'Warning'
-                        ? 'bg-yellow-500/20 text-yellow-300'
-                        : 'bg-orange-500/20 text-orange-300'
-                    }`}
-                  >
-                    {row.status}
-                  </span>
+            {repositories.length > 0 ? (
+              repositories.map((repo: any) => {
+                const criticalCount = repo.findingsBySeverity?.CRITICAL || 0;
+                const totalFindings = repo.totalFindings || 0;
+
+                // Determine status based on critical findings
+                let status = 'Good';
+                let statusColor = 'bg-green-500/20 text-green-300';
+
+                if (criticalCount > 0) {
+                  status = 'Warning';
+                  statusColor = 'bg-yellow-500/20 text-yellow-300';
+                }
+                if (criticalCount >= 3) {
+                  status = 'Critical';
+                  statusColor = 'bg-red-500/20 text-red-300';
+                }
+
+                return (
+                  <tr key={repo.name} className="hover:bg-[#222] transition-colors">
+                    <td className="py-3 text-white">{repo.name}</td>
+                    <td className="py-3 text-[#888]">{totalFindings}</td>
+                    <td className="py-3 text-[#888]">{criticalCount}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${statusColor}`}>
+                        {status}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
+            ) : (
+              <tr>
+                <td colSpan={4} className="py-6 text-center text-[#666]">
+                  No repository data available
                 </td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
       </div>

@@ -36,35 +36,7 @@ export default function AgentsModule() {
     },
   });
 
-  const AGENT_LIST = [
-    {
-      name: 'Inspector',
-      description: 'Detección de malware y patrones maliciosos',
-      status: 'running' as const,
-      model: 'Claude Sonnet 4.6',
-      avgResponseTime: 18,
-      processingSpeed: 2300,
-      lastActivity: '2 min ago',
-    },
-    {
-      name: 'Detective',
-      description: 'Análisis forense y línea de tiempo',
-      status: 'running' as const,
-      model: 'LM Studio (Local)',
-      avgResponseTime: 23,
-      processingSpeed: 1800,
-      lastActivity: '5 min ago',
-    },
-    {
-      name: 'Fiscal',
-      description: 'Evaluación de riesgos empresariales',
-      status: 'idle' as const,
-      model: 'Claude Opus 4.7',
-      avgResponseTime: 15,
-      processingSpeed: 3200,
-      lastActivity: '1 hour ago',
-    },
-  ];
+  // Note: AGENT_LIST removed - agents now fetched from real API via useQuery below
 
   const handleConfigureAgent = (agentName: string) => {
     const agent = AGENT_LIST.find(a => a.name === agentName);
@@ -113,7 +85,7 @@ export default function AgentsModule() {
           {/* Status Tab */}
           {activeTab === 'status' && (
             <div className="grid grid-cols-3 gap-4">
-              {AGENT_LIST.map(agent => (
+              {(agents || []).map((agent: any) => (
                 <div
                   key={agent.name}
                   className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 space-y-4"
@@ -178,7 +150,7 @@ export default function AgentsModule() {
           {/* Configuration Tab */}
           {activeTab === 'config' && (
             <div className="space-y-4">
-              {AGENT_LIST.map(agent => (
+              {(agents || []).map((agent: any) => (
                 <div
                   key={agent.name}
                   className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 flex items-center justify-between"

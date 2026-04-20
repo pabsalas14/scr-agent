@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import FindingsList, { FindingsFilter } from './FindingsList';
 import FindingDetailPanel from './FindingDetailPanel';
+import AlertRulesModal from './AlertRulesModal';
 import Button from '../ui/Button';
 import { apiService } from '../../services/api.service';
 
@@ -120,24 +121,11 @@ export default function FindingsCenter() {
         />
       )}
 
-      {/* Alert Rules Modal (placeholder - would be implemented) */}
-      {showAlertRulesModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center">
-          <div className="bg-[#1A1A1A] border border-[#2D2D2D] rounded-lg p-6 max-w-2xl w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-white">Gestionar Reglas de Alertas</h2>
-              <button
-                onClick={() => setShowAlertRulesModal(false)}
-                className="p-1 hover:bg-white/10 rounded"
-              >
-                ×
-              </button>
-            </div>
-            <p className="text-[#888] mb-4">Alert rules management interface (coming soon)</p>
-            <Button onClick={() => setShowAlertRulesModal(false)}>Cerrar</Button>
-          </div>
-        </div>
-      )}
+      {/* Alert Rules Modal */}
+      <AlertRulesModal
+        isOpen={showAlertRulesModal}
+        onClose={() => setShowAlertRulesModal(false)}
+      />
     </div>
   );
 }
