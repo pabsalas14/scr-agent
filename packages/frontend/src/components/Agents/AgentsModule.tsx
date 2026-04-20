@@ -47,14 +47,29 @@ export default function AgentsModule() {
 
   // Note: AGENT_LIST removed - agents now fetched from real API via useQuery below
 
-  const handleConfigureAgent = (agentName: string) => {
+  const handleConfigureAgent = async (agentName: string) => {
     const agent = agents?.find((a: any) => a.name === agentName);
     if (agent) {
       setEditingAgent(agent);
-      setEditFormData({
-        model: agent.model,
-        prompt: agent.prompt || `System prompt for ${agent.name} agent...`,
-      });
+
+      // Fetch the current agent configuration from backend
+      try {
+        const response = await apiService.get(`/agents/${agentName}/prompt`);
+        const agentConfig = response.data?.data;
+
+        setEditFormData({
+          model: agentConfig?.model || '',
+          prompt: agentConfig?.prompt || `System prompt for ${agent.name} agent...`,
+        });
+      } catch (error) {
+        console.error('Error fetching agent configuration:', error);
+        // Fallback to agent name as default
+        setEditFormData({
+          model: agent.model || '',
+          prompt: `System prompt for ${agent.name} agent...`,
+        });
+      }
+
       setShowConfigDrawer(true);
     }
   };
@@ -64,18 +79,31 @@ export default function AgentsModule() {
 
     setIsSaving(true);
     try {
+      // Validate that prompt is not empty
+      if (!editFormData.prompt || editFormData.prompt.trim().length === 0) {
+        alert('El prompt no puede estar vacío');
+        setIsSaving(false);
+        return;
+      }
+
       // Save agent configuration via API
-      // This would typically be: PATCH /agents/{agentName}
-      await apiService.patch(`/agents/${editingAgent.name}`, editFormData);
+      const response = await apiService.patch(`/agents/${editingAgent.name}`, {
+        model: editFormData.model,
+        prompt: editFormData.prompt,
+      });
 
-      // Close drawer and refresh agents list
-      setShowConfigDrawer(false);
-      setEditingAgent(null);
-      setEditFormData(null);
+      if (response.data?.success) {
+        // Show success message
+        alert(`✓ Configuración guardada para ${editingAgent.name}`);
 
-      // Optionally refetch agents here if needed
+        // Close drawer
+        setShowConfigDrawer(false);
+        setEditingAgent(null);
+        setEditFormData(null);
+      }
     } catch (error) {
       console.error('Error saving agent configuration:', error);
+      alert(`❌ Error al guardar: ${(error as any).message || 'Unknown error'}`);
     } finally {
       setIsSaving(false);
     }

@@ -40,7 +40,7 @@ const MAX_CHUNK_BYTES = 1200; // Further reduced - qwen2.5-coder struggles with 
 export class InspectorAgentService {
   private llmClient: LLMClient | null = null;
   private llmConfig: LLMConfig | null = null;
-  private model = 'qwen2.5-coder-7b-instruct'; // Usar Qwen como modelo por defecto
+  private model = 'claude-sonnet-4-6';
 
   constructor(llmConfig?: LLMConfig) {
     this.llmConfig = llmConfig || this.getDefaultConfig();
@@ -48,13 +48,14 @@ export class InspectorAgentService {
   }
 
   /**
-   * Configuración por defecto (Qwen2.5-Coder)
+   * Configuración por defecto (Anthropic - fallback)
+   * En producción, usar config del usuario (que puede ser Qwen, Anthropic, etc)
    */
   private getDefaultConfig(): LLMConfig {
     return {
-      provider: 'lmstudio',
+      provider: 'anthropic',
       model: this.model,
-      apiKey: process.env['LMSTUDIO_API_KEY'],
+      apiKey: process.env['ANTHROPIC_API_KEY'],
     };
   }
 

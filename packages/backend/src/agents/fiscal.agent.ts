@@ -35,7 +35,7 @@ const RETRY_TIMEOUTS_FISCAL = [15 * 60 * 1000, 25 * 60 * 1000, 30 * 60 * 1000]; 
 export class FiscalAgentService {
   private llmClient: LLMClient | null = null;
   private llmConfig: LLMConfig | null = null;
-  private model = 'qwen2.5-coder-7b-instruct'; // Usar Qwen como modelo por defecto
+  private model = 'claude-sonnet-4-6';
 
   constructor(llmConfig?: LLMConfig) {
     this.llmConfig = llmConfig || this.getDefaultConfig();
@@ -43,13 +43,14 @@ export class FiscalAgentService {
   }
 
   /**
-   * Configuración por defecto (Qwen2.5-Coder)
+   * Configuración por defecto (Anthropic Sonnet - fallback)
+   * En producción, usar config del usuario (que puede ser Qwen, Anthropic, etc)
    */
   private getDefaultConfig(): LLMConfig {
     return {
-      provider: 'lmstudio',
+      provider: 'anthropic',
       model: this.model,
-      apiKey: process.env['LMSTUDIO_API_KEY'],
+      apiKey: process.env['ANTHROPIC_API_KEY'],
     };
   }
 

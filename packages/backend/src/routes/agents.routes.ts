@@ -5,6 +5,7 @@
  *
  * GET    /api/v1/agents/:agentName/prompt    → Get agent prompt/context
  * PUT    /api/v1/agents/:agentName/prompt    → Update agent prompt
+ * PATCH  /api/v1/agents/:agentName           → Update agent configuration (model + prompt)
  * GET    /api/v1/agents/:agentName/versions  → Get prompt history
  */
 
@@ -73,6 +74,8 @@ router.get('/:agentName/prompt', async (req: AuthenticatedRequest, res: Response
         agentName,
         label: AGENT_PROMPTS[agentName].label,
         prompt,
+        model: agentPrompt?.model || null,
+        provider: agentPrompt?.provider || null,
         version: agentPrompt?.version || 1,
         lastUpdated: agentPrompt?.updatedAt || null,
         updatedBy: agentPrompt?.updatedBy || null,
@@ -153,6 +156,88 @@ router.put('/:agentName/prompt', async (req: AuthenticatedRequest, res: Response
   } catch (error) {
     logger.error('Error updating agent prompt:', error);
     res.status(500).json({ success: false, error: 'Error updating agent prompt' });
+  }
+});
+
+/**
+ * PATCH /api/v1/agents/:agentName
+ * Actualizar configuración del agente (modelo y/o prompt)
+ */
+router.patch('/:agentName', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { agentName } = req.params;
+    const { model, provider, prompt, comment } = req.body;
+    const userId = req.user?.id;
+
+    // Validar que el agente existe
+    if (!AGENT_PROMPTS[agentName]) {
+      return res.status(404).json({
+        success: false,
+        error: `Agente '${agentName}' no encontrado`,
+      });
+    }
+
+    // Construir objeto de actualización
+    const updateData: any = {};
+    if (model) updateData.model = model;
+    if (provider) updateData.provider = provider;
+    if (prompt) {
+      if (typeof prompt !== 'string' || prompt.trim().length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: 'El prompt no puede estar vacío',
+        });
+      }
+      updateData.prompt = prompt;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return res.status(400).json({
+        success: false,
+        error: 'No se proporcionaron cambios (model, provider, o prompt requeridos)',
+      });
+    }
+
+    // Obtener versión anterior para obtener el número de versión
+    const currentConfig = await prisma.agentPrompt.findUnique({
+      where: { agentName },
+    });
+
+    const newVersion = (currentConfig?.version || 0) + 1;
+    updateData.version = newVersion;
+    updateData.updatedBy = userId;
+    updateData.updatedAt = new Date();
+
+    // Guardar o actualizar configuración
+    const updated = await prisma.agentPrompt.upsert({
+      where: { agentName },
+      update: updateData,
+      create: {
+        agentName,
+        ...updateData,
+      },
+    });
+
+    logger.info(
+      `Agent configuration updated: ${agentName} (v${newVersion}) by ${userId}${
+        comment ? ` - ${comment}` : ''
+      }${model ? ` - Model: ${model}` : ''}${provider ? ` - Provider: ${provider}` : ''}`
+    );
+
+    res.json({
+      success: true,
+      data: {
+        agentName,
+        model: updated.model,
+        provider: updated.provider,
+        version: updated.version,
+        updatedAt: updated.updatedAt,
+        updatedBy: updated.updatedBy,
+      },
+    });
+  } catch (error) {
+    logger.error('Error updating agent configuration:', error);
+    res.status(500).json({ success: false, error: 'Error updating agent configuration' });
   }
 });
 
