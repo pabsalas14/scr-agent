@@ -19,11 +19,12 @@ import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
 /**
  * Tamaño máximo de código por llamada al LLM
- * Reducido a 50KB para accommodar LM Studio's 4K token context window
- * Approximation: 1 token ≈ 4 characters, so 4K tokens ≈ 16KB of actual code
- * Using 50KB to be safe and leave room for the prompt template
+ * Reducido a 10KB para accommodar LM Studio's 4K token context window
+ * With a 4K context length and ~1K for the prompt template,
+ * we need to ensure code chunks fit within ~3K tokens.
+ * Using 1 token ≈ 4 characters, 3K tokens ≈ 12KB max, using 10KB for safety
  */
-const MAX_CHUNK_BYTES = 50 * 1024; // Reduced from 500KB
+const MAX_CHUNK_BYTES = 10 * 1024; // Reduced from 500KB (50x reduction)
 
 /**
  * Servicio del Agente Inspector
