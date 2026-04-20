@@ -316,6 +316,8 @@ export class LLMClient {
         promptLength: prompt.length,
         temperature: this.config.temperature,
         maxTokens: maxTokens,
+        hasSignal: !!this.config.signal,
+        signalAborted: this.config.signal?.aborted,
       });
 
       response = await this.axiosClient.post('/chat/completions', payload, {
@@ -339,7 +341,12 @@ export class LLMClient {
         },
       };
       logger.error(`[LLM Debug] Request failed: ${JSON.stringify(errorDetails, null, 2)}`);
-      throw error;
+      // Include more details in the error message for debugging
+      const detailedError = new Error(
+        `LLM request failed: ${error.response?.status || error.code} - ${error.response?.statusText || error.message}` +
+        (error.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '')
+      );
+      throw detailedError;
     }
 
     const data = response.data;
@@ -366,12 +373,31 @@ export class LLMClient {
    * Cambiar configuración dinámicamente
    */
   updateConfig(config: Partial<LLMConfig>): void {
+    const oldConfig = this.config;
     this.config = { ...this.config, ...config };
     // Limpiar clientes al cambiar config
     this.anthropicClient = null;
     this.axiosClient = null;
+
+    logger.info(`LLMClient config before update:`, {
+      provider: oldConfig?.provider,
+      model: oldConfig?.model,
+      hasBaseUrl: !!oldConfig?.baseUrl,
+    });
+    logger.info(`LLMClient config update received:`, {
+      provider: config.provider,
+      model: config.model,
+      hasBaseUrl: !!config.baseUrl,
+      hasSignal: !!config.signal,
+    });
+
     this.validateConfig();
-    logger.info(`LLMClient config updated: ${this.config.provider} / ${this.config.model}`);
+    logger.info(`LLMClient config after update:`, {
+      provider: this.config.provider,
+      model: this.config.model,
+      baseUrl: this.config.baseUrl,
+      hasSignal: !!this.config.signal,
+    });
   }
 
   /**
