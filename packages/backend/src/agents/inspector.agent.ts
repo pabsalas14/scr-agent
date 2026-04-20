@@ -101,14 +101,24 @@ export class InspectorAgentService {
       logger.info(`Chunk ${i + 1}: ${chunk.length} archivos, ${chunkSize} bytes`);
     });
 
-    const resultados = await Promise.all(
-      chunks.map((chunk, i) =>
-        this.analizarCodigo({
-          codigo: chunk.map((f) => `// === ${f.path} ===\n${f.content}`).join('\n\n'),
-          contexto: chunks.length > 1 ? `${contexto ?? ''} [Parte ${i + 1}/${chunks.length}]` : contexto,
-        })
-      )
-    );
+    // Ejecutar análisis de chunks con timeout global para toda la operación
+    // Máximo 35 minutos para todos los chunks (1 minuto de overhead + 30 min para Inspector + 4 min extra)
+    const resultados = await Promise.race([
+      Promise.all(
+        chunks.map((chunk, i) =>
+          this.analizarCodigo({
+            codigo: chunk.map((f) => `// === ${f.path} ===\n${f.content}`).join('\n\n'),
+            contexto: chunks.length > 1 ? `${contexto ?? ''} [Parte ${i + 1}/${chunks.length}]` : contexto,
+          })
+        )
+      ),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error(`Inspector Agent chunks analysis timeout (35 minutos) - uno de los chunks tardó demasiado`)),
+          35 * 60 * 1000
+        )
+      ) as any,
+    ]);
 
     // Consolidar hallazgos de todos los chunks
     const todosHallazgos = resultados.flatMap((r) => r.hallazgos);
