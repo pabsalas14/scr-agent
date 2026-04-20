@@ -10,6 +10,7 @@ import {
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
 import ProjectDetailView from './ProjectDetailView';
+import { useAnalysisViewer } from '../../context/AnalysisViewerContext';
 
 interface ProyectoCardProps {
   proyecto: Proyecto;
@@ -37,6 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string;
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
    const [detalleAbierto, setDetalleAbierto] = useState(false);
    const [mostrarMenuAnalisis, setMostrarMenuAnalisis] = useState(false);
+   const { openAnalysisViewer } = useAnalysisViewer();
 
    const { data: analisisData } = useQuery({
      queryKey: ['analyses', proyecto.id],
@@ -53,7 +55,12 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
 
    const iniciar = useMutation({
      mutationFn: (isIncremental: boolean = false) => apiService.iniciarAnalisis(proyecto.id, isIncremental),
-     onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
+     onSuccess: (analisis) => {
+       // Abrir modal de progreso en tiempo real
+       openAnalysisViewer(analisis.id, proyecto.id);
+       // Mantener llamada original como fallback
+       onVerAnalisis(proyecto.id, analisis.id);
+     },
    });
 
   const analisisList = analisisData || [];
