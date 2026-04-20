@@ -11,6 +11,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Play,
   Clock,
@@ -68,6 +69,7 @@ export default function AnalysisProgressViewer({
   projectId,
   onClose,
 }: AnalysisProgressViewerProps) {
+  const navigate = useNavigate();
   const [localState, setLocalState] = useState<AnalysisState | null>(null);
   const [costData, setCostData] = useState<CostData | null>(null);
   const [pauseState, setPauseState] = useState<PauseState>({
@@ -453,7 +455,7 @@ export default function AnalysisProgressViewer({
           {/* Actions */}
           <div className="flex gap-3">
             <Button
-              onClick={() => window.open(`/dashboard/analyses/${analysisId}`, '_blank')}
+              onClick={() => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
               className="flex-1"
               variant="primary"
             >
