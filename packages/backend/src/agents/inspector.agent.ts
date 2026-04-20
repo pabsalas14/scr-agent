@@ -22,14 +22,12 @@ import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
  *
  * LM Studio's qwen2.5-coder-7b-instruct has a 4K token context window.
  *
- * Empirical testing with the REAL prompt template shows:
- * - Max code size: ~3000 bytes
- * - Total prompt size: ~3274 bytes
- * - Using 2400 bytes (80% safety margin) for reliability
+ * Issue: With 256 output tokens, model returns empty responses
+ * Solution: Increase to 512 output tokens + reduce input chunk size
  *
- * This was determined by binary search testing against the actual LM Studio server.
+ * Adjusted based on observation that model needs sufficient space to generate JSON
  */
-const MAX_CHUNK_BYTES = 2400; // Reduced from 500KB (208x reduction)
+const MAX_CHUNK_BYTES = 1800; // Reduced to ensure room for 512 token responses
 
 /**
  * Servicio del Agente Inspector
@@ -159,8 +157,9 @@ export class InspectorAgentService {
       const promptSize = Buffer.byteLength(prompt, 'utf-8');
       logger.info(`Prompt size: ${promptSize} bytes, Código size: ${input.codigo.length} bytes`);
 
-      // For LM Studio with 4K context, limit output to 256-512 tokens to leave room for input
-      const maxOutputTokens = config.provider === 'lmstudio' ? 256 : 4096;
+      // For LM Studio with 4K context, allow 512 tokens for JSON response output
+      // Model was returning empty responses with 256 tokens - need more space for valid JSON
+      const maxOutputTokens = config.provider === 'lmstudio' ? 512 : 4096;
 
       const response = await llmClient.complete(prompt, maxOutputTokens);
 
