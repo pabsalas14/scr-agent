@@ -191,7 +191,7 @@ export class InspectorAgentService {
 
   /**
    * Dividir archivos en chunks que no superen MAX_CHUNK_BYTES.
-   * Nunca corta un archivo a la mitad.
+   * Si un archivo individual es mayor que MAX_CHUNK_BYTES, lo divide por líneas.
    */
   private splitEnChunks(archivos: Array<{ path: string; content: string }>): Array<typeof archivos> {
     const chunks: Array<typeof archivos> = [];
@@ -200,14 +200,55 @@ export class InspectorAgentService {
 
     for (const archivo of archivos) {
       const fileSize = Buffer.byteLength(archivo.content, 'utf-8');
-      if (chunk.length > 0 && chunkSize + fileSize > MAX_CHUNK_BYTES) {
-        chunks.push(chunk);
-        chunk = [];
-        chunkSize = 0;
+
+      // Si el archivo es más grande que MAX_CHUNK_BYTES, dividirlo por líneas
+      if (fileSize > MAX_CHUNK_BYTES) {
+        // Primero, guardar el chunk actual si no está vacío
+        if (chunk.length > 0) {
+          chunks.push(chunk);
+          chunk = [];
+          chunkSize = 0;
+        }
+
+        // Dividir archivo grande por líneas
+        const lines = archivo.content.split('\n');
+        let filePart = '';
+        let partNum = 0;
+
+        for (const line of lines) {
+          const lineSize = Buffer.byteLength(line + '\n', 'utf-8');
+
+          if (Buffer.byteLength(filePart, 'utf-8') + lineSize > MAX_CHUNK_BYTES && filePart) {
+            // Guardar esta parte del archivo
+            chunks.push([{
+              path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / MAX_CHUNK_BYTES)}]`,
+              content: filePart
+            }]);
+            filePart = '';
+          }
+
+          filePart += line + '\n';
+        }
+
+        // Guardar la última parte
+        if (filePart) {
+          chunks.push([{
+            path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / MAX_CHUNK_BYTES)}]`,
+            content: filePart
+          }]);
+        }
+      } else {
+        // Archivo normal, usar lógica de chunking original
+        if (chunk.length > 0 && chunkSize + fileSize > MAX_CHUNK_BYTES) {
+          chunks.push(chunk);
+          chunk = [];
+          chunkSize = 0;
+        }
+        chunk.push(archivo);
+        chunkSize += fileSize;
       }
-      chunk.push(archivo);
-      chunkSize += fileSize;
     }
+
     if (chunk.length > 0) chunks.push(chunk);
     return chunks.length > 0 ? chunks : [[]];
   }
