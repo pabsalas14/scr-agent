@@ -357,6 +357,91 @@ router.get('/metrics/token-usage', async (req: AuthenticatedRequest, res: Respon
 });
 
 /**
+ * GET /api/v1/analytics/cost-by-analysis/:analysisId
+ * Get cost breakdown for a specific analysis
+ * Shows: tokens used per stage, total cost
+ */
+router.get('/cost-by-analysis/:analysisId', async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = (req as any).user?.id;
+    const { analysisId } = req.params;
+
+    if (!userId) {
+      return res.status(401).json({
+        error: 'Authentication required',
+        success: false
+      });
+    }
+
+    // Verify user owns this analysis
+    const analysis = await prisma.analysis.findFirst({
+      where: {
+        id: analysisId,
+        project: {
+          userId
+        }
+      },
+      select: {
+        id: true,
+        status: true,
+        createdAt: true
+      }
+    });
+
+    if (!analysis) {
+      return res.status(404).json({
+        error: 'Analysis not found',
+        success: false
+      });
+    }
+
+    // Get token usage records for this analysis (one per stage + potentially partial)
+    const tokenUsageRecords = await prisma.tokenUsage.findMany({
+      where: { analysisId },
+      select: {
+        inputTokens: true,
+        outputTokens: true,
+        totalTokens: true,
+        costUsd: true,
+        model: true,
+        provider: true,
+        createdAt: true
+      }
+    });
+
+    // Calculate totals
+    const totalInput = tokenUsageRecords.reduce((sum, t) => sum + t.inputTokens, 0);
+    const totalOutput = tokenUsageRecords.reduce((sum, t) => sum + t.outputTokens, 0);
+    const totalCost = tokenUsageRecords.reduce((sum, t) => sum + (t.costUsd || 0), 0);
+
+    res.json({
+      success: true,
+      data: {
+        analysisId,
+        status: analysis.status,
+        createdAt: analysis.createdAt,
+        tokens: {
+          input: totalInput,
+          output: totalOutput,
+          total: totalInput + totalOutput
+        },
+        cost: {
+          usd: parseFloat(totalCost.toFixed(6))
+        },
+        stageBreakdown: tokenUsageRecords, // Show each stage's usage
+        recordCount: tokenUsageRecords.length
+      }
+    });
+  } catch (error) {
+    logger.error(`Error fetching analysis cost: ${error}`);
+    res.status(500).json({
+      error: 'Failed to fetch analysis cost',
+      success: false
+    });
+  }
+});
+
+/**
  * GET /api/v1/analytics/metrics/repository-activity
  * Get activity metrics per repository
  * Shows: findings count, severity breakdown, analysis count

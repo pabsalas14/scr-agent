@@ -100,6 +100,7 @@ export class GitService {
   /**
    * Clonar o pullear un repositorio
    * Maneja tanto clones iniciales como updates
+   * Detecta y limpia directorios en estado inconsistente (.git con lock files)
    */
   async cloneOrPullRepository(repoUrl: string, githubToken?: string, branch?: string): Promise<string> {
     if (!this.validateRepositoryUrl(repoUrl)) {
@@ -112,6 +113,31 @@ export class GitService {
     const urlToUse = this.buildAuthenticatedUrl(repoUrl, githubToken);
 
     try {
+      // Detectar y limpiar directorios en estado inconsistente
+      // Si existe .git pero hay archivos lock, la clonación anterior falló
+      if (fs.existsSync(localPath)) {
+        const gitDir = path.join(localPath, '.git');
+        if (fs.existsSync(gitDir)) {
+          const lockFile = path.join(gitDir, 'shallow.lock');
+          const indexLock = path.join(gitDir, 'index.lock');
+
+          // Si hay archivos lock, la clonación anterior fue interrumpida
+          if (fs.existsSync(lockFile) || fs.existsSync(indexLock)) {
+            logger.warn(`🔄 Detectado directorio Git en estado inconsistente (lock files presentes).`);
+            logger.warn(`   Removiendo caché corrupto y reintentando clonación desde cero...`);
+
+            try {
+              // Eliminar todo el directorio para forzar re-clonación
+              fs.rmSync(localPath, { recursive: true, force: true });
+              logger.info(`✓ Caché corrupto eliminado: ${localPath}`);
+            } catch (cleanupError) {
+              logger.error(`Error limpiando caché: ${cleanupError}`);
+              throw new Error(`No se pudo limpiar caché corrupto: ${String(cleanupError)}`);
+            }
+          }
+        }
+      }
+
       if (!fs.existsSync(localPath)) {
         // Clonar repositorio - crear directorio parent si no existe
         if (!fs.existsSync(path.dirname(localPath))) {

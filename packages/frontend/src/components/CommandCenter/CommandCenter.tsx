@@ -21,6 +21,7 @@ import MetricsCard from '../ui/MetricsCard';
 import { apiService } from '../../services/api.service';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
+import CostComparisonWidget from '../Dashboard/CostComparisonWidget';
 
 export default function CommandCenter() {
   const [period, setPeriod] = useState<'day' | 'week' | 'month'>('month');
@@ -310,6 +311,12 @@ export default function CommandCenter() {
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* Cost Comparison Widget */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-white mb-4">Análisis de Proveedores</h2>
+        <CostComparisonWidget />
       </div>
     </div>
   );

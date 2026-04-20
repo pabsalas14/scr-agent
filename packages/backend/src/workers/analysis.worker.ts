@@ -24,6 +24,7 @@ import { decrypt } from '../services/crypto.service';
 import { UserLLMConfig } from '../services/llm-client.service';
 import { detectiveService } from '../services/detective.service';
 import { recordTokenUsage } from '../services/metrics.service';
+import { createCancellationToken, cleanupCancellationToken, isAnalysisCancelled } from '../services/cancellation.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
 import {
   getNewCommits,
@@ -163,13 +164,16 @@ const redisConnection = parseRedisUrl(REDIS_URL);
  * Ejecuta Detective → Inspector → Fiscal secuencialmente
  */
 async function processAnalysisJob(job: Job) {
-  const { analysisId, projectId, isIncremental: requestedIncremental } = job.data as { 
-    analysisId: string; 
-    projectId: string; 
-    isIncremental?: boolean 
+  const { analysisId, projectId, isIncremental: requestedIncremental } = job.data as {
+    analysisId: string;
+    projectId: string;
+    isIncremental?: boolean
   };
 
   let ownerId = '';
+
+  // Crear token de cancelación para este análisis
+  const cancellationToken = createCancellationToken(analysisId);
 
   try {
     logger.info(`⚙️ [Job ${job.id}] Procesando análisis ${analysisId}...`);
@@ -213,13 +217,20 @@ async function processAnalysisJob(job: Job) {
       }
     }
 
-    // Obtener y aplicar configuración LLM del usuario
+    // Obtener y aplicar configuración LLM del usuario + signal de cancelación
     const llmConfig = await getLLMConfigFromUser(project.userId);
     if (llmConfig) {
       logger.info(`Aplicando LLM config del usuario: ${llmConfig.provider}/${llmConfig.model}`);
-      inspectorAgent.updateConfig(llmConfig);
-      detectiveAgent.updateConfig(llmConfig);
-      fiscalAgent.updateConfig(llmConfig);
+      // Agregar signal de cancelación a la config
+      const configWithSignal = { ...llmConfig, signal: cancellationToken.signal };
+      inspectorAgent.updateConfig(configWithSignal);
+      detectiveAgent.updateConfig(configWithSignal);
+      fiscalAgent.updateConfig(configWithSignal);
+    } else {
+      // Incluso si no hay config del usuario, pasar el signal para cancelación
+      inspectorAgent.updateConfig({ signal: cancellationToken.signal } as any);
+      detectiveAgent.updateConfig({ signal: cancellationToken.signal } as any);
+      fiscalAgent.updateConfig({ signal: cancellationToken.signal } as any);
     }
 
     // ========== FASE 1: INSPECTOR AGENT ==========
@@ -278,11 +289,31 @@ async function processAnalysisJob(job: Job) {
 
     logger.info(`Analizando código (${repoFiles.fileCount} archivos activos, ${repoFiles.totalSize} bytes)...`);
 
+    // Callback para reportar progreso en tiempo real
+    const progressCallback = async (processedChunks: number, totalChunks: number) => {
+      // Calcular progreso real: INSPECTOR usa 0-10% del progreso total
+      // Formula: (chunks_procesados / chunks_totales) * 10
+      const inspectorProgress = Math.round((processedChunks / totalChunks) * 10);
+
+      logger.debug(`[Progress] Inspector: ${processedChunks}/${totalChunks} chunks (${inspectorProgress}%)`);
+
+      // Actualizar BD con progreso real
+      await prisma.analysis.update({
+        where: { id: analysisId },
+        data: { progress: inspectorProgress },
+      });
+
+      // Emitir evento WebSocket para actualizar UI en tiempo real
+      socketService.emitAnalysisStatusChanged(analysisId, projectId, 'INSPECTOR_RUNNING', inspectorProgress);
+    };
+
     // Ejecutar Inspector Agent con timeout
+    // Con 10 minutos por chunk y timeout global de 4 horas, establecer timeout aquí en 5 horas para dar margen
+    // Para proyectos muy grandes (>500KB): considerar limitar tamaño o usar Anthropic Claude en lugar de modelos locales
     const maliciaOutput: any = await Promise.race([
-      inspectorAgent.analizarArchivos(repoFiles.files, `Repositorio: ${project.repositoryUrl}`),
+      inspectorAgent.analizarArchivos(repoFiles.files, `Repositorio: ${project.repositoryUrl}`, progressCallback),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Inspector Agent timeout (5 minutos)')), 5 * 60 * 1000)
+        setTimeout(() => reject(new Error('Inspector Agent timeout (300 minutos / 5 horas) - análisis de código demasiado lento o proyecto muy grande')), 300 * 60 * 1000)
       ),
     ]);
 
@@ -293,7 +324,35 @@ async function processAnalysisJob(job: Job) {
     });
     socketService.emitCoverageReport(analysisId, projectId, repoFiles.coverage);
 
+    // 📊 Log retry/backoff stats if any chunks failed
+    if (maliciaOutput.failedChunks && maliciaOutput.failedChunks.length > 0) {
+      logger.warn(
+        `⚠️ Inspector: ${maliciaOutput.failedChunks.length} chunks fallidos después de reintentos`
+      );
+      maliciaOutput.failedChunks.forEach((fc: any) => {
+        logger.warn(`   - Chunk ${fc.index + 1}: ${fc.error} (${fc.attempts} intentos)`);
+      });
+    }
+
     logger.info(`✅ [Job ${job.id}] Inspector encontró ${maliciaOutput.cantidad_hallazgos} hallazgos`);
+
+    // 📊 RECORD INSPECTOR TOKEN USAGE (Partial - even if analysis fails later)
+    if (ownerId && maliciaOutput.usage) {
+      const inspectorInput = maliciaOutput.usage.input_tokens || 0;
+      const inspectorOutput = maliciaOutput.usage.output_tokens || 0;
+      if (inspectorInput > 0 || inspectorOutput > 0) {
+        await recordTokenUsage({
+          analysisId,
+          userId: ownerId,
+          inputTokens: inspectorInput,
+          outputTokens: inspectorOutput,
+          model: maliciaOutput.usage.model || llmConfig?.model || 'qwen2.5-coder-7b-instruct',
+          provider: llmConfig?.provider || 'lmstudio',
+          stage: 'INSPECTOR',
+        });
+        logger.info(`✅ Inspector tokens recorded: ${inspectorInput} in / ${inspectorOutput} out`);
+      }
+    }
 
     // Mapear severidad y tipo de riesgo
     const mapSeverity = (s: string): 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' => {
@@ -423,6 +482,24 @@ async function processAnalysisJob(job: Job) {
       logger.info(`✅ Eventos forenses guardados`);
     }
 
+    // 📊 RECORD DETECTIVE TOKEN USAGE (Partial - even if analysis fails later)
+    if (ownerId && forensesOutput.usage) {
+      const detectiveInput = forensesOutput.usage.input_tokens || 0;
+      const detectiveOutput = forensesOutput.usage.output_tokens || 0;
+      if (detectiveInput > 0 || detectiveOutput > 0) {
+        await recordTokenUsage({
+          analysisId,
+          userId: ownerId,
+          inputTokens: detectiveInput,
+          outputTokens: detectiveOutput,
+          model: forensesOutput.usage.model || llmConfig?.model || 'claude-3-5-sonnet',
+          provider: llmConfig?.provider || 'anthropic',
+          stage: 'DETECTIVE',
+        });
+        logger.info(`✅ Detective tokens recorded: ${detectiveInput} in / ${detectiveOutput} out`);
+      }
+    }
+
     // ========== FASE 3: FISCAL AGENT ==========
     logger.info(`[3/3] 📊 [Job ${job.id}] Ejecutando Fiscal Agent...`);
     await prisma.analysis.update({
@@ -443,6 +520,24 @@ async function processAnalysisJob(job: Job) {
     ]);
 
     logger.info(`✅ [Job ${job.id}] Fiscal generó reporte con puntuación: ${sintesisOutput.puntuacion_riesgo}/100`);
+
+    // 📊 RECORD FISCAL TOKEN USAGE (Last stage)
+    if (ownerId && sintesisOutput.usage) {
+      const fiscalInput = sintesisOutput.usage.input_tokens || 0;
+      const fiscalOutput = sintesisOutput.usage.output_tokens || 0;
+      if (fiscalInput > 0 || fiscalOutput > 0) {
+        await recordTokenUsage({
+          analysisId,
+          userId: ownerId,
+          inputTokens: fiscalInput,
+          outputTokens: fiscalOutput,
+          model: sintesisOutput.usage.model || llmConfig?.model || 'claude-3-5-sonnet',
+          provider: llmConfig?.provider || 'anthropic',
+          stage: 'FISCAL',
+        });
+        logger.info(`✅ Fiscal tokens recorded: ${fiscalInput} in / ${fiscalOutput} out`);
+      }
+    }
 
     // Guardar reporte
     const totalInput =
@@ -494,18 +589,9 @@ async function processAnalysisJob(job: Job) {
     });
     socketService.emitAnalysisStatusChanged(analysisId, projectId, 'COMPLETED', 100);
 
-    // Record token usage for metrics tracking (PHASE 3)
-    if (ownerId && totalInput > 0) {
-      await recordTokenUsage({
-        analysisId,
-        userId: ownerId,
-        inputTokens: totalInput,
-        outputTokens: totalOutput,
-        model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
-        provider: llmConfig?.provider || 'anthropic',
-        costUsd: totalInput * 0.003 + totalOutput * 0.015, // Approximate Anthropic pricing
-      });
-    }
+    // ✅ Token usage already recorded per-stage (INSPECTOR, DETECTIVE, FISCAL)
+    // No need to record again here - tokens are aggregated in UI via getAnalysisTokenUsage()
+    logger.info(`📊 Total analysis tokens: ${totalInput} input, ${totalOutput} output (recorded per-stage)`)
 
     // Generar eventos forenses para el análisis completado
     await detectiveService.generateForensicEvents(analysisId);
@@ -533,8 +619,14 @@ async function processAnalysisJob(job: Job) {
       socketService.emitAnalysisStatusChanged(analysisId, projectId, 'FAILED', 0);
     }
 
+    // Limpiar token de cancelación
+    cleanupCancellationToken(analysisId);
+
     // Re-lanzar error para que Bull lo maneje (reintentos automáticos)
     throw error;
+  } finally {
+    // Limpiar token de cancelación al completar exitosamente
+    cleanupCancellationToken(analysisId);
   }
 }
 

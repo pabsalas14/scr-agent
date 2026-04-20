@@ -15,6 +15,7 @@ import { logger } from './logger.service';
 import { prisma } from './prisma.service';
 import { getAnalysisQueue, initializeBullQueue, closeBullQueue } from '../config/bull.config';
 import { startAnalysisWorker } from '../workers/analysis.worker';
+import { cancelAnalysisRequests } from './cancellation.service';
 import { Worker } from 'bullmq';
 
 let analysisWorker: Worker | null = null;
@@ -90,13 +91,17 @@ export async function cancelAnalysis(analysisId: string): Promise<boolean> {
       return true;
     }
 
-    // Si está en progreso, marcar para cancelación
+    // Si está en progreso, abortar todas las peticiones a LM Studio
+    logger.info(`🚫 Abortando peticiones a LM Studio para análisis ${analysisId}`);
+    cancelAnalysisRequests(analysisId);
+
+    // Marcar para cancelación en BD
     await prisma.analysis.update({
       where: { id: analysisId },
       data: { status: 'CANCELLED', progress: 0 },
     });
 
-    logger.info(`🚫 Análisis ${analysisId} marcado para cancelación`);
+    logger.info(`🚫 Análisis ${analysisId} cancelado - peticiones abortadas`);
     return true;
   } catch (error) {
     logger.error(`❌ Error cancelando análisis: ${error}`);

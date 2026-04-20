@@ -112,7 +112,18 @@ export class DetectiveAgentService {
       const llmClient = this.getLLMClient();
       const config = llmClient.getConfig();
       logger.info(`Llamando a ${config.provider} (${config.model})`);
-      const response = await llmClient.complete(prompt, 2048);
+
+      // Wrap LLM call with timeout to detect hanging requests
+      // LM Studio should respond within 5 minutes for forensic analysis
+      const response = await Promise.race([
+        llmClient.complete(prompt, 2048),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
+            5 * 60 * 1000
+          )
+        ) as any,
+      ]);
 
       if (!response.text) {
         throw new Error('Respuesta inesperada del LLM');

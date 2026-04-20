@@ -15,6 +15,7 @@ import {
   Users, Bell, LogOut, User as UserIcon, Cpu, AlertTriangle
 } from 'lucide-react';
 import type { TabGroup, TabId, GroupId } from '../../types/navigation';
+import QuickAnalysisLookup from '../Analysis/QuickAnalysisLookup';
 
 interface NavigationSidebarProps {
   activeTab: TabId;
@@ -272,6 +273,13 @@ export default function NavigationSidebar({
             <p className="text-sm font-semibold text-white truncate">{displayName}</p>
           </div>
         )}
+        {/* Quick Analysis Lookup */}
+        <div className={`px-3 py-2 flex items-center gap-2 ${collapsed ? 'justify-center' : ''}`}>
+          <QuickAnalysisLookup />
+          {!collapsed && (
+            <span className="text-xs text-[#6B7280]">Ver análisis</span>
+          )}
+        </div>
         {onLogout && (
           <button
             onClick={onLogout}

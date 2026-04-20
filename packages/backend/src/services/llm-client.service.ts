@@ -37,6 +37,7 @@ export interface LLMConfig {
   temperature?: number;
   maxTokens?: number;
   customHeaders?: Record<string, string>; // Headers personalizados para Custom/LLM Gateway
+  signal?: AbortSignal; // Para cancelación de peticiones
 }
 
 export interface LLMResponse {
@@ -54,7 +55,7 @@ export class LLMClient {
   constructor(config: LLMConfig) {
     this.config = {
       temperature: 0.7,
-      maxTokens: 4096,
+      maxTokens: 512, // Reduced from 4096 to ~1/8 to leave room for input tokens (~3.5K)
       ...config,
     };
     this.validateConfig();
@@ -105,6 +106,11 @@ export class LLMClient {
    */
   async complete(prompt: string, maxTokens?: number): Promise<LLMResponse> {
     const tokens = maxTokens || this.config.maxTokens || 4096;
+
+    // Verificar si se pidió cancelación antes de empezar
+    if (this.config.signal?.aborted) {
+      throw new Error('Analysis cancelled by user');
+    }
 
     try {
       switch (this.config.provider) {
@@ -262,26 +268,87 @@ export class LLMClient {
   private async completeWithOpenAICompatible(prompt: string, maxTokens: number): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const baseUrl = this.config.baseUrl || 'http://localhost:1234';
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
       if (this.config.apiKey) {
         headers['Authorization'] = `Bearer ${this.config.apiKey}`;
       }
       if (this.config.customHeaders) {
         Object.assign(headers, this.config.customHeaders);
       }
+      logger.info(`[LLM Init] Creating axios client for ${this.config.provider}`, {
+        baseUrl,
+        headers,
+        hasApiKey: !!this.config.apiKey,
+      });
       this.axiosClient = axios.create({
         baseURL: baseUrl,
-        timeout: 120000, // 2 minutos para modelos locales
+        timeout: 900000, // 15 minutos para modelos locales (qwen2.5-coder needs time for code analysis + JSON generation)
+                         // MUST be >= adaptive timeout in inspector.agent.ts (10-15 min based on health)
         headers,
+      });
+      logger.info(`[LLM Init] Axios client created successfully`);
+    }
+
+    // Add request interceptor for logging
+    if (!this.axiosClient.interceptors.request.handlers || this.axiosClient.interceptors.request.handlers.length === 0) {
+      this.axiosClient.interceptors.request.use((config) => {
+        logger.info(`[LLM Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+          headers: config.headers,
+          dataSize: JSON.stringify(config.data).length,
+        });
+        return config;
       });
     }
 
-    const response = await this.axiosClient.post('/chat/completions', {
-      model: this.config.model,
-      messages: [{ role: 'user', content: prompt }],
-      temperature: this.config.temperature,
-      max_tokens: maxTokens,
-    });
+    let response;
+    try {
+      const payload = {
+        model: this.config.model,
+        messages: [{ role: 'user', content: prompt }],
+        temperature: this.config.temperature,
+        max_tokens: maxTokens,
+      };
+
+      logger.info(`[LLM Debug] Sending request to ${this.config.provider}: ${this.config.baseUrl}/chat/completions`, {
+        model: this.config.model,
+        payloadSize: JSON.stringify(payload).length,
+        promptLength: prompt.length,
+        temperature: this.config.temperature,
+        maxTokens: maxTokens,
+        hasSignal: !!this.config.signal,
+        signalAborted: this.config.signal?.aborted,
+      });
+
+      response = await this.axiosClient.post('/chat/completions', payload, {
+        signal: this.config.signal,
+      });
+      logger.info(`[LLM Debug] Success response from ${this.config.provider}`);
+    } catch (error: any) {
+      // Log detailed error information for debugging
+      const errorDetails = {
+        message: error.message,
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        headers: error.response?.headers,
+        axiosConfig: {
+          baseURL: this.axiosClient?.defaults.baseURL,
+          headers: this.axiosClient?.defaults.headers,
+          timeout: this.axiosClient?.defaults.timeout,
+          model: this.config.model,
+          provider: this.config.provider,
+        },
+      };
+      logger.error(`[LLM Debug] Request failed: ${JSON.stringify(errorDetails, null, 2)}`);
+      // Include more details in the error message for debugging
+      const detailedError = new Error(
+        `LLM request failed: ${error.response?.status || error.code} - ${error.response?.statusText || error.message}` +
+        (error.response?.data ? ` - ${JSON.stringify(error.response.data)}` : '')
+      );
+      throw detailedError;
+    }
 
     const data = response.data;
     const choice = data.choices?.[0];
@@ -307,12 +374,31 @@ export class LLMClient {
    * Cambiar configuración dinámicamente
    */
   updateConfig(config: Partial<LLMConfig>): void {
+    const oldConfig = this.config;
     this.config = { ...this.config, ...config };
     // Limpiar clientes al cambiar config
     this.anthropicClient = null;
     this.axiosClient = null;
+
+    logger.info(`LLMClient config before update:`, {
+      provider: oldConfig?.provider,
+      model: oldConfig?.model,
+      hasBaseUrl: !!oldConfig?.baseUrl,
+    });
+    logger.info(`LLMClient config update received:`, {
+      provider: config.provider,
+      model: config.model,
+      hasBaseUrl: !!config.baseUrl,
+      hasSignal: !!config.signal,
+    });
+
     this.validateConfig();
-    logger.info(`LLMClient config updated: ${this.config.provider} / ${this.config.model}`);
+    logger.info(`LLMClient config after update:`, {
+      provider: this.config.provider,
+      model: this.config.model,
+      baseUrl: this.config.baseUrl,
+      hasSignal: !!this.config.signal,
+    });
   }
 
   /**
