@@ -130,6 +130,32 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             </div>
           </div>
 
+          {/* Recent Analysis Quick Access */}
+          {analisisList.length > 0 && (
+            <div className="flex items-center gap-2 flex-wrap px-2 py-2 bg-[#242424]/50 rounded-lg border border-[#2D2D2D]">
+              <span className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">Últimos:</span>
+              {analisisList.slice(0, 5).map((analisis) => (
+                <button
+                  key={analisis.id}
+                  onClick={() => openAnalysisViewer(analisis.id, proyecto.id)}
+                  className={`w-6 h-6 rounded flex items-center justify-center text-[10px] transition-all ${
+                    analisis.status.includes('RUNNING')
+                      ? 'bg-orange-500/20 text-orange-400 hover:bg-orange-500/40'
+                      : analisis.status === 'COMPLETED'
+                      ? 'bg-green-500/20 text-green-400 hover:bg-green-500/40'
+                      : 'bg-red-500/20 text-red-400 hover:bg-red-500/40'
+                  }`}
+                  title={`${analisis.status} - ${new Date(analisis.createdAt).toLocaleDateString()}`}
+                >
+                  <Eye className="w-3 h-3" />
+                </button>
+              ))}
+              {analisisList.length > 5 && (
+                <span className="text-[10px] text-[#6B7280]">+{analisisList.length - 5}</span>
+              )}
+            </div>
+          )}
+
           {/* Actions */}
           <div className="flex items-center gap-2 relative">
             <div className="flex-1 flex items-stretch">
@@ -235,15 +261,6 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
               )}
             </AnimatePresence>
 
-            {ultimoAnalisis?.status === 'COMPLETED' && (
-              <button
-                onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
-                className="p-2 rounded-lg bg-[#242424] border border-[#2D2D2D] text-[#A0A0A0] hover:text-white hover:border-[#22C55E]/40 transition-all"
-                title="Ver reporte"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
 
             <button
               onClick={() => setDetalleAbierto(true)}
