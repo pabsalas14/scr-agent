@@ -26,6 +26,8 @@ export default function AgentsModule() {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [showConfigDrawer, setShowConfigDrawer] = useState(false);
   const [editingAgent, setEditingAgent] = useState<any>(null);
+  const [editFormData, setEditFormData] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Fetch agents
   const { data: agents, isLoading } = useQuery({
@@ -39,9 +41,37 @@ export default function AgentsModule() {
   // Note: AGENT_LIST removed - agents now fetched from real API via useQuery below
 
   const handleConfigureAgent = (agentName: string) => {
-    const agent = AGENT_LIST.find(a => a.name === agentName);
-    setEditingAgent(agent);
-    setShowConfigDrawer(true);
+    const agent = agents?.find((a: any) => a.name === agentName);
+    if (agent) {
+      setEditingAgent(agent);
+      setEditFormData({
+        model: agent.model,
+        prompt: agent.prompt || `System prompt for ${agent.name} agent...`,
+      });
+      setShowConfigDrawer(true);
+    }
+  };
+
+  const handleSaveConfiguration = async () => {
+    if (!editingAgent || !editFormData) return;
+
+    setIsSaving(true);
+    try {
+      // Save agent configuration via API
+      // This would typically be: PATCH /agents/{agentName}
+      await apiService.patch(`/agents/${editingAgent.name}`, editFormData);
+
+      // Close drawer and refresh agents list
+      setShowConfigDrawer(false);
+      setEditingAgent(null);
+      setEditFormData(null);
+
+      // Optionally refetch agents here if needed
+    } catch (error) {
+      console.error('Error saving agent configuration:', error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -188,44 +218,87 @@ export default function AgentsModule() {
       )}
 
       {/* Config Drawer */}
-      {editingAgent && (
+      {editingAgent && editFormData && (
         <DetailDrawer
           isOpen={showConfigDrawer}
           onClose={() => {
             setShowConfigDrawer(false);
             setTimeout(() => setEditingAgent(null), 300);
           }}
-          title={`Configure ${editingAgent.name}`}
-          subtitle="Edit agent prompt and settings"
+          title={`Configurar ${editingAgent.name}`}
+          subtitle="Edita el modelo y prompt del agente"
           width="lg"
         >
-          <div className="space-y-4">
+          <div className="space-y-6">
+            {/* Model Selection */}
             <div>
-              <label className="block text-xs text-[#888] mb-2">Model</label>
-              <select className="w-full px-3 py-2 bg-[#111] border border-[#2D2D2D] rounded text-white">
-                <option>{editingAgent.model}</option>
-                <option>Claude Sonnet 4.6</option>
-                <option>Claude Opus 4.7</option>
-                <option>Claude Haiku 4.5</option>
-                <option>LM Studio (Local)</option>
+              <label className="block text-sm font-semibold text-white mb-2">Modelo</label>
+              <select
+                value={editFormData.model}
+                onChange={(e) => setEditFormData({ ...editFormData, model: e.target.value })}
+                className="w-full px-3 py-2 bg-[#111] border border-[#2D2D2D] rounded text-white text-sm focus:border-blue-500 focus:outline-none"
+              >
+                <optgroup label="Anthropic (API)">
+                  <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+                  <option value="claude-opus-4-7">Claude Opus 4.7</option>
+                  <option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+                </optgroup>
+                <optgroup label="Open Source (LM Studio)">
+                  <option value="qwen2.5-coder-7b-instruct">Qwen 2.5 Coder (7B)</option>
+                  <option value="mistral-7b">Mistral 7B</option>
+                  <option value="llama2-13b">Llama 2 (13B)</option>
+                </optgroup>
               </select>
+              <p className="text-xs text-[#666] mt-2">💡 Modelos disponibles: Anthropic (API) y LM Studio (local). Cambia aquí el modelo que usará este agente.</p>
             </div>
 
+            {/* Prompt Editor */}
             <div>
-              <label className="block text-xs text-[#888] mb-2">Prompt</label>
+              <label className="block text-sm font-semibold text-white mb-2">System Prompt</label>
               <textarea
-                defaultValue={`System prompt for ${editingAgent.name} agent...`}
-                className="w-full px-3 py-2 bg-[#111] border border-[#2D2D2D] rounded text-white text-sm font-mono h-64 resize-none"
+                value={editFormData.prompt}
+                onChange={(e) => setEditFormData({ ...editFormData, prompt: e.target.value })}
+                className="w-full px-3 py-2 bg-[#111] border border-[#2D2D2D] rounded text-white text-sm font-mono h-48 resize-none focus:border-blue-500 focus:outline-none"
+                placeholder={`System prompt for ${editingAgent.name} agent...`}
               />
+              <p className="text-xs text-[#666] mt-2">Instrucciones del sistema que guiarán al agente en sus análisis.</p>
             </div>
 
-            <div>
-              <label className="block text-xs text-[#888] mb-2">Version History</label>
-              <select className="w-full px-3 py-2 bg-[#111] border border-[#2D2D2D] rounded text-white text-sm">
-                <option>v1.0 (Current)</option>
-                <option>v0.9</option>
-                <option>v0.8</option>
-              </select>
+            {/* Agent Info */}
+            <div className="bg-[#111] border border-[#2D2D2D] rounded-lg p-4 space-y-2">
+              <h4 className="text-sm font-semibold text-white">Información del Agente</h4>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="text-[#888]">Nombre</p>
+                  <p className="text-white font-mono">{editingAgent.name}</p>
+                </div>
+                <div>
+                  <p className="text-[#888]">Estado</p>
+                  <p className="text-green-400 font-semibold capitalize">{editingAgent.status || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Save Button */}
+            <div className="flex gap-3 pt-4 border-t border-[#2D2D2D]">
+              <Button
+                onClick={handleSaveConfiguration}
+                disabled={isSaving}
+                variant="primary"
+                className="flex-1"
+              >
+                {isSaving ? '💾 Guardando...' : '✓ Guardar Cambios'}
+              </Button>
+              <Button
+                onClick={() => {
+                  setShowConfigDrawer(false);
+                  setTimeout(() => setEditingAgent(null), 300);
+                }}
+                variant="secondary"
+                className="flex-1"
+              >
+                Cancelar
+              </Button>
             </div>
           </div>
         </DetailDrawer>
