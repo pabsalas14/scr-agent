@@ -262,7 +262,9 @@ export class LLMClient {
   private async completeWithOpenAICompatible(prompt: string, maxTokens: number): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const baseUrl = this.config.baseUrl || 'http://localhost:1234';
-      const headers: Record<string, string> = {};
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
       if (this.config.apiKey) {
         headers['Authorization'] = `Bearer ${this.config.apiKey}`;
       }
