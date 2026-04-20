@@ -279,10 +279,11 @@ async function processAnalysisJob(job: Job) {
     logger.info(`Analizando código (${repoFiles.fileCount} archivos activos, ${repoFiles.totalSize} bytes)...`);
 
     // Ejecutar Inspector Agent con timeout
+    // Timeout debe ser mayor que el timeout de LM Studio (300s) para permitir que complete
     const maliciaOutput: any = await Promise.race([
       inspectorAgent.analizarArchivos(repoFiles.files, `Repositorio: ${project.repositoryUrl}`),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Inspector Agent timeout (5 minutos)')), 5 * 60 * 1000)
+        setTimeout(() => reject(new Error('Inspector Agent timeout (10 minutos)')), 10 * 60 * 1000)
       ),
     ]);
 
