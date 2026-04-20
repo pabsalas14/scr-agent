@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Monitor juice-shop analysis with qwen2.5-coder-14b
-ANALYSIS_ID="cmo7cy8dl000511lhcmzc3a08"
+ANALYSIS_ID="cmo7drvqd0005poqe6i0bhd63"
 TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNtbzZlMXZidTAwMDY1bDBsdTcxa294dTAiLCJlbWFpbCI6ImFkbWluQHNjci5jb20iLCJyb2xlIjoiQURNSU4iLCJpYXQiOjE3NzY2OTkwMjYsImV4cCI6MTc3Njc4NTQyNn0.4wcJ68NPBO3qdU1GZdeUUGC2CoCFx3j1gI1YQYwXFUA"
 LOG_FILE="/tmp/analysis-monitor.log"
 
