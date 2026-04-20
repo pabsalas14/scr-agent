@@ -705,6 +705,13 @@ class ApiService {
   }
 
   /**
+   * Petición PATCH genérica
+   */
+  async patch<T = any>(url: string, data?: any, config?: any): Promise<{ data: T }> {
+    return this.client.patch<T>(url, data, config);
+  }
+
+  /**
    * Petición DELETE genérica
    */
   async delete<T = any>(url: string, config?: any): Promise<{ data: T }> {
