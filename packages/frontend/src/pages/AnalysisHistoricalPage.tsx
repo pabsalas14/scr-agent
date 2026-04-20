@@ -11,9 +11,15 @@ export default function AnalysisHistoricalPage() {
   });
 
   const analyses = analysesResponse?.data || [];
-  const completedAnalyses = analyses.filter((a: any) => a.status === 'COMPLETED');
+  // Mostrar todos los análisis (completados, fallidos, cancelados)
+  const allAnalyses = analyses.filter((a: any) =>
+    ['COMPLETED', 'FAILED', 'CANCELLED'].includes(a.status)
+  );
 
-  // Fetch reports and findings for completed analyses
+  // Solo buscar hallazgos/reportes para análisis COMPLETADOS
+  const completedAnalyses = allAnalyses.filter((a: any) => a.status === 'COMPLETED');
+
+  // Fetch reports and findings only for completed analyses
   const reportsQueries = useQueries({
     queries: completedAnalyses.map((analysis: any) => ({
       queryKey: ['report', analysis.id],
@@ -32,14 +38,15 @@ export default function AnalysisHistoricalPage() {
     })),
   });
 
-  // Combine analyses with their reports and findings
-  const analysesWithReports = completedAnalyses.map((analysis: any, idx: number) => {
-    const findings = findingsQueries[idx]?.data || [];
+  // Combine all analyses with their reports and findings (when available)
+  const analysesWithReports = allAnalyses.map((analysis: any) => {
+    const completedIdx = completedAnalyses.findIndex((a: any) => a.id === analysis.id);
+    const findings = completedIdx >= 0 ? findingsQueries[completedIdx]?.data || [] : [];
     const criticalCount = findings.filter((f: any) => f.severity === 'CRITICAL').length;
 
     return {
       ...analysis,
-      report: reportsQueries[idx]?.data,
+      report: completedIdx >= 0 ? reportsQueries[completedIdx]?.data : undefined,
       findings,
       criticalCount,
     };
@@ -113,13 +120,25 @@ export default function AnalysisHistoricalPage() {
                       <span className={`px-3 py-1 rounded-full text-xs font-medium whitespace-nowrap ${
                         analysis.status === 'COMPLETED'
                           ? 'bg-green-500/20 text-green-400'
+                          : analysis.status === 'FAILED'
+                          ? 'bg-red-500/20 text-red-400'
+                          : analysis.status === 'CANCELLED'
+                          ? 'bg-orange-500/20 text-orange-400'
                           : analysis.status === 'IN_PROGRESS'
                           ? 'bg-yellow-500/20 text-yellow-400'
                           : 'bg-gray-500/20 text-gray-400'
                       }`}>
-                        {analysis.status === 'COMPLETED' ? 'Completado' : analysis.status === 'IN_PROGRESS' ? 'En progreso' : 'Pendiente'}
+                        {analysis.status === 'COMPLETED' ? 'Completado' : analysis.status === 'FAILED' ? 'Fallido' : analysis.status === 'CANCELLED' ? 'Cancelado' : analysis.status === 'IN_PROGRESS' ? 'En progreso' : 'Pendiente'}
                       </span>
                     </div>
+
+                    {/* Error message for failed analyses */}
+                    {analysis.status === 'FAILED' && analysis.errorMessage && (
+                      <div className="mt-3 p-2 bg-red-500/10 border border-red-500/30 rounded text-xs text-red-300">
+                        <p className="font-medium">Error:</p>
+                        <p>{analysis.errorMessage}</p>
+                      </div>
+                    )}
 
                     {/* Stats */}
                     <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-[#2D2D2D]">
