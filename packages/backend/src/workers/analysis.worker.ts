@@ -446,13 +446,23 @@ async function processAnalysisJob(job: Job) {
       (project as any).maxCommits ?? 50
     );
 
+    // Detectar si repositorio es grande para aplicar chunking
+    // Criterio: > 2MB total o > 1000 archivos
+    const LARGE_REPO_SIZE_BYTES = 2 * 1024 * 1024; // 2MB
+    const LARGE_REPO_FILE_COUNT = 1000;
+    const isLargeRepo =
+      repoFiles.totalSize > LARGE_REPO_SIZE_BYTES ||
+      repoFiles.fileCount > LARGE_REPO_FILE_COUNT;
+
+    logger.info(`📊 Repo size analysis: ${repoFiles.totalSize} bytes, ${repoFiles.fileCount} files → ${isLargeRepo ? 'LARGE' : 'SMALL'}`);
+
     logger.info(`Investigando ${maliciaOutput.hallazgos.length} hallazgos en historial...`);
 
     const forensesOutput: any = await Promise.race([
       detectiveAgent.investigarHistorial({
         hallazgos_malicia: maliciaOutput.hallazgos,
         historial_commits: historialGit,
-      }),
+      }, isLargeRepo),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Detective Agent timeout (3 minutos)')), 3 * 60 * 1000)
       ),
@@ -527,7 +537,7 @@ async function processAnalysisJob(job: Job) {
         hallazgos_malicia: maliciaOutput.hallazgos,
         linea_tiempo_forenses: forensesOutput.linea_tiempo,
         contexto_repo: `Repositorio: ${project.repositoryUrl}`,
-      }),
+      }, isLargeRepo),
       new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Fiscal Agent timeout (2 minutos)')), 2 * 60 * 1000)
       ),
