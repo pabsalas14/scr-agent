@@ -11,6 +11,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import {
   Play,
   Clock,
@@ -25,7 +26,7 @@ import {
 import { apiService } from '../../services/api.service';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { socketService } from '../../services/socket.service';
+import { socketClientService } from '../../services/socket.service';
 import FailedChunksWidget from './FailedChunksWidget';
 
 interface AnalysisProgressViewerProps {
@@ -68,6 +69,7 @@ export default function AnalysisProgressViewer({
   projectId,
   onClose,
 }: AnalysisProgressViewerProps) {
+  const navigate = useNavigate();
   const [localState, setLocalState] = useState<AnalysisState | null>(null);
   const [costData, setCostData] = useState<CostData | null>(null);
   const [pauseState, setPauseState] = useState<PauseState>({
@@ -123,10 +125,10 @@ export default function AnalysisProgressViewer({
       }
     };
 
-    socketService.on('analysisStatusChanged', handleStatusChange);
+    socketClientService.on('analysisStatusChanged', handleStatusChange);
 
     return () => {
-      socketService.off('analysisStatusChanged', handleStatusChange);
+      socketClientService.off('analysisStatusChanged', handleStatusChange);
     };
   }, [initialAnalysis, analysisId]);
 
@@ -180,10 +182,10 @@ export default function AnalysisProgressViewer({
       }
     };
 
-    socketService.on('analysisCostUpdated', handleCostUpdate);
+    socketClientService.on('analysisCostUpdated', handleCostUpdate);
 
     return () => {
-      socketService.off('analysisCostUpdated', handleCostUpdate);
+      socketClientService.off('analysisCostUpdated', handleCostUpdate);
     };
   }, [analysisId]);
 
@@ -453,7 +455,7 @@ export default function AnalysisProgressViewer({
           {/* Actions */}
           <div className="flex gap-3">
             <Button
-              onClick={() => window.open(`/dashboard/analyses/${analysisId}`, '_blank')}
+              onClick={() => navigate(`/projects/${projectId}/analyses/${analysisId}`)}
               className="flex-1"
               variant="primary"
             >

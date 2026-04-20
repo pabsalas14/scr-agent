@@ -10,6 +10,7 @@ import {
 import { apiService } from '../../services/api.service';
 import type { Proyecto } from '../../types/api';
 import ProjectDetailView from './ProjectDetailView';
+import { useAnalysisViewer } from '../../context/AnalysisViewerContext';
 
 interface ProyectoCardProps {
   proyecto: Proyecto;
@@ -37,6 +38,7 @@ const STATUS_CONFIG: Record<string, { label: string; color: string; dot: string;
 export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardProps) {
    const [detalleAbierto, setDetalleAbierto] = useState(false);
    const [mostrarMenuAnalisis, setMostrarMenuAnalisis] = useState(false);
+   const { openAnalysisViewer } = useAnalysisViewer();
 
    const { data: analisisData } = useQuery({
      queryKey: ['analyses', proyecto.id],
@@ -53,7 +55,12 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
 
    const iniciar = useMutation({
      mutationFn: (isIncremental: boolean = false) => apiService.iniciarAnalisis(proyecto.id, isIncremental),
-     onSuccess: (analisis) => onVerAnalisis(proyecto.id, analisis.id),
+     onSuccess: (analisis) => {
+       // Abrir modal de progreso en tiempo real
+       openAnalysisViewer(analisis.id, proyecto.id);
+       // Mantener llamada original como fallback
+       onVerAnalisis(proyecto.id, analisis.id);
+     },
    });
 
   const analisisList = analisisData || [];
@@ -125,6 +132,25 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
 
           {/* Actions */}
           <div className="flex items-center gap-2 relative">
+            {/* View Analysis Eye Icon */}
+            {ultimoAnalisis && (
+              <motion.button
+                onClick={() => openAnalysisViewer(ultimoAnalisis.id, proyecto.id)}
+                whileHover={{ scale: 1.05, translateY: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className={`p-2 rounded-lg border transition-all duration-200 ${
+                  enProceso
+                    ? 'bg-orange-500/10 border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:border-orange-500/70 shadow-lg shadow-orange-500/10'
+                    : ultimoAnalisis.status === 'COMPLETED'
+                    ? 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:border-green-500/70 shadow-lg shadow-green-500/10'
+                    : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500/70 shadow-lg shadow-red-500/10'
+                }`}
+                title={`Ver ${enProceso ? 'progreso en vivo' : 'análisis'}`}
+              >
+                <Eye className="w-4 h-4" />
+              </motion.button>
+            )}
+
             <div className="flex-1 flex items-stretch">
               <button
                 onClick={() => iniciar.mutate(false)} // Por defecto Completo si se da click al principal
@@ -228,15 +254,6 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
               )}
             </AnimatePresence>
 
-            {ultimoAnalisis?.status === 'COMPLETED' && (
-              <button
-                onClick={() => onVerAnalisis(proyecto.id, ultimoAnalisis.id)}
-                className="p-2 rounded-lg bg-[#242424] border border-[#2D2D2D] text-[#A0A0A0] hover:text-white hover:border-[#22C55E]/40 transition-all"
-                title="Ver reporte"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-            )}
 
             <button
               onClick={() => setDetalleAbierto(true)}

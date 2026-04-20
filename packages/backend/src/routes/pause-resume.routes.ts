@@ -11,7 +11,7 @@ import { Router, type Request, type Response } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
-import { analysisQueue } from '../services/queue.service';
+import { analysisQueue } from '../config/bull.config';
 import { socketService } from '../services/socket.service';
 
 const router = Router();
