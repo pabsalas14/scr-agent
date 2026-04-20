@@ -52,9 +52,17 @@ export default function AgentsModule() {
     if (agent) {
       setEditingAgent(agent);
 
+      // Map agent names to backend format (e.g., "Inspector Principal" -> "inspector")
+      const agentNameMap: Record<string, string> = {
+        'Inspector Principal': 'inspector',
+        'Detective Forense': 'detective',
+        'Fiscal Análisis': 'fiscal',
+      };
+      const backendAgentName = agentNameMap[agentName] || agentName.toLowerCase();
+
       // Fetch the current agent configuration from backend
       try {
-        const response = await apiService.get(`/agents/${agentName}/prompt`);
+        const response = await apiService.get(`/agents/${backendAgentName}/prompt`);
         const agentConfig = response.data?.data;
 
         setEditFormData({
@@ -86,8 +94,16 @@ export default function AgentsModule() {
         return;
       }
 
+      // Map agent names to backend format (e.g., "Inspector Principal" -> "inspector")
+      const agentNameMap: Record<string, string> = {
+        'Inspector Principal': 'inspector',
+        'Detective Forense': 'detective',
+        'Fiscal Análisis': 'fiscal',
+      };
+      const backendAgentName = agentNameMap[editingAgent.name] || editingAgent.name.toLowerCase();
+
       // Save agent configuration via API
-      const response = await apiService.patch(`/agents/${editingAgent.name}`, {
+      const response = await apiService.patch(`/agents/${backendAgentName}`, {
         model: editFormData.model,
         prompt: editFormData.prompt,
       });
