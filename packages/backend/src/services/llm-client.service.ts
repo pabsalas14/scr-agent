@@ -280,12 +280,23 @@ export class LLMClient {
 
     let response;
     try {
-      response = await this.axiosClient.post('/chat/completions', {
+      const payload = {
         model: this.config.model,
         messages: [{ role: 'user', content: prompt }],
         temperature: this.config.temperature,
         max_tokens: maxTokens,
+      };
+
+      logger.info(`[LLM Debug] Sending request to ${this.config.provider}: ${this.config.baseUrl}/chat/completions`, {
+        model: this.config.model,
+        payloadSize: JSON.stringify(payload).length,
+        promptLength: prompt.length,
+        temperature: this.config.temperature,
+        maxTokens: maxTokens,
       });
+
+      response = await this.axiosClient.post('/chat/completions', payload);
+      logger.info(`[LLM Debug] Success response from ${this.config.provider}`);
     } catch (error: any) {
       // Log detailed error information for debugging
       const errorDetails = {
@@ -293,13 +304,16 @@ export class LLMClient {
         status: error.response?.status,
         statusText: error.response?.statusText,
         data: error.response?.data,
-        config: {
+        headers: error.response?.headers,
+        axiosConfig: {
           baseURL: this.axiosClient?.defaults.baseURL,
           headers: this.axiosClient?.defaults.headers,
+          timeout: this.axiosClient?.defaults.timeout,
           model: this.config.model,
+          provider: this.config.provider,
         },
       };
-      console.error('LM Studio request error details:', JSON.stringify(errorDetails, null, 2));
+      logger.error(`[LLM Debug] Request failed: ${JSON.stringify(errorDetails, null, 2)}`);
       throw error;
     }
 
