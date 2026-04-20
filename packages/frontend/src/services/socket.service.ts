@@ -199,6 +199,41 @@ class SocketClientService {
   }
 
   /**
+   * Listen for analysis cost updates (real-time token tracking)
+   */
+  onAnalysisCostUpdated(
+    callback: (data: any) => void
+  ): void {
+    this.registerListener('analysisCostUpdated', callback);
+  }
+
+  /**
+   * Generic listener for any socket event
+   * Used when you need to listen to events without typed methods
+   */
+  on(eventName: string, callback: (data: any) => void): void {
+    this.registerListener(eventName, callback);
+  }
+
+  /**
+   * Generic unsubscribe from socket events
+   */
+  off(eventName: string, callback?: (data: any) => void): void {
+    if (!this.socket) return;
+
+    if (callback) {
+      this.socket.off(eventName, callback);
+    } else {
+      // Remove all listeners for this event
+      const oldListener = this.listeners.get(eventName);
+      if (oldListener) {
+        this.socket.off(eventName, oldListener as any);
+        this.listeners.delete(eventName);
+      }
+    }
+  }
+
+  /**
    * Disconnect socket and clean up all listeners
    * BUG FIX #16: Ensure all listeners are properly cleaned up
    */

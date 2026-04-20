@@ -25,7 +25,7 @@ import {
 import { apiService } from '../../services/api.service';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
-import { socketService } from '../../services/socket.service';
+import { socketClientService } from '../../services/socket.service';
 import FailedChunksWidget from './FailedChunksWidget';
 
 interface AnalysisProgressViewerProps {
@@ -123,10 +123,10 @@ export default function AnalysisProgressViewer({
       }
     };
 
-    socketService.on('analysisStatusChanged', handleStatusChange);
+    socketClientService.on('analysisStatusChanged', handleStatusChange);
 
     return () => {
-      socketService.off('analysisStatusChanged', handleStatusChange);
+      socketClientService.off('analysisStatusChanged', handleStatusChange);
     };
   }, [initialAnalysis, analysisId]);
 
@@ -180,10 +180,10 @@ export default function AnalysisProgressViewer({
       }
     };
 
-    socketService.on('analysisCostUpdated', handleCostUpdate);
+    socketClientService.on('analysisCostUpdated', handleCostUpdate);
 
     return () => {
-      socketService.off('analysisCostUpdated', handleCostUpdate);
+      socketClientService.off('analysisCostUpdated', handleCostUpdate);
     };
   }, [analysisId]);
 
