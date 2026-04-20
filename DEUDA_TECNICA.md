@@ -35,6 +35,18 @@
 - **Status**: DETENIDO - Se revertió el cambio que lo causaba
 - **Solución Pendiente**: Implementar correctamente para mostrar todos sin romper reportes
 
+### 5. ❌ Token de GitHub No Se Valida Ni Se Prueba
+- **Ubicación**: Configuración → Integraciones → GitHub Token
+- **Problema**: Token se guarda pero no se valida ni se muestra usuario conectado
+- **Impacto**: Usuario no sabe si el token es válido o si está conectado a GitHub
+- **Prioridad**: HIGH
+- **Causa Raíz**: No hay endpoint de validación de token GitHub
+- **Área**: Frontend SettingsModule + Backend API (falta endpoint)
+- **Solución Requerida**: 
+  - Crear `POST /github/verify-token` endpoint
+  - Llamar GitHub API `/user` para validar y obtener username
+  - Mostrar "✓ Conectado como @{username}"
+
 ---
 
 ## Fix Stack (Completado)
