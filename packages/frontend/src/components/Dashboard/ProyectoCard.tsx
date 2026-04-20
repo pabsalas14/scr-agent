@@ -130,30 +130,27 @@ export default function ProyectoCard({ proyecto, onVerAnalisis }: ProyectoCardPr
             </div>
           </div>
 
-          {/* Quick Access to Active or Latest Analysis */}
-          {ultimoAnalisis && (
-            <motion.button
-              onClick={() => openAnalysisViewer(ultimoAnalisis.id, proyecto.id)}
-              whileHover={{ scale: 1.05, translateY: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className={`group relative px-3 py-2.5 rounded-lg border transition-all duration-200 flex items-center gap-2 ${
-                enProceso
-                  ? 'bg-orange-500/10 border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:border-orange-500/70 shadow-lg shadow-orange-500/10'
-                  : ultimoAnalisis.status === 'COMPLETED'
-                  ? 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:border-green-500/70 shadow-lg shadow-green-500/10'
-                  : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500/70 shadow-lg shadow-red-500/10'
-              }`}
-              title={`Ver ${enProceso ? 'progreso en vivo' : 'análisis'}`}
-            >
-              <Eye className="w-4 h-4" />
-              <span className="text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 max-w-0 group-hover:max-w-[60px] overflow-hidden">
-                {enProceso ? 'En vivo' : 'Ver análisis'}
-              </span>
-            </motion.button>
-          )}
-
           {/* Actions */}
           <div className="flex items-center gap-2 relative">
+            {/* View Analysis Eye Icon */}
+            {ultimoAnalisis && (
+              <motion.button
+                onClick={() => openAnalysisViewer(ultimoAnalisis.id, proyecto.id)}
+                whileHover={{ scale: 1.05, translateY: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className={`p-2 rounded-lg border transition-all duration-200 ${
+                  enProceso
+                    ? 'bg-orange-500/10 border-orange-500/50 text-orange-400 hover:bg-orange-500/20 hover:border-orange-500/70 shadow-lg shadow-orange-500/10'
+                    : ultimoAnalisis.status === 'COMPLETED'
+                    ? 'bg-green-500/10 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:border-green-500/70 shadow-lg shadow-green-500/10'
+                    : 'bg-red-500/10 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:border-red-500/70 shadow-lg shadow-red-500/10'
+                }`}
+                title={`Ver ${enProceso ? 'progreso en vivo' : 'análisis'}`}
+              >
+                <Eye className="w-4 h-4" />
+              </motion.button>
+            )}
+
             <div className="flex-1 flex items-stretch">
               <button
                 onClick={() => iniciar.mutate(false)} // Por defecto Completo si se da click al principal
