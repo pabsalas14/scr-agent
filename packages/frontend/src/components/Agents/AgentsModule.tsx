@@ -33,9 +33,16 @@ export default function AgentsModule() {
   const { data: agents, isLoading } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      const response = await apiService.get('/agents');
-      return response.data?.data || [];
+      try {
+        // Try the monitoring endpoint first (actual agent status)
+        const response = await apiService.get('/monitoring/agents');
+        return response.data?.data || [];
+      } catch (error) {
+        console.error('Error fetching agents:', error);
+        return [];
+      }
     },
+    refetchInterval: 10000, // Refresh every 10 seconds
   });
 
   // Note: AGENT_LIST removed - agents now fetched from real API via useQuery below
