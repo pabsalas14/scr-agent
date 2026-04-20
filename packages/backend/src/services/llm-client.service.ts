@@ -37,6 +37,7 @@ export interface LLMConfig {
   temperature?: number;
   maxTokens?: number;
   customHeaders?: Record<string, string>; // Headers personalizados para Custom/LLM Gateway
+  signal?: AbortSignal; // Para cancelación de peticiones
 }
 
 export interface LLMResponse {
@@ -105,6 +106,11 @@ export class LLMClient {
    */
   async complete(prompt: string, maxTokens?: number): Promise<LLMResponse> {
     const tokens = maxTokens || this.config.maxTokens || 4096;
+
+    // Verificar si se pidió cancelación antes de empezar
+    if (this.config.signal?.aborted) {
+      throw new Error('Analysis cancelled by user');
+    }
 
     try {
       switch (this.config.provider) {
@@ -312,7 +318,9 @@ export class LLMClient {
         maxTokens: maxTokens,
       });
 
-      response = await this.axiosClient.post('/chat/completions', payload);
+      response = await this.axiosClient.post('/chat/completions', payload, {
+        signal: this.config.signal,
+      });
       logger.info(`[LLM Debug] Success response from ${this.config.provider}`);
     } catch (error: any) {
       // Log detailed error information for debugging

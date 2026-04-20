@@ -24,6 +24,7 @@ import { decrypt } from '../services/crypto.service';
 import { UserLLMConfig } from '../services/llm-client.service';
 import { detectiveService } from '../services/detective.service';
 import { recordTokenUsage } from '../services/metrics.service';
+import { createCancellationToken, cleanupCancellationToken, isAnalysisCancelled } from '../services/cancellation.service';
 import { QUEUE_NAME, ANALYSIS_CONCURRENCY } from '../config/bull.config';
 import {
   getNewCommits,
@@ -163,13 +164,16 @@ const redisConnection = parseRedisUrl(REDIS_URL);
  * Ejecuta Detective → Inspector → Fiscal secuencialmente
  */
 async function processAnalysisJob(job: Job) {
-  const { analysisId, projectId, isIncremental: requestedIncremental } = job.data as { 
-    analysisId: string; 
-    projectId: string; 
-    isIncremental?: boolean 
+  const { analysisId, projectId, isIncremental: requestedIncremental } = job.data as {
+    analysisId: string;
+    projectId: string;
+    isIncremental?: boolean
   };
 
   let ownerId = '';
+
+  // Crear token de cancelación para este análisis
+  const cancellationToken = createCancellationToken(analysisId);
 
   try {
     logger.info(`⚙️ [Job ${job.id}] Procesando análisis ${analysisId}...`);
@@ -213,13 +217,20 @@ async function processAnalysisJob(job: Job) {
       }
     }
 
-    // Obtener y aplicar configuración LLM del usuario
+    // Obtener y aplicar configuración LLM del usuario + signal de cancelación
     const llmConfig = await getLLMConfigFromUser(project.userId);
     if (llmConfig) {
       logger.info(`Aplicando LLM config del usuario: ${llmConfig.provider}/${llmConfig.model}`);
-      inspectorAgent.updateConfig(llmConfig);
-      detectiveAgent.updateConfig(llmConfig);
-      fiscalAgent.updateConfig(llmConfig);
+      // Agregar signal de cancelación a la config
+      const configWithSignal = { ...llmConfig, signal: cancellationToken.signal };
+      inspectorAgent.updateConfig(configWithSignal);
+      detectiveAgent.updateConfig(configWithSignal);
+      fiscalAgent.updateConfig(configWithSignal);
+    } else {
+      // Incluso si no hay config del usuario, pasar el signal para cancelación
+      inspectorAgent.updateConfig({ signal: cancellationToken.signal } as any);
+      detectiveAgent.updateConfig({ signal: cancellationToken.signal } as any);
+      fiscalAgent.updateConfig({ signal: cancellationToken.signal } as any);
     }
 
     // ========== FASE 1: INSPECTOR AGENT ==========
@@ -535,8 +546,14 @@ async function processAnalysisJob(job: Job) {
       socketService.emitAnalysisStatusChanged(analysisId, projectId, 'FAILED', 0);
     }
 
+    // Limpiar token de cancelación
+    cleanupCancellationToken(analysisId);
+
     // Re-lanzar error para que Bull lo maneje (reintentos automáticos)
     throw error;
+  } finally {
+    // Limpiar token de cancelación al completar exitosamente
+    cleanupCancellationToken(analysisId);
   }
 }
 
