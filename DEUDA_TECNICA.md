@@ -47,16 +47,27 @@
   - Llamar GitHub API `/user` para validar y obtener username
   - Mostrar "✓ Conectado como @{username}"
 
-### 6. ⚠️ Análisis Pueden Quedar Stuck Sin Timeout Global
-- **Ubicación**: Inspector Agent `analizarArchivos()` - `Promise.all()` de chunks
-- **Problema**: Si un chunk de código tarda indefinidamente, Promise.all() se cuelga sin recuperación
-- **Impacto**: Worker stuck esperando indefinidamente, peticiones huérfanas a LM Studio
-- **Prioridad**: MEDIUM
-- **Status**: PARCIALMENTE ARREGLADO - Se añadió timeout global de 35 minutos (2026-04-20)
-- **Solución Pendiente**: 
-  - Mejorar manejo de errores en chunks individuales
-  - Implementar circuit breaker si N chunks fallan
-  - Opcionalmente: ejecutar chunks en paralelo limitado con control de concurrencia
+### 6. ⚠️ Proyectos Muy Grandes (>1MB) No Se Pueden Analizar
+- **Ubicación**: Inspector Agent `analizarArchivos()` - análisis de chunks secuencial
+- **Problema**: 
+  - Juice-shop tiene 1,446 chunks = 4+ horas de análisis secuencial
+  - LM Studio timeout/fallo por volume de peticiones
+  - qwen2.5-coder es lento (~10s por request)
+  - Análisis nunca completa o falla con ECONNREFUSED
+- **Impacto**: Usuarios no pueden escanear proyectos grandes (repos públicos, monorepos)
+- **Prioridad**: HIGH
+- **Causa Raíz**: 
+  - Chunking secuencial ineficiente (1 chunk = 1 petición LLM)
+  - Modelo LLM local demasiado lento
+  - Sin límite de tamaño de proyecto
+- **Área**: Backend - Inspector Agent, algoritmo de chunking
+- **Solución Requerida**:
+  - [ ] Limitar tamaño máximo de proyecto a 500KB (rechazar mayores)
+  - [ ] Implementar análisis paralelo (máx 5 chunks en paralelo)
+  - [ ] Mejorar compresión: remover comentarios, espacios en blanco
+  - [ ] Considerar usar modelo más rápido o Anthropic para proyectos grandes
+  - [ ] Implementar circuit breaker si N chunks fallan consecutivamente
+- **Alternativa rápida**: Recomendar Anthropic Claude para proyectos > 500KB (10x más rápido)
 
 ---
 
