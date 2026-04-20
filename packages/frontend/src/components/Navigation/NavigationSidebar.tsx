@@ -19,7 +19,7 @@ import type { TabGroup, TabId, GroupId } from '../../types/navigation';
 interface NavigationSidebarProps {
   activeTab: TabId;
   onTabChange: (tabId: TabId) => void;
-  userName?: string;
+  userName?: string; // Will use this if provided, otherwise fallback to localStorage or 'Usuario'
   onLogout?: () => void;
   collapsed?: boolean;
   badgeOverrides?: Record<TabId, number | string>; // Dynamic badge data from parent
@@ -151,11 +151,13 @@ const getNavigationGroups = (): TabGroup[] => [
 export default function NavigationSidebar({
   activeTab,
   onTabChange,
-  userName = 'Usuario',
+  userName,
   onLogout,
   collapsed = false,
   badgeOverrides = {},
 }: NavigationSidebarProps) {
+  // Use provided userName, fallback to localStorage, then 'Usuario'
+  const displayName = userName || localStorage.getItem('userName') || 'Usuario';
   const [expandedGroups, setExpandedGroups] = useState<Set<GroupId>>(() => {
     const groups = getNavigationGroups();
     return new Set(groups.filter(g => g.defaultExpanded).map(g => g.groupId));
@@ -267,7 +269,7 @@ export default function NavigationSidebar({
         {!collapsed && (
           <div className="px-3 py-2">
             <p className="text-xs text-[#6B7280]">Conectado como</p>
-            <p className="text-sm font-semibold text-white truncate">{userName}</p>
+            <p className="text-sm font-semibold text-white truncate">{displayName}</p>
           </div>
         )}
         {onLogout && (

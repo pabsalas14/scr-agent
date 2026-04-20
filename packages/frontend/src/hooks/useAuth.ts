@@ -48,7 +48,7 @@ export function useAuth() {
     window.dispatchEvent(new Event('auth_changed'));
   }, []);
 
-  const getUser = useCallback((): { id: string; email: string; name?: string; role: string } | null => {
+  const getUser = useCallback((): { id: string; email: string; name: string; role: string } | null => {
     const token = authToken || localStorage.getItem(TOKEN_KEY);
     if (!token) return null;
     try {
@@ -56,10 +56,20 @@ export function useAuth() {
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(atob(base64));
       if (payload.exp && payload.exp * 1000 < Date.now()) return null;
+
+      const email = payload.email || '';
+      // Use name from JWT, fallback to email prefix, then generic 'Usuario'
+      const name = payload.name || email.split('@')[0] || 'Usuario';
+
+      // Store name in localStorage for persistence
+      if (name !== 'Usuario') {
+        localStorage.setItem('userName', name);
+      }
+
       return {
         id: payload.sub || payload.userId || payload.id,
-        email: payload.email,
-        name: payload.name,
+        email,
+        name,
         role: payload.role ?? 'VIEWER',
       };
     } catch {

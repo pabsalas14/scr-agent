@@ -49,6 +49,8 @@ export default function SettingsModule() {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [slackNotifications, setSlackNotifications] = useState(false);
+  const [iaTestLoading, setIaTestLoading] = useState(false);
+  const [iaTestStatus, setIaTestStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   // Validate tokens
   const validateGithubToken = (token: string): boolean => {
@@ -91,16 +93,57 @@ export default function SettingsModule() {
   }, [userSettings]);
 
   // Mutations
+  const [githubUser, setGithubUser] = useState<{ login: string; repositories: number } | null>(null);
+  const [githubLoading, setGithubLoading] = useState(false);
+
+  // Verify GitHub token and fetch user info
+  const verifyGithubToken = async (token: string) => {
+    if (!token) return;
+    setGithubLoading(true);
+    try {
+      // Call GitHub API to verify token and get user info
+      const response = await fetch('https://api.github.com/user', {
+        headers: { Authorization: `token ${token}` },
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        // Fetch repository count
+        const reposResponse = await fetch('https://api.github.com/user/repos?per_page=1', {
+          headers: { Authorization: `token ${token}` },
+        });
+        const repoLink = reposResponse.headers.get('link');
+        const repoCount = repoLink ? parseInt(repoLink.match(/&page=(\d+)>; rel="last"/)?.[1] || '0') : 0;
+
+        setGithubUser({ login: userData.login, repositories: repoCount });
+        return true;
+      } else {
+        setGithubUser(null);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error verifying GitHub token:', error);
+      setGithubUser(null);
+      return false;
+    } finally {
+      setGithubLoading(false);
+    }
+  };
+
   const guardarTokenMutation = useMutation({
-    mutationFn: (token: string) => {
+    mutationFn: async (token: string) => {
       if (!validateGithubToken(token)) {
         throw new Error('Token de GitHub debe tener un formato válido');
+      }
+      // Verify token first
+      const isValid = await verifyGithubToken(token);
+      if (!isValid) {
+        throw new Error('Token de GitHub no válido o expirado');
       }
       return apiService.guardarTokenGithub(token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      setStatus({ type: 'success', message: 'Token de GitHub actualizado.' });
+      setStatus({ type: 'success', message: githubUser ? `✓ Conectado como @${githubUser.login} (${githubUser.repositories} repositorios)` : 'Token de GitHub actualizado.' });
       setTimeout(() => setStatus(null), 5000);
     },
     onError: (error: any) => {
@@ -109,6 +152,34 @@ export default function SettingsModule() {
       setTimeout(() => setStatus(null), 5000);
     },
   });
+
+  const testIAConnection = async (provider: 'anthropic' | 'lmstudio', apiKey?: string) => {
+    setIaTestLoading(true);
+    try {
+      if (provider === 'anthropic') {
+        const response = await fetch('https://api.anthropic.com/v1/models', {
+          headers: { 'X-API-Key': apiKey || claudeApiKey },
+        });
+        if (response.ok) {
+          setIaTestStatus({ type: 'success', message: '✓ Conectado a Anthropic Claude' });
+        } else {
+          setIaTestStatus({ type: 'error', message: 'API Key no válida o expirada' });
+        }
+      } else if (provider === 'lmstudio') {
+        const response = await fetch(`${llmBaseUrl}/models`);
+        if (response.ok) {
+          setIaTestStatus({ type: 'success', message: '✓ Conectado a LM Studio' });
+        } else {
+          setIaTestStatus({ type: 'error', message: 'LM Studio no accesible en ' + llmBaseUrl });
+        }
+      }
+    } catch (error) {
+      setIaTestStatus({ type: 'error', message: 'Error al conectar: ' + (error as any).message });
+    } finally {
+      setIaTestLoading(false);
+      setTimeout(() => setIaTestStatus(null), 5000);
+    }
+  };
 
   const guardarConfiguracionIAMutation = useMutation({
     mutationFn: (config: any) => {
@@ -122,7 +193,8 @@ export default function SettingsModule() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['user-settings'] });
-      setStatus({ type: 'success', message: 'Configuración de IA actualizada correctamente.' });
+      const providerText = llmProvider === 'anthropic' ? 'Claude Sonnet 4.6' : 'LM Studio';
+      setStatus({ type: 'success', message: `✓ Configuración Guardada | Usando: ${providerText}` });
       setTimeout(() => setStatus(null), 5000);
     },
     onError: () => {
@@ -307,26 +379,57 @@ export default function SettingsModule() {
                 </div>
               </div>
 
-              <button
-                onClick={() =>
-                  guardarConfiguracionIAMutation.mutate({
-                    claudeApiKey: llmProvider === 'anthropic' ? (claudeApiKey || undefined) : undefined,
-                    selectedModel,
-                    temperature,
-                    maxTokens,
-                    webhookUrl: webhookUrl || undefined,
-                    llmProvider,
-                    llmBaseUrl: llmProvider === 'lmstudio' ? (llmBaseUrl || undefined) : undefined,
-                  })
-                }
-                disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}
-                className="w-full bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-white text-sm font-semibold py-3 rounded-lg hover:from-[#7C3AED] hover:to-[#6D28D9] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-6"
-              >
-                {guardarConfiguracionIAMutation.isPending
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-                  : <><Save className="w-4 h-4" /> Guardar Configuración</>
-                }
-              </button>
+              <div className="flex gap-2 mt-6">
+                <button
+                  onClick={() => testIAConnection(llmProvider)}
+                  disabled={iaTestLoading || guardarConfiguracionIAMutation.isPending}
+                  className="flex-1 bg-[#242424] border border-[#2D2D2D] text-white text-sm font-semibold py-3 rounded-lg hover:border-[#8B5CF6]/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {iaTestLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Probando...</>
+                    : <>⚡ Probar Conexión</>
+                  }
+                </button>
+                <button
+                  onClick={() =>
+                    guardarConfiguracionIAMutation.mutate({
+                      claudeApiKey: llmProvider === 'anthropic' ? (claudeApiKey || undefined) : undefined,
+                      selectedModel,
+                      temperature,
+                      maxTokens,
+                      webhookUrl: webhookUrl || undefined,
+                      llmProvider,
+                      llmBaseUrl: llmProvider === 'lmstudio' ? (llmBaseUrl || undefined) : undefined,
+                    })
+                  }
+                  disabled={guardarConfiguracionIAMutation.isPending || !selectedModel}
+                  className="flex-1 bg-gradient-to-r from-[#8B5CF6] to-[#7C3AED] text-white text-sm font-semibold py-3 rounded-lg hover:from-[#7C3AED] hover:to-[#6D28D9] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {guardarConfiguracionIAMutation.isPending
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                    : <><Save className="w-4 h-4" /> Guardar Configuración</>
+                  }
+                </button>
+              </div>
+
+              {iaTestStatus && (
+                <motion.div
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className={`flex items-center gap-3 p-4 rounded-lg text-sm font-medium mt-4 ${
+                    iaTestStatus.type === 'success'
+                      ? 'bg-[#22C55E]/10 text-[#22C55E] border border-[#22C55E]/20'
+                      : 'bg-[#EF4444]/10 text-[#EF4444] border border-[#EF4444]/20'
+                  }`}
+                >
+                  {iaTestStatus.type === 'success'
+                    ? <CheckCircle className="w-5 h-5 flex-shrink-0" />
+                    : <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                  }
+                  {iaTestStatus.message}
+                </motion.div>
+              )}
 
               <AnimatePresence>
                 {status && (
@@ -382,16 +485,37 @@ export default function SettingsModule() {
                 <p className="text-xs text-[#6B7280] mt-2">Proporciona acceso a tus repositorios para análisis automáticos</p>
               </div>
 
-              <button
-                onClick={() => guardarTokenMutation.mutate(githubToken)}
-                disabled={guardarTokenMutation.isPending || !githubToken.trim()}
-                className="w-full bg-gradient-to-r from-[#F97316] to-[#EA6D00] text-white text-sm font-semibold py-3 rounded-lg hover:from-[#EA6D00] hover:to-[#D45A00] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {guardarTokenMutation.isPending
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
-                  : <><Save className="w-4 h-4" /> Guardar Token</>
-                }
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => guardarTokenMutation.mutate(githubToken)}
+                  disabled={guardarTokenMutation.isPending || !githubToken.trim()}
+                  className="flex-1 bg-gradient-to-r from-[#F97316] to-[#EA6D00] text-white text-sm font-semibold py-3 rounded-lg hover:from-[#EA6D00] hover:to-[#D45A00] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {guardarTokenMutation.isPending || githubLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Guardando...</>
+                    : <><Save className="w-4 h-4" /> Guardar Token</>
+                  }
+                </button>
+                <button
+                  onClick={() => {
+                    if (githubToken) verifyGithubToken(githubToken);
+                  }}
+                  disabled={!githubToken.trim() || githubLoading}
+                  className="flex-1 bg-[#242424] border border-[#2D2D2D] text-white text-sm font-semibold py-3 rounded-lg hover:border-[#F97316]/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {githubLoading
+                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Probando...</>
+                    : <>⚡ Probar Conexión</>
+                  }
+                </button>
+              </div>
+
+              {githubUser && (
+                <div className="p-4 rounded-lg bg-[#22C55E]/10 border border-[#22C55E]/20">
+                  <p className="text-sm text-[#22C55E] font-semibold">✓ Conectado como @{githubUser.login}</p>
+                  <p className="text-xs text-[#22C55E]/70 mt-1">{githubUser.repositories} repositorios accesibles</p>
+                </div>
+              )}
             </div>
           </div>
         );
