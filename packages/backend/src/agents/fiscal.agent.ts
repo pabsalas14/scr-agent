@@ -110,7 +110,18 @@ export class FiscalAgentService {
       const llmClient = this.getLLMClient();
       const config = llmClient.getConfig();
       logger.info(`Llamando a ${config.provider} (${config.model})`);
-      const response = await llmClient.complete(prompt, 4096);
+
+      // Wrap LLM call with timeout to detect hanging requests
+      // LM Studio should respond within 5 minutes for report generation
+      const response = await Promise.race([
+        llmClient.complete(prompt, 4096),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
+            5 * 60 * 1000
+          )
+        ) as any,
+      ]);
 
       if (!response.text) {
         throw new Error('Respuesta inesperada del LLM');
@@ -336,7 +347,18 @@ Responde directamente a la pregunta. No incluyas JSON, solo texto plano o markdo
 `;
 
       const llmClient = this.getLLMClient();
-      const response = await llmClient.complete(prompt, 2048);
+      const config = llmClient.getConfig();
+
+      // Wrap LLM call with timeout to detect hanging requests
+      const response = await Promise.race([
+        llmClient.complete(prompt, 2048),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
+            5 * 60 * 1000
+          )
+        ) as any,
+      ]);
 
       const answer = response.text;
 

@@ -162,7 +162,17 @@ export class InspectorAgentService {
       // Model was returning empty responses - increased output space for better JSON generation
       const maxOutputTokens = config.provider === 'lmstudio' ? 768 : 4096;
 
-      const response = await llmClient.complete(prompt, maxOutputTokens);
+      // Wrap LLM call with timeout to detect hanging requests
+      // LM Studio should respond within 5 minutes for code analysis
+      const response = await Promise.race([
+        llmClient.complete(prompt, maxOutputTokens),
+        new Promise((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
+            5 * 60 * 1000
+          )
+        ) as any,
+      ]);
 
       if (!response.text) throw new Error('Respuesta inesperada del LLM');
 
