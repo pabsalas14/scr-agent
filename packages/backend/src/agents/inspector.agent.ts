@@ -17,8 +17,13 @@ import { cacheService, CacheType } from '../services/cache.service';
 import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
-/** Tamaño máximo de código por llamada al LLM (500 KB) */
-const MAX_CHUNK_BYTES = 500 * 1024;
+/**
+ * Tamaño máximo de código por llamada al LLM
+ * Reducido a 50KB para accommodar LM Studio's 4K token context window
+ * Approximation: 1 token ≈ 4 characters, so 4K tokens ≈ 16KB of actual code
+ * Using 50KB to be safe and leave room for the prompt template
+ */
+const MAX_CHUNK_BYTES = 50 * 1024; // Reduced from 500KB
 
 /**
  * Servicio del Agente Inspector
