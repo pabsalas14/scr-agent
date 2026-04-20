@@ -53,9 +53,32 @@ export default function HealthTab() {
     ? Math.round(agents.reduce((sum: number, a: any) => sum + (a.avgResponseTime || 0), 0) / agents.length)
     : 0;
 
-  // System health status
-  const healthStatus = health?.healthy ? 'Operacional' : 'Degradado';
-  const healthColor = health?.healthy ? 'text-green-400' : 'text-yellow-400';
+  // System health status - exclude LLM monitoring from degraded determination
+  const isHealthyExcludingLLM = () => {
+    if (!health) return true;
+
+    // If there are specific service statuses, check them excluding LLM
+    if (health.services && typeof health.services === 'object') {
+      const servicesExcludingLLM = Object.entries(health.services)
+        .filter(([serviceName]) => !serviceName.toLowerCase().includes('llm'))
+        .map(([, status]) => status);
+
+      // If all non-LLM services are healthy, system is operational
+      if (servicesExcludingLLM.length === 0) return true;
+      return servicesExcludingLLM.every((s: any) => s?.status === 'healthy' || s?.healthy === true);
+    }
+
+    // Fallback: if health.healthy is true, system is operational
+    // If false, check if only LLM is the issue
+    if (health.healthy === true) return true;
+
+    // If we only have the boolean flag and it's false, assume system is degraded
+    // (unless we can confirm it's only LLM causing it)
+    return false;
+  };
+
+  const healthStatus = isHealthyExcludingLLM() ? 'Operacional' : 'Degradado';
+  const healthColor = isHealthyExcludingLLM() ? 'text-green-400' : 'text-yellow-400';
 
   return (
     <div className="space-y-6">
