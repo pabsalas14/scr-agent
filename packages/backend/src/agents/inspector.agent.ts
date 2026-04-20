@@ -19,12 +19,11 @@ import { MaliciaInput, MaliciaOutput, MaliciaFinding } from '../types/agents';
 
 /**
  * Tamaño máximo de código por llamada al LLM
- * Reducido a 10KB para accommodar LM Studio's 4K token context window
- * With a 4K context length and ~1K for the prompt template,
- * we need to ensure code chunks fit within ~3K tokens.
- * Using 1 token ≈ 4 characters, 3K tokens ≈ 12KB max, using 10KB for safety
+ * LM Studio's qwen2.5-coder model has a 4K token context window.
+ * Empirical testing shows the max prompt size is ~7.6KB of raw text.
+ * Using 6KB (6144 bytes) as a conservative limit with safety margin.
  */
-const MAX_CHUNK_BYTES = 10 * 1024; // Reduced from 500KB (50x reduction)
+const MAX_CHUNK_BYTES = 6 * 1024; // Reduced from 500KB (83x reduction)
 
 /**
  * Servicio del Agente Inspector
