@@ -19,6 +19,8 @@ import {
   DollarSign,
   TrendingUp,
   X,
+  Pause,
+  RotateCcw,
 } from 'lucide-react';
 import { apiService } from '../../services/api.service';
 import Button from '../ui/Button';
@@ -30,6 +32,13 @@ interface AnalysisProgressViewerProps {
   analysisId: string;
   projectId: string;
   onClose?: () => void;
+}
+
+interface PauseState {
+  canPause: boolean;
+  canResume: boolean;
+  isPausing: boolean;
+  isResuming: boolean;
 }
 
 interface AnalysisState {
@@ -61,6 +70,12 @@ export default function AnalysisProgressViewer({
 }: AnalysisProgressViewerProps) {
   const [localState, setLocalState] = useState<AnalysisState | null>(null);
   const [costData, setCostData] = useState<CostData | null>(null);
+  const [pauseState, setPauseState] = useState<PauseState>({
+    canPause: false,
+    canResume: false,
+    isPausing: false,
+    isResuming: false,
+  });
 
   // Fetch initial analysis state
   const { data: initialAnalysis, isLoading } = useQuery({
@@ -121,6 +136,108 @@ export default function AnalysisProgressViewer({
       setCostData(costs);
     }
   }, [costs]);
+
+  // Fetch pause capability
+  useEffect(() => {
+    if (!analysisId) return;
+
+    const fetchPauseCapability = async () => {
+      try {
+        const response = await apiService.get(`/analyses/${analysisId}/can-pause`);
+        const data = response.data?.data;
+        if (data) {
+          setPauseState((prev) => ({
+            ...prev,
+            canPause: data.canPause,
+            canResume: data.canResume,
+          }));
+        }
+      } catch (error) {
+        console.warn('Failed to fetch pause capability:', error);
+      }
+    };
+
+    fetchPauseCapability();
+    // Refetch every 5 seconds to keep pause state current
+    const interval = setInterval(fetchPauseCapability, 5000);
+
+    return () => clearInterval(interval);
+  }, [analysisId]);
+
+  // Listen for real-time cost updates via WebSocket
+  useEffect(() => {
+    const handleCostUpdate = async (data: any) => {
+      if (data.analysisId === analysisId) {
+        // Re-fetch cost data when stage completes
+        try {
+          const response = await apiService.get(`/analytics/cost-by-analysis/${analysisId}`);
+          if (response.data?.data) {
+            setCostData(response.data.data);
+          }
+        } catch (error) {
+          console.warn('Failed to fetch updated cost data:', error);
+        }
+      }
+    };
+
+    socketService.on('analysisCostUpdated', handleCostUpdate);
+
+    return () => {
+      socketService.off('analysisCostUpdated', handleCostUpdate);
+    };
+  }, [analysisId]);
+
+  const handlePause = async () => {
+    if (!analysisId || pauseState.isPausing) return;
+
+    setPauseState((prev) => ({ ...prev, isPausing: true }));
+    try {
+      const response = await apiService.post(`/analyses/${analysisId}/pause`);
+      if (response.data?.success) {
+        setPauseState((prev) => ({
+          ...prev,
+          canPause: false,
+          canResume: true,
+          isPausing: false,
+        }));
+        // Emit socket event to update local state
+        if (localState) {
+          setLocalState((prev) =>
+            prev ? { ...prev, status: 'PAUSED' as any } : null
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error pausing analysis:', error);
+      setPauseState((prev) => ({ ...prev, isPausing: false }));
+    }
+  };
+
+  const handleResume = async () => {
+    if (!analysisId || pauseState.isResuming) return;
+
+    setPauseState((prev) => ({ ...prev, isResuming: true }));
+    try {
+      const response = await apiService.post(`/analyses/${analysisId}/resume`);
+      if (response.data?.success) {
+        setPauseState((prev) => ({
+          ...prev,
+          canPause: true,
+          canResume: false,
+          isResuming: false,
+        }));
+        // Emit socket event to update local state
+        if (localState) {
+          setLocalState((prev) =>
+            prev ? { ...prev, status: 'INSPECTOR_RUNNING' as any } : null
+          );
+        }
+      }
+    } catch (error) {
+      console.error('Error resuming analysis:', error);
+      setPauseState((prev) => ({ ...prev, isResuming: false }));
+    }
+  };
 
   if (isLoading) {
     return (
@@ -297,6 +414,39 @@ export default function AnalysisProgressViewer({
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Pause/Resume Controls */}
+          {(pauseState.canPause || pauseState.canResume) && (
+            <div className="flex gap-3 border-t border-[#2D2D2D] pt-4">
+              {pauseState.canPause && (
+                <Button
+                  onClick={handlePause}
+                  disabled={pauseState.isPausing}
+                  className="flex-1 flex items-center justify-center gap-2"
+                  variant="secondary"
+                >
+                  <Pause className="w-4 h-4" />
+                  {pauseState.isPausing ? 'Pausando...' : 'Pausar Análisis'}
+                </Button>
+              )}
+              {pauseState.canResume && (
+                <>
+                  <Button
+                    onClick={handleResume}
+                    disabled={pauseState.isResuming}
+                    className="flex-1 flex items-center justify-center gap-2"
+                    variant="primary"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                    {pauseState.isResuming ? 'Reanudando...' : 'Reanudar Análisis'}
+                  </Button>
+                  <Button onClick={onClose} variant="secondary" className="flex-1">
+                    Mantener Resultados
+                  </Button>
+                </>
+              )}
             </div>
           )}
 

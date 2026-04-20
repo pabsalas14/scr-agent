@@ -351,6 +351,13 @@ async function processAnalysisJob(job: Job) {
           stage: 'INSPECTOR',
         });
         logger.info(`✅ Inspector tokens recorded: ${inspectorInput} in / ${inspectorOutput} out`);
+        // Emit event to notify UI of cost update in real-time
+        socketService.io?.emit('analysisCostUpdated', {
+          analysisId,
+          projectId,
+          stage: 'INSPECTOR',
+          tokens: { input: inspectorInput, output: inspectorOutput },
+        });
       }
     }
 
@@ -497,6 +504,13 @@ async function processAnalysisJob(job: Job) {
           stage: 'DETECTIVE',
         });
         logger.info(`✅ Detective tokens recorded: ${detectiveInput} in / ${detectiveOutput} out`);
+        // Emit event to notify UI of cost update in real-time
+        socketService.io?.emit('analysisCostUpdated', {
+          analysisId,
+          projectId,
+          stage: 'DETECTIVE',
+          tokens: { input: detectiveInput, output: detectiveOutput },
+        });
       }
     }
 
@@ -536,6 +550,13 @@ async function processAnalysisJob(job: Job) {
           stage: 'FISCAL',
         });
         logger.info(`✅ Fiscal tokens recorded: ${fiscalInput} in / ${fiscalOutput} out`);
+        // Emit event to notify UI of cost update in real-time
+        socketService.io?.emit('analysisCostUpdated', {
+          analysisId,
+          projectId,
+          stage: 'FISCAL',
+          tokens: { input: fiscalInput, output: fiscalOutput },
+        });
       }
     }
 

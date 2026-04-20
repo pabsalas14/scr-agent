@@ -171,6 +171,7 @@ import detectionRoutes from './routes/detection.routes';
 import visualizationsRoutes from './routes/visualizations.routes';
 import codeAnalysisRoutes from './routes/code-analysis.routes';
 import reportsRoutes from './routes/reports.routes';
+import pauseResumeRoutes from './routes/pause-resume.routes';
 import comparisonRoutes from './routes/comparison.routes';
 import searchRoutes from './routes/search.routes';
 import webhooksRoutes from './routes/webhooks.routes';
@@ -200,6 +201,7 @@ app.use('/api/v1', auditMiddleware);
 
 app.use('/api/v1/projects', projectRoutes);
 app.use('/api/v1/analyses', analysisRoutes);
+app.use('/api/v1/analyses', pauseResumeRoutes); // Pause/Resume endpoints
 app.use('/api/v1/monitoring', monitoringRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/github', githubRoutes);
@@ -272,6 +274,13 @@ startAnalysisProcessor().catch((err) => {
   logger.error(`Error iniciando analysis processor: ${err}`);
 });
 
+// ==================== RESILIENCE SERVICES ====================
+
+// Iniciar monitoreo de salud de LM Studio (health checks cada 30 segundos)
+import { lmStudioHealthChecker } from './services/lm-studio-health.service';
+lmStudioHealthChecker.startMonitoring();
+logger.info('✅ LM Studio health monitoring iniciado (cada 30 segundos)');
+
 // Iniciar servidor
 const server = httpServer.listen(PORT, () => {
   logger.info(`🚀 Servidor SCR Agent iniciado en puerto ${PORT}`);
@@ -282,10 +291,18 @@ const server = httpServer.listen(PORT, () => {
 
 /**
  * Manejo de Shutdown Graceful
- * Cierra conexiones ordenadamente (Bull queue, Worker, HTTP server)
+ * Cierra conexiones ordenadamente (Bull queue, Worker, Health monitoring, HTTP server)
  */
 async function gracefulShutdown() {
   logger.info('🔌 Iniciando shutdown graceful...');
+
+  try {
+    // Detener monitoreo de salud de LM Studio
+    lmStudioHealthChecker.stopMonitoring();
+    logger.info('✅ LM Studio health monitoring detenido');
+  } catch (err) {
+    logger.error(`Error deteniendo health monitoring: ${err}`);
+  }
 
   try {
     // Cerrar Bull queue y worker
