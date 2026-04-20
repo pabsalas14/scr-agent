@@ -284,7 +284,8 @@ export class LLMClient {
       });
       this.axiosClient = axios.create({
         baseURL: baseUrl,
-        timeout: 300000, // 5 minutos para modelos locales (qwen2.5-coder needs time for code analysis + JSON generation)
+        timeout: 900000, // 15 minutos para modelos locales (qwen2.5-coder needs time for code analysis + JSON generation)
+                         // MUST be >= adaptive timeout in inspector.agent.ts (10-15 min based on health)
         headers,
       });
       logger.info(`[LLM Init] Axios client created successfully`);

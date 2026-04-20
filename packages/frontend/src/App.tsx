@@ -4,6 +4,7 @@ import { router } from './routes/router';
 import { ThemeProvider } from './contexts/ThemeProvider';
 import { ModalProvider } from './contexts/ModalContext';
 import { ConfirmDialogProvider } from './components/Providers/ConfirmDialogProvider';
+import { AnalysisViewerProvider } from './context/AnalysisViewerContext';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -20,7 +21,9 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <ModalProvider>
           <ConfirmDialogProvider>
-            <RouterProvider router={router} />
+            <AnalysisViewerProvider>
+              <RouterProvider router={router} />
+            </AnalysisViewerProvider>
           </ConfirmDialogProvider>
         </ModalProvider>
       </QueryClientProvider>

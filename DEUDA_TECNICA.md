@@ -68,6 +68,36 @@
   - [ ] Considerar usar modelo más rápido o Anthropic para proyectos grandes
   - [ ] Implementar circuit breaker si N chunks fallan consecutivamente
 - **Alternativa rápida**: Recomendar Anthropic Claude para proyectos > 500KB (10x más rápido)
+- **Status (2026-04-20)**: PARCIALMENTE RESUELTO
+  - ✅ Resilience strategy implementada (code compression, rate limiting, circuit breaker, health checks)
+  - ✅ Timeout aumentado: 5 min → 15 min (todavía insuficiente para qwen7b)
+  - ❌ Análisis falló en 10 minutos (qwen7b necesita 15-20 minutos por chunk)
+  - 🔧 AJUSTE: Aumentado timeout adaptativo: 10/8/6 min → 20/18/15 min
+
+### 7. 🔴 Progreso de Análisis Muestra 10% Incorrecto
+- **Ubicación**: `/api/v1/analyses/{id}` - campo `progress`
+- **Problema**: 
+  - Progress está hardcodeado en worker: 10% (INSPECTOR) → 40% (DETECTIVE) → 70% (FISCAL) → 100% (COMPLETED)
+  - Usuario ve 10% cuando realmente está en 1-2% (en tiempo real) o 7-8% (chunks procesados)
+  - Progreso solo cambia cuando etapa cambia, no actualiza en tiempo real
+- **Impacto**: Usuario no sabe progreso real del análisis, cree que está más avanzado de lo que está
+- **Prioridad**: MEDIUM
+- **Causa Raíz**: Worker no actualiza progress durante ejecución de etapa
+- **Área**: Backend - `packages/backend/src/workers/analysis.worker.ts`
+- **Solución Requerida**:
+  - [ ] Calcular progreso real basado en chunks procesados
+  - [ ] Actualizar DB cada N chunks (ej. cada 10 chunks)
+  - [ ] Formula: (chunks_procesados / chunks_totales) * 10 + etapa_base
+    - INSPECTOR: (prog_real) * 0.10
+    - DETECTIVE: 10 + (prog_real) * 0.30
+    - FISCAL: 40 + (prog_real) * 0.30
+    - COMPLETED: 100
+- **Ejemplo Real**: juice-shop en INSPECTOR
+  - Chunks totales: 1500
+  - Chunks procesados: 100
+  - Progress real: (100/1500) * 10 = 0.67% (no 10%)
+  - Progress mostrado: 10% ❌ (INCORRECTO)
+  - Progress debería ser: ~0.67% ✅ (CORRECTO)
 
 ---
 
