@@ -271,10 +271,27 @@ export class LLMClient {
       if (this.config.customHeaders) {
         Object.assign(headers, this.config.customHeaders);
       }
+      logger.info(`[LLM Init] Creating axios client for ${this.config.provider}`, {
+        baseUrl,
+        headers,
+        hasApiKey: !!this.config.apiKey,
+      });
       this.axiosClient = axios.create({
         baseURL: baseUrl,
         timeout: 120000, // 2 minutos para modelos locales
         headers,
+      });
+      logger.info(`[LLM Init] Axios client created successfully`);
+    }
+
+    // Add request interceptor for logging
+    if (!this.axiosClient.interceptors.request.handlers || this.axiosClient.interceptors.request.handlers.length === 0) {
+      this.axiosClient.interceptors.request.use((config) => {
+        logger.info(`[LLM Request] ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`, {
+          headers: config.headers,
+          dataSize: JSON.stringify(config.data).length,
+        });
+        return config;
       });
     }
 
