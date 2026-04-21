@@ -20,6 +20,34 @@ import { gitService } from '../services/git.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
 
 /**
+ * System Prompt para el Detective
+ * Instrucciones centralizadas (~150 tokens - moved from user prompt to system)
+ */
+const DETECTIVE_SYSTEM_PROMPT = `You are a forensic code analyst specializing in Git history investigation.
+
+Your task is to analyze Git commit history and malicious findings to:
+- Build a timeline of when/how malicious code was introduced
+- Identify correlations between commits and security findings
+- Detect patterns suggesting compromise chain
+- Identify suspicious authors based on commit patterns
+- Analyze how code evolved (gradual obfuscation, escalation, etc.)
+
+For each event in the timeline, provide:
+- Timestamp and commit hash
+- Author email
+- File and function affected
+- Action (ADDED, MODIFIED)
+- Risk level (ALTO, CRÍTICO)
+- Suspicious indicators
+
+Respond ONLY with valid JSON containing:
+- "eventos": array of timeline events
+- "patrones": array of detected patterns
+- "autores_sospechosos": array of suspicious authors
+
+Be thorough in connecting findings to commits.`;
+
+/**
  * Constantes para chunking y retry
  */
 const MAX_FINDINGS_PER_CHUNK = 5; // Procesar máximo 5 hallazgos por chunk (para Qwen 4K context)
@@ -167,7 +195,7 @@ export class DetectiveAgentService {
             : RETRY_TIMEOUTS[RETRY_TIMEOUTS.length - 1];
 
           const response = await Promise.race([
-            llmClient.complete(prompt, 2048),
+            llmClient.complete(prompt, 2048, DETECTIVE_SYSTEM_PROMPT),
             new Promise((_, reject) =>
               setTimeout(
                 () => reject(new Error(`LLM request timeout (${timeoutMs / 60000} minutos)`)),
@@ -265,7 +293,7 @@ export class DetectiveAgentService {
     // Wrap LLM call with timeout to detect hanging requests
     // LM Studio should respond within 5 minutes for forensic analysis
     const response = await Promise.race([
-      llmClient.complete(prompt, 2048),
+      llmClient.complete(prompt, 2048, DETECTIVE_SYSTEM_PROMPT),
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
@@ -340,56 +368,23 @@ export class DetectiveAgentService {
   }
 
   /**
-   * Construir prompt para Claude Haiku
+   * Construir prompt para el Detective (solo datos, instrucciones en system prompt)
+   * OPTIMIZED: User prompt contains ONLY data to analyze
+   * (~100 tokens - instructions moved to DETECTIVE_SYSTEM_PROMPT)
    */
   private construirPrompt(input: ForensesInput): string {
     return `
-# Análisis Forense de Git - Investigación de Cadena de Compromiso
-
-Se han encontrado los siguientes hallazgos maliciosos:
-
-## Hallazgos de Malicia
+Malicious findings discovered:
 \`\`\`json
 ${JSON.stringify(input.hallazgos_malicia, null, 2)}
 \`\`\`
 
-## Historial de Commits (últimos 50)
+Git commit history (last 50 commits):
 \`\`\`json
 ${JSON.stringify(input.historial_commits.slice(0, 50), null, 2)}
 \`\`\`
 
-## Tarea
-Analiza el historial de Git para:
-
-1. **Línea de Tiempo**: Crea una línea de tiempo de cuándo se agregó/modificó el código malicioso
-2. **Correlaciones**: Identifica commits relacionados y cambios asociados
-3. **Patrones**: Busca patrones que sugieran una cadena de compromiso (ej: introducción gradual)
-4. **Autores**: Identifica autores sospechosos basándote en patrones de cambio
-5. **Escalation**: Describe cómo evolucionó el código malicioso (ofuscación creciente, etc.)
-
-## Formato de Respuesta
-Responde SOLO con JSON válido:
-
-\`\`\`json
-{
-  "eventos": [
-    {
-      "timestamp": "2024-03-15T10:30:00Z",
-      "commit": "abc123",
-      "autor": "usuario@ejemplo.com",
-      "archivo": "src/api.js",
-      "funcion": "autenticarUsuario",
-      "accion": "AGREGADO",
-      "mensaje_commit": "Agregada validación de autenticación",
-      "resumen_cambios": "Nueva función de autenticación",
-      "nivel_riesgo": "ALTO",
-      "indicadores_sospecha": ["Código sin documentación", "Función inusual"]
-    }
-  ],
-  "patrones": ["Introducción gradual de código ofuscado", "Mismo autor en todos los cambios"],
-  "autores_sospechosos": ["usuario@ejemplo.com"]
-}
-\`\`\`
+Build a forensic timeline correlating these findings with commit history.
 `;
   }
 

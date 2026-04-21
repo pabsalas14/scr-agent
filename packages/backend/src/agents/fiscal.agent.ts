@@ -23,6 +23,35 @@ import {
 } from '../types/agents';
 
 /**
+ * System Prompt para el Fiscal
+ * Instrucciones centralizadas (~200 tokens - moved from user prompt to system)
+ */
+const FISCAL_SYSTEM_PROMPT = `You are a senior security auditor creating executive reports on code security findings.
+
+Your task is to synthesize malicious code findings and forensic analysis into a comprehensive security report:
+1. Executive summary describing risk clearly (2-3 paragraphs of professional text, no bullet points)
+2. Severity breakdown: count of CRÍTICO, ALTO, MEDIO, BAJO findings
+3. Compromised functions list
+4. Attack chain timeline (how malicious code evolved)
+5. Remediation priority: ordered list of concrete technical actions
+6. Affected authors: developers responsible for malicious changes
+7. Risk score: 0-100 (100 = critical)
+8. General recommendation: numbered technical controls
+
+IMPORTANT CONSTRAINTS:
+- Focus ONLY on technical measures (code review, reversion, credential rotation, signing requirements)
+- DO NOT mention compliance, regulations, standards, team structure, or processes
+- Be direct and technical without unnecessary complexity
+
+For remediation steps provide:
+- "orden": step number
+- "accion": concrete technical action to take
+- "justificacion": technical reason why this matters
+- "urgencia": CRÍTICA, ALTA, MEDIA, BAJA
+
+Respond ONLY with valid JSON.`;
+
+/**
  * Constantes para chunking y retry
  */
 const MAX_FINDINGS_PER_CHUNK_FISCAL = 10; // Procesar máximo 10 hallazgos por chunk
@@ -168,7 +197,7 @@ export class FiscalAgentService {
             : RETRY_TIMEOUTS_FISCAL[RETRY_TIMEOUTS_FISCAL.length - 1];
 
           const response = await Promise.race([
-            llmClient.complete(prompt, 4096),
+            llmClient.complete(prompt, 4096, FISCAL_SYSTEM_PROMPT),
             new Promise((_, reject) =>
               setTimeout(
                 () => reject(new Error(`LLM request timeout (${timeoutMs / 60000} minutos)`)),
@@ -289,7 +318,7 @@ export class FiscalAgentService {
     // Wrap LLM call with timeout to detect hanging requests
     // LM Studio should respond within 5 minutes for report generation
     const response = await Promise.race([
-      llmClient.complete(prompt, 4096),
+      llmClient.complete(prompt, 4096, FISCAL_SYSTEM_PROMPT),
       new Promise((_, reject) =>
         setTimeout(
           () => reject(new Error(`LLM request timeout (5 minutos) - ${config.provider}/${config.model} no respondió`)),
@@ -360,81 +389,28 @@ export class FiscalAgentService {
   }
 
   /**
-   * Construir prompt para Claude
+   * Construir prompt para el Fiscal (solo datos, instrucciones en system prompt)
+   * OPTIMIZED: User prompt contains ONLY data to synthesize
+   * (~150 tokens - instructions moved to FISCAL_SYSTEM_PROMPT)
    */
   private construirPrompt(input: SintesisInput): string {
-    return `
-# Análisis Ejecutivo - Síntesis de Hallazgos de Seguridad
-
-Se han realizado análisis de Malicia y Forenses. Ahora necesitamos generar un reporte ejecutivo.
-
-## Hallazgos de Código Malicioso
+    let prompt = `Malicious code findings:
 \`\`\`json
 ${JSON.stringify(input.hallazgos_malicia, null, 2)}
 \`\`\`
 
-## Línea de Tiempo Forense
+Forensic timeline:
 \`\`\`json
 ${JSON.stringify(input.linea_tiempo_forenses, null, 2)}
 \`\`\`
 
-## Tarea
-Genera un reporte ejecutivo TÉCNICO que incluya:
+Create a comprehensive executive security report synthesizing these findings and forensic analysis.`;
 
-1. **Resumen Ejecutivo**: Descripción clara del riesgo técnico encontrado (2-3 párrafos, sin referencias normativas)
-2. **Desglose de Severidad**: Conteo de hallazgos por severidad (CRÍTICO, ALTO, MEDIO, BAJO)
-3. **Funciones Comprometidas**: Lista de funciones maliciosas identificadas
-4. **Línea de Ataque**: Descripción de cómo evolucionó el código malicioso en el tiempo
-5. **Prioridad de Remediación**:
-   - Paso 1-3 con acciones técnicas específicas (código a revertir, funciones a revisar, etc.)
-   - Cada paso con justificación técnica (no normativa)
-   - Nivel de urgencia
-6. **Autores Afectados**: Quién fue responsable de los cambios
-7. **Puntuación de Riesgo**: 0-100 (100 = crítico)
-8. **Recomendación General**: Medidas técnicas de control inmediatas (sin hablar de equipos, procesos o requisitos normativos)
-
-## Severidades (usar siempre estos términos)
-- CRÍTICO: Riesgo inmediato de compromiso total
-- ALTO: Vulnerabilidad seria que permite acceso/manipulación
-- MEDIO: Debilidad de seguridad que puede ser explotada
-- BAJO: Problema menor de seguridad
-
-## IMPORTANTE: Restricciones de contenido
-- NO menciones requisitos normativos, regulaciones o estándares (CNBV, ISO, NIST, etc.)
-- NO sugieras formar equipos, reuniones o procesos organizacionales
-- Enfócate ÚNICAMENTE en medidas técnicas de control y remediación
-- Sé directo y técnico, sin complejidad administrativa
-
-## Formato de Respuesta
-Responde SOLO con JSON válido. IMPORTANTE: El "resumen_ejecutivo" debe ser TEXTO FORMAL Y LIMPIO sin viñetas ni símbolos. Usa párrafos profesionales completos. La "recomendacion_general" debe ser NUMERADA y FORMAL, sin símbolos especiales, con cada paso claramente separado.
-
-\`\`\`json
-{
-  "resumen_ejecutivo": "Párrafo 1: Descripción formal del riesgo. Párrafo 2: Contexto técnico. Párrafo 3: Implicaciones e impacto.",
-  "desglose_severidad": {
-    "CRÍTICO": 1,
-    "ALTO": 2,
-    "MEDIO": 1,
-    "BAJO": 0
-  },
-  "funciones_comprometidas": ["autenticarUsuario", "validarToken"],
-  "linea_de_ataque": "15-Mar-2024: Introducción inicial → 16-Mar-2024: Ofuscación y endurecimiento",
-  "prioridad_remediacion": [
-    {
-      "orden": 1,
-      "accion": "Revertir commits abc123 y xyz789 inmediatamente",
-      "justificacion": "Código crítico comprometido que permite bypass de autenticación",
-      "urgencia": "CRÍTICA"
+    if (input.contexto_repo) {
+      prompt += `\n\nRepository context:\n${input.contexto_repo}`;
     }
-  ],
-  "autores_afectados": ["usuario@ejemplo.com"],
-  "puntuacion_riesgo": 92,
-  "recomendacion_general": "1. Revertir commits abc123 y xyz789 inmediatamente del repositorio. 2. Ejecutar análisis completo de código para identificar cambios maliciosos similares. 3. Revisar credenciales y tokens usados por el autor durante el período afectado. 4. Implementar firmas de commit requeridas para prevenir cambios no autenticados."
-}
-\`\`\`
 
-${input.contexto_repo ? `\n## Contexto del Repositorio\n${input.contexto_repo}` : ''}
-`;
+    return prompt;
   }
 
   /**

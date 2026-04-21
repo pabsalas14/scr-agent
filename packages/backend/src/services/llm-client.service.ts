@@ -103,8 +103,11 @@ export class LLMClient {
 
   /**
    * Ejecutar completion con el proveedor configurado
+   * @param prompt - Contenido del usuario (datos/código a procesar)
+   * @param maxTokens - Máximo de tokens en la respuesta
+   * @param systemPrompt - Instrucciones del sistema (role/comportamiento del agente)
    */
-  async complete(prompt: string, maxTokens?: number): Promise<LLMResponse> {
+  async complete(prompt: string, maxTokens?: number, systemPrompt?: string): Promise<LLMResponse> {
     const tokens = maxTokens || this.config.maxTokens || 4096;
 
     // Verificar si se pidió cancelación antes de empezar
@@ -115,19 +118,19 @@ export class LLMClient {
     try {
       switch (this.config.provider) {
         case 'anthropic':
-          return await this.completeWithAnthropic(prompt, tokens);
+          return await this.completeWithAnthropic(prompt, tokens, systemPrompt);
 
         case 'openai':
-          return await this.completeWithOpenAI(prompt, tokens);
+          return await this.completeWithOpenAI(prompt, tokens, systemPrompt);
 
         case 'llm-gateway':
-          return await this.completeWithLLMGateway(prompt, tokens);
+          return await this.completeWithLLMGateway(prompt, tokens, systemPrompt);
 
         case 'lmstudio':
         case 'ollama':
         case 'openai-compatible':
         case 'custom':
-          return await this.completeWithOpenAICompatible(prompt, tokens);
+          return await this.completeWithOpenAICompatible(prompt, tokens, systemPrompt);
 
         default:
           throw new Error(`Unsupported provider: ${this.config.provider}`);
@@ -142,7 +145,7 @@ export class LLMClient {
   /**
    * Completar usando Anthropic
    */
-  private async completeWithAnthropic(prompt: string, maxTokens: number): Promise<LLMResponse> {
+  private async completeWithAnthropic(prompt: string, maxTokens: number, systemPrompt?: string): Promise<LLMResponse> {
     if (!this.anthropicClient) {
       const key = this.config.apiKey || process.env['ANTHROPIC_API_KEY'];
       if (!key) {
@@ -155,6 +158,7 @@ export class LLMClient {
       model: this.config.model,
       max_tokens: maxTokens,
       temperature: this.config.temperature,
+      system: systemPrompt,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -175,7 +179,7 @@ export class LLMClient {
   /**
    * Completar usando OpenAI API
    */
-  private async completeWithOpenAI(prompt: string, maxTokens: number): Promise<LLMResponse> {
+  private async completeWithOpenAI(prompt: string, maxTokens: number, systemPrompt?: string): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const baseUrl = this.config.baseUrl || 'https://api.openai.com/v1';
       this.axiosClient = axios.create({
@@ -188,9 +192,15 @@ export class LLMClient {
       });
     }
 
+    const messages: any[] = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+
     const response = await this.axiosClient.post('/chat/completions', {
       model: this.config.model,
-      messages: [{ role: 'user', content: prompt }],
+      messages,
       temperature: this.config.temperature || 0.7,
       max_tokens: maxTokens,
     });
@@ -216,7 +226,7 @@ export class LLMClient {
   /**
    * Completar usando LLM Gateway
    */
-  private async completeWithLLMGateway(prompt: string, maxTokens: number): Promise<LLMResponse> {
+  private async completeWithLLMGateway(prompt: string, maxTokens: number, systemPrompt?: string): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const headers: Record<string, string> = {
         'Content-Type': 'application/json',
@@ -237,9 +247,15 @@ export class LLMClient {
       });
     }
 
+    const messages: any[] = [];
+    if (systemPrompt) {
+      messages.push({ role: 'system', content: systemPrompt });
+    }
+    messages.push({ role: 'user', content: prompt });
+
     const response = await this.axiosClient.post('/chat/completions', {
       model: this.config.model,
-      messages: [{ role: 'user', content: prompt }],
+      messages,
       temperature: this.config.temperature || 0.7,
       max_tokens: maxTokens,
     });
@@ -265,7 +281,7 @@ export class LLMClient {
   /**
    * Completar usando servidor OpenAI-compatible (LM Studio, Ollama, Custom, etc)
    */
-  private async completeWithOpenAICompatible(prompt: string, maxTokens: number): Promise<LLMResponse> {
+  private async completeWithOpenAICompatible(prompt: string, maxTokens: number, systemPrompt?: string): Promise<LLMResponse> {
     if (!this.axiosClient) {
       const baseUrl = this.config.baseUrl || 'http://localhost:1234';
       const headers: Record<string, string> = {
@@ -304,9 +320,15 @@ export class LLMClient {
 
     let response;
     try {
+      const messages: any[] = [];
+      if (systemPrompt) {
+        messages.push({ role: 'system', content: systemPrompt });
+      }
+      messages.push({ role: 'user', content: prompt });
+
       const payload = {
         model: this.config.model,
-        messages: [{ role: 'user', content: prompt }],
+        messages,
         temperature: this.config.temperature,
         max_tokens: maxTokens,
       };
@@ -315,6 +337,8 @@ export class LLMClient {
         model: this.config.model,
         payloadSize: JSON.stringify(payload).length,
         promptLength: prompt.length,
+        hasSystemPrompt: !!systemPrompt,
+        systemPromptLength: systemPrompt?.length || 0,
         temperature: this.config.temperature,
         maxTokens: maxTokens,
         hasSignal: !!this.config.signal,

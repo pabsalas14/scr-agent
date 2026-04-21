@@ -22,17 +22,45 @@ import { codeCompressor } from '../services/code-compressor.service';
 import { lmStudioHealthChecker } from '../services/lm-studio-health.service';
 
 /**
+ * System Prompt para el Inspector
+ * Define el rol y comportamiento del agente
+ * (~150 tokens - centralized in system message, not in user prompt)
+ */
+const INSPECTOR_SYSTEM_PROMPT = `You are a security code analyzer specialized in detecting malicious code patterns.
+
+Your task is to analyze source code and identify:
+- Backdoors: Hidden entry points for unauthorized access
+- Injections: SQL, command, or code injection vulnerabilities
+- Logic Bombs: Time-delayed or condition-triggered malicious code
+- Obfuscation: Deliberately obscured or hidden code logic
+- Hardcoded Secrets: API keys, passwords, tokens embedded in code
+- Eval/Exec: Dynamic code execution vulnerabilities
+
+For each finding, provide:
+- File name and line number
+- Risk type (BACKDOOR, INJECTION, BOMB, OBFUSCATION, SECRET, EVAL, OTHER)
+- Severity (CRÍTICO, ALTO, MEDIO, BAJO)
+- Clear description of why this is suspicious
+
+Respond ONLY with valid JSON. If no issues found, return {"hallazgos":[]}.
+Be thorough but avoid false positives.`;
+
+/**
  * Tamaño máximo de código por llamada al LLM
  *
- * LM Studio's qwen2.5-coder-7b-instruct has a 4K token context window.
+ * LM Studio's qwen2.5-coder-7b-instruct has a 4K token context window (~3000 tokens for analysis).
  *
- * Issue: Model generating empty responses despite 512 output tokens allocated
- * Root cause: Input too large (1800 bytes) for LM Studio to process + generate JSON coherently
- * Solution: Reduce to 1200 bytes per chunk to give model better context ratio
+ * Token budget breakdown:
+ * - System prompt (centralized): ~150 tokens
+ * - Code to analyze: ~1200 tokens (at ~1 token per 4 bytes)
+ * - JSON structure requirement: ~300 tokens
+ * - Response space: ~800 tokens (allocated via maxOutputTokens)
+ * Total needed: ~2800 tokens (fits in 4K with safety margin)
  *
- * Aggressive chunking: Better to analyze 1200 bytes deeply than 1800 bytes shallowly
+ * Aggressively reduced from 1200 to 800 bytes to ensure model has enough space
+ * to generate coherent JSON output without token overflow errors.
  */
-const MAX_CHUNK_BYTES = 1200; // Further reduced - qwen2.5-coder struggles with larger chunks
+const MAX_CHUNK_BYTES = 800; // Aggressively reduced for Qwen 4K context limit
 
 /**
  * Servicio del Agente Inspector
@@ -293,9 +321,10 @@ export class InspectorAgentService {
       const promptSize = Buffer.byteLength(prompt, 'utf-8');
       logger.info(`Prompt size: ${promptSize} bytes, Código comprimido size: ${codigoComprimido.length} bytes`);
 
-      // For LM Studio with 4K context, allocate 768 tokens for JSON response output
-      // Model was returning empty responses - increased output space for better JSON generation
-      const maxOutputTokens = config.provider === 'lmstudio' ? 768 : 4096;
+      // For LM Studio (Qwen) with 4K context limit:
+      // - Reduced from 768 to 512 to leave more room for input tokens
+      // - Simplified JSON format requires less output space
+      const maxOutputTokens = config.provider === 'lmstudio' ? 512 : 4096;
 
       // ============================================================================
       // LAYER 2: CIRCUIT BREAKER - Check if LM Studio is available
@@ -320,10 +349,11 @@ export class InspectorAgentService {
       // LAYER 2: RATE LIMITING - Throttle requests to prevent LM Studio overload
       // ============================================================================
       // Wrap LLM call with rate limiter and circuit breaker recording
+      // Pass system prompt for Inspector (centralized instructions, not in user prompt)
       const response = await Promise.race([
         rateLimiter.execute(async () => {
           try {
-            const llmResponse = await llmClient.complete(prompt, maxOutputTokens);
+            const llmResponse = await llmClient.complete(prompt, maxOutputTokens, INSPECTOR_SYSTEM_PROMPT);
             circuitBreaker.recordSuccess();
             return llmResponse;
           } catch (error) {
@@ -432,46 +462,47 @@ export class InspectorAgentService {
   }
 
   /**
-   * Construir prompt para Claude
+   * Construir prompt para el Inspector (solo datos, instrucciones en system prompt)
+   * OPTIMIZED: User prompt now contains ONLY code, no instructions
+   * (~100 tokens - instructions moved to INSPECTOR_SYSTEM_PROMPT)
    */
   private construirPrompt(input: MaliciaInput): string {
-    return `Analiza el siguiente código fuente en busca de funcionalidades maliciosas: backdoors, inyecciones, bombas lógicas, ofuscación, bypass de autenticación, errores silenciados, credenciales hardcodeadas y ejecución dinámica (eval/exec).${input.contexto ? ` Contexto: ${input.contexto}` : ''}
-
-\`\`\`
-${input.codigo}
-\`\`\`
-
-Responde ÚNICAMENTE con JSON válido con esta estructura (sin texto adicional):
-{"hallazgos":[{"archivo":"ruta","funcion":"nombre","rango_lineas":[inicio,fin],"fragmento_codigo":"...","severidad":"CRÍTICO|ALTO|MEDIO|BAJO","tipo_riesgo":"PUERTA_TRASERA|INYECCION|BOMBA_LOGICA|OFUSCACION|SOSPECHOSO|HARDCODED_VALUES|ERROR_HANDLING","por_que_sospechoso":"explicación técnica","confianza":0.0,"pasos_remediacion":["paso1"]}]}`;
+    let prompt = '';
+    if (input.contexto) {
+      prompt += `Context: ${input.contexto}\n\n`;
+    }
+    prompt += `Code to analyze:\n\`\`\`\n${input.codigo}\n\`\`\``;
+    return prompt;
   }
 
   /**
-   * Parsear respuesta JSON de Claude
+   * Parsear respuesta JSON - Optimizado para Qwen
    */
   private parseRespuesta(texto: string): MaliciaFinding[] {
     try {
-      /**
-       * Intentar extraer JSON del texto
-       * A veces Claude envolverá con markdown
-       */
-      let jsonStr = texto;
+      let jsonStr = texto.trim();
 
-      // Buscar JSON entre ```json y ```
-      const jsonMatch = texto.match(/```json\n([\s\S]*?)\n```/);
+      // Extract JSON from various formats
+      const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        jsonStr = jsonMatch[1] ?? jsonStr;
-      } else {
-        // Buscar JSON plano
-        const jsonMatch2 = texto.match(/\{[\s\S]*\}/);
-        if (jsonMatch2) {
-          jsonStr = jsonMatch2[0] ?? jsonStr;
-        }
+        jsonStr = jsonMatch[0];
       }
 
       const parsed = JSON.parse(jsonStr);
-      return parsed.hallazgos || [];
+      const hallazgos = parsed.hallazgos || [];
+
+      // Map simplified response to MaliciaFinding format
+      return hallazgos.map((h: any) => ({
+        archivo: h.archivo || 'unknown',
+        linea: h.linea || 0,
+        tipo_riesgo: h.tipo || h.tipo_riesgo || 'SOSPECHOSO',
+        severidad: h.severidad || 'MEDIO',
+        por_que_sospechoso: h.descripcion || h.por_que_sospechoso || 'Patrón sospechoso detectado',
+        confianza: 0.7,
+        pasos_remediacion: ['Revisar el código manualmente'],
+      }));
     } catch (error) {
-      logger.error(`Error parseando respuesta de Malicia: ${error}`);
+      logger.warn(`Error parseando respuesta de Inspector (probablemente Qwen): ${error}`);
       return [];
     }
   }
