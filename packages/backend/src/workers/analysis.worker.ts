@@ -539,9 +539,22 @@ async function processAnalysisJob(job: Job) {
         contexto_repo: `Repositorio: ${project.repositoryUrl}`,
       }, isLargeRepo),
       new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Fiscal Agent timeout (2 minutos)')), 2 * 60 * 1000)
+        setTimeout(() => reject(new Error('Fiscal Agent timeout (10 minutos) - reporte synthesis demasiado lento o proyecto muy grande')), 10 * 60 * 1000)
       ),
     ]);
+
+    // Validar que Fiscal devolvió datos válidos
+    if (!sintesisOutput) {
+      throw new Error('Fiscal Agent devolvió respuesta vacía');
+    }
+    if (!sintesisOutput.resumen_ejecutivo) {
+      logger.warn('⚠️ Fiscal: resumen_ejecutivo vacío, usando default');
+      sintesisOutput.resumen_ejecutivo = 'Análisis completado sin resumen disponible.';
+    }
+    if (!sintesisOutput.puntuacion_riesgo) {
+      logger.warn('⚠️ Fiscal: puntuacion_riesgo vacía, usando default');
+      sintesisOutput.puntuacion_riesgo = 50;
+    }
 
     logger.info(`✅ [Job ${job.id}] Fiscal generó reporte con puntuación: ${sintesisOutput.puntuacion_riesgo}/100`);
 
@@ -581,25 +594,55 @@ async function processAnalysisJob(job: Job) {
       (sintesisOutput.usage?.output_tokens || 0);
 
     logger.info(`Guardando reporte final en BD...`);
-    await prisma.report.create({
-      data: {
-        analysisId,
-        riskScore: sintesisOutput.puntuacion_riesgo || 50,
-        executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
-        findingsCount: maliciaOutput.cantidad_hallazgos || 0,
-        severityBreakdown: sintesisOutput.desglose_severidad || {},
-        compromisedFunctions: sintesisOutput.funciones_comprometidas || [],
-        affectedAuthors: sintesisOutput.autores_afectados || [],
-        remediationSteps: sintesisOutput.prioridad_remediacion || [],
-        generalRecommendation:
-          sintesisOutput.recomendacion_general ||
-          'Se recomienda una revisión inmediata de los hallazgos críticos.',
-        inputTokens: totalInput,
-        outputTokens: totalOutput,
-        model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
-      },
-    });
-    logger.info(`✅ Reporte guardado con éxito (Tokens: ${totalInput} in / ${totalOutput} out)`);
+
+    // Convert generalRecommendation array to JSON string if it's an array
+    let generalRecommendationStr = 'Se recomienda una revisión inmediata de los hallazgos críticos.';
+    if (sintesisOutput.recomendacion_general) {
+      if (Array.isArray(sintesisOutput.recomendacion_general)) {
+        generalRecommendationStr = JSON.stringify(sintesisOutput.recomendacion_general);
+      } else if (typeof sintesisOutput.recomendacion_general === 'string') {
+        generalRecommendationStr = sintesisOutput.recomendacion_general;
+      }
+    }
+
+    // Validar y limpiar datos antes de guardar
+    const severityBreakdown = sintesisOutput.desglose_severidad || { CRÍTICO: 0, ALTO: 0, MEDIO: 0, BAJO: 0 };
+    const compromisedFunctions = Array.isArray(sintesisOutput.funciones_comprometidas)
+      ? sintesisOutput.funciones_comprometidas
+      : [];
+    const affectedAuthors = Array.isArray(sintesisOutput.autores_afectados)
+      ? sintesisOutput.autores_afectados
+      : [];
+    const remediationSteps = Array.isArray(sintesisOutput.prioridad_remediacion)
+      ? sintesisOutput.prioridad_remediacion
+      : [];
+
+    logger.info(`📋 Reporte data: findings=${maliciaOutput.cantidad_hallazgos}, severity=${JSON.stringify(severityBreakdown)}, risk=${sintesisOutput.puntuacion_riesgo}`);
+
+    try {
+      await prisma.report.create({
+        data: {
+          analysisId,
+          riskScore: Math.min(100, Math.max(0, sintesisOutput.puntuacion_riesgo || 50)),
+          executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
+          findingsCount: maliciaOutput.cantidad_hallazgos || 0,
+          severityBreakdown,
+          compromisedFunctions,
+          affectedAuthors,
+          remediationSteps,
+          generalRecommendation: generalRecommendationStr,
+          inputTokens: totalInput,
+          outputTokens: totalOutput,
+          model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
+        },
+      });
+      logger.info(`✅ Reporte guardado con éxito en BD (analysisId: ${analysisId}, Tokens: ${totalInput} in / ${totalOutput} out)`);
+    } catch (reportError) {
+      const reportErrorMsg = reportError instanceof Error ? reportError.message : String(reportError);
+      logger.error(`❌ Error guardando reporte en BD: ${reportErrorMsg}`);
+      logger.error(`   ReportData: ${JSON.stringify({ analysisId, riskScore: sintesisOutput.puntuacion_riesgo, findingsCount: maliciaOutput.cantidad_hallazgos })}`);
+      throw new Error(`Error guardando reporte Prisma: ${reportErrorMsg}`);
+    }
 
     // ========== COMPLETADO ==========
     logger.info(`✅ [Job ${job.id}] Análisis ${analysisId} completado exitosamente`);
@@ -622,7 +665,7 @@ async function processAnalysisJob(job: Job) {
 
     // ✅ Token usage already recorded per-stage (INSPECTOR, DETECTIVE, FISCAL)
     // No need to record again here - tokens are aggregated in UI via getAnalysisTokenUsage()
-    logger.info(`📊 Total analysis tokens: ${totalInput} input, ${totalOutput} output (recorded per-stage)`)
+    logger.info(`📊 Total analysis tokens: ${totalInput} input, ${totalOutput} output (recorded per-stage)`);
 
     // Generar eventos forenses para el análisis completado
     await detectiveService.generateForensicEvents(analysisId);
