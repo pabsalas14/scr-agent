@@ -879,6 +879,7 @@ router.put('/:findingId/sla', async (req: Request, res: Response) => {
       where: { id: findingId },
       include: {
         remediation: true,
+        statusHistory: { orderBy: { createdAt: 'desc' }, take: 1 },
       },
     });
 
@@ -890,7 +891,7 @@ router.put('/:findingId/sla', async (req: Request, res: Response) => {
     await prisma.findingStatusChange.create({
       data: {
         findingId,
-        status: finding.statusHistory?.[0]?.status || 'DETECTED',
+        status: finding.statusHistory[0]?.status || 'DETECTED',
         changedBy: userId,
         note: `SLA target updated to ${parsedDate.toISOString()}`,
       },
@@ -899,7 +900,7 @@ router.put('/:findingId/sla', async (req: Request, res: Response) => {
     // Emit event
     socketService.emitFindingStatusChanged(
       findingId,
-      finding.statusHistory?.[0]?.status || 'DETECTED',
+      finding.statusHistory[0]?.status || 'DETECTED',
       userId
     );
 

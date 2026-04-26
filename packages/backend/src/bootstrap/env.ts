@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import path from 'path';
+import { validateEnvOrExit } from '../config/validate-env';
 
 // Cargar variables de entorno lo antes posible (antes de importar otros módulos).
 // Intentar múltiples rutas (override para evitar vars vacías del sistema).
@@ -14,3 +15,4 @@ for (const p of envPaths) {
   if (!result.error) break;
 }
 
+validateEnvOrExit();

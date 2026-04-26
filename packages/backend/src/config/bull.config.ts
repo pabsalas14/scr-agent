@@ -53,10 +53,6 @@ export async function initializeBullQueue(): Promise<Queue> {
   try {
     analysisQueue = new Queue(QUEUE_NAME, {
       connection: redisConnection,
-      settings: {
-        // Reintentos automáticos
-        retryProcessDelay: 60000, // 1 minuto entre reintentos
-      },
     });
 
     // Event listeners via QueueEvents (correcto para BullMQ v5)

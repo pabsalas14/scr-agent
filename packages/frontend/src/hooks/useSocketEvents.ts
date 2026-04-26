@@ -99,81 +99,129 @@ export function useSocketEvents(callbacks: {
 }) {
   useEffect(() => {
     let socket: Socket | null = null;
+    let connectionAttempts = 0;
+    const MAX_RETRIES = 5;
 
-    // Conectar a Socket.io
-    try {
-      const token = localStorage.getItem('auth_token');
-      socket = io(window.location.origin, {
-        auth: { token },
-        reconnection: true,
-        reconnectionDelay: 1000,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: 5,
-      });
+    // Conectar a Socket.io con manejo robusto de errores y autenticación
+    const connectSocket = () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const user = localStorage.getItem('auth_user');
 
-      // ── Handlers para Eventos Finding ────────────────────────────────
+        if (!token || !user) {
+          console.warn('[Socket] No auth credentials found, deferring connection');
+          return;
+        }
 
-      socket.on('finding:statusChanged', (data: FindingEventData) => {
-        callbacks.onFindingUpdated?.(data);
-      });
+        const userId = JSON.parse(user).id;
 
-      socket.on('finding:assigned', (data: FindingEventData) => {
-        callbacks.onFindingAssigned?.(data);
-      });
+        socket = io(window.location.origin, {
+          transports: ['websocket', 'polling'],
+          reconnection: true,
+          reconnectionDelay: 1000,
+          reconnectionDelayMax: 5000,
+          reconnectionAttempts: MAX_RETRIES,
+          withCredentials: true,
+          path: '/socket.io',
+        });
 
-      socket.on('remediation:updated', (data: FindingEventData) => {
-        callbacks.onRemediationUpdated?.(data);
-      });
+        socket.on('connect', () => {
+          console.info('[Socket] Connected, authenticating...');
+          // Authenticate immediately after connection
+          socket?.emit('auth:user', { userId, token });
+        });
 
-      socket.on('remediation:verified', (data: FindingEventData) => {
-        callbacks.onRemediationVerified?.(data);
-      });
+        socket.on('auth:success', () => {
+          console.info('[Socket] Authentication successful');
+          connectionAttempts = 0; // Reset counter on success
+        });
 
-      socket.on('comment:added', (data: CommentEventData) => {
-        callbacks.onCommentAdded?.(data);
-      });
+        socket.on('auth:error', (error: any) => {
+          console.error('[Socket] Auth error:', error);
+        });
 
-      socket.on('comment:updated', (data: CommentEventData) => {
-        callbacks.onCommentUpdated?.(data);
-      });
+        socket.on('connect_error', (error: any) => {
+          console.error('[Socket] Connection error:', error);
+          connectionAttempts++;
+        });
 
-      socket.on('comment:deleted', (data: CommentEventData) => {
-        callbacks.onCommentDeleted?.(data);
-      });
+        // ── Handlers para Eventos Finding ────────────────────────────────
 
-      socket.on('comment:mentioned', (data: CommentMentionedData) => {
-        callbacks.onCommentMentioned?.(data);
-      });
+        socket.on('finding:statusChanged', (data: FindingEventData) => {
+          callbacks.onFindingUpdated?.(data);
+        });
 
-      // ── Handlers para Eventos Analysis ───────────────────────────────
+        socket.on('finding:assigned', (data: FindingEventData) => {
+          callbacks.onFindingAssigned?.(data);
+        });
 
-      socket.on('analysis:statusChanged', (data: AnalysisStatusChangedData) => {
-        callbacks.onAnalysisStatusChanged?.(data);
-      });
+        socket.on('remediation:updated', (data: FindingEventData) => {
+          callbacks.onRemediationUpdated?.(data);
+        });
 
-      socket.on('analysis:findingsDiscovered', (data: AnalysisFindingsDiscoveredData) => {
-        callbacks.onAnalysisFindingsDiscovered?.(data);
-      });
+        socket.on('remediation:verified', (data: FindingEventData) => {
+          callbacks.onRemediationVerified?.(data);
+        });
 
-      socket.on('analysis:completed', (data: AnalysisCompletedData) => {
-        callbacks.onAnalysisCompleted?.(data);
-      });
+        socket.on('comment:added', (data: CommentEventData) => {
+          callbacks.onCommentAdded?.(data);
+        });
 
-      socket.on('analysis:error', (data: AnalysisErrorData) => {
-        callbacks.onAnalysisError?.(data);
-      });
+        socket.on('comment:updated', (data: CommentEventData) => {
+          callbacks.onCommentUpdated?.(data);
+        });
 
-      // ── Handlers para Eventos Notification ──────────────────────────────
+        socket.on('comment:deleted', (data: CommentEventData) => {
+          callbacks.onCommentDeleted?.(data);
+        });
 
-      socket.on('notification:received', (data: NotificationData) => {
-        callbacks.onNotificationReceived?.(data);
-      });
-    } catch (error) {
-      console.error('Error initializing Socket.io:', error);
-    }
+        socket.on('comment:mentioned', (data: CommentMentionedData) => {
+          callbacks.onCommentMentioned?.(data);
+        });
+
+        // ── Handlers para Eventos Analysis ───────────────────────────────
+
+        socket.on('analysis:statusChanged', (data: AnalysisStatusChangedData) => {
+          console.debug('[Socket] analysis:statusChanged', data);
+          callbacks.onAnalysisStatusChanged?.(data);
+        });
+
+        socket.on('analysis:findingsDiscovered', (data: AnalysisFindingsDiscoveredData) => {
+          console.debug('[Socket] analysis:findingsDiscovered', data);
+          callbacks.onAnalysisFindingsDiscovered?.(data);
+        });
+
+        socket.on('analysis:completed', (data: AnalysisCompletedData) => {
+          console.debug('[Socket] analysis:completed', data);
+          callbacks.onAnalysisCompleted?.(data);
+        });
+
+        socket.on('analysis:error', (data: AnalysisErrorData) => {
+          console.error('[Socket] analysis:error', data);
+          callbacks.onAnalysisError?.(data);
+        });
+
+        // ── Handlers para Eventos Notification ──────────────────────────────
+
+        socket.on('notification:received', (data: NotificationData) => {
+          callbacks.onNotificationReceived?.(data);
+        });
+      } catch (error) {
+        console.error('[Socket] Error initializing Socket.io:', error);
+      }
+    };
+
+    // Retry connection if needed
+    const retryInterval = setTimeout(() => {
+      if (!socket || !socket.connected) {
+        console.warn('[Socket] Attempting to reconnect...');
+        connectSocket();
+      }
+    }, 5000);
 
     // Cleanup
     return () => {
+      clearTimeout(retryInterval);
       if (socket) {
         socket.disconnect();
       }

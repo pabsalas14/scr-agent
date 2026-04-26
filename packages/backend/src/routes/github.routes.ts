@@ -454,9 +454,6 @@ router.post('/webhook', async (req: Request, res: Response) => {
             projectId: project.id,
             status: 'PENDING',
             progress: 0,
-            analysisType: analysisType as any,
-            gitRef: ref,
-            isIncremental: analysisType === 'INCREMENTAL',
           },
         });
 

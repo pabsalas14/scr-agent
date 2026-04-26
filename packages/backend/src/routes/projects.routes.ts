@@ -198,9 +198,8 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     // ========== VALIDACIÓN DE REPOSITORIO ==========
+    let githubToken: string | undefined;
     try {
-      // Obtener GitHub token del usuario si está disponible
-      let githubToken: string | undefined;
       if (userId) {
         const userSettings = await prisma.userSettings.findUnique({
           where: { userId },
@@ -208,7 +207,6 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
         githubToken = userSettings?.githubToken ? decrypt(userSettings.githubToken) : undefined;
       }
 
-      // Validar acceso al repositorio
       await gitService.testRepositoryAccess(repositoryUrl, githubToken);
     } catch (validationError: any) {
       const errorMessage = validationError.message || '';

@@ -25,6 +25,7 @@ import { inspectorAgent } from '../agents/inspector.agent';
 import { detectiveAgent } from '../agents/detective.agent';
 import { fiscalAgent } from '../agents/fiscal.agent';
 import { prisma } from './prisma.service';
+import { getLLMConfigFromUser } from './user-llm-config.service';
 import { cancelAnalysis } from './analysis-queue';
 import { socketService } from './socket.service';
 import {
@@ -73,12 +74,14 @@ export class MCPOrchestratorService {
         include: { user: { include: { settings: true } } }
       });
 
-      if (project?.user?.settings?.claudeApiKey) {
-        const userKey = project.user.settings.claudeApiKey;
-        inspectorAgent.updateConfig(userKey);
-        detectiveAgent.updateConfig(userKey);
-        fiscalAgent.updateConfig(userKey);
-        logger.info(`Usando API Key de usuario para análisis ${analisis.id}`);
+      const userLlm = await getLLMConfigFromUser(project?.userId ?? null);
+      if (userLlm) {
+        inspectorAgent.updateConfig(userLlm);
+        detectiveAgent.updateConfig(userLlm);
+        fiscalAgent.updateConfig(userLlm);
+        logger.info(
+          `Config LLM del usuario aplicada al análisis ${analisis.id} (${userLlm.provider}/${userLlm.model})`
+        );
       }
 
       socketService.emitAnalysisStatusChanged(analisis.id, analisis.proyecto_id, 'INICIANDO', 5, project?.userId || undefined);

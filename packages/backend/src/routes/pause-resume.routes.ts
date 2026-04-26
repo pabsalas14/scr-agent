@@ -11,7 +11,8 @@ import { Router, type Request, type Response } from 'express';
 import { prisma } from '../services/prisma.service';
 import { logger } from '../services/logger.service';
 import type { AuthenticatedRequest } from '../middleware/auth.middleware';
-import { analysisQueue } from '../config/bull.config';
+import { getAnalysisQueue } from '../config/bull.config';
+import { JobStatus, AnalysisStatus } from '@prisma/client';
 import { socketService } from '../services/socket.service';
 
 const router = Router();
@@ -77,9 +78,10 @@ router.post('/:id/pause', async (req: AuthenticatedRequest, res: Response) => {
       },
     });
 
+    const q = getAnalysisQueue();
     if (job && job.bullJobId) {
       try {
-        const bullJob = await analysisQueue.getJob(job.bullJobId);
+        const bullJob = await q.getJob(job.bullJobId);
         if (bullJob) {
           await bullJob.remove();
           logger.info(`Cancelled Bull job ${job.bullJobId} for analysis ${analysisId}`);
@@ -89,11 +91,10 @@ router.post('/:id/pause', async (req: AuthenticatedRequest, res: Response) => {
       }
     }
 
-    // Update analysis status to PAUSED
     await prisma.analysis.update({
       where: { id: analysisId },
       data: {
-        status: 'PAUSED',
+        status: AnalysisStatus.PAUSED,
         errorMessage: `Paused at ${new Date().toISOString()} with progress ${analysis.progress}%`,
       },
     });
@@ -166,7 +167,7 @@ router.post('/:id/resume', async (req: AuthenticatedRequest, res: Response) => {
     }
 
     // Can only resume PAUSED analyses
-    if (analysis.status !== 'PAUSED') {
+    if (analysis.status !== AnalysisStatus.PAUSED) {
       return res.status(400).json({
         error: `Cannot resume analysis with status: ${analysis.status}. Only PAUSED analyses can be resumed.`,
         success: false,
@@ -179,17 +180,19 @@ router.post('/:id/resume', async (req: AuthenticatedRequest, res: Response) => {
     await prisma.analysis.update({
       where: { id: analysisId },
       data: {
-        status: 'INSPECTOR_RUNNING',
-        startedAt: new Date(), // Reset start time for this resume attempt
-        errorMessage: null, // Clear pause message
+        status: AnalysisStatus.INSPECTOR_RUNNING,
+        startedAt: new Date(),
+        errorMessage: null,
       },
     });
 
-    // Add back to queue
+    const analysisQueue = getAnalysisQueue();
     const job = await analysisQueue.add(
+      'analyze',
       {
         analysisId,
         projectId: analysis.projectId,
+        isIncremental: false,
       },
       {
         attempts: 3,
@@ -201,17 +204,16 @@ router.post('/:id/resume', async (req: AuthenticatedRequest, res: Response) => {
       }
     );
 
-    // Update job record
     await prisma.analysisJob.upsert({
       where: { analysisId },
       create: {
         analysisId,
-        bullJobId: job.id!,
-        status: 'QUEUED',
+        bullJobId: String(job.id),
+        status: JobStatus.QUEUED,
       },
       update: {
-        bullJobId: job.id!,
-        status: 'QUEUED',
+        bullJobId: String(job.id),
+        status: JobStatus.QUEUED,
         attempts: 0,
       },
     });
@@ -289,7 +291,7 @@ router.get('/:id/can-pause', async (req: AuthenticatedRequest, res: Response) =>
       'FISCAL_RUNNING',
     ];
     const canPause = runningStatuses.includes(analysis.status);
-    const canResume = analysis.status === 'PAUSED';
+    const canResume = analysis.status === AnalysisStatus.PAUSED;
 
     res.json({
       success: true,

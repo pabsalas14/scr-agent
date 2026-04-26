@@ -45,22 +45,18 @@ export async function recordFalsePositive(findingId: string): Promise<{
     const fileExtension = fileName.split('.').pop();
     const filePattern = `.*\\.${fileExtension}$`;
 
-    // Check for similar false positives
-    const similarFPs = await prisma.$runCommandRaw({
-      db_query: `
-        SELECT COUNT(*) as count FROM finding_audits
-        WHERE action = 'STATUS_CHANGE'
-        AND newValue = 'FALSE_POSITIVE'
-        AND findingId IN (
-          SELECT id FROM findings
-          WHERE file LIKE '%${fileName.replace(/'/g, "''")}'
-          AND "riskType" = '${finding.riskType}'
-        )
-        AND createdAt > NOW() - INTERVAL '30 days'
-      `,
-    }).catch(() => ({ count: 0 }));
-
-    const fpCount = (similarFPs as any)?.count || 0;
+    // Contar falsos positivos recientes en el mismo tipo de riesgo y nombre de archivo
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const fpCount = await prisma.findingStatusChange.count({
+      where: {
+        status: 'FALSE_POSITIVE',
+        createdAt: { gte: since },
+        finding: {
+          file: { contains: fileName },
+          riskType: finding.riskType,
+        },
+      },
+    });
     const shouldAutoIgnore = fpCount >= FP_AUTO_IGNORE_THRESHOLD;
 
     // Log false positive for learning

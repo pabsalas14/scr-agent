@@ -21,7 +21,7 @@ import { FiscalAgentService } from '../agents/fiscal.agent';
 import { LLMConfig } from '../services/llm-client.service';
 import { socketService } from '../services/socket.service';
 import { decrypt } from '../services/crypto.service';
-import { UserLLMConfig } from '../services/llm-client.service';
+import { getLLMConfigFromUser } from '../services/user-llm-config.service';
 import { detectiveService } from '../services/detective.service';
 import { recordTokenUsage } from '../services/metrics.service';
 import { createCancellationToken, cleanupCancellationToken, isAnalysisCancelled } from '../services/cancellation.service';
@@ -37,109 +37,6 @@ import {
 const inspectorAgent = new InspectorAgentService();
 const detectiveAgent = new DetectiveAgentService();
 const fiscalAgent = new FiscalAgentService();
-
-/**
- * Obtener configuración LLM del usuario desde UserSettings
- */
-async function getLLMConfigFromUser(userId: string | null): Promise<LLMConfig | undefined> {
-  if (!userId) {
-    return undefined; // Usar config por defecto (Anthropic)
-  }
-
-  const userSettings = await prisma.userSettings.findUnique({
-    where: { userId },
-    select: {
-      llmProvider: true,
-      llmBaseUrl: true,
-      llmModel: true,
-      llmApiKey: true,
-      llmCustomHeaders: true,
-    },
-  });
-
-  if (!userSettings) {
-    return undefined; // Usar config por defecto
-  }
-
-  const provider = (userSettings.llmProvider || 'anthropic') as any;
-
-  // Descifrar apiKey si existe
-  let decryptedApiKey: string | undefined;
-  if (userSettings.llmApiKey) {
-    try {
-      decryptedApiKey = decrypt(userSettings.llmApiKey);
-    } catch (error) {
-      logger.error(`Failed to decrypt LLM API key for user ${userId}`);
-    }
-  }
-
-  // Parse custom headers si existen
-  let customHeaders: Record<string, string> | undefined;
-  if (userSettings.llmCustomHeaders) {
-    try {
-      customHeaders = JSON.parse(userSettings.llmCustomHeaders);
-    } catch (error) {
-      logger.error(`Failed to parse custom headers for user ${userId}`);
-    }
-  }
-
-  // Construir config según el provider
-  const baseConfig: LLMConfig = {
-    provider,
-    model: userSettings.llmModel || 'default',
-  };
-
-  switch (provider) {
-    case 'anthropic':
-      return {
-        ...baseConfig,
-        model: userSettings.llmModel || 'claude-sonnet-4-6',
-        apiKey: decryptedApiKey || process.env['ANTHROPIC_API_KEY'],
-      };
-
-    case 'openai':
-      if (!decryptedApiKey) {
-        logger.warn(`OpenAI provider requires API key for user ${userId}`);
-        return undefined;
-      }
-      return {
-        ...baseConfig,
-        apiKey: decryptedApiKey,
-        baseUrl: userSettings.llmBaseUrl,
-      };
-
-    case 'llm-gateway':
-      if (!decryptedApiKey || !userSettings.llmBaseUrl) {
-        logger.warn(`LLM Gateway requires API key and baseUrl for user ${userId}`);
-        return undefined;
-      }
-      return {
-        ...baseConfig,
-        apiKey: decryptedApiKey,
-        baseUrl: userSettings.llmBaseUrl,
-        customHeaders,
-      };
-
-    case 'lmstudio':
-    case 'ollama':
-    case 'openai-compatible':
-    case 'custom':
-      if (!userSettings.llmBaseUrl) {
-        logger.warn(`Provider ${provider} requires baseUrl for user ${userId}`);
-        return undefined;
-      }
-      return {
-        ...baseConfig,
-        baseUrl: userSettings.llmBaseUrl,
-        apiKey: decryptedApiKey,
-        customHeaders,
-      };
-
-    default:
-      logger.warn(`Unknown LLM provider: ${provider}`);
-      return undefined;
-  }
-}
 
 // Configuración de Redis para el worker
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
@@ -191,7 +88,12 @@ async function processAnalysisJob(job: Job) {
 
     // Obtener configuración del usuario (GitHub token + LLM settings)
     let userGithubToken: string | undefined = process.env['GITHUB_TOKEN'];
-    let userLLMConfig: UserLLMConfig = {};
+    let userLLMConfig: {
+      provider?: string;
+      apiKey?: string;
+      model?: string;
+      llmBaseUrl?: string;
+    } = {};
 
     if (project.userId) {
       const userSettings = await prisma.userSettings.findUnique({
@@ -352,7 +254,7 @@ async function processAnalysisJob(job: Job) {
         });
         logger.info(`✅ Inspector tokens recorded: ${inspectorInput} in / ${inspectorOutput} out`);
         // Emit event to notify UI of cost update in real-time
-        socketService.io?.emit('analysisCostUpdated', {
+        socketService.broadcast('analysisCostUpdated', {
           analysisId,
           projectId,
           stage: 'INSPECTOR',
@@ -515,7 +417,7 @@ async function processAnalysisJob(job: Job) {
         });
         logger.info(`✅ Detective tokens recorded: ${detectiveInput} in / ${detectiveOutput} out`);
         // Emit event to notify UI of cost update in real-time
-        socketService.io?.emit('analysisCostUpdated', {
+        socketService.broadcast('analysisCostUpdated', {
           analysisId,
           projectId,
           stage: 'DETECTIVE',
@@ -574,7 +476,7 @@ async function processAnalysisJob(job: Job) {
         });
         logger.info(`✅ Fiscal tokens recorded: ${fiscalInput} in / ${fiscalOutput} out`);
         // Emit event to notify UI of cost update in real-time
-        socketService.io?.emit('analysisCostUpdated', {
+        socketService.broadcast('analysisCostUpdated', {
           analysisId,
           projectId,
           stage: 'FISCAL',
@@ -607,35 +509,49 @@ async function processAnalysisJob(job: Job) {
 
     // Validar y limpiar datos antes de guardar
     const severityBreakdown = sintesisOutput.desglose_severidad || { CRÍTICO: 0, ALTO: 0, MEDIO: 0, BAJO: 0 };
-    const compromisedFunctions = Array.isArray(sintesisOutput.funciones_comprometidas)
-      ? sintesisOutput.funciones_comprometidas
-      : [];
-    const affectedAuthors = Array.isArray(sintesisOutput.autores_afectados)
-      ? sintesisOutput.autores_afectados
-      : [];
-    const remediationSteps = Array.isArray(sintesisOutput.prioridad_remediacion)
-      ? sintesisOutput.prioridad_remediacion
-      : [];
-
     logger.info(`📋 Reporte data: findings=${maliciaOutput.cantidad_hallazgos}, severity=${JSON.stringify(severityBreakdown)}, risk=${sintesisOutput.puntuacion_riesgo}`);
 
     try {
-      await prisma.report.create({
-        data: {
-          analysisId,
-          riskScore: Math.min(100, Math.max(0, sintesisOutput.puntuacion_riesgo || 50)),
-          executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
-          findingsCount: maliciaOutput.cantidad_hallazgos || 0,
-          severityBreakdown,
-          compromisedFunctions,
-          affectedAuthors,
-          remediationSteps,
-          generalRecommendation: generalRecommendationStr,
-          inputTokens: totalInput,
-          outputTokens: totalOutput,
-          model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
-        },
-      });
+      // Check if report already exists to avoid unique constraint violation
+      const existingReport = await prisma.report.findUnique({ where: { analysisId } });
+
+      // Prepare remediation steps from Fiscal output
+      const remediationSteps = Array.isArray(sintesisOutput.prioridad_remediacion)
+        ? sintesisOutput.prioridad_remediacion
+        : [];
+
+      if (!existingReport) {
+        await prisma.report.create({
+          data: {
+            analysisId,
+            riskScore: Math.min(100, Math.max(0, sintesisOutput.puntuacion_riesgo || 50)),
+            executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
+            findingsCount: maliciaOutput.cantidad_hallazgos || 0,
+            severityBreakdown,
+            generalRecommendation: generalRecommendationStr,
+            remediationSteps,
+            inputTokens: totalInput,
+            outputTokens: totalOutput,
+            model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
+          },
+        });
+      } else {
+        // Update existing report
+        await prisma.report.update({
+          where: { analysisId },
+          data: {
+            riskScore: Math.min(100, Math.max(0, sintesisOutput.puntuacion_riesgo || 50)),
+            executiveSummary: sintesisOutput.resumen_ejecutivo || 'Análisis completado exitosamente.',
+            findingsCount: maliciaOutput.cantidad_hallazgos || 0,
+            severityBreakdown,
+            generalRecommendation: generalRecommendationStr,
+            remediationSteps,
+            inputTokens: totalInput,
+            outputTokens: totalOutput,
+            model: sintesisOutput.usage?.model || 'claude-3-5-sonnet',
+          },
+        });
+      }
       logger.info(`✅ Reporte guardado con éxito en BD (analysisId: ${analysisId}, Tokens: ${totalInput} in / ${totalOutput} out)`);
     } catch (reportError) {
       const reportErrorMsg = reportError instanceof Error ? reportError.message : String(reportError);

@@ -8,6 +8,7 @@ import ErrorBoundary from '../components/ui/ErrorBoundary';
 const Dashboard = lazy(() => import('../components/Dashboard/Dashboard'));
 const ProjectsPage = lazy(() => import('../components/Projects/ProjectsPage'));
 const ReportViewer = lazy(() => import('../components/Reports/ReportViewer'));
+const AnalysisMonitor = lazy(() => import('../components/Analysis/AnalysisMonitor'));
 
 // NEW: Consolidated master modules
 const FindingsCenter = lazy(() => import('../components/Findings/FindingsCenter'));
@@ -155,7 +156,7 @@ export const router = createBrowserRouter([
         element: (
           <ErrorBoundary>
             <Suspense fallback={<LoadingFallback />}>
-              <ReportViewer />
+              <AnalysisMonitor />
             </Suspense>
           </ErrorBoundary>
         ),

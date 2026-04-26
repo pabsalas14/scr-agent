@@ -126,15 +126,44 @@ app.use((req, res, next) => {
 // ==================== RUTAS ====================
 
 /**
- * Health Check
- * Endpoint para verificar que el servidor está activo
+ * Health: proceso + conectividad a DB y Redis (readiness; 503 si falla un check)
  */
-app.get('/health', (_req, res) => {
-  res.status(200).json({
+app.get('/health', async (_req, res) => {
+  const body: {
+    status: string;
+    timestamp: string;
+    uptime: number;
+    checks: Record<string, string>;
+  } = {
     status: 'ok',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
-  });
+    checks: {},
+  };
+
+  try {
+    const { prisma } = await import('./services/prisma.service');
+    await prisma.$queryRaw`SELECT 1`;
+    body.checks.database = 'ok';
+  } catch {
+    body.checks.database = 'error';
+    body.status = 'degraded';
+  }
+
+  try {
+    const { createClient } = await import('redis');
+    const url = process.env['REDIS_URL'] || 'redis://127.0.0.1:6379';
+    const client = createClient({ url });
+    await client.connect();
+    await client.ping();
+    await client.quit();
+    body.checks.redis = 'ok';
+  } catch {
+    body.checks.redis = 'error';
+    body.status = 'degraded';
+  }
+
+  res.status(body.status === 'ok' ? 200 : 503).json(body);
 });
 
 /**

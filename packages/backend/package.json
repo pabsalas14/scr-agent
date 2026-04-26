@@ -40,7 +40,8 @@
     "simple-git": "^3.20.0",
     "validator": "^13.11.0",
     "winston": "^3.11.0",
-    "zod": "^3.22.4"
+    "zod": "^3.22.4",
+    "prisma": "^5.8.0"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
@@ -50,7 +51,6 @@
     "@types/node": "^20.10.6",
     "@types/sanitize-html": "^2.9.5",
     "@types/validator": "^13.11.8",
-    "prisma": "^5.8.0",
     "supertest": "^6.3.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",

@@ -24,8 +24,16 @@ export class CodeCompressor {
 
     const originalSize = code.length;
 
-    // 1. Remover comentarios de línea (//)
-    let compressed = code.replace(/\/\/.*?$/gm, '');
+    // CRITICAL FIX: Preserve file markers (// === filename ===) - they're NOT comments, they're metadata!
+    // File markers are essential for the LLM to know which files it's analyzing
+    // Without them, LLM hallucinations occur (reports files that don't exist)
+
+    let compressed = code;
+
+    // 1. Remover comentarios de línea (//) - BUT PRESERVE file markers
+    // File markers look like: // === filename.ext ===
+    // This regex removes ALL // comments EXCEPT file markers (both inline and full-line)
+    compressed = compressed.replace(/\/\/(?!\s*===).*?$/gm, ''); // Remove non-marker comments (inline + full-line)
 
     // 2. Remover comentarios de bloque (/* */)
     compressed = compressed.replace(/\/\*[\s\S]*?\*\//g, '');
@@ -33,10 +41,16 @@ export class CodeCompressor {
     // 3. Remover líneas en blanco
     compressed = compressed.replace(/^\s*\n/gm, '');
 
-    // 4. Remover espacios al inicio/final de líneas
+    // 4. Remover espacios al inicio/final de líneas (pero preservar file markers)
     compressed = compressed
       .split('\n')
-      .map(line => line.trim())
+      .map(line => {
+        // For file markers, preserve exact format
+        if (line.includes('===')) {
+          return line.trim();
+        }
+        return line.trim();
+      })
       .filter(line => line.length > 0)
       .join('\n');
 
@@ -46,7 +60,7 @@ export class CodeCompressor {
     const compressedSize = compressed.length;
     const reduction = Math.round(((originalSize - compressedSize) / originalSize) * 100);
 
-    logger.debug(`[CodeCompressor] ${originalSize} bytes → ${compressedSize} bytes (${reduction}% reducción)`);
+    logger.debug(`[CodeCompressor] ${originalSize} bytes → ${compressedSize} bytes (${reduction}% reducción) - File markers PRESERVED`);
 
     return compressed;
   }

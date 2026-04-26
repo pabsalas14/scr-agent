@@ -1,44 +1,110 @@
 /**
  * ============================================================================
- * CODE DIFF SERVICE - Análisis de cambios de código
+ * CODE DIFF SERVICE - Diffs reales vía Git (repositorio del proyecto)
  * ============================================================================
- *
- * Proporciona capacidades de visualización de diffs:
- * - Commits específicos vs análisis anterior
- * - Comparación entre versiones de archivos
- * - Contexto de cambios sospechosos
  */
 
 import { logger } from './logger.service';
 import { prisma } from './prisma.service';
+import { gitService } from './git.service';
+import { decrypt } from './crypto.service';
 
-export interface CodeDiff {
-  file: string;
-  additions: number;
-  deletions: number;
-  changes: number;
-  riskLevel: string;
-  severity: string;
-  hunks: DiffHunk[];
-}
+import type { CodeDiff, DiffHunk, DiffLine } from './code-diff.service.types';
 
-export interface DiffHunk {
-  oldStart: number;
-  oldLines: number;
-  newStart: number;
-  newLines: number;
-  lines: DiffLine[];
-}
+// Re-export types (mantener API estable para rutas)
+export type { CodeDiff, DiffHunk, DiffLine } from './code-diff.service.types';
 
-export interface DiffLine {
-  type: 'add' | 'remove' | 'context';
-  content: string;
-  lineNumber?: number;
-  highlighted?: boolean;
+function resolveProjectGithubToken(
+  project: {
+    githubToken: string | null;
+    user: { settings: { githubToken: string | null } | null } | null;
+  } | null
+): string | undefined {
+  if (!project) {
+    return process.env['GITHUB_TOKEN'];
+  }
+  const raw = project.githubToken || project.user?.settings?.githubToken;
+  if (raw) {
+    return decrypt(raw);
+  }
+  return process.env['GITHUB_TOKEN'];
 }
 
 /**
- * Obtener cambios de código para un hallazgo específico
+ * Convierte un patch unificado de git en estructura de hunks (UI).
+ */
+function parseUnifiedPatchToHunks(patch: string): DiffHunk[] {
+  if (!patch?.trim()) {
+    return [];
+  }
+
+  const lines = patch.split('\n');
+  let i = 0;
+  while (i < lines.length && !lines[i]!.startsWith('@@') && !lines[i]!.startsWith('diff --git')) {
+    i++;
+  }
+  if (i < lines.length && lines[i]!.startsWith('diff --git')) {
+    while (i < lines.length && !lines[i]!.startsWith('@@')) {
+      i++;
+    }
+  }
+
+  const hunks: DiffHunk[] = [];
+
+  while (i < lines.length) {
+    const line = lines[i]!;
+    if (line.startsWith('@@')) {
+      const m = line.match(
+        /@@\s+-(\d+)(?:,(\d+))?\s+\+(\d+)(?:,(\d+))?\s+@@/
+      );
+      const oldStart = m ? parseInt(m[1]!, 10) : 1;
+      const oldCount = m && m[2] != null && m[2] !== '' ? parseInt(m[2], 10) : 1;
+      const newStart = m ? parseInt(m[3]!, 10) : 1;
+      const newCount = m && m[4] != null && m[4] !== '' ? parseInt(m[4], 10) : 1;
+      i++;
+      const hunkLines: DiffLine[] = [];
+      let o = oldStart;
+      let n = newStart;
+      while (i < lines.length && !lines[i]!.startsWith('@@') && !lines[i]!.startsWith('diff --git')) {
+        const l = lines[i]!;
+        if (l.startsWith('---') || l.startsWith('+++')) {
+          i++;
+          continue;
+        }
+        if (l.startsWith('\\')) {
+          i++;
+          continue;
+        }
+        if (l.startsWith(' ')) {
+          hunkLines.push({ type: 'context', content: l.slice(1) });
+          o++;
+          n++;
+        } else if (l.startsWith('-')) {
+          hunkLines.push({ type: 'remove', content: l.slice(1), lineNumber: o });
+          o++;
+        } else if (l.startsWith('+')) {
+          hunkLines.push({ type: 'add', content: l.slice(1), lineNumber: n });
+          n++;
+        }
+        i++;
+      }
+      hunks.push({
+        oldStart,
+        oldLines: oldCount,
+        newStart,
+        newLines: newCount,
+        lines: hunkLines,
+      });
+    } else {
+      i++;
+    }
+  }
+
+  return hunks;
+}
+
+/**
+ * Obtener cambios de código reales (git) para un hallazgo.
  */
 export async function getFindingCodeDiff(findingId: string) {
   try {
@@ -46,8 +112,10 @@ export async function getFindingCodeDiff(findingId: string) {
       where: { id: findingId },
       include: {
         analysis: {
-          select: {
-            project: { select: { repositoryUrl: true } },
+          include: {
+            project: {
+              include: { user: { include: { settings: true } } },
+            },
           },
         },
       },
@@ -57,12 +125,12 @@ export async function getFindingCodeDiff(findingId: string) {
       return null;
     }
 
-    // Extraer información del hallazgo
     const file = finding.file || 'unknown';
     const severity = finding.severity || 'UNKNOWN';
     const riskType = finding.riskType || 'UNKNOWN';
+    const repoUrl = finding.analysis?.project?.repositoryUrl;
+    const token = resolveProjectGithubToken(finding.analysis?.project ?? null);
 
-    // Buscar eventos forensicos relacionados
     const forensicEvents = await prisma.forensicEvent.findMany({
       where: {
         findingId,
@@ -79,18 +147,55 @@ export async function getFindingCodeDiff(findingId: string) {
       take: 5,
     });
 
-    // Construir respuesta con análisis de diff simulado
     const diffs: CodeDiff[] = [];
 
-    for (const event of forensicEvents) {
+    if (repoUrl) {
+      for (const event of forensicEvents) {
+        const { patch, additions, deletions } = await gitService.getFilePatchAtCommit(
+          repoUrl,
+          file,
+          event.commitHash,
+          token
+        );
+        const hunks = parseUnifiedPatchToHunks(patch);
+        diffs.push({
+          file,
+          additions,
+          deletions,
+          changes: additions + deletions,
+          riskLevel: severity,
+          severity,
+          hunks:
+            hunks.length > 0
+              ? hunks
+              : snippetFallbackHunk(finding.codeSnippet, file, riskType),
+        });
+      }
+    }
+
+    if (diffs.length === 0 && forensicEvents.length > 0) {
+      for (const event of forensicEvents) {
+        diffs.push({
+          file,
+          additions: 0,
+          deletions: 0,
+          changes: 0,
+          riskLevel: severity,
+          severity,
+          hunks: snippetFallbackHunk(finding.codeSnippet, file, riskType),
+        });
+      }
+    }
+
+    if (diffs.length === 0) {
       diffs.push({
         file,
-        additions: Math.floor(Math.random() * 50),
-        deletions: Math.floor(Math.random() * 30),
-        changes: Math.floor(Math.random() * 80),
+        additions: 0,
+        deletions: 0,
+        changes: 0,
         riskLevel: severity,
         severity,
-        hunks: generateMockHunks(file, riskType),
+        hunks: snippetFallbackHunk(finding.codeSnippet, file, riskType),
       });
     }
 
@@ -109,8 +214,33 @@ export async function getFindingCodeDiff(findingId: string) {
   }
 }
 
+function snippetFallbackHunk(
+  codeSnippet: string | null,
+  _file: string,
+  _riskType: string
+): DiffHunk[] {
+  if (!codeSnippet?.trim()) {
+    return [];
+  }
+  const rawLines = codeSnippet.split('\n');
+  return [
+    {
+      oldStart: 1,
+      oldLines: 0,
+      newStart: 1,
+      newLines: rawLines.length,
+      lines: rawLines.map((content, idx) => ({
+        type: 'add' as const,
+        content,
+        lineNumber: idx + 1,
+        highlighted: true,
+      })),
+    },
+  ];
+}
+
 /**
- * Comparar dos versiones de un archivo
+ * Comparar dos versiones de un archivo (estadísticas reales vía numstat).
  */
 export async function compareFileVersions(
   analysisId: string,
@@ -121,7 +251,14 @@ export async function compareFileVersions(
   }
 ) {
   try {
-    // Obtener eventos para el archivo
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: { project: { include: { user: { include: { settings: true } } } } },
+    });
+    if (!analysis?.project) {
+      return null;
+    }
+
     const events = await prisma.forensicEvent.findMany({
       where: {
         analysisId,
@@ -142,29 +279,37 @@ export async function compareFileVersions(
       return null;
     }
 
-    // Obtener cambios agregados
+    const repoUrl = analysis.project.repositoryUrl;
+    const token = resolveProjectGithubToken(analysis.project);
+    const fromCommit = options?.beforeCommit || events[0]!.commitHash;
+    const toCommit = options?.afterCommit || events[events.length - 1]!.commitHash;
+
     let totalAdditions = 0;
     let totalDeletions = 0;
-    const changes = events.length;
-
-    // Simular estadísticas de diff
-    for (const event of events) {
-      totalAdditions += Math.floor(Math.random() * 100);
-      totalDeletions += Math.floor(Math.random() * 50);
+    if (fromCommit && toCommit && fromCommit !== toCommit) {
+      const stats = await gitService.getFileNumstatBetween(
+        repoUrl,
+        file,
+        fromCommit,
+        toCommit,
+        token
+      );
+      totalAdditions = stats.additions;
+      totalDeletions = stats.deletions;
     }
 
     return {
       file,
       analysisId,
-      beforeCommit: options?.beforeCommit || events[0]?.commitHash || 'initial',
-      afterCommit: options?.afterCommit || events[events.length - 1]?.commitHash || 'latest',
+      beforeCommit: fromCommit,
+      afterCommit: toCommit,
       stats: {
-        commits: changes,
+        commits: events.length,
         additions: totalAdditions,
         deletions: totalDeletions,
         totalChanges: totalAdditions + totalDeletions,
       },
-      events: events.map(e => ({
+      events: events.map((e) => ({
         commit: e.commitHash,
         author: e.author,
         date: e.timestamp,
@@ -179,12 +324,15 @@ export async function compareFileVersions(
 }
 
 /**
- * Obtener archivos más afectados por un usuario
+ * Archivos con más actividad por autor (análisis de eventos forenses en BD, sin random).
  */
-export async function getUserAffectedFiles(userId: string, options?: {
-  limit?: number;
-  analysisId?: string;
-}) {
+export async function getUserAffectedFiles(
+  userId: string,
+  options?: {
+    limit?: number;
+    analysisId?: string;
+  }
+) {
   try {
     const limit = Math.min(options?.limit || 20, 100);
 
@@ -197,7 +345,7 @@ export async function getUserAffectedFiles(userId: string, options?: {
       return [];
     }
 
-    const where: any = {
+    const where: { author: string; analysisId?: string } = {
       author: user.email,
     };
 
@@ -205,7 +353,6 @@ export async function getUserAffectedFiles(userId: string, options?: {
       where.analysisId = options.analysisId;
     }
 
-    // Agrupar cambios por archivo
     const fileStats = await prisma.forensicEvent.groupBy({
       by: ['file'],
       where,
@@ -213,9 +360,9 @@ export async function getUserAffectedFiles(userId: string, options?: {
       _max: { riskLevel: true },
     });
 
-    const results = fileStats
-      .filter(f => f.file) // Remove nulls
-      .map(f => ({
+    return fileStats
+      .filter((f) => f.file)
+      .map((f) => ({
         file: f.file!,
         changes: f._count.id,
         maxRisk: f._max?.riskLevel || 'LOW',
@@ -223,8 +370,6 @@ export async function getUserAffectedFiles(userId: string, options?: {
       }))
       .sort((a, b) => b.riskScore - a.riskScore)
       .slice(0, limit);
-
-    return results;
   } catch (error) {
     logger.error(`Error getting user affected files: ${error}`);
     return [];
@@ -232,7 +377,7 @@ export async function getUserAffectedFiles(userId: string, options?: {
 }
 
 /**
- * Obtener contexto de cambios para una línea específica
+ * Líneas reales alrededor de un número de línea (working tree clonado).
  */
 export async function getLineContext(
   analysisId: string,
@@ -243,7 +388,14 @@ export async function getLineContext(
   try {
     const contextLines = context || 3;
 
-    // Obtener eventos que afecten líneas cercanas
+    const analysis = await prisma.analysis.findUnique({
+      where: { id: analysisId },
+      include: { project: { include: { user: { include: { settings: true } } } } },
+    });
+    if (!analysis?.project) {
+      return null;
+    }
+
     const events = await prisma.forensicEvent.findMany({
       where: {
         analysisId,
@@ -260,18 +412,47 @@ export async function getLineContext(
       take: 10,
     });
 
-    // Construir contexto de línea
-    const contextHunks: DiffHunk[] = [];
+    const repoUrl = analysis.project.repositoryUrl;
+    const token = resolveProjectGithubToken(analysis.project);
+    const localPath = await gitService.cloneOrPullRepository(
+      repoUrl,
+      token
+    );
+    const content = gitService.readWorktreeFile(localPath, file);
 
-    for (const event of events) {
-      contextHunks.push({
-        oldStart: Math.max(1, lineNumber - contextLines),
-        oldLines: contextLines * 2 + 1,
-        newStart: Math.max(1, lineNumber - contextLines),
-        newLines: contextLines * 2 + 1,
-        lines: generateContextLines(lineNumber, contextLines),
-      });
+    if (!content) {
+      return {
+        file,
+        lineNumber,
+        context: contextLines,
+        contextHunks: [] as DiffHunk[],
+        eventsAffecting: events.length,
+        note: 'No se pudo leer el archivo en el clon local (¿ruta, binario o sin checkout?).',
+      };
     }
+
+    const allLines = content.split('\n');
+    const from = Math.max(0, lineNumber - 1 - contextLines);
+    const to = Math.min(allLines.length, lineNumber - 1 + contextLines + 1);
+    const slice = allLines.slice(from, to);
+
+    const contextHunks: DiffHunk[] = [
+      {
+        oldStart: from + 1,
+        oldLines: slice.length,
+        newStart: from + 1,
+        newLines: slice.length,
+        lines: slice.map((c, j) => {
+          const lineNo = from + j + 1;
+          return {
+            type: lineNo === lineNumber ? 'add' : 'context',
+            content: c,
+            lineNumber: lineNo,
+            highlighted: lineNo === lineNumber,
+          } as DiffLine;
+        }),
+      },
+    ];
 
     return {
       file,
@@ -284,46 +465,6 @@ export async function getLineContext(
     logger.error(`Error getting line context: ${error}`);
     return null;
   }
-}
-
-// ============================================================================
-// HELPERS
-// ============================================================================
-
-function generateMockHunks(file: string, riskType: string): DiffHunk[] {
-  // Generar hunks de ejemplo
-  return [
-    {
-      oldStart: 10,
-      oldLines: 5,
-      newStart: 10,
-      newLines: 8,
-      lines: [
-        { type: 'context', content: '  function validateInput(data) {' },
-        { type: 'remove', content: '    return true; // No validation' },
-        { type: 'add', content: '    if (!data.isAdmin) {' },
-        { type: 'add', content: '      return false;' },
-        { type: 'add', content: '    }' },
-        { type: 'add', content: '    return true; // Validation passed' },
-        { type: 'context', content: '  }' },
-      ],
-    },
-  ];
-}
-
-function generateContextLines(lineNumber: number, context: number): DiffLine[] {
-  const lines: DiffLine[] = [];
-
-  for (let i = lineNumber - context; i <= lineNumber + context; i++) {
-    lines.push({
-      type: i === lineNumber ? 'add' : 'context',
-      content: `Line ${i} content here`,
-      lineNumber: i,
-      highlighted: i === lineNumber,
-    });
-  }
-
-  return lines;
 }
 
 function riskLevelToScore(level: string): number {

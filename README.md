@@ -48,7 +48,7 @@ A diferencia de herramientas tradicionales de análisis estático:
 - 📊 **Visualización avanzada** - Dashboards interactivos con mapas de calor y timelines
 - ✅ **Gestión integral de remediaciones** - Desde detección hasta validación con auditoría completa
 - 📈 **Análisis incremental** - Solo re-escanea commits nuevos (70% más rápido)
-- 🔒 **100% local y privado** - Ningún código se envía a servidores externos
+- 🔒 **Modelos configurables** - Anthropic (nube) o LLM local (p. ej. LM Studio, Ollama) según tu `LLM_PROVIDER` y credenciales
 - 🎯 **Enfoque técnico** - Recomendaciones de control sin referencias normativas
 
 ## 🆕 Estado Actual - Última Versión
@@ -69,41 +69,51 @@ A diferencia de herramientas tradicionales de análisis estático:
 
 ## ⚡ Inicio Rápido
 
-### Requisitos Mínimos
-- **Node.js** 18+
-- **PostgreSQL** 14+ 
-- **Redis** 6+
-- **Git** 2.0+
+### Requisitos mínimos
+- **Node.js** 20+ (ver `package.json` `engines`) y **pnpm** 10+ (`corepack enable`)
+- **PostgreSQL** 14+ y **Redis** 6+ (cola Bull; obligatorio en flujo completo)
+- **Git** 2+
 
-### Instalación en 5 Minutos
+### Opción A: Docker (recomendada para probar el stack)
+
+Desde la raíz del monorepo:
 
 ```bash
-# 1. Clonar repositorio
-git clone https://github.com/pabsalas14/scr-agent.git
-cd scr-agent
+cp .env.docker .env
+# Edita .env: JWT_SECRET (≥32 caracteres), ENCRYPTION_KEY (64 hex), ANTHROPIC_API_KEY, etc.
 
-# 2. Instalar dependencias
-npm install
-
-# 3. Configurar backend
-cd packages/backend
-npm install
-npx prisma migrate dev
-
-# 4. Configurar frontend
-cd ../frontend
-npm install
-
-# 5. Iniciar en paralelo
-cd ../..
-npm run dev:all
+docker compose --env-file .env up -d --build
 ```
 
-### Acceder a la Aplicación
-
-- **Frontend**: http://localhost:5173
+- **Frontend (Nginx + SPA)**: http://localhost:8080 (mapea `FRONTEND_HOST_PORT`, por defecto 8080)
 - **API**: http://localhost:3001
-- **Health Check**: `curl http://localhost:3001/health`
+- **Health (readiness)**: `GET /health` comprobando PostgreSQL y Redis; responde **503** si falla un servicio
+
+La imagen del backend aplica `prisma migrate deploy` y, si faltan tablas frente a `schema.prisma`, `prisma db push` (historial de migraciones antiguo; en producción conviene alinear con migraciones dedicadas). No se copian archivos `**/.env` a la imagen (`.dockerignore`); las variables vienen de `docker-compose`.
+
+### Opción B: Desarrollo local (pnpm + turbo)
+
+```bash
+git clone https://github.com/pabsalas14/scr-agent.git
+cd scr-agent
+pnpm install
+
+# Backend: .env (ver .env.example en la raíz o packages/frontend)
+cd packages/backend
+cp ../../.env.example .env  # o enlaza; ajusta DATABASE_URL, REDIS_URL, JWT_SECRET, etc.
+pnpm exec prisma migrate deploy   # o prisma db push en entornos sin historial
+cd ../..
+
+pnpm dev   # o el script que tengas en la raíz (p. ej. turbo dev)
+```
+
+Ajusta **BACKEND_PORT** (por defecto 3000 en código; muchos usan 3001) y **FRONTEND_URL** para CORS. El arranque valida variables con Zod (`validateEnvOrExit` en `packages/backend/src/bootstrap/env.ts`); en `NODE_ENV=production` se exigen `JWT_SECRET` (≥32) y `ENCRYPTION_KEY` (64 hex).
+
+### Acceder a la aplicación (local típico)
+
+- **Frontend (Vite)**: http://localhost:5173
+- **API**: `http://localhost:<BACKEND_PORT>` (p. ej. 3000 o 3001)
+- **Health**: `curl -sf http://localhost:<BACKEND_PORT>/health`
 
 ---
 

@@ -15,85 +15,81 @@
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
 import { cacheService, CacheType } from '../services/cache.service';
-import { LLMClient, LLMConfig, createLLMClient, UserLLMConfig } from '../services/llm-client.service';
+import { LLMClient, LLMConfig } from '../services/llm-client.service';
 import { gitService } from '../services/git.service';
 import { ForensesInput, ForensesOutput, EventoForense } from '../types/agents';
+import { agentContextConfig } from '../config/agent-context.config';
 
 /**
- * System Prompt para el Detective (v2 - Optimized for Qwen)
- * Instrucciones centralizadas (~450 tokens - complete forensic guidelines)
+ * System Prompt del Detective: metodología forense completa + esquema JSON explícito.
  */
-const DETECTIVE_SYSTEM_PROMPT = `You are a forensic Git analyst specializing in compromise chain investigation.
+const DETECTIVE_SYSTEM_PROMPT = `You are a senior forensic Git analyst. You receive malicious/security findings and Git history. Build an evidence-based timeline. Respond with ONE JSON object only. No other text.
 
-CRITICAL: You MUST respond with ONLY a JSON object. No other text, no explanations, no observations.
+MISSION:
+- Trace how and when concerning code was introduced and evolved.
+- Correlate findings with real commits, authors, and file paths from the data provided.
+- Surface patterns of coordination, obfuscation, or risky auth/crypto/data changes.
+- Distinguish strong evidence from weak inference: cite commits and messages you actually see.
 
-Your Mission:
-Analyze Git commit history to understand HOW and WHEN malicious code was introduced.
-Build a complete forensic timeline correlating security findings with commit history.
-Identify patterns that suggest a deliberate compromise chain.
+METHODOLOGY (apply all that the data allows):
+1. Timeline construction: map each important finding to commits that plausibly introduced or modified it
+2. Cross-commit correlation: connect related file changes, authors, and time proximity
+3. Pattern detection: frequency, timing, message quality, and scope of changes
+4. Escalation: describe progression (simple → hidden → more dangerous) if the history supports it
+5. Author profiling: flag only when the history supports it (not gossip)
 
-Analysis Methodology:
-1. Timeline Construction: Map each finding to the specific commit that introduced it
-2. Correlation: Link related changes across multiple commits and files
-3. Pattern Detection: Identify suspicious patterns in commit frequency, timing, authors
-4. Escalation Analysis: How did the malicious code evolve? (gradual obfuscation, escalation)
-5. Author Profiling: Which developers made suspicious changes? Any patterns?
+SUSPICIOUS INDICATORS (use when present in the data):
+- HIDDEN COMMITS: generic messages ("fix", "update", "cleanup") for sensitive modules
+- TIMING ANOMALIES: off-hours or bursts of changes
+- RAPID SUCCESSION: many related commits in a short window
+- CRITICAL FILES: auth, crypto, payments, admin, database, network ingress
+- OBFUSCATION PROGRESSION: growing complexity, encoding, or evasion
+- AUTHOR ANOMALIES: new or unusual authors on critical paths
+- BRANCHING: long-lived feature branches, delayed merges, cherry-picks hiding intent
+- MASS CHANGES: very large diffs that could conceal small malicious edits
 
-Suspicious Patterns:
-- HIDDEN COMMITS: Generic messages ("fix", "update") for significant code changes
-- TIMING ANOMALIES: Changes outside normal working hours
-- RAPID SUCCESSION: Multiple related commits in quick succession
-- CRITICAL FILES: Changes to auth, database, security modules
-- OBFUSCATION PROGRESSION: Code becoming increasingly obscured over time
+ANALYSIS RULES:
+- Prefer at least one timeline event per supplied finding when history supports a link; if a finding cannot be tied to a commit, explain that in the closest related event for that file.
+- Use ISO 8601 "timestamp" when you have a commit date; if only approximate, still use ISO and align to the provided commit metadata.
+- "commit" must be a hash string present in the provided history when you attribute an event to a commit.
+- "resumen_cambios" and "indicadores_sospecha" must be grounded in the diff/message content you have, not invented repositories or paths.
 
-REQUIRED OUTPUT FORMAT (and ONLY this format):
+REQUIRED OUTPUT FORMAT (exact top-level keys):
 {
   "eventos": [
     {
-      "timestamp": "2024-03-15T10:30:00Z",
-      "commit": "abc123def456",
-      "autor": "developer@company.com",
-      "archivo": "src/auth/login.js",
-      "funcion": "validateCredentials",
-      "accion": "MODIFIED",
-      "mensaje_commit": "Refactor authentication logic",
-      "resumen_cambios": "Added hidden backdoor check before validation",
+      "timestamp": "2024-03-15T10:30:00.000Z",
+      "commit": "full_or_short_hash_from_history",
+      "autor": "email_or_name_from_metadata",
+      "archivo": "path/from/finding_or_history",
+      "funcion": "functionNameOrNull",
+      "accion": "ADDED",
+      "mensaje_commit": "exact or summarized commit message",
+      "resumen_cambios": "what changed in security-relevant terms",
       "nivel_riesgo": "CRÍTICO",
-      "indicadores_sospecha": ["Logic added but not in message", "Author new to auth module"]
+      "indicadores_sospecha": ["specific reason tied to this commit/file"]
     }
   ],
-  "patrones": ["Gradual obfuscation over 5 commits", "Same author in 80% of changes"],
-  "autores_sospechosos": ["developer@company.com"]
+  "patrones": ["cross-cutting patterns you infer from the set of events"],
+  "autores_sospechosos": ["authors worth manual review, only if supported"]
 }
 
 FIELD REQUIREMENTS:
-- "eventos": Array of timeline events (chronological order)
-- "timestamp": ISO 8601 format (YYYY-MM-DDTHH:MM:SSZ)
-- "commit": Git commit hash (string)
-- "autor": Developer email/username (string)
-- "archivo": File path (string)
-- "funcion": Function name or null (string or null)
+- "eventos": array in chronological order when dates are available
 - "accion": EXACTLY one of: ADDED, MODIFIED, DELETED
 - "nivel_riesgo": EXACTLY one of: CRÍTICO, ALTO
-- "indicadores_sospecha": Array of suspicious indicators (strings)
-- "patrones": Array of detected patterns (strings)
-- "autores_sospechosos": Array of suspicious authors (strings)
+- "funcion": string or the JSON null value if not identifiable
+- "indicadores_sospecha", "patrones", "autores_sospechosos": arrays of strings (may be empty)
+- "patrones" and "autores_sospechosos" may be empty arrays if the evidence is thin
 
-CRITICAL RULES:
-1. Respond with ONLY valid JSON - no text before or after
-2. Timestamps must be ISO 8601 format
-3. Actions must be ADDED, MODIFIED, or DELETED (exact case)
-4. Link findings to SPECIFIC commits, not guesses
-5. Show escalation: how code evolved from simple to complex
-6. Do NOT add extra fields or sections
-7. If no forensic timeline can be built, return empty events array
+STRICT RULES:
+1. Output ONLY valid JSON. No keys other than "eventos", "patrones", "autores_sospechosos" at the top level.
+2. No markdown, no comments, no trailing commas.
+3. If the supplied history is insufficient, return minimal but honest events (e.g. linking findings to the nearest touching commit) rather than fabricating metadata.
 
-Now analyze the provided malicious findings and git history, then respond with ONLY the JSON object.`;
+Now respond with ONLY the JSON object.`;
 
-/**
- * Constantes para chunking y retry
- */
-const MAX_FINDINGS_PER_CHUNK = 5; // Procesar máximo 5 hallazgos por chunk (para Qwen 4K context)
+/** Reintentos por chunk (independiente del tamaño de contexto). */
 const MAX_RETRIES = 3;
 const RETRY_TIMEOUTS = [15 * 60 * 1000, 25 * 60 * 1000, 30 * 60 * 1000]; // 15, 25, 30 minutos
 
@@ -182,8 +178,11 @@ export class DetectiveAgentService {
       }
 
       // Si es repositorio grande, usar chunking
-      if (isLargeRepo && input.hallazgos_malicia.length > MAX_FINDINGS_PER_CHUNK) {
-        logger.info(`📊 Repo grande detectado: ${input.hallazgos_malicia.length} hallazgos. Aplicando chunking (${MAX_FINDINGS_PER_CHUNK} por chunk)`);
+      const maxFindings = agentContextConfig.detectiveMaxFindingsPerChunk;
+      if (isLargeRepo && input.hallazgos_malicia.length > maxFindings) {
+        logger.info(
+          `📊 Repo grande detectado: ${input.hallazgos_malicia.length} hallazgos. Aplicando chunking (${maxFindings} por chunk, env DETECTIVE_MAX_FINDINGS_PER_CHUNK)`
+        );
         return await this.investigarHistorialConChunking(input, cacheKey, startTime);
       }
 
@@ -206,7 +205,10 @@ export class DetectiveAgentService {
     startTime: number
   ): Promise<ForensesOutput> {
     const allEventos: EventoForense[] = [];
-    const chunks = this.chunkHallazgos(input.hallazgos_malicia, MAX_FINDINGS_PER_CHUNK);
+    const chunks = this.chunkHallazgos(
+      input.hallazgos_malicia,
+      agentContextConfig.detectiveMaxFindingsPerChunk
+    );
     const failedChunks: Array<{ index: number; error: string; attempts: number }> = [];
 
     logger.info(`📦 Total chunks: ${chunks.length}`);
@@ -292,7 +294,7 @@ export class DetectiveAgentService {
       usage: {
         input_tokens: 0, // Acumulado de chunks
         output_tokens: 0,
-        model: 'qwen2.5-coder-7b-instruct',
+        model: this.getLLMClient().getConfig().model,
       },
       failedChunks: failedChunks.length > 0 ? failedChunks : undefined,
     };

@@ -55,7 +55,7 @@ export class LLMClient {
   constructor(config: LLMConfig) {
     this.config = {
       temperature: 0.7,
-      maxTokens: 512, // Reduced from 4096 to ~1/8 to leave room for input tokens (~3.5K)
+      maxTokens: 4096,
       ...config,
     };
     this.validateConfig();

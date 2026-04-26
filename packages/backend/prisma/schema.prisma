@@ -497,10 +497,12 @@ enum AnalysisStatus {
   INSPECTOR_RUNNING // Agente Inspector en proceso
   DETECTIVE_RUNNING // Agente Detective en proceso
   FISCAL_RUNNING // Agente Fiscal en proceso
+  PAUSED // Pausado por el usuario (cola interrumpida, reanudable)
   COMPLETED // Análisis completado
   FAILED // Falló el análisis
   CANCELLED // Cancelado por el usuario
   PARTIAL // Completado parcialmente
+  ERROR // Legacy: presente en migración inicial; preferir FAILED en lógica nueva
 }
 
 /// Severidad de hallazgo
@@ -880,6 +882,7 @@ model TokenUsage {
 /// Estado de job en Bull queue
 enum JobStatus {
   PENDING      // Esperando ser procesado
+  QUEUED       // En cola Bull, pendiente de worker
   ACTIVE       // Actualmente siendo procesado
   COMPLETED    // Completado exitosamente
   FAILED       // Falló después de todos los reintentos

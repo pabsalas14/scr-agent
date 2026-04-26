@@ -43,7 +43,7 @@ export default function SettingsModule() {
   const [maxTokens, setMaxTokens] = useState(4096);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [llmProvider, setLlmProvider] = useState<'anthropic' | 'lmstudio'>('anthropic');
-  const [llmBaseUrl, setLlmBaseUrl] = useState('http://localhost:1234/v1');
+  const [llmBaseUrl, setLlmBaseUrl] = useState('');
   const [status, setStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [language, setLanguage] = useState('es');
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');

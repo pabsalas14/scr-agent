@@ -661,6 +661,110 @@ export class GitService {
       throw new Error(`VALIDATION_ERROR: ${error.message}`);
     }
   }
+
+  /**
+   * Patch unificado de un archivo en un commit (`git show`, sin cabecera de commit).
+   */
+  async getFilePatchAtCommit(
+    repoUrl: string,
+    filePath: string,
+    commitHash: string,
+    githubToken?: string
+  ): Promise<{ patch: string; additions: number; deletions: number }> {
+    const localPath = await this.cloneOrPullRepository(repoUrl, githubToken);
+    const git = simpleGit(localPath);
+    try {
+      const patch = await git.raw([
+        'show',
+        '--format=',
+        '--patch',
+        '--no-textconv',
+        commitHash,
+        '--',
+        filePath,
+      ]);
+      return {
+        patch,
+        additions: this.countDiffSignLines(patch, '+'),
+        deletions: this.countDiffSignLines(patch, '-'),
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.warn(`getFilePatchAtCommit: ${filePath} @ ${commitHash}: ${errorMessage}`);
+      return { patch: '', additions: 0, deletions: 0 };
+    }
+  }
+
+  private countDiffSignLines(patch: string, sign: '+' | '-'): number {
+    let n = 0;
+    for (const line of patch.split('\n')) {
+      if (sign === '+' && line.startsWith('+') && !line.startsWith('+++')) {
+        n++;
+      }
+      if (sign === '-' && line.startsWith('-') && !line.startsWith('---')) {
+        n++;
+      }
+    }
+    return n;
+  }
+
+  /**
+   * numstat de un único archivo entre dos commits.
+   */
+  async getFileNumstatBetween(
+    repoUrl: string,
+    filePath: string,
+    fromCommit: string,
+    toCommit: string,
+    githubToken?: string
+  ): Promise<{ additions: number; deletions: number }> {
+    const localPath = await this.cloneOrPullRepository(repoUrl, githubToken);
+    const git = simpleGit(localPath);
+    try {
+      const out = await git.raw(['diff', '--numstat', `${fromCommit}..${toCommit}`, '--', filePath]);
+      const line = out
+        .split('\n')
+        .map((l) => l.trim())
+        .find((l) => l.length > 0);
+      if (!line) {
+        return { additions: 0, deletions: 0 };
+      }
+      const parts = line.split('\t');
+      if (parts.length < 2) {
+        return { additions: 0, deletions: 0 };
+      }
+      const add =
+        parts[0] === '-' || parts[0] === undefined ? 0 : parseInt(parts[0], 10) || 0;
+      const del =
+        parts[1] === '-' || parts[1] === undefined ? 0 : parseInt(parts[1], 10) || 0;
+      return { additions: add, deletions: del };
+    } catch (error) {
+      logger.warn(`getFileNumstatBetween: ${error}`);
+      return { additions: 0, deletions: 0 };
+    }
+  }
+
+  /**
+   * Contenido de un archivo en el clon local (ruta relativa al repo, sin `..`).
+   */
+  readWorktreeFile(
+    localPath: string,
+    filePath: string
+  ): string | null {
+    const normalized = filePath.replace(/^\.\//, '');
+    if (normalized.includes('..') || path.isAbsolute(normalized)) {
+      return null;
+    }
+    const full = path.join(localPath, normalized);
+    try {
+      if (!fs.existsSync(full) || !fs.statSync(full).isFile()) {
+        return null;
+      }
+      return fs.readFileSync(full, 'utf-8');
+    } catch {
+      return null;
+    }
+  }
 }
 
 // Singleton exportado

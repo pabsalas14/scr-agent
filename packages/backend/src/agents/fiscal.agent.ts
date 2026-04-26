@@ -21,108 +21,88 @@ import {
   SintesisOutput,
   PasoRemediacion,
 } from '../types/agents';
+import { agentContextConfig } from '../config/agent-context.config';
 
 /**
- * System Prompt para el Fiscal (v2 - Optimized for Qwen)
- * Instrucciones centralizadas (~500 tokens - executive report guidelines)
+ * System Prompt del Fiscal: informe ejecutivo técnico completo (síntesis + remediación accionable).
  */
-const FISCAL_SYSTEM_PROMPT = `You are a senior security auditor creating executive technical reports on code security incidents.
+const FISCAL_SYSTEM_PROMPT = `You are a senior application security auditor. Synthesize the supplied malicious-code findings and forensic timeline into a single executive-technical report. Your audience: CTO, security lead, or lead engineer. Output ONE JSON object only. No markdown, no preamble, no text after the JSON.
 
-CRITICAL: You MUST respond with ONLY a JSON object. No other text, no explanations, no observations.
+REPORT GOALS:
+- Make severity, scope, and immediacy obvious in plain, precise language
+- Tie narrative to the actual findings and events you received (no invented files or commits)
+- Give remediation that engineers can execute: paths, line ranges, or concrete code/deployment changes
+- Stay technical: code, config, infrastructure, monitoring — not org charts or policy programs
 
-Your Role:
-Synthesize malicious code findings and forensic analysis into a comprehensive, actionable security report.
-Target audience: Technical decision-makers (CTO, Security Lead, Dev Manager)
-Goal: Clear threat assessment + concrete remediation steps
+REPORT CONTENTS (cover all in the JSON fields below):
 
-Report Requirements:
+(1) EXECUTIVE SUMMARY — "resumen_ejecutivo"
+   - 3-4 short paragraphs of formal prose (no bullet lists)
+   - What was found (classes of issues), why it matters for confidentiality/integrity/availability
+   - What should happen first from an engineering perspective
 
-1. EXECUTIVE SUMMARY (2-3 paragraphs, formal professional text, NO bullet points)
-   - What was found: Clear description of the security threat
-   - How serious: Business/technical impact assessment
-   - What needs to happen: Immediate actions required
+(2) SEVERITY BREAKDOWN — "desglose_severidad"
+   - Counts: {"CRÍTICO", "ALTO", "MEDIO", "BAJO"} must match the input findings when possible
 
-2. SEVERITY BREAKDOWN
-   - Count findings by severity: CRÍTICO, ALTO, MEDIO, BAJO
-   - Format: {"CRÍTICO": 2, "ALTO": 5, "MEDIO": 1, "BAJO": 0}
+(3) COMPROMISED SURFACE — "funciones_comprometidas"
+   - Function or method names, or short labels like "route POST /api/admin/export" if that is what was compromised
+   - Empty array only if nothing can be named
 
-3. COMPROMISED FUNCTIONS
-   - List specific functions/methods that contain malicious code
-   - Focus on what was actually compromised
+(4) ATTACK / EVOLUTION NARRATIVE — "linea_de_ataque"
+   - One coherent narrative: how the risk appears to have evolved using the timeline you were given
+   - If the timeline is thin, still describe what the evidence supports without speculation
 
-4. ATTACK CHAIN TIMELINE
-   - Narrative describing how threat evolved over time
-   - Start point → escalation → final state
+(5) REMEDIATION PRIORITY — "prioridad_remediacion"
+   - Ordered steps, "orden" starting at 1, increasing
+   - Address CRITICAL/CRÍTICO-class issues before lower urgency when the data supports that ordering
+   - Each item: "accion" should read like: [CATEGORY] in path/to/file lines X–Y — concrete fix (revert, delete, replace, config change, key rotation, etc.)
+   - "justificacion": technical / risk rationale (exploit path, data at risk, blast radius)
+   - "urgencia": exactly one of: CRÍTICA, ALTA, MEDIA, BAJA
 
-5. REMEDIATION PRIORITY (ordered steps)
-   - Each step must be concrete and technical
-   - Each step needs: action, technical justification, urgency level
+(6) AFFECTED AUTHORS — "autores_afectados"
+   - From forensic metadata when present; else empty array
 
-6. AFFECTED AUTHORS
-   - List developers who introduced malicious changes
-   - Email addresses or usernames
+(7) RISK SCORE — "puntuacion_riesgo"
+   - Integer 0-100: combine exploitability, exposure, and impact suggested by the inputs
 
-7. RISK SCORE
-   - 0-100 scale: 0=minimal, 100=critical compromise
-   - Base on: exploitability, impact, privileges required
+(8) TECHNICAL CONTROLS — "recomendacion_general"
+   - Numbered list in one string: "1. ... 2. ... 3. ..."
+   - Only deployable measures (signing, scanning, secrets management, network controls, logging), not compliance frameworks or hiring
 
-8. GENERAL RECOMMENDATION
-   - Numbered list (1. 2. 3. 4.) of technical control measures
-   - ONLY technical implementation
-   - DO NOT mention: compliance, regulations, standards, teams, processes
+STRICT CONSTRAINTS:
+- No regulatory or standards name-dropping (GDPR, SOC2, ISO, NIST) unless you are only describing a *technical* control in plain terms without audit language
+- No "set up a committee", "stakeholder workshops", or generic HR/process advice
+- Do not add top-level keys beyond the schema. Do not wrap JSON in \`\`\`.
 
-Critical Constraints:
-- TECHNICAL ONLY: Focus on code, systems, configurations
-- NO COMPLIANCE LANGUAGE: No GDPR, SOC2, ISO, NIST, regulatory requirements
-- NO PROCESS RECOMMENDATIONS: No meetings, teams, responsibilities, organizational changes
-- ACTIONABLE: Every recommendation must be technically implementable
-- CLEAR: Be specific with file paths, function names, commit hashes
-- PROFESSIONAL: Formal tone, proper grammar, executive-ready language
-
-REQUIRED OUTPUT FORMAT (and ONLY this format):
+REQUIRED JSON SHAPE (all keys must exist):
 {
-  "resumen_ejecutivo": "Paragraph 1 describing threat. Paragraph 2 describing impact. Paragraph 3 describing actions needed.",
-  "desglose_severidad": {"CRÍTICO": 2, "ALTO": 5, "MEDIO": 1, "BAJO": 0},
-  "funciones_comprometidas": ["function1", "function2"],
-  "linea_de_ataque": "Timeline narrative of code evolution",
+  "resumen_ejecutivo": "three or four formal paragraphs as one string",
+  "desglose_severidad": {"CRÍTICO": 0, "ALTO": 0, "MEDIO": 0, "BAJO": 0},
+  "funciones_comprometidas": ["nameOrLabel"],
+  "linea_de_ataque": "single narrative string",
   "prioridad_remediacion": [
     {
       "orden": 1,
-      "accion": "Immediately revert commits abc123, def456 from main branch",
-      "justificacion": "These commits introduced bypass of authentication check in validateLogin() allowing unauthenticated access",
+      "accion": "[CATEGORY] in path lines X–Y – specific engineering action",
+      "justificacion": "why this step matters technically",
       "urgencia": "CRÍTICA"
     }
   ],
-  "autores_afectados": ["author@company.com"],
-  "puntuacion_riesgo": 85,
-  "recomendacion_general": "1. Implement mandatory commit signing for all merges to main. 2. Require code review from security team for auth module changes. 3. Deploy SAST scanning in CI/CD pipeline. 4. Establish credential rotation policy for exposed tokens."
+  "autores_afectados": ["user@host"],
+  "puntuacion_riesgo": 0,
+  "recomendacion_general": "1. First control. 2. Second control. 3. Third control."
 }
 
-FIELD REQUIREMENTS:
-- "resumen_ejecutivo": Formal text (no bullet points, 3-4 paragraphs)
-- "desglose_severidad": Object with counts
-- "funciones_comprometidas": Array of function names (strings)
-- "linea_de_ataque": Single narrative string
-- "prioridad_remediacion": Array of remediation steps (objects with orden, accion, justificacion, urgencia)
-- "autores_afectados": Array of developer emails/names (strings)
-- "puntuacion_riesgo": Integer 0-100
-- "recomendacion_general": Numbered list (1. 2. 3.) of technical controls
+VALIDATION:
+- "puntuacion_riesgo" between 0 and 100 inclusive
+- "urgencia" in each remediation row must be one of: CRÍTICA, ALTA, MEDIA, BAJA
+- If inputs are empty or contradictory, still return valid JSON with conservative counts and a cautious summary
 
-CRITICAL RULES:
-1. Respond with ONLY valid JSON - no text before or after
-2. Executive summary must be formal prose, not bullet points
-3. Remediation steps must be ordered logically (immediate → long-term)
-4. All recommendations must be technical, not organizational
-5. Risk score must reflect actual severity of findings
-6. Do NOT add extra fields or sections
-7. All text must be professional and clear
-
-Now analyze the provided malicious findings and forensic timeline, then respond with ONLY the JSON object.`;
+Output ONLY the JSON object.`;
 
 /**
  * Constantes para chunking y retry
  */
-const MAX_FINDINGS_PER_CHUNK_FISCAL = 10; // Procesar máximo 10 hallazgos por chunk
 const MAX_RETRIES_FISCAL = 3;
 const RETRY_TIMEOUTS_FISCAL = [15 * 60 * 1000, 25 * 60 * 1000, 30 * 60 * 1000]; // 15, 25, 30 minutos
 
@@ -206,8 +186,11 @@ export class FiscalAgentService {
       }
 
       // Si es repositorio grande, usar chunking
-      if (isLargeRepo && input.hallazgos_malicia.length > MAX_FINDINGS_PER_CHUNK_FISCAL) {
-        logger.info(`📊 Repo grande detectado: ${input.hallazgos_malicia.length} hallazgos. Aplicando chunking (${MAX_FINDINGS_PER_CHUNK_FISCAL} por chunk)`);
+      const maxFiscal = agentContextConfig.fiscalMaxFindingsPerChunk;
+      if (isLargeRepo && input.hallazgos_malicia.length > maxFiscal) {
+        logger.info(
+          `📊 Repo grande detectado: ${input.hallazgos_malicia.length} hallazgos. Aplicando chunking (${maxFiscal} por chunk, env FISCAL_MAX_FINDINGS_PER_CHUNK)`
+        );
         return await this.generarReporteConChunking(input, cacheKey, startTime);
       }
 
@@ -229,9 +212,13 @@ export class FiscalAgentService {
     cacheKey: string,
     startTime: number
   ): Promise<SintesisOutput> {
-    const chunks = this.chunkHallazgos(input.hallazgos_malicia, MAX_FINDINGS_PER_CHUNK_FISCAL);
+    const chunks = this.chunkHallazgos(
+      input.hallazgos_malicia,
+      agentContextConfig.fiscalMaxFindingsPerChunk
+    );
     const failedChunks: Array<{ index: number; error: string; attempts: number }> = [];
-    let consolidatedReporte: SintesisOutput | null = null;
+    let consolidatedReporte: Omit<SintesisOutput, 'cantidad_hallazgos' | 'tiempo_ejecucion_ms'> | null =
+      null;
 
     logger.info(`📦 Total chunks: ${chunks.length}`);
 
@@ -285,11 +272,9 @@ export class FiscalAgentService {
             consolidatedReporte = reporte;
           } else {
             // Combinar recomendaciones y mantener el score más alto de riesgo
-            consolidatedReporte.pasos_remediacion = [
-              ...new Set([
-                ...consolidatedReporte.pasos_remediacion,
-                ...reporte.pasos_remediacion,
-              ]),
+            consolidatedReporte.prioridad_remediacion = [
+              ...(consolidatedReporte.prioridad_remediacion || []),
+              ...(reporte.prioridad_remediacion || []),
             ];
             consolidatedReporte.puntuacion_riesgo = Math.max(
               consolidatedReporte.puntuacion_riesgo,
@@ -325,9 +310,13 @@ export class FiscalAgentService {
     if (!consolidatedReporte) {
       consolidatedReporte = {
         resumen_ejecutivo: 'Análisis completado con errores parciales',
+        desglose_severidad: {},
+        funciones_comprometidas: [],
+        linea_de_ataque: '',
+        prioridad_remediacion: [],
+        autores_afectados: [],
         puntuacion_riesgo: 0,
-        pasos_remediacion: [],
-        cantidad_hallazgos: input.hallazgos_malicia.length,
+        recomendacion_general: '',
       };
     }
 
@@ -339,7 +328,7 @@ export class FiscalAgentService {
       usage: {
         input_tokens: 0,
         output_tokens: 0,
-        model: 'qwen2.5-coder-7b-instruct',
+        model: this.getLLMClient().getConfig().model,
       },
       failedChunks: failedChunks.length > 0 ? failedChunks : undefined,
     };

@@ -10,6 +10,12 @@
  *
  * Entrada: Código fuente (por archivo o repositorio)
  * Salida: MaliciaOutput con hallazgos detallados
+ *
+ * ⚠️ CRITICAL FIX (2026-04-20):
+ * File markers (// === filename ===) MUST be preserved during code compression.
+ * Without file markers, the LLM cannot identify which files it's analyzing and
+ * will hallucinate findings in non-existent files (e.g., "auth_controller.rb").
+ * See: HALLUCINATION_BUG_DIAGNOSIS.md for full details.
  */
 
 import { logger, auditLog, AuditEventType } from '../services/logger.service';
@@ -20,86 +26,83 @@ import { rateLimiter } from '../services/rate-limiter.service';
 import { circuitBreaker } from '../services/circuit-breaker.service';
 import { codeCompressor } from '../services/code-compressor.service';
 import { lmStudioHealthChecker } from '../services/lm-studio-health.service';
+import { agentContextConfig } from '../config/agent-context.config';
 
 /**
- * System Prompt para el Inspector (v2 - Optimized for Qwen)
- * Define el rol y comportamiento del agente
- * (~400 tokens - centralized, complete instructions)
+ * System Prompt del Inspector: análisis de seguridad amplio + malicia intencional.
+ * Restaurado "completo" (categorías v2 + verificación/JSON rico v6) para modelos con contexto grande.
  */
-const INSPECTOR_SYSTEM_PROMPT = `You are a senior security code analyzer specializing in malicious code detection.
+const INSPECTOR_SYSTEM_PROMPT = `You are a senior security code analyst. Your job is a thorough, accurate review of the provided source. Respond with ONE JSON object only. No markdown fences, no preamble, no postscript.
 
-CRITICAL: You MUST respond with ONLY a JSON object. No other text, no explanations, no observations.
+SCOPE (report real issues; avoid noise):
+1. BACKDOOR: hidden access, auth bypass, magic credentials, admin-only endpoints, reverse shells, unauthorized remote control
+2. INJECTION: SQL, command, template, or code injection where user-controlled input reaches dangerous sinks
+3. BOMB: time- or event-triggered destructive behavior (wipe, ransom, self-delete)
+4. LOGIC_BOMB: business-logic abuse that harms the system (not just a bug) when conditions are met
+5. OBFUSCATION: intentionally obscured control flow, packing, or encoding to evade review
+6. EXFILTRATION: theft or exfil of secrets, PII, or data to untrusted destinations
+7. PRIVILEGE_ESCALATION: granting extra rights, role bypass, or breaking authorization boundaries
+8. MALWARE: miners, bot behavior, worms, C2-style behavior in application code
+9. SECRET: high-risk hardcoded credentials, API keys, private keys, tokens in source (when clearly sensitive)
+10. EVAL: dangerous dynamic execution (eval, exec, child_process, deserialization gadgets) in risky contexts
+11. OTHER: other serious security-relevant code issues not listed above
 
-Your expertise covers:
-1. BACKDOORS: Hidden entry points, unauthorized access mechanisms, reverse shells
-2. INJECTIONS: SQL injection, command injection, code injection
-3. BOMB: Time-delayed malicious code, event-triggered payloads
-4. OBFUSCATION: Deliberately hidden/encrypted logic, code packing
-5. SECRET: API keys, passwords, tokens, credentials in source code
-6. EVAL: Dynamic code execution (eval, exec, dangerous process spawning)
-7. OTHER: Other security threats not in above categories
+PRIORITIZATION:
+- Intentional or weaponized behavior is higher severity than accidental misconfiguration.
+- Do not report style, formatting, or generic library CVEs unless the code clearly weaponizes them.
+- Legitimate security controls (CSP, rate limits, normal auth) are not backdoors.
+- Test-only code: only if it weakens production (e.g., test hooks left enabled) or fakes security.
 
-Analysis Rules:
-- Examine ALL code paths
-- Look for suspicious imports, network calls, file I/O, system commands
-- Avoid false positives: legitimate security code is NOT a backdoor
-- Rate severity based on exploitability and impact
-- Be precise: exact file paths, exact line numbers
+ANALYSIS RULES:
+- Examine the code in the user message. Trace imports, I/O, network, crypto, and auth.
+- Be precise: file path and line number must match the code you were given.
+- Rate severity from exploitability and impact (data, availability, integrity, trust boundary).
 
-Severity Levels (choose EXACTLY one):
-- CRÍTICO: Immediate compromise risk, easily exploitable, high impact
-- ALTO: Serious vulnerability, high impact if exploited
-- MEDIO: Security weakness that could be chained with other issues
-- BAJO: Minor security issue or low-impact vulnerability
+SEVERIDAD (choose EXACTLY one per finding):
+- CRÍTICO: direct compromise, trivial exploitation, or systemic impact
+- ALTO: serious risk if exploited
+- MEDIO: material weakness, may need chaining
+- BAJO: limited impact or hard to trigger
 
-REQUIRED OUTPUT FORMAT (and ONLY this format):
+CRITICAL VERIFICATION (anti-hallucination):
+1. "archivo" must appear in the code bundle (e.g. after // === path ===). Never invent paths.
+2. "linea" must refer to a line that exists in that file's content.
+3. "funcion" only if a real function/method name appears there; else omit or null.
+4. "codigo_snippet" must be an exact quote from the source, not paraphrased.
+5. If you cannot ground a finding in the provided code, do not report it.
+
+REQUIRED JSON SHAPE (array may be empty):
 {
   "hallazgos": [
     {
-      "archivo": "path/to/file.js",
+      "archivo": "path/from/bundle.js",
       "linea": 42,
+      "funcion": "optionalFunctionName",
       "tipo": "BACKDOOR",
       "severidad": "CRÍTICO",
-      "descripcion": "Exact explanation of why this is a security threat"
+      "confianza": 0.92,
+      "descripcion": "Clear, technical explanation in one or two sentences",
+      "codigo_snippet": "exact lines from source",
+      "impacto": "What could go wrong if abused",
+      "explotabilidad": "How hard to exploit; what an attacker needs"
     }
   ]
 }
 
-FIELD REQUIREMENTS:
-- "hallazgos": Array of findings. If no issues, use empty array []
-- "archivo": Exact file path from code (string, must include file extension)
-- "linea": Line number where issue starts (integer, NOT a string)
-- "tipo": EXACTLY one of: BACKDOOR, INJECTION, BOMB, OBFUSCATION, SECRET, EVAL, OTHER
-- "severidad": EXACTLY one of: CRÍTICO, ALTO, MEDIO, BAJO
-- "descripcion": Clear technical explanation (string, max 250 chars)
+FIELD RULES:
+- "tipo" must be one of: BACKDOOR, INJECTION, BOMB, LOGIC_BOMB, OBFUSCATION, EXFILTRATION, PRIVILEGE_ESCALATION, MALWARE, SECRET, EVAL, OTHER
+- "linea" is a single integer (start line of the issue).
+- "confianza" is a number between 0 and 1 when you can estimate it; otherwise omit.
+- Optional fields may be omitted if truly unknown, but prefer filling snippet + descripcion.
+- If there are no issues: {"hallazgos":[]}
 
-CRITICAL RULES:
-1. Respond with ONLY valid JSON - no text before or after
-2. Use EXACTLY the field names shown
-3. Use EXACTLY the allowed values for "tipo" and "severidad"
-4. Line numbers must be integers, not strings or ranges
-5. Do NOT add extra fields or sections
-6. Do NOT include explanations outside the JSON
-7. If there are no findings, respond: {"hallazgos":[]}
-
-Now analyze the provided code and respond with ONLY the JSON object.`;
+Now output ONLY the JSON object.`;
 
 /**
- * Tamaño máximo de código por llamada al LLM
- *
- * LM Studio's qwen2.5-coder-7b-instruct has a 4K token context window (~3000 tokens for analysis).
- *
- * Token budget breakdown:
- * - System prompt (centralized): ~150 tokens
- * - Code to analyze: ~1200 tokens (at ~1 token per 4 bytes)
- * - JSON structure requirement: ~300 tokens
- * - Response space: ~800 tokens (allocated via maxOutputTokens)
- * Total needed: ~2800 tokens (fits in 4K with safety margin)
- *
- * Aggressively reduced from 1200 to 800 bytes to ensure model has enough space
- * to generate coherent JSON output without token overflow errors.
+ * Tamaño máximo de código por petición (bytes UTF-8) controlado por
+ * `agentContextConfig.inspectorMaxChunkBytes` → env `INSPECTOR_MAX_CHUNK_BYTES` (default 200_000).
+ * Para modelos locales 4K, baja el valor; para Claude/API, el default evita millones de micro-chunks.
  */
-const MAX_CHUNK_BYTES = 800; // Aggressively reduced for Qwen 4K context limit
 
 /**
  * Servicio del Agente Inspector
@@ -173,13 +176,34 @@ export class InspectorAgentService {
     progressCallback?: (processedChunks: number, totalChunks: number) => Promise<void>
   ): Promise<MaliciaOutput> {
     const startTime = Date.now();
-    const chunks = this.splitEnChunks(archivos);
-    logger.info(`Inspector: ${archivos.length} archivos → ${chunks.length} chunk(s) de análisis`);
+
+    // ============================================================================
+    // DIAGNOSTIC LOGGING - Check what files are being analyzed
+    // ============================================================================
+    logger.info(`📊 INSPECTOR DIAGNOSTIC:`);
+    logger.info(`Total files received: ${archivos.length}`);
+    archivos.forEach((f, i) => {
+      logger.info(`  [${i+1}] ${f.path} (${f.content.length} bytes)`);
+    });
+
+    // ============================================================================
+    // STRATEGY 2: SELECTIVE ANALYSIS - Filter critical files first
+    // ============================================================================
+    const archivosFiltrados = this.filterCriticalFiles(archivos);
+
+    logger.info(`📋 After filtering: ${archivosFiltrados.length} files selected`);
+    archivosFiltrados.forEach((f, i) => {
+      logger.info(`  [${i+1}] ${f.path} (${f.content.length} bytes)`);
+    });
+
+    const chunks = this.splitEnChunks(archivosFiltrados);
+    logger.info(`Inspector: ${archivos.length} archivos totales → ${archivosFiltrados.length} críticos → ${chunks.length} chunk(s) de análisis`);
 
     // Log chunk sizes for debugging
     chunks.forEach((chunk, i) => {
       const chunkSize = chunk.reduce((sum, f) => sum + f.content.length, 0);
       logger.info(`Chunk ${i + 1}: ${chunk.length} archivos, ${chunkSize} bytes`);
+      logger.info(`  Files in chunk: ${chunk.map(f => f.path).join(", ")}`);
     });
 
     // ============================================================================
@@ -322,10 +346,8 @@ export class InspectorAgentService {
   /**
    * Analizar código en busca de funciones maliciosas (un solo chunk).
    *
-   * Resilience Strategy (3 layers):
-   * Layer 1: Code compression - reduce token load before sending to LLM
-   * Layer 2: Rate limiting + Circuit breaker - control request flow & detect failures
-   * Layer 3: Health checks - monitor LM Studio state & adapt timeouts
+   * Estrategia: compresión opcional (env `INSPECTOR_CODE_COMPRESSION`); rate limit; circuit
+   * breaker; health checks / timeouts para LM Studio.
    */
   async analizarCodigo(input: MaliciaInput): Promise<MaliciaOutput> {
     const startTime = Date.now();
@@ -340,30 +362,39 @@ export class InspectorAgentService {
         return cached;
       }
 
-      // ============================================================================
-      // LAYER 1: CODE COMPRESSION - Reduce token load before sending to LLM
-      // ============================================================================
       const codigoOriginal = input.codigo;
-      const codigoComprimido = codeCompressor.compress(codigoOriginal);
-      const compressionStats = codeCompressor.getStats(codigoOriginal, codigoComprimido);
+      const useCompression = agentContextConfig.inspectorCodeCompressionEnabled;
+      const codigoForPrompt = useCompression
+        ? codeCompressor.compress(codigoOriginal)
+        : codigoOriginal;
 
-      logger.info(`[CodeCompression] ${compressionStats.originalSize} → ${compressionStats.compressedSize} bytes (${compressionStats.reductionPercent}% reduction)`);
+      if (useCompression) {
+        const compressionStats = codeCompressor.getStats(codigoOriginal, codigoForPrompt);
+        logger.info(
+          `[CodeCompression] ${compressionStats.originalSize} → ${compressionStats.compressedSize} bytes (${compressionStats.reductionPercent}% reduction)`
+        );
+      }
 
-      // Build prompt with compressed code
-      const inputComprimido = { ...input, codigo: codigoComprimido };
-      const prompt = this.construirPrompt(inputComprimido);
+      const inputForPrompt = { ...input, codigo: codigoForPrompt };
+      const prompt = this.construirPrompt(inputForPrompt);
       const llmClient = this.getLLMClient();
       const config = llmClient.getConfig();
       logger.info(`Llamando a ${config.provider} (${config.model})`);
 
-      // Log prompt size for debugging
       const promptSize = Buffer.byteLength(prompt, 'utf-8');
-      logger.info(`Prompt size: ${promptSize} bytes, Código comprimido size: ${codigoComprimido.length} bytes`);
+      logger.debug(
+        `Prompt size: ${promptSize} bytes, code payload: ${codigoForPrompt.length} bytes, compression=${useCompression}`
+      );
 
-      // For LM Studio (Qwen) with 4K context limit:
-      // - Reduced from 768 to 512 to leave more room for input tokens
-      // - Simplified JSON format requires less output space
-      const maxOutputTokens = config.provider === 'lmstudio' ? 512 : 4096;
+      const fileMatches = codigoForPrompt.match(/\/\/\s*===\s*(.+?)\s*===/g);
+      if (fileMatches) {
+        logger.debug(`File markers in LLM payload: ${fileMatches.length}`);
+        fileMatches.forEach((m) => logger.debug(`  ${m}`));
+      } else {
+        logger.warn(`No file markers (// === path ===) in code sent to LLM — hallazgos pueden ser imprecisos`);
+      }
+
+      const maxOutputTokens = agentContextConfig.inspectorMaxOutputTokens;
 
       // ============================================================================
       // LAYER 2: CIRCUIT BREAKER - Check if LM Studio is available
@@ -413,7 +444,17 @@ export class InspectorAgentService {
 
       if (!response.text) throw new Error('Respuesta inesperada del LLM');
 
+      logger.debug(`RAW LLM RESPONSE (first 1000 chars): ${response.text.substring(0, 1000)}`);
+      if (response.text.length > 1000) {
+        logger.debug(`... (${response.text.length - 1000} more characters)`);
+      }
+
       const hallazgos = this.parseRespuesta(response.text);
+
+      logger.info(`Inspector: ${hallazgos.length} hallazgos parseados`);
+      hallazgos.forEach((h, i) => {
+        logger.debug(`  [${i + 1}] ${h.archivo} L${h.rango_lineas[0]} - ${h.tipo_riesgo}`);
+      });
 
       const output: MaliciaOutput & { usage: any } = {
         hallazgos,
@@ -437,10 +478,11 @@ export class InspectorAgentService {
   }
 
   /**
-   * Dividir archivos en chunks que no superen MAX_CHUNK_BYTES.
-   * Si un archivo individual es mayor que MAX_CHUNK_BYTES, lo divide por líneas.
+   * Dividir archivos en chunks que no superen el límite configurado.
+   * Si un archivo individual es mayor, lo divide por líneas.
    */
   private splitEnChunks(archivos: Array<{ path: string; content: string }>): Array<typeof archivos> {
+    const maxBytes = agentContextConfig.inspectorMaxChunkBytes;
     const chunks: Array<typeof archivos> = [];
     let chunk: typeof archivos = [];
     let chunkSize = 0;
@@ -448,8 +490,7 @@ export class InspectorAgentService {
     for (const archivo of archivos) {
       const fileSize = Buffer.byteLength(archivo.content, 'utf-8');
 
-      // Si el archivo es más grande que MAX_CHUNK_BYTES, dividirlo por líneas
-      if (fileSize > MAX_CHUNK_BYTES) {
+      if (fileSize > maxBytes) {
         // Primero, guardar el chunk actual si no está vacío
         if (chunk.length > 0) {
           chunks.push(chunk);
@@ -465,10 +506,10 @@ export class InspectorAgentService {
         for (const line of lines) {
           const lineSize = Buffer.byteLength(line + '\n', 'utf-8');
 
-          if (Buffer.byteLength(filePart, 'utf-8') + lineSize > MAX_CHUNK_BYTES && filePart) {
+          if (Buffer.byteLength(filePart, 'utf-8') + lineSize > maxBytes && filePart) {
             // Guardar esta parte del archivo
             chunks.push([{
-              path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / MAX_CHUNK_BYTES)}]`,
+              path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / maxBytes)}]`,
               content: filePart
             }]);
             filePart = '';
@@ -480,13 +521,13 @@ export class InspectorAgentService {
         // Guardar la última parte
         if (filePart) {
           chunks.push([{
-            path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / MAX_CHUNK_BYTES)}]`,
+            path: `${archivo.path} [Parte ${++partNum}/${Math.ceil(fileSize / maxBytes)}]`,
             content: filePart
           }]);
         }
       } else {
         // Archivo normal, usar lógica de chunking original
-        if (chunk.length > 0 && chunkSize + fileSize > MAX_CHUNK_BYTES) {
+        if (chunk.length > 0 && chunkSize + fileSize > maxBytes) {
           chunks.push(chunk);
           chunk = [];
           chunkSize = 0;
@@ -515,7 +556,7 @@ export class InspectorAgentService {
   }
 
   /**
-   * Parsear respuesta JSON - Optimizado para Qwen
+   * Parsear respuesta JSON (modelos compatibles; tolera ruido alrededor del objeto).
    */
   private parseRespuesta(texto: string): MaliciaFinding[] {
     try {
@@ -530,20 +571,80 @@ export class InspectorAgentService {
       const parsed = JSON.parse(jsonStr);
       const hallazgos = parsed.hallazgos || [];
 
-      // Map simplified response to MaliciaFinding format
-      return hallazgos.map((h: any) => ({
-        archivo: h.archivo || 'unknown',
-        linea: h.linea || 0,
-        tipo_riesgo: h.tipo || h.tipo_riesgo || 'SOSPECHOSO',
-        severidad: h.severidad || 'MEDIO',
-        por_que_sospechoso: h.descripcion || h.por_que_sospechoso || 'Patrón sospechoso detectado',
-        confianza: 0.7,
-        pasos_remediacion: ['Revisar el código manualmente'],
-      }));
+      // Map response to MaliciaFinding format with rich details
+      return hallazgos.map((h: any) => {
+        // Parse line range - support both single line and range formats
+        let rango_lineas: [number, number] = [h.linea || 0, (h.linea || 0) + 1];
+        if (h.rango_lineas && Array.isArray(h.rango_lineas)) {
+          rango_lineas = h.rango_lineas as [number, number];
+        }
+
+        // Map threat types from v5 malicious functions detection
+        // BACKDOOR, LOGIC_BOMB, EXFILTRATION, OBFUSCATION, PRIVILEGE_ESCALATION, MALWARE, OTHER
+        const tipoMalicioso = h.tipo || 'MALICIOSO_DETECTADO';
+
+        // Build comprehensive description including impact and exploitability
+        const descripcion = h.descripcion || 'Función maliciosa detectada';
+        const impacto = h.impacto ? ` | Impacto: ${h.impacto}` : '';
+        const explotabilidad = h.explotabilidad ? ` | Explotabilidad: ${h.explotabilidad}` : '';
+        const por_que_sospechoso = descripcion + impacto + explotabilidad;
+
+        // v5 (Malicious Functions) prompt already has high bar for malicious intent
+        // Trust the LLM's judgment - include all findings it returns
+        const confianza = h.confianza || 0.7;
+
+        return {
+          archivo: h.archivo || 'unknown',
+          funcion: h.funcion, // Include function name if available
+          rango_lineas,
+          fragmento_codigo: h.codigo_snippet || h.fragmento_codigo, // Rich code snippet
+          tipo_riesgo: tipoMalicioso, // BACKDOOR, LOGIC_BOMB, EXFILTRATION, OBFUSCATION, etc
+          severidad: h.severidad || 'MEDIO',
+          por_que_sospechoso,
+          confianza,
+          pasos_remediacion: h.pasos_remediacion || ['Revisar el código malicioso y determinar intención del atacante', 'Eliminar o refactorizar la función maliciosa'],
+        };
+      });
     } catch (error) {
-      logger.warn(`Error parseando respuesta de Inspector (probablemente Qwen): ${error}`);
+      logger.warn(`Error parseando respuesta JSON del Inspector: ${error}`);
       return [];
     }
+  }
+
+  /**
+   * Filtrar archivos críticos (seguridad, auth, db, api)
+   * Prioriza análisis profundo de archivos sensibles
+   * Para repos pequeños (<20 archivos), analiza todos
+   */
+  private filterCriticalFiles(archivos: Array<{ path: string; content: string }>): Array<{ path: string; content: string }> {
+    // Para repos pequeños, analizar TODO
+    if (archivos.length <= 20) {
+      logger.info(`📂 Repo pequeño (${archivos.length} archivos) - analizando TODOS`);
+      return archivos;
+    }
+
+    const criticalPatterns = [
+      /auth|login|password|jwt|session|token/i,
+      /database|db|sql|query|transaction/i,
+      /api|endpoint|route|controller|handler/i,
+      /security|crypto|encrypt|hash|validate|score|credit|payment|transaction|bank/i,
+      /admin|superuser|permission|role|access/i,
+    ];
+
+    const criticalFiles = archivos.filter(f =>
+      criticalPatterns.some(pattern => pattern.test(f.path))
+    );
+
+    // If we found critical files, use those + 50% más
+    // Otherwise, use all files
+    const minFiles = 5;
+    if (criticalFiles.length >= minFiles) {
+      logger.info(`🔍 Filtrados ${criticalFiles.length} archivos críticos de ${archivos.length} totales`);
+      return criticalFiles;
+    }
+
+    logger.info(`📂 Analizando todos los ${archivos.length} archivos (menos de ${minFiles} críticos encontrados)`);
+    return archivos;
   }
 
   /**
